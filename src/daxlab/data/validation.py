@@ -1,10 +1,10 @@
 """Strict market-data contracts for reproducible DAX research."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 import pandas as pd
-
 
 REQUIRED_OHLC = ("open", "high", "low", "close")
 
