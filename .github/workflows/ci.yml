@@ -24,3 +24,8 @@ jobs:
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
         run: python scripts/check_neon.py
+      - name: Apply research database migrations
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: python scripts/migrate_db.py
