@@ -1,6 +1,6 @@
 # MASTERSTAND — DAX Daytrading Bot
 
-Updated: 2026-09-07
+Updated: 2026-09-08
 
 This document is the durable project handover/source-of-truth. New work must preserve these constraints and verified findings.
 
@@ -18,10 +18,13 @@ GitHub repository `hennebergtoni-lgtm/dax-Day` is now the central code/version-c
 - New hypotheses/variants never silently become the bot.
 - Historical basis: 2014–2019.
 - 1,673 valid Berlin session days.
-- 172,319 M1 candles.
+- 481,824 raw M5 rows (1,673 daily files × 288 bars/day).
+- 172,319 M5 Berlin-session bars (1,673 × 103). Earlier project notes that called this number “M1 candles” were mislabeled; the underlying data and strategy results are unchanged.
 - 103 M5 session bars/day.
 - Session 09:00–17:30 Europe/Berlin.
-- Audited basis: 0 OHLC errors.
+- Audited basis: 0 OHLC errors and 0 duplicate UTC timestamps.
+- Audited session OHLC SHA256: `e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`.
+- Audited migration ZIP SHA256: `c46c09a391ee83a19a117fb43628cb75ab0a75703701ed7a84731d2963b24870`.
 - V11.2 parameter grid: 144 variants.
 - Walk-forward: 81 WFs, Train 45d, OOS 20d, Step 20d.
 - Reference OOS: 36 positive, 45 negative, 0 flat WFs; 1,384 trades; -68.1095R.
@@ -32,7 +35,7 @@ GitHub repository `hennebergtoni-lgtm/dax-Day` is now the central code/version-c
 - Matrix aggregate normal-cost sum: -1122.231646R. This is a matrix sum, not one bot result.
 - Observed acceleration around 1.243×.
 - Exact engine SHA256: `9561b9089c57c543798dc587ce240a729b7995230dd5d665a1bdd029f3990887`.
-- Known core bootstrap: 172,319 candles / 1,673 days; 144-grid; 81-WF schedule; trade-bearing pre-gate 14 trades, return_r 3.9351648669, PF 1.5556035886; parity 144/144 with 114 trade-bearing cases.
+- Known core bootstrap: 172,319 M5 session bars / 1,673 days; 144-grid; 81-WF schedule; trade-bearing pre-gate 14 trades, return_r 3.9351648669, PF 1.5556035886; parity 144/144 with 114 trade-bearing cases.
 
 ## 4. Research findings retained
 ### V2.8.19
@@ -87,12 +90,11 @@ Gap research: gap size/direction, intraday gap close, OR/day-structure interacti
 - Large historical data should not be committed to public GitHub; use reproducible storage/cache with manifests and hashes.
 - MT5 belongs behind a separate execution boundary; research and live execution must not be coupled.
 
-## 8. Next milestone
-1. Establish repository skeleton and CI.
-2. Encode data, metric, cost, strategy and experiment contracts.
-3. Add V11.2 frozen adapter/reference manifest.
-4. Add parity/no-lookahead/intrabar/WF tests.
-5. Reconnect the audited historical data through the data layer.
-6. Obtain green V11.2 parity.
-7. Run BB-001 isolated pilot.
-8. Continue FIB-001, GAP-001 and targeted interaction research only after isolated evidence.
+## 8. Current milestone
+1. Repository skeleton and CI — complete.
+2. Contracts / parity / no-lookahead / intrabar / WF tests — complete foundation.
+3. Frozen V11.2 recovered engine sources with SHA gates — complete.
+4. Gate 0 audited historical M5 data + independent fingerprint — GREEN on 2026-09-08.
+5. Gate 1 full V11.2 parity in the new lab — next.
+6. BB001 isolated pilot after Gate 1.
+7. FIB001, GAP001, EVENT001 and targeted interactions only after isolated evidence.

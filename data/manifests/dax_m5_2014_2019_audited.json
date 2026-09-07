@@ -1,0 +1,20 @@
+{
+  "dataset_key": "DAX_M5_2014_2019_AUDITED",
+  "provenance": "legacy_colab_drive",
+  "research_start": "2014-01-01",
+  "research_end": "2019-12-31",
+  "daily_files": 1673,
+  "raw_m5_rows": 481824,
+  "session_timezone": "Europe/Berlin",
+  "session_start": "09:00",
+  "session_end": "17:30",
+  "session_days": 1673,
+  "session_m5_rows": 172319,
+  "session_m5_bars_per_day": 103,
+  "invalid_ohlc_rows": 0,
+  "duplicate_utc_timestamps": 0,
+  "session_ohlc_sha256": "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2",
+  "zip_sha256": "c46c09a391ee83a19a117fb43628cb75ab0a75703701ed7a84731d2963b24870",
+  "verification": "independently re-read and re-fingerprinted after bundle creation",
+  "note": "172,319 is the audited M5 Berlin-session bar count, not an M1 candle count. Large market-data payload is intentionally not stored in public GitHub."
+}

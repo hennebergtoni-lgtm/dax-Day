@@ -6,10 +6,15 @@ The new infrastructure accelerates work; it does not change the scientific order
 Required before historical parity/research claims:
 - 2014–2019 basis identified by manifest/fingerprint
 - 1,673 valid Europe/Berlin session days
-- 172,319 M1 candles
+- 481,824 raw M5 rows
+- 172,319 M5 Berlin-session bars
 - 103 M5 session bars/day
 - 09:00–17:30 Europe/Berlin session contract
 - zero known OHLC integrity errors
+- zero duplicate UTC timestamps
+- session OHLC SHA256 `e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`
+
+Gate 0 status: **GREEN (2026-09-08)**. The migration bundle was independently re-read and re-fingerprinted after creation. The earlier label “172,319 M1 candles” was an audit-label error; the number is the M5 Berlin-session bar count and no strategy/result values changed.
 
 ## Gate 1 — frozen V11.2 parity
 V11.2 is reference-only and immutable. A reconstructed/adapted core must reproduce the established reference surface before research results are accepted.

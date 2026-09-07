@@ -6,8 +6,13 @@ def test_v11_2_reference_invariants() -> None:
     assert_reference_invariants()
     assert V11_2.oos_trades == 1384
     assert V11_2.oos_return_r == -68.1095
-    assert V11_2.m1_candles == 172319
+    assert V11_2.raw_m5_rows == 481824
+    assert V11_2.m5_session_bars == 172319
     assert V11_2.m5_bars_per_day == 103
+    assert (
+        V11_2.dataset_session_ohlc_sha256
+        == "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
+    )
 
 
 def test_walk_forward_contract_is_frozen() -> None:
