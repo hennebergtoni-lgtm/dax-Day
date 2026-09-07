@@ -12,10 +12,12 @@ def main() -> None:
     if not database_url:
         raise SystemExit("NEON_DATABASE_URL is not configured")
 
-    with psycopg.connect(database_url, connect_timeout=15) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute("select current_database(), current_user")
-            database, user = cursor.fetchone()
+    with (
+        psycopg.connect(database_url, connect_timeout=15) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute("select current_database(), current_user")
+        database, user = cursor.fetchone()
 
     print(f"PostgreSQL connection OK | database={database} | role={user}")
 
