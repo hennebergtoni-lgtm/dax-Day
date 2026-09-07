@@ -28,6 +28,18 @@ EXACT_ENGINE = ArtifactExpectation(
     ),
 )
 
+# Verified 2026-09-07 by extracting the embedded engine source from EXACT_ENGINE.
+# This is the exact parity candidate source used by the proven V3.5.4 gate.
+EXACT_ENGINE_EMBEDDED_SHA256 = (
+    "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888"
+)
+EXACT_ENGINE_EMBEDDED_CHARS = 51501
+
+# Verified 2026-09-07 by extracting the engine payload written by V11_2_ONE_CLICK.ipynb.
+# This is the frozen oracle/reference source against which parity is judged.
+ORACLE_ENGINE_SHA256 = "62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f"
+ORACLE_ENGINE_CHARS = 35819
+
 FAST_RUNNER = ArtifactExpectation(
     key="v2_8_18_fast_runner",
     filename="DAX_V11_2_V2_8_18_FAST_FULL_RESEARCH_ONE_CLICK.ipynb",
