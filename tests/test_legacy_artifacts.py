@@ -2,7 +2,16 @@ from hashlib import sha256
 
 import pytest
 
-from daxlab.reference.legacy_artifacts import ArtifactExpectation, sha256_file, verify_artifact
+from daxlab.reference.legacy_artifacts import (
+    EXACT_ENGINE,
+    EXACT_ENGINE_EMBEDDED_CHARS,
+    EXACT_ENGINE_EMBEDDED_SHA256,
+    ORACLE_ENGINE_CHARS,
+    ORACLE_ENGINE_SHA256,
+    ArtifactExpectation,
+    sha256_file,
+    verify_artifact,
+)
 
 
 def test_sha256_file_is_deterministic(tmp_path):
@@ -47,3 +56,17 @@ def test_verify_artifact_rejects_wrong_filename(tmp_path):
 
     with pytest.raises(ValueError, match="Wrong artifact"):
         verify_artifact(path, expectation)
+
+
+def test_verified_engine_provenance_is_frozen():
+    assert EXACT_ENGINE.expected_sha256 == (
+        "9561b9089c57c543798dc587ce240a729b7995230dd5d665a1bdd029f3990887"
+    )
+    assert EXACT_ENGINE_EMBEDDED_SHA256 == (
+        "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888"
+    )
+    assert EXACT_ENGINE_EMBEDDED_CHARS == 51501
+    assert ORACLE_ENGINE_SHA256 == (
+        "62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f"
+    )
+    assert ORACLE_ENGINE_CHARS == 35819
