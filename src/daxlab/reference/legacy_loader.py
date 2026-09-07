@@ -51,7 +51,8 @@ def _load(source: bytes, module_name: str) -> ModuleType:
     module.__file__ = f"<frozen:{module_name}>"
     module.__package__ = module_name.rpartition(".")[0]
     sys.modules[module_name] = module
-    exec(compile(source, module.__file__, "exec"), module.__dict__)
+    # Source is cryptographically gated immediately above; execution is intentional.
+    exec(compile(source, module.__file__, "exec"), module.__dict__)  # noqa: S102
     return module
 
 
