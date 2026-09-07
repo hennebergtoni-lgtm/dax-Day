@@ -35,7 +35,11 @@ Order begins with the existing research matrix, not donor-project popularity:
 2. FIB001 Fibonacci
 3. GAP001 close gaps
 4. volatility / time / entry / exit / market-structure tools
+5. EVENT001 event/news context layer
 Each is isolated first; only validated tools reach interaction testing.
+
+### EVENT001 — event/news context layer
+The event layer is a research tool, not an unverified live override. Candidate inputs include scheduled macro events (ECB, Fed/FOMC, CPI, NFP and other demonstrably DAX-relevant releases), event proximity, event class/importance and later validated market/news context. Research must measure whether setup behaviour before/after event classes changes trade quality. Event information may become a filter, risk reducer or confidence input only after OOS/WF validation. No statement such as “this trade can only win” is permitted.
 
 ## Gate 4 — targeted interactions
 Interactions are hypothesis-led and limited. No brute-force combinatorial explosion. Existing OR15/retest/OR-mid/RR/OR-ATR findings remain evidence and controls, not automatic strategy replacements.
@@ -43,8 +47,34 @@ Interactions are hypothesis-led and limited. No brute-force combinatorial explos
 ## Gate 5 — candidate bot
 A candidate requires robust OOS/WF evidence, cost stress, overfitting diagnostics, stability and independent validation. Ranking alone cannot promote a candidate.
 
+## Gate 5A — confidence and adaptive risk research
+Only after validated strategy components exist, research a transparent setup-quality/confidence score. Potential validated inputs may include regime, volatility, OR/market structure, setup type, historical behaviour of comparable setups, event/news context, spread/liquidity and cross-market context.
+
+Confidence and risk remain separate concepts:
+- confidence estimates setup quality; it never guarantees an outcome
+- position sizing remains bounded by hard risk limits
+- high-confidence setups may qualify for a prevalidated bounded risk multiplier
+- weak conditions may reduce size or prohibit a trade
+- all adaptive sizing must be tested OOS/WF and under cost/stress conditions before demo use
+- hard account/day/trade loss limits cannot be bypassed by confidence, UI controls or discretionary risk mode
+
+Initial UI concepts such as Defensive / Standard / Offensive are product controls only. Exact percentages and multipliers are not fixed until separately researched and validated.
+
 ## Gate 6 — execution
 Only after candidate validation: MT5 paper/demo execution boundary, operational risk controls, then any later live decision. Research code and broker execution stay separated.
+
+Before live consideration, the execution/risk layer must support hard limits for per-trade risk, daily loss, exposure, trading/session state and emergency stop. Adaptive sizing remains bounded by those limits.
+
+## Gate 7 — operator web interface
+A later web interface should expose, without changing frozen research evidence:
+- bot/MT5 connection and trading state
+- current market regime and setup-quality/confidence explanation
+- active risk profile and hard limits
+- event/news risk context
+- open/recent trades and bot decision rationale (“why trade / why no trade”)
+- optional approval workflow when a validated high-confidence setup qualifies for a larger but still bounded order size
+
+The UI must not create arbitrary strategy parameters or bypass risk controls. Configuration changes must be explicit, auditable and versioned. Automatic higher sizing may only be enabled after the same logic has passed research validation and demo/paper observation.
 
 # Donor-project integration rule
 Public GitHub projects are an engineering/research library, not a new source of truth.
