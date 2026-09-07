@@ -1,0 +1,21 @@
+{
+  "experiment_id": "BB001",
+  "status": "PILOT",
+  "baseline": "V11.2 frozen reference",
+  "hypothesis": "Bollinger-derived state can improve trade selection without changing frozen V11.2 execution semantics.",
+  "variants": [
+    "bandwidth_volatility",
+    "price_position",
+    "band_breakout",
+    "pullback_mean_reversion",
+    "or_interaction"
+  ],
+  "controls": [
+    "no Bollinger filter",
+    "same V11.2 factors",
+    "same WF schedule",
+    "normal/stress_1.5x/stress_2x costs"
+  ],
+  "known_issue_to_fix_first": "Previous pilot matched zero trades because day/timestamp lookup did not match trade time/index representation. Primary alignment must use actual entry_time; signal_time is a separate explicit variant.",
+  "promotion_allowed": false
+}
