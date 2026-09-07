@@ -33,7 +33,8 @@ def _load_module(module_name: str, source: str) -> types.ModuleType:
     module.__file__ = f"<recovered:{module_name}>"
     module.__package__ = ""
     sys.modules[module_name] = module
-    exec(compile(source, module.__file__, "exec"), module.__dict__)
+    # Intentional: only execute repository-stored source after strict SHA-256 verification above.
+    exec(compile(source, module.__file__, "exec"), module.__dict__)  # noqa: S102
     return module
 
 
