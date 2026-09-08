@@ -69,8 +69,20 @@ def main() -> None:
         raise SystemExit("web status must mark V11.2 active reference immutable")
     if web["readiness"]["paper"] != "BLOCKED" or web["readiness"]["live"] != "BLOCKED":
         raise SystemExit("web status must not expose Paper/Live as ready")
+
+    mt5 = web.get("mt5_adapter")
+    if not isinstance(mt5, dict):
+        raise SystemExit("web status must expose MT5 adapter preparation state")
+    if mt5.get("mode") != "READ_ONLY_ONLY":
+        raise SystemExit("MT5 adapter must remain read-only during architecture preparation")
+    if mt5.get("order_execution_enabled") is not False:
+        raise SystemExit("MT5 order execution must remain disabled before explicit Paper authorization")
+    if mt5.get("phase") != "ARCHITECTURE_PREPARATION":
+        raise SystemExit("unexpected MT5 adapter phase")
+
     print(
-        "Web status integrity OK | canonical reference + research registry match | Paper/Live BLOCKED"
+        "Web status integrity OK | canonical reference + research registry match | "
+        "MT5 read-only | Paper/Live BLOCKED"
     )
 
 
