@@ -71,7 +71,7 @@ Starting project counter: 41/150
 - [x] 88. Re-audit recovery dependency direction; no deletion-first refactor.
 
 ## 89–91 — Closure / hard stop
-- [ ] 89. Run full CI/recovery/research/web integrity gates.
+- [x] 89. Run full PR CI/recovery/research/web integrity gates. PR workflow #422 GREEN; main-only Neon gates remain to be verified after merge.
 - [ ] 90. Consolidate V7 readiness and remaining external MT5 requirements.
 - [ ] 91. HARD STOP: do not start shadow/paper/live/bot operation; present evidence and obtain explicit user authorization before any prospective run.
 
