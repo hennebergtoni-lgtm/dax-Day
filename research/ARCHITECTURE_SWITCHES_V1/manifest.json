@@ -1,0 +1,54 @@
+{
+  "artifact": "ARCHITECTURE_SWITCHES_V1",
+  "status": "RESEARCH_ARCHITECTURE",
+  "promotion_allowed": false,
+  "baseline_mutated": false,
+  "baseline": "V11.2 frozen active reference",
+  "implemented": [
+    "evidence-gated filter registry",
+    "explainable regime-to-filter recommender",
+    "web filter control interface contract",
+    "causal BB001 research module retained",
+    "causal Fibonacci retracement feature module",
+    "opening-gap feature module",
+    "isolated research interaction matrix",
+    "central research module catalog"
+  ],
+  "evidence_gates": {
+    "research": "visible/observable only; no live eligibility changes",
+    "validated": "may later qualify for explicit manual demo control after promotion",
+    "deployable": "may support manual control; regime-automatic requires separately validated regime mapping"
+  },
+  "current_module_states": {
+    "BB001": "research tool; promising but not independently promoted",
+    "PrevRange_ATR": "research hypothesis/context",
+    "FIB001": "research started; feature code and tests added",
+    "GAP001": "research started; feature code and tests added",
+    "EVENT001": "planned",
+    "cross_market": "planned after DAX-internal evidence stabilizes"
+  },
+  "public_intelligence_preserved": [
+    "completed higher-timeframe Bollinger state / no repaint",
+    "confirmed breakout before retrace continuation",
+    "structure/BOS-linked Fibonacci anchoring rather than hindsight swing picking",
+    "opening gap separated from intraday FVG/displacement logic",
+    "public donor results never replace DAX OOS/WF validation"
+  ],
+  "web_ui_target": {
+    "show_regime": true,
+    "show_filter_recommendations": true,
+    "show_reasoning_summary": true,
+    "show_evidence_status": true,
+    "manual_toggle_only_when_allowed": true,
+    "auto_regime_only_for_deployable_validated_mapping": true,
+    "risk_limits_bypassable": false
+  },
+  "next_research_order": [
+    "FIB001 isolated causal pilot",
+    "GAP001 isolated causal pilot",
+    "targeted interactions with OR/retest and BB001",
+    "EVENT001",
+    "cross-market regime context",
+    "candidate release only after full evidence gates"
+  ]
+}
