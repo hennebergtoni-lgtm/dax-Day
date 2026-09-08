@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from daxlab.runtime.contracts import DataQualityState, UNSAFE_STATES
+from daxlab.runtime.contracts import UNSAFE_STATES, DataQualityState
 from daxlab.runtime.decision import FinalAction
 
 
