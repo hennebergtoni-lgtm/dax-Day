@@ -72,6 +72,20 @@ def default_research_registry() -> FilterRegistry:
                 rationale="Causal research tool; promising interactions but not promotion-eligible.",
             ),
             FilterCapability(
+                key="fib001",
+                label="Causal Fibonacci retracement context",
+                evidence_status=EvidenceStatus.RESEARCH,
+                allowed_modes=(ControlMode.VISIBLE_ONLY,),
+                rationale="Fixed retracement zones from causally known impulses; isolated research only.",
+            ),
+            FilterCapability(
+                key="gap001",
+                label="Opening-gap context",
+                evidence_status=EvidenceStatus.RESEARCH,
+                allowed_modes=(ControlMode.VISIBLE_ONLY,),
+                rationale="Opening-gap feature family; no gap-fill assumption or live eligibility.",
+            ),
+            FilterCapability(
                 key="prev_range_atr",
                 label="Prior-day extension context",
                 evidence_status=EvidenceStatus.RESEARCH,
