@@ -9,6 +9,7 @@ EXPECTED_MIGRATIONS = (
     "0003_active_reference_registry.sql",
     "0004_detail_evidence_registry.sql",
     "0005_reproduced_detail_sources.sql",
+    "0006_detail_evidence_rows.sql",
 )
 EXPECTED_FILES = (
     "data/manifests/dax_m5_2014_2019_audited.json",
