@@ -8,6 +8,7 @@ from pathlib import Path
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     ref = json.loads((root / "research/V112_REFERENCE_V1/reference_result.json").read_text())
+    registry = json.loads((root / "research/RESEARCH_FAMILY_REGISTRY_V1.json").read_text())
     web = json.loads((root / "web/status.json").read_text())
 
     checks = {
@@ -39,15 +40,38 @@ def main() -> None:
             web["reference_results"]["negative_wfs"],
             ref["results"]["normal"]["negative_wfs"],
         ),
+        "research_registry_schema": (
+            web["research_families"]["registry_schema"],
+            registry["schema_version"],
+        ),
+        "research_family_count": (
+            web["research_families"]["count"],
+            len(registry["families"]),
+        ),
     }
     drift = {name: values for name, values in checks.items() if values[0] != values[1]}
     if drift:
         raise SystemExit(f"web status drift detected: {drift}")
+
+    web_families = {
+        item["id"]: (item["status"], item["evidence_maturity"])
+        for item in web["research_families"]["items"]
+    }
+    registry_families = {
+        item["id"]: (item["status"], item["evidence_maturity"])
+        for item in registry["families"]
+    }
+    if web_families != registry_families:
+        raise SystemExit(
+            f"web research-family drift detected: web={web_families} registry={registry_families}"
+        )
     if web["active_reference"]["immutable"] is not True:
         raise SystemExit("web status must mark V11.2 active reference immutable")
     if web["readiness"]["paper"] != "BLOCKED" or web["readiness"]["live"] != "BLOCKED":
         raise SystemExit("web status must not expose Paper/Live as ready")
-    print("Web status integrity OK | canonical reference matches | Paper/Live BLOCKED")
+    print(
+        "Web status integrity OK | canonical reference + research registry match | Paper/Live BLOCKED"
+    )
 
 
 if __name__ == "__main__":
