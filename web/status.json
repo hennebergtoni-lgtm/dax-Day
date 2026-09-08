@@ -65,6 +65,17 @@
       {"id": "EXIT001", "status": "PLANNED", "evidence_maturity": "PLAN_ONLY"}
     ]
   },
+  "mt5_adapter": {
+    "phase": "ARCHITECTURE_PREPARATION",
+    "mode": "READ_ONLY_ONLY",
+    "terminal_connected": false,
+    "account_connected": false,
+    "symbol_available": false,
+    "market_data_fresh": false,
+    "clock_ok": false,
+    "order_execution_enabled": false,
+    "contract": "docs/MT5_ADAPTER_CONTRACT_V1.md"
+  },
   "readiness": {
     "clean_reference_replay": "ELIGIBLE",
     "paper": "BLOCKED",
