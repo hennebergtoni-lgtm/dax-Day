@@ -24,11 +24,11 @@
       "id": "FIB001",
       "name": "Causal Fibonacci Retracement",
       "status": "RESEARCH",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "SPECIFIED",
+      "evidence_maturity": "DESCRIPTIVE",
+      "causality_state": "PASS",
       "promotion_allowed": false,
-      "provenance_notes": ["public ideas are architecture/hypothesis donors only", "no hindsight swing picking"],
-      "known_negative_findings": []
+      "provenance_notes": ["public ideas are architecture/hypothesis donors only", "no hindsight swing picking", "confirmed-breakout descriptive evidence uses frozen V11.2 trade evidence and audited 2014-2019 data"],
+      "known_negative_findings": ["OR-completed session-open to directional OR-extreme produced 0/667 fixed-zone retracement observations and mainly measured extension", "confirmed-breakout impulse has limited coverage: 213/856 eligible observations and 45 fixed-zone observations", "descriptive zone P/L is not valid for zone selection or promotion"]
     },
     {
       "id": "GAP001",
