@@ -11,6 +11,7 @@ EXPECTED_MIGRATIONS = {
     "0003_active_reference_registry",
     "0004_detail_evidence_registry",
     "0005_reproduced_detail_sources",
+    "0006_detail_evidence_rows",
 }
 EXPECTED_ENGINE_SHA = "9561b9089c57c543798dc587ce240a729b7995230dd5d665a1bdd029f3990887"
 EXPECTED_DATASET_SHA = "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
@@ -41,26 +42,15 @@ def main() -> None:
         if missing:
             raise SystemExit(f"database integrity failed: missing migrations {sorted(missing)}")
 
-        cursor.execute(
-            "select sha256, frozen from engine_references where name = %s",
-            ("V11.2 Exact Reference Engine",),
-        )
-        engine = cursor.fetchone()
-        if engine != (EXPECTED_ENGINE_SHA, True):
+        cursor.execute("select sha256, frozen from engine_references where name = %s", ("V11.2 Exact Reference Engine",))
+        if cursor.fetchone() != (EXPECTED_ENGINE_SHA, True):
             raise SystemExit("database integrity failed: V11.2 engine reference drift")
 
-        cursor.execute(
-            "select sha256, candle_count, valid_day_count from datasets where name = %s",
-            ("dax_m5_2014_2019_audited_v1",),
-        )
-        dataset = cursor.fetchone()
-        if dataset != (EXPECTED_DATASET_SHA, 172319, 1673):
+        cursor.execute("select sha256, candle_count, valid_day_count from datasets where name = %s", ("dax_m5_2014_2019_audited_v1",))
+        if cursor.fetchone() != (EXPECTED_DATASET_SHA, 172319, 1673):
             raise SystemExit("database integrity failed: active dataset reference drift")
 
-        cursor.execute(
-            "select status, git_commit_sha, config from experiments where experiment_key = %s",
-            ("V112_REFERENCE_V1",),
-        )
+        cursor.execute("select status, git_commit_sha, config from experiments where experiment_key = %s", ("V112_REFERENCE_V1",))
         experiment = cursor.fetchone()
         if experiment is None:
             raise SystemExit("database integrity failed: active V11.2 experiment missing")
@@ -80,33 +70,18 @@ def main() -> None:
         detail_rows = cursor.fetchall()
         if len(detail_rows) != 3:
             raise SystemExit("database integrity failed: V11.2 detail registry incomplete")
-
         expected_counts = {"WF_METRICS": 243, "SELECTED_VARIANTS": 81, "TRADES": 856}
-        for (
-            kind,
-            evidence_class,
-            detail_state,
-            expected_rows,
-            expected_hash,
-            data_sha,
-            engine_sha,
-            source_key,
-            metadata,
-        ) in detail_rows:
+        for kind, evidence_class, detail_state, expected_rows, expected_hash, data_sha, engine_sha, source_key, metadata in detail_rows:
             if evidence_class != "CLEAN_REFERENCE" or detail_state != "NOT_IMPORTED":
                 raise SystemExit("database integrity failed: V11.2 detail evidence state drift")
-            if expected_rows != expected_counts[kind]:
-                raise SystemExit("database integrity failed: V11.2 detail expected-row drift")
+            if expected_rows != expected_counts[kind] or expected_hash != EXPECTED_DETAIL_HASHES[kind]:
+                raise SystemExit(f"database integrity failed: {kind} evidence contract drift")
             if data_sha != EXPECTED_DATASET_SHA or engine_sha != EXPECTED_CANDIDATE_ENGINE_SHA:
                 raise SystemExit("database integrity failed: V11.2 detail provenance drift")
-            if expected_hash != EXPECTED_DETAIL_HASHES[kind]:
-                raise SystemExit(f"database integrity failed: {kind} expected-hash drift")
             if source_key != EXPECTED_DETAIL_SOURCES[kind]:
                 raise SystemExit(f"database integrity failed: {kind} source-artifact drift")
             if kind == "TRADES":
-                if not isinstance(metadata, dict):
-                    raise SystemExit("database integrity failed: trade evidence metadata missing")
-                if metadata.get("identity_semantics") != "NEWLY_REPRODUCED_NO_HISTORICAL_FROZEN_HASH":
+                if not isinstance(metadata, dict) or metadata.get("identity_semantics") != "NEWLY_REPRODUCED_NO_HISTORICAL_FROZEN_HASH":
                     raise SystemExit("database integrity failed: trade hash semantics drift")
                 if metadata.get("historical_file_identity") is not False:
                     raise SystemExit("database integrity failed: reproduced trade hash mislabeled historical")
@@ -122,10 +97,13 @@ def main() -> None:
         for key, (verification, expected_sha, observed_sha, metadata) in sources.items():
             if verification != "VERIFIED" or expected_sha != observed_sha:
                 raise SystemExit(f"database integrity failed: unverified detail source {key}")
-            if key == EXPECTED_DETAIL_SOURCES["TRADES"]:
-                if metadata.get("historical_file_identity") is not False:
-                    raise SystemExit("database integrity failed: trade source historical identity drift")
+            if key == EXPECTED_DETAIL_SOURCES["TRADES"] and metadata.get("historical_file_identity") is not False:
+                raise SystemExit("database integrity failed: trade source historical identity drift")
 
+        cursor.execute("select count(*) from detail_evidence_rows")
+        evidence_rows = cursor.fetchone()[0]
+        if evidence_rows != 0:
+            raise SystemExit("database integrity failed: detail evidence rows imported without authorization")
         cursor.execute("select count(*) from walk_forward_results")
         wf_rows = cursor.fetchone()[0]
         cursor.execute("select count(*) from trades")
@@ -133,10 +111,9 @@ def main() -> None:
 
     print(
         "Database integrity OK | "
-        f"migrations={len(migrations)} | active_reference=VERIFIED | "
-        f"detail_sources=VERIFIED | detail_registry=NOT_IMPORTED | "
-        f"wf_rows={wf_rows} | trades={trade_rows} | "
-        f"detailed_rows={'PRESENT' if wf_rows else 'NOT_IMPORTED'}"
+        f"migrations={len(migrations)} | active_reference=VERIFIED | detail_sources=VERIFIED | "
+        f"detail_registry=NOT_IMPORTED | evidence_rows={evidence_rows} | "
+        f"wf_rows={wf_rows} | trades={trade_rows} | detailed_rows=NOT_IMPORTED"
     )
 
 
