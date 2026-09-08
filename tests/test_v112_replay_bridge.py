@@ -60,7 +60,7 @@ def test_bridge_frame_matches_v112_dataframe_contract() -> None:
 
 def test_real_v112_engine_historical_and_replay_match_on_complete_days() -> None:
     engine = load_exact_candidate_engine()
-    params = list(engine.grid())[0]
+    params = next(iter(engine.grid()))
     candles = make_session(2) + make_session(3) + make_session(4)
     historical = run_historical_days(engine, candles, params)
     replay = run_replay_days(engine, candles, params)
