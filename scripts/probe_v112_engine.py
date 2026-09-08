@@ -1,10 +1,13 @@
 """Print the SHA-verified V11.2 executable surface used for replay integration."""
+
 from __future__ import annotations
 
 import inspect
 
-from daxlab.reference.recovered_engine import load_exact_candidate_engine, load_oracle_engine
-
+from daxlab.reference.recovered_engine import (
+    load_exact_candidate_engine,
+    load_oracle_engine,
+)
 
 NAMES = (
     "daily_context",
