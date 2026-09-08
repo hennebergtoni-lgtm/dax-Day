@@ -1,0 +1,62 @@
+{
+  "schema_version": "FIB001_CONFIRMED_BREAKOUT_DESCRIPTIVE_V1",
+  "status": "DESCRIPTIVE_EVIDENCE_RETAINED",
+  "strategy_reference": "V112_REFERENCE_V1",
+  "dataset": {
+    "session_ohlc_sha256": "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2",
+    "raw_csv_sha256": "a1379e13d70005363e60eb0015e2a648af392becbe7c4d5825bb00a8193f5103"
+  },
+  "trade_evidence": {
+    "rows": 856,
+    "sha256": "f60bb5fc15b5e620a37ca44bdb5bdcea20381261c06d40cb78aba34387f56023"
+  },
+  "signal_boundary_check": {
+    "trades_checked": 856,
+    "signal_closes_beyond_or_boundary": 856,
+    "mismatches": 0
+  },
+  "anchor_rule": "CONFIRMED_BREAKOUT_IMPULSE",
+  "freeze_rule": "first completed state after breakout that fails to extend the directional extreme",
+  "counts": {
+    "reference_trades": 856,
+    "breakout_trades": 471,
+    "retest_trades": 385,
+    "eligible_observations": 213,
+    "ineligible_observations": 643,
+    "breakout_same_time_ineligible": 471,
+    "unfrozen_before_retest": 172,
+    "fixed_zone_observations": 45
+  },
+  "coverage": {
+    "eligible_fraction_all_trades": 0.24883177570093457,
+    "eligible_fraction_retest_trades": 0.5532467532467532,
+    "fixed_zone_fraction_eligible": 0.2112676056338028,
+    "fixed_zone_fraction_all_trades": 0.05257009345794392
+  },
+  "fixed_zone_counts": {
+    "R33_R382": 3,
+    "R382_R50": 8,
+    "R50_R618": 25,
+    "R618_R667": 9,
+    "OUTSIDE_FIXED_ZONES": 168
+  },
+  "depth_quantiles": {
+    "min": -3.979999999999927,
+    "p10": 0.11575445231076739,
+    "p25": 0.5454545454545454,
+    "median": 0.7671033478893765,
+    "p75": 0.9053497942387102,
+    "p90": 0.9628605846073437,
+    "max": 1.0
+  },
+  "descriptive_r_only_not_for_selection": {
+    "OUTSIDE_FIXED_ZONES": {"count": 168, "sum_r": 7.926101, "mean_r": 0.047179},
+    "R33_R382": {"count": 3, "sum_r": -0.514363, "mean_r": -0.171454},
+    "R382_R50": {"count": 8, "sum_r": -2.682459, "mean_r": -0.335307},
+    "R50_R618": {"count": 25, "sum_r": 0.575676, "mean_r": 0.023027},
+    "R618_R667": {"count": 9, "sum_r": -3.555074, "mean_r": -0.395008}
+  },
+  "interpretation": "The confirmed-breakout anchor produces genuine positive retracement depths and is more semantically appropriate than the rejected OR-completed anchor. Coverage is limited: only 213/856 trades and 45 fixed-zone observations. No zone shows sufficient standalone evidence for promotion, and descriptive R values must not be used to choose a zone.",
+  "promotion": "BLOCKED",
+  "next_step": "stability/coverage audit by WF and broad era before any isolated fixed-zone evaluation"
+}
