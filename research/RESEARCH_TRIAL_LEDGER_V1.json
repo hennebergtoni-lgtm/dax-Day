@@ -1,0 +1,55 @@
+{
+  "schema_version": "DAXLAB_RESEARCH_TRIAL_LEDGER_V1",
+  "status": "ACTIVE",
+  "purpose": "Record material hypothesis/variant search history so multiple-testing and selection bias are not forgotten.",
+  "rules": {
+    "append_only_semantics": true,
+    "winner_only_reporting_forbidden": true,
+    "diagnostic_discovery_is_not_independent_validation": true,
+    "promotion_requires_trial_history": true
+  },
+  "trials": [
+    {
+      "trial_id": "ATR001-DIAG-001",
+      "family_id": "ATR001",
+      "hypothesis": "Train-only ATR tertile state as standalone OOS selector",
+      "provenance": "OOS_DIAGNOSTIC_DERIVED",
+      "alternatives_considered": 3,
+      "status": "REJECTED_AS_STANDALONE_SELECTOR",
+      "promotion_allowed": false,
+      "notes": "ATR HIGH aggregate was positive but unstable across broad WF eras and split 34 positive/34 negative active WFs."
+    },
+    {
+      "trial_id": "ATR001-DIAG-002",
+      "family_id": "ATR001",
+      "hypothesis": "Train-only OR/ATR tertile state as standalone OOS selector",
+      "provenance": "OOS_DIAGNOSTIC_DERIVED",
+      "alternatives_considered": 3,
+      "status": "REJECTED_AS_STANDALONE_SELECTOR",
+      "promotion_allowed": false,
+      "notes": "LOW/MID/HIGH OR/ATR states were unstable across WF eras."
+    },
+    {
+      "trial_id": "ATR001-DIAG-003",
+      "family_id": "ATR001",
+      "hypothesis": "ATR tertile x OR/ATR tertile interaction",
+      "provenance": "OOS_DIAGNOSTIC_DERIVED",
+      "alternatives_considered": 9,
+      "status": "DIAGNOSTIC_CANDIDATE_FOUND",
+      "promotion_allowed": false,
+      "selected_cell": "ATR_HIGH_X_ORATR_MID",
+      "notes": "Selected after viewing 9 interaction cells; therefore cannot be treated as a one-trial independent test."
+    },
+    {
+      "trial_id": "ATR001-DIAG-004",
+      "family_id": "ATR001",
+      "hypothesis": "OR15 x ATR HIGH x OR/ATR MID",
+      "provenance": "OOS_DIAGNOSTIC_DERIVED",
+      "alternatives_considered": 4,
+      "status": "FROZEN_FOR_RETEST",
+      "promotion_allowed": false,
+      "contract": "research/ATR001/PREDECLARED_RETEST_CONTRACT_V1.md",
+      "notes": "Promising retrospective diagnostic; exact hypothesis frozen for future retest without threshold search."
+    }
+  ]
+}
