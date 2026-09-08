@@ -21,6 +21,8 @@ jobs:
         run: pytest
       - name: Recovery reconstruction preflight
         run: python scripts/recovery_preflight.py
+      - name: Research registry integrity
+        run: python scripts/check_research_registry.py
       - name: Web status integrity
         run: python scripts/check_web_status.py
       - name: V11.2 engine surface probe
