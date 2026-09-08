@@ -55,8 +55,12 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
             blockers.append("DATASET_IDENTITY_NOT_HASH_VERIFIED")
         if not snapshot.audited_bundle_available:
             blockers.append("AUDITED_BUNDLE_UNAVAILABLE")
-        if not snapshot.full_reference_replay_verified:
-            blockers.append("FULL_REFERENCE_REPLAY_UNVERIFIED")
+
+    # A clean-reference replay produces this evidence; requiring it beforehand
+    # would create a circular gate. Paper, however, must consume verified replay
+    # evidence and therefore remains blocked until it exists.
+    if kind is RunKind.PAPER and not snapshot.full_reference_replay_verified:
+        blockers.append("FULL_REFERENCE_REPLAY_UNVERIFIED")
 
     if kind is RunKind.PAPER and not snapshot.execution_boundary_verified:
         blockers.append("EXECUTION_BOUNDARY_UNVERIFIED")
