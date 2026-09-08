@@ -22,39 +22,14 @@ Required before historical parity/research claims:
 - zero duplicate UTC timestamps
 - session OHLC SHA256 `e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`
 
-Gate 0 status: **GREEN (2026-09-08)**. The migration bundle was independently re-read and re-fingerprinted after creation. The earlier label “172,319 M1 candles” was an audit-label error; the number is the M5 Berlin-session bar count and no strategy/result values changed.
+Gate 0 status: **GREEN (2026-09-08)**.
 
 ## Gate 1 — frozen V11.2 parity and clean reference
 V11.2 is reference-only and immutable. A reconstructed/adapted core must reproduce the established engine surface before research results are accepted.
 
-Two historically different WF surfaces must not be mixed:
-- **Engine/FAST parity surface**: later exact-vs-FAST runner with the known trade-bearing pre-gate and 144/144 broader parity checks. This surface has been re-run on the audited dataset and is GREEN: 1,673/1,673 daily contexts exact, 14 trades / 3.9351648669R / PF 1.5556035886, 144/144 parity with 114 trade-bearing cases, and the 34,992-evaluation normal-cost matrix sum reproduces -1122.231646R.
-- **Historical V11.2 OOS legacy surface**: `V11_2_FULL_WF_SESSION_DAY_V4_FIX1/FULL_WF_SUMMARY.csv`, release `V4.0-FIX1`, engine SHA `b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888`. Its heartbeat records `FULL_WF_COMPLETE` with WF1–WF81. This run uses a fixed rolling 45-train / 20-OOS / 20-step schedule, not the later expanding-training FAST schedule.
+Clean active reference is `V112_REFERENCE_V1`, fixed rolling 45/20/20, 81 WFs, audited DAX M5 data, normal/1.5x/2x costs. Historical V4.0-FIX1 remains legacy evidence only because `_MALFORMED` serialization/parsing affected part of the old OOS surface.
 
-Historical legacy aggregate from that 81-row summary:
-- 81 WFs exactly, WF1–WF81
-- 1,384 OOS trades
-- total OOS return -68.10950257808015R
-- 36 positive WFs / 45 negative WFs / 0 flat WFs
-
-These values are retained as **legacy evidence only**, not as targets for the clean reference rerun.
-
-### Legacy `_MALFORMED` finding
-The WF1–WF6 comparison exposed a concrete legacy implementation artifact: some historical selected variants serialize OR/ATR filters with a `_MALFORMED` suffix, including examples corresponding to `('between', 0.2, 0.6)` and `('above', 0.2)`. The clean runner uses the intended tuple filter representation directly and must not deliberately recreate malformed parsing/serialization behavior merely to match historical totals.
-
-The small clean comparison produced exact agreement on unaffected WFs (including WF3, WF4 and WF6) while affected WFs diverged. This is evidence that the historical aggregate contains implementation-specific legacy behavior. The discrepancy remains documented for provenance; it is not a reason to mutate frozen V11.2 strategy semantics or corrupt the new runner.
-
-Required checks for the new reference therefore include:
-- 144-variant grid contract
-- fixed rolling 45/20/20 WF methodology
-- known trade-bearing engine pre-gate: 14 trades, 3.9351648669R, PF 1.5556035886
-- broader engine parity surface: 144/144, 114 trade-bearing cases
-- explicit normal / 1.5x / 2x cost models
-- deterministic selection/tie-breaking
-- versioned output and provenance hashes
-- comparison to legacy aggregates as diagnostic information only, never as a pass/fail target
-
-Gate 1 status: **ENGINE PARITY GREEN; HISTORICAL PROVENANCE RESOLVED; CLEAN V11.2 REFERENCE RERUN IN PROGRESS.**
+Gate 1 status: **GREEN — ACTIVE REFERENCE FROZEN.**
 
 ## Gate 2 — research correctness
 Before a tool can become VALIDATED TOOL:
@@ -74,56 +49,71 @@ Order begins with the existing research matrix, not donor-project popularity:
 5. EVENT001 event/news context layer
 Each is isolated first; only validated tools reach interaction testing.
 
-### EVENT001 — event/news context layer
-The event layer is a research tool, not an unverified live override. Candidate inputs include scheduled macro events (ECB, Fed/FOMC, CPI, NFP and other demonstrably DAX-relevant releases), event proximity, event class/importance and later validated market/news context. Research must measure whether setup behaviour before/after event classes changes trade quality. Event information may become a filter, risk reducer or confidence input only after OOS/WF validation. No statement such as “this trade can only win” is permitted.
+### BB001 current branch
+- alignment gate: GREEN, 856/856 clean OOS trades matched at actual `entry_time`
+- descriptive evidence: narrowest bandwidth quartile weak; directional band position promising
+- fixed coarse directional-momentum test: +24.37R / PF 1.10 / 432 trades at normal costs, but not yet validated
+- temporal stability remains mixed at finer WF resolution; regime explanation and exact cost stress are required before promotion
 
-## Gate 4 — targeted interactions
+### EVENT001 — event/news context layer
+The event layer is a research tool, not an unverified live override. Candidate inputs include scheduled macro events (ECB, Fed/FOMC, CPI, NFP and other demonstrably DAX-relevant releases), event proximity, event class/importance and later validated market/news context. Event information may become a filter, risk reducer or confidence input only after OOS/WF validation.
+
+## Gate 3A — recurring public-project intelligence milestone
+Public GitHub/quant projects must be reviewed throughout research, not only once at the end. The purpose is to reuse already-developed ideas, experimental designs and engineering patterns to reduce duplicated effort while keeping our own evidence independent.
+
+For every major research family (Bollinger, Fibonacci, gaps, OR/retest, volatility/regime, event context, exits/trailing, cross-market context, execution), perform a targeted public-project scan before finalizing its experiment design. Record:
+- repository/project and license status
+- exact idea or engineering pattern worth testing
+- what evidence the donor project actually provides versus what is only a claim
+- look-ahead/repainting/data-mining risks
+- whether we may reuse code or only reimplement the idea
+- mapping into our IDEA -> RESEARCH -> PILOT -> VALIDATED TOOL pipeline
+
+Public-project results never replace our DAX OOS/WF validation. They are an efficiency and hypothesis source.
+
+### Public-project hypotheses already queued
+1. **Multi-timeframe Bollinger regime switching** — inspired by `JN842/multitf-bollinger-switching`: investigate whether a completed higher-timeframe Bollinger state can distinguish momentum/breakout from mean-reversion regimes. Must use only completed HTF bars and be independently implemented unless license permits reuse.
+2. **Confirmed breakout -> retrace** — inspired by `dws-data/nas-orb-backtester`: investigate close-confirmed OR breakout followed by retracement rather than raw intrabar breakout.
+3. **Volume-profile retracement zones** — investigate VAH/POC/VAL or comparable volume-profile structure as retracement context, only after a reproducible DAX volume-data contract exists.
+4. **Breakout persistence** — investigate whether persistence/confirmation after an OR break predicts retest quality; candidate confirmations include one/two closes and higher-timeframe close, with volume variants only if data quality supports them.
+5. **Efficient precomputation architecture** — retain donor patterns such as daily-context precomputation, vectorized arrays, timestamp lookup and MFE/MAE capture where they preserve exact strategy semantics.
+
+These hypotheses are now milestone items and must not be silently dropped. They are not validated rules and must not be inserted into V11.2.
+
+## Gate 4 — targeted interactions and regime/tool mapping
 Interactions are hypothesis-led and limited. No brute-force combinatorial explosion. Existing OR15/retest/OR-mid/RR/OR-ATR findings remain evidence and controls, not automatic strategy replacements.
+
+After isolated evidence exists, explicitly research **which validated tool/filter works in which trading period/regime**. Candidate conditioning dimensions include:
+- time-of-day/session phase
+- DAX volatility/trend/range/OR state
+- completed higher-timeframe state
+- scheduled-event proximity
+- later cross-market state from DAX-relevant instruments (e.g. European equity context, US futures where contemporaneously available, EUR/USD, rates/Bund, volatility indices)
+
+Cross-market features must be timestamp-causal. No information unavailable at the DAX decision time may be used. The target architecture is regime -> DAX structure -> cross-market context -> eligible validated tools -> setup/entry -> bounded risk, rather than one universal filter stack.
 
 ## Gate 5 — candidate bot
 A candidate requires robust OOS/WF evidence, cost stress, overfitting diagnostics, stability and independent validation. Ranking alone cannot promote a candidate.
 
 ## Gate 5A — confidence and adaptive risk research
-Only after validated strategy components exist, research a transparent setup-quality/confidence score. Potential validated inputs may include regime, volatility, OR/market structure, setup type, historical behaviour of comparable setups, event/news context, spread/liquidity and cross-market context.
-
-Confidence and risk remain separate concepts:
-- confidence estimates setup quality; it never guarantees an outcome
-- position sizing remains bounded by hard risk limits
-- high-confidence setups may qualify for a prevalidated bounded risk multiplier
-- weak conditions may reduce size or prohibit a trade
-- all adaptive sizing must be tested OOS/WF and under cost/stress conditions before demo use
-- hard account/day/trade loss limits cannot be bypassed by confidence, UI controls or discretionary risk mode
-
-Initial UI concepts such as Defensive / Standard / Offensive are product controls only. Exact percentages and multipliers are not fixed until separately researched and validated.
+Only after validated strategy components exist, research a transparent setup-quality/confidence score. Confidence and risk remain separate; all adaptive sizing stays inside hard account/day/trade limits and must pass OOS/WF and stress validation.
 
 ## Gate 6 — execution
 Only after candidate validation: MT5 paper/demo execution boundary, operational risk controls, then any later live decision. Research code and broker execution stay separated.
 
-Before live consideration, the execution/risk layer must support hard limits for per-trade risk, daily loss, exposure, trading/session state and emergency stop. Adaptive sizing remains bounded by those limits.
-
 ## Gate 7 — operator web interface
-A later web interface should expose, without changing frozen research evidence:
-- bot/MT5 connection and trading state
-- current market regime and setup-quality/confidence explanation
-- active risk profile and hard limits
-- event/news risk context
-- open/recent trades and bot decision rationale (“why trade / why no trade”)
-- optional approval workflow when a validated high-confidence setup qualifies for a larger but still bounded order size
-
-The UI must not create arbitrary strategy parameters or bypass risk controls. Configuration changes must be explicit, auditable and versioned. Automatic higher sizing may only be enabled after the same logic has passed research validation and demo/paper observation.
+Later UI: bot/MT5 state, regime/setup explanation, bounded risk profile, event context, trades and why trade/no trade. UI cannot create arbitrary strategy parameters or bypass risk controls.
 
 # Donor-project integration rule
 Public GitHub projects are an engineering/research library, not a new source of truth.
 
-Adopt where useful:
+Previously audited donors retained:
 - `charlesbx/futures-backtester` (MIT): plugin architecture, grid/WF organization, explicit costs, CLI concepts.
 - `DaruFinance/quant-research-framework` (Apache-2.0): no-lookahead discipline, robustness/overfitting statistics, CI/property-test philosophy.
 - `asdtroll3/ORB-Backtester` (MIT): conservative ambiguity handling, trade reporting and sensitivity analysis.
 - `jimtin/build-your-own-mt5-ea` (MIT): later MQL5/MT5 helper patterns.
-
-Research independently, no code copying without confirmed license:
-- `Sarthaktagra27/orb-futures-backtesting`: previous-day range, CPR, volatility/cross-instrument hypotheses; reject its full-dataset-grid-search evidence as validation and do not inherit ambiguous same-bar heuristics.
-- `dws-data/nas-orb-backtester`: confirmed breakout/retrace and volume-profile hypotheses.
-- other ORB/live-bot projects remain idea/architecture donors subject to license audit.
+- `Sarthaktagra27/orb-futures-backtesting`: previous-day range, CPR, volatility/cross-instrument hypotheses; idea donor only unless licensing permits otherwise.
+- `dws-data/nas-orb-backtester`: confirmed breakout/retrace, volume-profile and persistence hypotheses; idea donor unless licensing permits reuse.
+- `JN842/multitf-bollinger-switching`: multi-timeframe regime-switching hypothesis; idea donor unless licensing permits reuse.
 
 Every donor-derived idea must enter our normal IDEA -> RESEARCH -> PILOT -> VALIDATED TOOL pipeline and must be tested against our audited DAX data and frozen controls.
