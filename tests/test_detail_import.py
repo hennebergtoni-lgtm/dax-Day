@@ -105,4 +105,6 @@ def test_reconciliation_conflict_blocks_commit() -> None:
     existing = {planned[0].source_row_id: "0" * 64}
     result = reconcile_planned_rows(planned, existing_payload_hashes=existing)
     assert result.reconciliation.conflicting_rows == 1
-    assert validate_postimport(result.reconciliation) == ("CONFLICTING_ROWS",)
+    blockers = validate_postimport(result.reconciliation)
+    assert "CONFLICTING_ROWS" in blockers
+    assert "SOURCE_ROW_RECONCILIATION_MISMATCH" in blockers
