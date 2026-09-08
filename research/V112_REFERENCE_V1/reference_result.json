@@ -1,0 +1,68 @@
+{
+  "experiment_id": "V112_REFERENCE_V1",
+  "status": "ACTIVE_REFERENCE",
+  "strategy": "V11.2",
+  "strategy_changed": false,
+  "dataset": {
+    "id": "dax_m5_2014_2019_audited_v1",
+    "valid_session_days": 1673,
+    "session_m5_rows": 172319,
+    "session_ohlc_sha256": "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2",
+    "audited_zip_sha256": "c46c09a391ee83a19a117fb43628cb75ab0a75703701ed7a84731d2963b24870"
+  },
+  "engine": {
+    "exact_candidate_source_sha256": "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888",
+    "oracle_source_sha256": "62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f",
+    "variants": 144
+  },
+  "walk_forward": {
+    "method": "rolling_fixed",
+    "train_days": 45,
+    "oos_days": 20,
+    "step_days": 20,
+    "windows": 81
+  },
+  "results": {
+    "normal": {
+      "oos_trades": 856,
+      "oos_return_r": -31.309210619787684,
+      "positive_wfs": 37,
+      "negative_wfs": 44,
+      "flat_wfs": 0,
+      "median_wf_pf": 0.905769310256018
+    },
+    "stress_1.5x": {
+      "oos_trades": 856,
+      "oos_return_r": -40.921695023387514,
+      "positive_wfs": 37,
+      "negative_wfs": 44,
+      "flat_wfs": 0,
+      "median_wf_pf": 0.8909162959672307
+    },
+    "stress_2x": {
+      "oos_trades": 856,
+      "oos_return_r": -48.424611963007294,
+      "positive_wfs": 37,
+      "negative_wfs": 44,
+      "flat_wfs": 0,
+      "median_wf_pf": 0.8766802664631563
+    }
+  },
+  "artifacts": {
+    "wf_metrics_rows": 243,
+    "selected_variants_rows": 81,
+    "wf_metrics_sha256": "4f61f57c21f469685488c52481f779b87b17b599fbcda0da942b5a2ed713709a",
+    "selected_variants_sha256": "8b604de454b615a3d789577be3295765e04eab06448cbcd0844a995af9b0a41e"
+  },
+  "legacy_comparison": {
+    "release": "V4.0-FIX1",
+    "role": "LEGACY_EVIDENCE_ONLY",
+    "oos_trades": 1384,
+    "oos_return_r": -68.10950257808015,
+    "positive_wfs": 36,
+    "negative_wfs": 45,
+    "flat_wfs": 0,
+    "note": "Historical Colab values are preserved for provenance and comparison only. They are not pass/fail targets; known _MALFORMED OR/ATR serialization/parsing behavior is not recreated."
+  },
+  "promotion_note": "This freezes the clean reproducible V11.2 measurement as the active reference. It does not promote or modify the bot."
+}
