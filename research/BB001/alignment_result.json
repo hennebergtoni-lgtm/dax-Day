@@ -1,0 +1,33 @@
+{
+  "experiment_id": "BB001_ALIGNMENT_V1",
+  "status": "PASS",
+  "baseline": "V112_REFERENCE_V1",
+  "engine_sha256": "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888",
+  "dataset_session_sha256": "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2",
+  "bb_definition": {
+    "source": "session M5 close",
+    "window": 20,
+    "center": "SMA",
+    "sd_ddof": 0,
+    "multiplier": 2.0,
+    "history": "continuous chronological audited session-M5 rows"
+  },
+  "alignment": {
+    "baseline_oos_trades_checked": 856,
+    "exact_timestamp_matches": 856,
+    "indicator_ready_matches": 856,
+    "missing_exact_timestamp": 0,
+    "insufficient_20_bar_history": 0,
+    "ambiguous_lookup_rows": 0,
+    "same_date_matches": 856,
+    "unexplained_missing": 0,
+    "alignment_pass": true
+  },
+  "artifacts": {
+    "aligned_trades_sha256": "1668019b29e31cd2116f6d21e032748b9ac83e829b0c59efbc8899200dc91db3",
+    "sample_sha256": "bca7e25e72861ea4a4b829f91c5b29e91eac4dc72503f0d4d0f860e3461e8e45"
+  },
+  "method_note": "Selected OOS variants were read from the frozen active V112_REFERENCE_V1 selection artifact and their normal-cost OOS trades were reconstructed directly with the exact engine. The all-variant FAST cache was intentionally not rebuilt because selection was already frozen. Bollinger values were joined by exact engine entry_time only.",
+  "promotion_allowed": false,
+  "next_gate": "descriptive isolated Bollinger buckets before any threshold optimization"
+}
