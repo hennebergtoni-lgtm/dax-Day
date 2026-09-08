@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
 import pandas as pd
 
@@ -15,7 +16,11 @@ class P:
 
 
 class FakeEngine:
-    COST_SCENARIOS = {"normal": {}, "stress_1.5x": {}, "stress_2x": {}}
+    COST_SCENARIOS: ClassVar[dict[str, dict]] = {
+        "normal": {},
+        "stress_1.5x": {},
+        "stress_2x": {},
+    }
 
     @staticmethod
     def metrics(_):
