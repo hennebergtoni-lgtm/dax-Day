@@ -17,6 +17,7 @@
     {"id":"T007","family":"SESSION001","hypothesis":"fixed MIDDLE session phase is a poor V11.2 environment","origin":"OOS_DIAGNOSTIC_DERIVED","state":"FROZEN_FOR_FRESH_TEST","promotion_proof":false},
     {"id":"T008","family":"LIQ001","hypothesis":"pre-entry wick-rejection sweep has incremental selection value","origin":"OOS_DIAGNOSTIC_DERIVED","state":"REJECTED_SESSION_CONFOUNDED","promotion_proof":false},
     {"id":"T009","family":"STRUCT001","hypothesis":"pre-entry BOS has incremental selection value","origin":"OOS_DIAGNOSTIC_DERIVED","state":"REJECTED_SESSION_CONFOUNDED_UNSTABLE","promotion_proof":false},
-    {"id":"T010","family":"EXIT001","hypothesis":"a small causal trailing-exit family can improve risk-adjusted V11.2 outcomes without using post-trade MFE/MAE at decision time","origin":"INDEPENDENT_PREDECLARED","state":"PREDECLARED_NOT_TESTED","promotion_proof":false}
+    {"id":"T010","family":"EXIT001","hypothesis":"a small causal trailing-exit family can improve risk-adjusted V11.2 outcomes without using post-trade MFE/MAE at decision time","origin":"INDEPENDENT_PREDECLARED","state":"PREDECLARED_NOT_TESTED","promotion_proof":false},
+    {"id":"T011","family":"TWAP001","hypothesis":"causal session-reset average-price location and distance provide incremental context for frozen V11.2 entries","origin":"INDEPENDENT_PREDECLARED","state":"PREDECLARED_NOT_TESTED","promotion_proof":false}
   ]
 }
