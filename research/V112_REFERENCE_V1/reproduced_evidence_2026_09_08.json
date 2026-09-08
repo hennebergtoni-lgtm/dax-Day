@@ -1,0 +1,30 @@
+{
+  "schema_version": "V112_CLEAN_REFERENCE_REPRODUCED_2026_09_08_V1",
+  "classification": "REPRODUCED_CLEAN_EVIDENCE",
+  "dataset_sha256": "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2",
+  "engine_source_sha256": "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888",
+  "oracle_source_sha256": "62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f",
+  "walk_forward": "rolling_fixed_45_20_20",
+  "windows": 81,
+  "variants": 144,
+  "runtime_seconds_observed": 25.14,
+  "signal_accelerator": {
+    "role": "RESEARCH_ONLY",
+    "parity_sample_days": 240,
+    "parity_cases": 960,
+    "mismatches": 0,
+    "sample_years": [2014, 2015, 2016, 2017, 2018, 2019]
+  },
+  "aggregate": {
+    "normal": {"oos_trades": 856, "oos_return_r": -31.309210619787684, "positive_wfs": 37, "negative_wfs": 44, "median_wf_pf": 0.9057693102560179},
+    "stress_1.5x": {"oos_trades": 856, "oos_return_r": -40.92169502338753, "positive_wfs": 37, "negative_wfs": 44, "median_wf_pf": 0.8909162959672307},
+    "stress_2x": {"oos_trades": 856, "oos_return_r": -48.424611963007294, "positive_wfs": 37, "negative_wfs": 44, "median_wf_pf": 0.8766802664631563}
+  },
+  "artifacts": {
+    "wf_metrics": {"rows": 243, "sha256": "4f61f57c21f469685488c52481f779b87b17b599fbcda0da942b5a2ed713709a", "provenance": "FROZEN_HASH_REPRODUCED_EXACT"},
+    "selected_variants": {"rows": 81, "sha256": "8b604de454b615a3d789577be3295765e04eab06448cbcd0844a995af9b0a41e", "provenance": "FROZEN_HASH_REPRODUCED_EXACT"},
+    "trades_normal": {"rows": 856, "sha256": "f60bb5fc15b5e620a37ca44bdb5bdcea20381261c06d40cb78aba34387f56023", "provenance": "NEWLY_REPRODUCED_NO_HISTORICAL_FROZEN_HASH"},
+    "drive_recovery_zip": {"file_id": "1-9B98eX6FBKXJ5WyvY8cpwIuof1v4Lcq", "sha256": "f037cfe47a2d152884d7d803e51762cda83230093d6841b66a1d8cfadcc9ca35"}
+  },
+  "forensic_note": "The frozen engine main() uses an expanding training schedule and has empty-OOS reporting edge cases. It is not the active-reference runner. The canonical active reference uses src/daxlab/reference/reference_runner.py and rolling fixed 45/20/20 windows. The expanding-run checkpoints produced during V5 are forensic only and are not reference evidence."
+}
