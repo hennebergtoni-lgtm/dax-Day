@@ -1,6 +1,5 @@
 from daxlab.data.recovery import RecoveryEvidence, RecoveryIdentity, classify_recovery
 
-
 EXPECTED_SHA = "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
 
 
