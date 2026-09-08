@@ -6,8 +6,10 @@ from daxlab.runtime.mt5_readonly import (
     BrokerSymbol,
     Mt5Bar,
     Mt5Health,
+    closed_bar_age_seconds,
     closed_bars,
     closed_rates_start_pos,
+    market_data_is_fresh,
     resolve_dax_symbol,
 )
 
@@ -51,6 +53,20 @@ def test_current_open_bar_is_excluded() -> None:
     out = closed_bars(bars, timeframe_minutes=5, observed_at=t0 + timedelta(minutes=9))
     assert len(out) == 1
     assert out[0].open_time == t0
+
+
+def test_freshness_watchdog_uses_bar_close_age() -> None:
+    t0 = datetime(2026, 1, 2, 9, 0, tzinfo=timezone.utc)
+    observed = t0 + timedelta(minutes=6)
+    assert closed_bar_age_seconds(latest_closed_bar_open=t0, timeframe_minutes=5, observed_at=observed) == 60
+    assert market_data_is_fresh(latest_closed_bar_open=t0, timeframe_minutes=5, observed_at=observed, max_age_seconds=60)
+    assert not market_data_is_fresh(latest_closed_bar_open=t0, timeframe_minutes=5, observed_at=observed, max_age_seconds=59)
+
+
+def test_freshness_watchdog_rejects_not_yet_closed_bar() -> None:
+    t0 = datetime(2026, 1, 2, 9, 0, tzinfo=timezone.utc)
+    with pytest.raises(ValueError, match="not closed"):
+        closed_bar_age_seconds(latest_closed_bar_open=t0, timeframe_minutes=5, observed_at=t0 + timedelta(minutes=4))
 
 
 def test_naive_observation_time_fails_closed() -> None:
