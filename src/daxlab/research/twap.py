@@ -6,11 +6,13 @@ source has no trustworthy volume field. The entry candle is never included.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from typing import Iterable
 from zoneinfo import ZoneInfo
 
 BERLIN = ZoneInfo("Europe/Berlin")
+SESSION_START = time(9, 0)
+SESSION_END = time(17, 30)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,9 +50,7 @@ def session_twap_before_entry(
         available = bar.open_time + delta
         if local_open.date() != session_date:
             continue
-        if not (9 <= local_open.hour or (local_open.hour == 8 and local_open.minute >= 60)):
-            continue
-        if local_open.hour > 17 or (local_open.hour == 17 and local_open.minute > 30):
+        if not (SESSION_START <= local_open.time() <= SESSION_END):
             continue
         if available >= entry_time:
             continue
