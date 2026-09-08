@@ -139,6 +139,34 @@ def resample_completed_htf(
     return htf
 
 
+def classify_htf_regime(
+    htf: pd.DataFrame,
+    *,
+    close_col: str = "close",
+    mid_col: str = "bb_mid",
+    lookback: int = 3,
+) -> pd.Series:
+    """Classify completed HTF bars into breakout/mean regimes.
+
+    This is an independent implementation inspired by the general public-project
+    idea of using persistent distance from a completed HTF Bollinger midline.
+    It does not copy donor code and does not assert DAX profitability.
+    """
+    if lookback < 1:
+        raise ValueError("lookback must be >= 1")
+    close = pd.to_numeric(htf[close_col], errors="raise").astype(float)
+    mid = pd.to_numeric(htf[mid_col], errors="coerce").astype(float)
+    diff = close - mid
+    roll_min = diff.rolling(lookback, min_periods=lookback).min()
+    roll_max = diff.rolling(lookback, min_periods=lookback).max()
+
+    regime = pd.Series("mean", index=htf.index, dtype="object")
+    regime[roll_min > 0] = "long_breakout"
+    regime[roll_max < 0] = "short_breakout"
+    regime[mid.isna()] = pd.NA
+    return regime
+
+
 def filter_trades(
     trades: pd.DataFrame,
     *,
