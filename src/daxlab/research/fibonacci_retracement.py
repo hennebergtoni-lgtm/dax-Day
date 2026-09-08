@@ -42,7 +42,7 @@ class CausalImpulseAnchor:
         timestamps = (self.start_time, self.end_time, self.confirmation_time)
         if any(value.tzinfo is None for value in timestamps):
             raise ValueError("Fibonacci anchor timestamps must be timezone-aware")
-        if not self.start_time <= self.end_time <= self.confirmation_time:
+        if self.start_time > self.end_time or self.end_time > self.confirmation_time:
             raise ValueError("invalid Fibonacci anchor timestamp ordering")
 
 
