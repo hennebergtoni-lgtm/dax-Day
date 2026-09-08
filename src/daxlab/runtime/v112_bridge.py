@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
@@ -116,6 +117,14 @@ def run_replay_days(
     history = candles_to_v112_frame(completed)
     results.append(_simulate_complete_day(engine, history, current_day, params, cost_name))
     return tuple(results)
+
+
+def v112_results_fingerprint(results: Iterable[V112DayResult]) -> str:
+    """Create a deterministic hash for repeated replay-result comparison."""
+    payload = "\n".join(
+        f"{result.day.isoformat()}\x1f{result.outcome!r}" for result in results
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def assert_v112_day_parity(
