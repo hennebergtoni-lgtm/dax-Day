@@ -57,11 +57,10 @@ def validate_retracement_observation(
         raise ValueError("retracement observation time must be timezone-aware")
     if observation_time <= anchor.confirmation_time:
         raise ValueError("retracement observation must follow anchor confirmation")
-    if entry_time is not None:
-        if entry_time.tzinfo is None:
-            raise ValueError("entry time must be timezone-aware")
-        if observation_time > entry_time:
-            raise ValueError("retracement observation cannot occur after entry")
+    if entry_time is not None and entry_time.tzinfo is None:
+        raise ValueError("entry time must be timezone-aware")
+    if entry_time is not None and observation_time > entry_time:
+        raise ValueError("retracement observation cannot occur after entry")
 
 
 def retracement_levels(start: float, end: float) -> FibonacciLevels:
