@@ -24,6 +24,7 @@ class ReadinessSnapshot:
     audited_bundle_available: bool
     full_reference_replay_verified: bool
     execution_boundary_verified: bool = False
+    mt5_readonly_health_verified: bool = False
     dataset_identity: RecoveryIdentity | None = None
 
 
@@ -54,19 +55,20 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
 
     # A clean-reference replay may use a recovered source whose normalized session
     # surface is HASH_VERIFIED against the frozen active-reference fingerprint.
-    # The original ZIP archive is still valuable provenance, but requiring that
-    # exact container would unnecessarily block reproducible replay from an
-    # evidence-equivalent recovered representation.
     if kind is RunKind.PAPER and not snapshot.audited_bundle_available:
         blockers.append("AUDITED_BUNDLE_UNAVAILABLE")
 
-    # A clean-reference replay produces this evidence; requiring it beforehand
-    # would create a circular gate. Paper, however, must consume verified replay
-    # evidence and therefore remains blocked until it exists.
+    # A clean-reference replay produces this evidence; Paper consumes it.
     if kind is RunKind.PAPER and not snapshot.full_reference_replay_verified:
         blockers.append("FULL_REFERENCE_REPLAY_UNVERIFIED")
 
     if kind is RunKind.PAPER and not snapshot.execution_boundary_verified:
         blockers.append("EXECUTION_BOUNDARY_UNVERIFIED")
+
+    # Paper must not be unlocked merely because execution code exists. The actual
+    # broker-facing read-only observation path must first prove terminal/account/
+    # symbol/data/clock/loop health under the fail-closed MT5 bridge.
+    if kind is RunKind.PAPER and not snapshot.mt5_readonly_health_verified:
+        blockers.append("MT5_READONLY_HEALTH_UNVERIFIED")
 
     return RunReadiness(kind=kind, allowed=not blockers, blockers=tuple(blockers))
