@@ -1,134 +1,22 @@
 {
   "schema_version": "DAXLAB_RESEARCH_FAMILY_REGISTRY_V1",
   "status": "ACTIVE_RESEARCH_CONTROL_PLANE",
-  "baseline": {
-    "experiment_id": "V112_REFERENCE_V1",
-    "strategy": "V11.2",
-    "immutable": true
-  },
+  "baseline": {"experiment_id": "V112_REFERENCE_V1", "strategy": "V11.2", "immutable": true},
   "allowed_statuses": ["PLANNED", "RESEARCH", "RETAINED", "REJECTED", "VALIDATED", "DEPLOYABLE"],
   "evidence_maturity": ["PLAN_ONLY", "CAUSALITY_TESTED", "DESCRIPTIVE", "OOS_TESTED", "WF_TESTED", "COST_STRESSED", "STABILITY_TESTED", "PROSPECTIVE_TESTED"],
   "provenance_classes": ["INDEPENDENT_PREDECLARED", "TRAIN_DERIVED", "OOS_DIAGNOSTIC_DERIVED", "PUBLIC_IDEA_ONLY", "LEGACY_OBSERVATION", "USER_HYPOTHESIS"],
   "families": [
-    {
-      "id": "BB001",
-      "name": "Bollinger Bands",
-      "status": "RESEARCH",
-      "evidence_maturity": "COST_STRESSED",
-      "causality_state": "PASS",
-      "promotion_allowed": false,
-      "provenance_notes": ["candidate thresholds include train-derived and diagnostic-derived evidence; diagnostic-derived thresholds cannot count as independent promotion proof"],
-      "known_negative_findings": ["same-entry-bar state is non-causal", "completed 15m above-mid did not improve candidate", "completed 15m position >=0.75 reduced candidate PF", "tight retest timing not justified", "extra OR/ATR threshold not stable enough"]
-    },
-    {
-      "id": "FIB001",
-      "name": "Causal Fibonacci Retracement",
-      "status": "RESEARCH",
-      "evidence_maturity": "DESCRIPTIVE",
-      "causality_state": "PASS",
-      "promotion_allowed": false,
-      "provenance_notes": ["public ideas are architecture/hypothesis donors only", "no hindsight swing picking", "confirmed-breakout descriptive evidence uses frozen V11.2 trade evidence and audited 2014-2019 data"],
-      "known_negative_findings": ["OR-completed session-open to directional OR-extreme produced 0/667 fixed-zone retracement observations and mainly measured extension", "confirmed-breakout impulse has limited coverage: 213/856 eligible observations and 45 fixed-zone observations", "descriptive zone P/L is not valid for zone selection or promotion"]
-    },
-    {
-      "id": "GAP001",
-      "name": "Opening Gap",
-      "status": "RESEARCH",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "SPECIFIED",
-      "promotion_allowed": false,
-      "provenance_notes": ["opening gap remains separate from intraday fair-value-gap concepts"],
-      "known_negative_findings": []
-    },
-    {
-      "id": "FAIL001",
-      "name": "Failure Taxonomy",
-      "status": "RETAINED",
-      "evidence_maturity": "DESCRIPTIVE",
-      "causality_state": "NOT_APPLICABLE",
-      "promotion_allowed": false,
-      "provenance_notes": ["literature and failure observations create tests/gates, never direct trading rules"],
-      "known_negative_findings": []
-    },
-    {
-      "id": "BOOST001",
-      "name": "Bounded Research Sleeve",
-      "status": "RESEARCH",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "NOT_APPLICABLE",
-      "promotion_allowed": false,
-      "provenance_notes": ["no martingale, revenge sizing, borrowing or loss-triggered size escalation"],
-      "known_negative_findings": []
-    },
-    {
-      "id": "ATR001",
-      "name": "ATR / OR-ATR Regime",
-      "status": "PLANNED",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "NOT_TESTED",
-      "promotion_allowed": false,
-      "provenance_notes": ["retain prior OR/ATR clue as legacy observation only until re-tested under V6 contract"],
-      "known_negative_findings": []
-    },
-    {
-      "id": "LIQ001",
-      "name": "Liquidity Sweep",
-      "status": "PLANNED",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "NOT_TESTED",
-      "promotion_allowed": false,
-      "provenance_notes": ["must avoid hindsight pivot/swing confirmation"],
-      "known_negative_findings": []
-    },
-    {
-      "id": "STRUCT001",
-      "name": "Market Structure",
-      "status": "PLANNED",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "NOT_TESTED",
-      "promotion_allowed": false,
-      "provenance_notes": [],
-      "known_negative_findings": []
-    },
-    {
-      "id": "MOM001",
-      "name": "Momentum",
-      "status": "PLANNED",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "NOT_TESTED",
-      "promotion_allowed": false,
-      "provenance_notes": [],
-      "known_negative_findings": []
-    },
-    {
-      "id": "SESSION001",
-      "name": "Session / Time Context",
-      "status": "PLANNED",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "NOT_TESTED",
-      "promotion_allowed": false,
-      "provenance_notes": [],
-      "known_negative_findings": []
-    },
-    {
-      "id": "ENTRY001",
-      "name": "Entry Diagnostics",
-      "status": "PLANNED",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "NOT_TESTED",
-      "promotion_allowed": false,
-      "provenance_notes": ["must not silently change frozen V11.2 execution semantics"],
-      "known_negative_findings": []
-    },
-    {
-      "id": "EXIT001",
-      "name": "Exit Diagnostics",
-      "status": "PLANNED",
-      "evidence_maturity": "PLAN_ONLY",
-      "causality_state": "NOT_TESTED",
-      "promotion_allowed": false,
-      "provenance_notes": ["must not silently change frozen V11.2 execution semantics"],
-      "known_negative_findings": []
-    }
+    {"id":"BB001","name":"Bollinger Bands","status":"RESEARCH","evidence_maturity":"COST_STRESSED","causality_state":"PASS","promotion_allowed":false,"provenance_notes":["candidate thresholds include train-derived and diagnostic-derived evidence; diagnostic-derived thresholds cannot count as independent promotion proof"],"known_negative_findings":["same-entry-bar state is non-causal","completed 15m above-mid did not improve candidate","completed 15m position >=0.75 reduced candidate PF","tight retest timing not justified","extra OR/ATR threshold not stable enough"]},
+    {"id":"FIB001","name":"Causal Fibonacci Retracement","status":"RESEARCH","evidence_maturity":"DESCRIPTIVE","causality_state":"PASS","promotion_allowed":false,"provenance_notes":["public ideas are architecture/hypothesis donors only","no hindsight swing picking","confirmed-breakout descriptive evidence uses frozen V11.2 trade evidence and audited 2014-2019 data"],"known_negative_findings":["OR-completed session-open to directional OR-extreme produced 0/667 fixed-zone retracement observations and mainly measured extension","confirmed-breakout impulse has limited coverage: 213/856 eligible observations and 45 fixed-zone observations","descriptive zone P/L is not valid for zone selection or promotion"]},
+    {"id":"GAP001","name":"Opening Gap","status":"RESEARCH","evidence_maturity":"PLAN_ONLY","causality_state":"SPECIFIED","promotion_allowed":false,"provenance_notes":["opening gap remains separate from intraday fair-value-gap concepts"],"known_negative_findings":[]},
+    {"id":"FAIL001","name":"Failure Taxonomy","status":"RETAINED","evidence_maturity":"DESCRIPTIVE","causality_state":"NOT_APPLICABLE","promotion_allowed":false,"provenance_notes":["literature and failure observations create tests/gates, never direct trading rules"],"known_negative_findings":[]},
+    {"id":"BOOST001","name":"Bounded Research Sleeve","status":"RESEARCH","evidence_maturity":"PLAN_ONLY","causality_state":"NOT_APPLICABLE","promotion_allowed":false,"provenance_notes":["no martingale, revenge sizing, borrowing or loss-triggered size escalation"],"known_negative_findings":[]},
+    {"id":"ATR001","name":"ATR / OR-ATR Regime","status":"RESEARCH","evidence_maturity":"PLAN_ONLY","causality_state":"SPECIFIED","promotion_allowed":false,"provenance_notes":["legacy OR/ATR thresholds remain LEGACY_OBSERVATION only","ATR14 must use completed M5 candles strictly before entry","public regime projects are hypothesis/architecture donors only","research contract: docs/V7_ATR001_RESEARCH_CONTRACT.md"],"known_negative_findings":[]},
+    {"id":"LIQ001","name":"Liquidity Sweep","status":"PLANNED","evidence_maturity":"PLAN_ONLY","causality_state":"NOT_TESTED","promotion_allowed":false,"provenance_notes":["must avoid hindsight pivot/swing confirmation"],"known_negative_findings":[]},
+    {"id":"STRUCT001","name":"Market Structure","status":"PLANNED","evidence_maturity":"PLAN_ONLY","causality_state":"NOT_TESTED","promotion_allowed":false,"provenance_notes":[],"known_negative_findings":[]},
+    {"id":"MOM001","name":"Momentum","status":"PLANNED","evidence_maturity":"PLAN_ONLY","causality_state":"NOT_TESTED","promotion_allowed":false,"provenance_notes":[],"known_negative_findings":[]},
+    {"id":"SESSION001","name":"Session / Time Context","status":"PLANNED","evidence_maturity":"PLAN_ONLY","causality_state":"NOT_TESTED","promotion_allowed":false,"provenance_notes":[],"known_negative_findings":[]},
+    {"id":"ENTRY001","name":"Entry Diagnostics","status":"PLANNED","evidence_maturity":"PLAN_ONLY","causality_state":"NOT_TESTED","promotion_allowed":false,"provenance_notes":["must not silently change frozen V11.2 execution semantics"],"known_negative_findings":[]},
+    {"id":"EXIT001","name":"Exit Diagnostics","status":"PLANNED","evidence_maturity":"PLAN_ONLY","causality_state":"NOT_TESTED","promotion_allowed":false,"provenance_notes":["must not silently change frozen V11.2 execution semantics"],"known_negative_findings":[]}
   ]
 }
