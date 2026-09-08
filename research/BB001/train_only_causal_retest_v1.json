@@ -1,0 +1,20 @@
+{
+  "experiment_id": "BB001_TRAIN_ONLY_CAUSAL_RETEST_V1",
+  "status": "RESEARCH_EVIDENCE",
+  "promotion_allowed": false,
+  "causality": {"state_definition":"last fully completed session M5 bar strictly before entry_time","aligned_trades":856,"missing":0,"all_state_time_before_entry":true,"lag_minutes":5},
+  "candidate": {"side":"long","entry_mode":"retest","causal_position_min":0.75,"bandwidth_threshold":"per-WF train-only median of causal session-M5 bandwidth over the 45-day training window"},
+  "normal_oos": {"trades":57,"R":11.111104424750572,"PF":1.3719584890158127,"winrate":0.45614035087719296,"active_wfs":26,"positive_active_wfs":15,"negative_active_wfs":11},
+  "cost_stress": {
+    "normal":{"trades":57,"R":11.111104424750572,"PF":1.3719584890158127,"winrate":0.45614035087719296,"active_wfs":26,"positive_active_wfs":15,"negative_active_wfs":11},
+    "stress_1.5x":{"trades":57,"R":10.853447407616038,"PF":1.3619175282947698,"winrate":0.45614035087719296,"active_wfs":26,"positive_active_wfs":15,"negative_active_wfs":11},
+    "stress_2x":{"trades":57,"R":10.598521074755133,"PF":1.3520600497527813,"winrate":0.45614035087719296,"active_wfs":26,"positive_active_wfs":15,"negative_active_wfs":11}
+  },
+  "threshold_neighborhood": {
+    "Q40":{"trades":66,"R":10.371274786587717,"PF":1.2997781915687614},
+    "Q50":{"trades":57,"R":11.111104424750572,"PF":1.3719584890158127},
+    "Q60":{"trades":52,"R":6.448168893688372,"PF":1.2234204383628355}
+  },
+  "regime_note": {"WF1-27":"negative across Q40/Q50/Q60","WF28-54":"positive","WF55-81":"positive"},
+  "gate_decision": {"decision":"KEEP_AS_RESEARCH_CANDIDATE","validated":false,"reason":["positive OOS survives train-only thresholding","positive through 2x cost stress","Q40/Q50/Q60 neighborhood positive overall","WF1-27 remains weak","sample modest and regime dependence unresolved"],"next_research":"explain early-regime weakness with pre-existing DAX structure/regime variables before cross-market context"}
+}
