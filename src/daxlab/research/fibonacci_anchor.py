@@ -17,49 +17,48 @@ def build_opening_range_anchor(
 ) -> CausalImpulseAnchor:
     """Build an immutable OR impulse using only bars available by OR confirmation.
 
-    `bars` may contain later observations; they are ignored by construction.
+    The first eligible bar open is the impulse start. The direction-specific OR
+    extreme is the impulse end. Later bars may be present in `bars` but are ignored.
     """
     if confirmation_time.tzinfo is None:
         raise ValueError("OR confirmation time must be timezone-aware")
     if direction not in {"long", "short"}:
         raise ValueError("direction must be long or short")
 
-    required = {time_col, "high", "low"}
+    required = {time_col, "open", "high", "low"}
     missing = sorted(required - set(bars.columns))
     if missing:
         raise ValueError(f"opening-range bars missing required columns: {missing}")
 
     times = pd.to_datetime(bars[time_col], utc=True)
     confirmation_utc = pd.Timestamp(confirmation_time).tz_convert("UTC")
-    eligible = bars.loc[times <= confirmation_utc].copy()
-    eligible[time_col] = times.loc[times <= confirmation_utc]
+    eligible_mask = times <= confirmation_utc
+    eligible = bars.loc[eligible_mask].copy()
+    eligible[time_col] = times.loc[eligible_mask]
     if eligible.empty:
         raise ValueError("no bars available by OR confirmation time")
 
-    low_idx = eligible["low"].astype(float).idxmin()
-    high_idx = eligible["high"].astype(float).idxmax()
-    low_price = float(eligible.loc[low_idx, "low"])
-    high_price = float(eligible.loc[high_idx, "high"])
-    low_time = eligible.loc[low_idx, time_col].to_pydatetime()
-    high_time = eligible.loc[high_idx, time_col].to_pydatetime()
+    eligible = eligible.sort_values(time_col)
+    first = eligible.iloc[0]
+    start_price = float(first["open"])
+    start_time = first[time_col].to_pydatetime()
 
     if direction == "long":
-        start_price, start_time = low_price, low_time
-        end_price, end_time = high_price, high_time
+        end_idx = eligible["high"].astype(float).idxmax()
+        end_price = float(eligible.loc[end_idx, "high"])
     else:
-        start_price, start_time = high_price, high_time
-        end_price, end_time = low_price, low_time
+        end_idx = eligible["low"].astype(float).idxmin()
+        end_price = float(eligible.loc[end_idx, "low"])
+    end_time = eligible.loc[end_idx, time_col].to_pydatetime()
 
-    # The directional extremes can occur in either chronological order inside the OR.
-    # The anchor becomes usable only at confirmation, so its recorded start/end event
-    # times are normalized chronologically while prices preserve the directional move.
-    chronological_start = min(start_time, end_time)
-    chronological_end = max(start_time, end_time)
+    if end_time < start_time:
+        raise ValueError("OR impulse end cannot precede start")
+
     return CausalImpulseAnchor(
         rule_id="OR_COMPLETED_IMPULSE",
         start_price=start_price,
-        start_time=chronological_start,
+        start_time=start_time,
         end_price=end_price,
-        end_time=chronological_end,
+        end_time=end_time,
         confirmation_time=confirmation_time,
     )
