@@ -26,16 +26,16 @@ Starting project counter: 41/150
 - [x] 51. Add unit tests for payload fail-closed behavior.
 
 ## 52–61 — Feed safety preparation
-- [ ] 52. Add closed-M5 payload schema.
-- [ ] 53. Reject MT5 bar 0 at the serialized request boundary.
-- [ ] 54. Enforce timezone-aware bar timestamps.
-- [ ] 55. Enforce OHLC invariants on incoming bars.
-- [ ] 56. Enforce chronological uniqueness.
-- [ ] 57. Define latest-closed-bar identity fingerprint.
-- [ ] 58. Define feed freshness threshold contract.
-- [ ] 59. Define stale-feed reason codes.
-- [ ] 60. Add feed discontinuity diagnostics without synthetic filling.
-- [ ] 61. Add tests for all feed-safety failures.
+- [x] 52. Add closed-M5 payload schema.
+- [x] 53. Reject MT5 bar 0 at the serialized request boundary.
+- [x] 54. Enforce timezone-aware bar timestamps.
+- [x] 55. Enforce OHLC invariants on incoming bars.
+- [x] 56. Enforce chronological uniqueness.
+- [x] 57. Define latest-closed-bar identity fingerprint.
+- [x] 58. Define feed freshness threshold contract.
+- [x] 59. Define stale-feed reason codes.
+- [x] 60. Add feed discontinuity diagnostics without synthetic filling.
+- [x] 61. Add tests for all feed-safety failures.
 
 ## 62–71 — Broker/session normalization
 - [ ] 62. Capture broker timezone as observation metadata.
