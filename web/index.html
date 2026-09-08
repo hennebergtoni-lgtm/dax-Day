@@ -27,6 +27,10 @@
   <div class="sub">Read-only observability surface — keine Orders, keine Strategieänderungen.</div>
   <div id="status" class="grid"><div class="card">Status wird geladen …</div></div>
   <div class="card" style="margin-top:12px">
+    <div class="label">Research Families</div>
+    <table><thead><tr><th>Familie</th><th>Status</th><th>Evidence</th></tr></thead><tbody id="families"></tbody></table>
+  </div>
+  <div class="card" style="margin-top:12px">
     <div class="label">Detail Evidence</div>
     <table><thead><tr><th>Artefakt</th><th>Status</th></tr></thead><tbody id="details"></tbody></table>
   </div>
@@ -37,22 +41,24 @@
   <footer>Canonical state remains in versioned repository contracts, verified DB registries and hashed run artifacts.</footer>
 </main>
 <script>
-const cls = v => ['GREEN','HASH_VERIFIED','ELIGIBLE','ACTIVE','IMPLEMENTED','EXACT_MATCH'].includes(v) ? 'ok' : v === 'BLOCKED' ? 'block' : 'warn';
+const cls = v => ['GREEN','HASH_VERIFIED','ELIGIBLE','ACTIVE','IMPLEMENTED','EXACT_MATCH','RETAINED','COST_STRESSED'].includes(v) ? 'ok' : v === 'BLOCKED' ? 'block' : 'warn';
 const card = (label,value,small='') => `<div class="card"><div class="label">${label}</div><div class="value ${cls(String(value))}">${value}</div>${small ? `<div class="small">${small}</div>` : ''}</div>`;
 const shortHash = v => `${v.slice(0,12)}…${v.slice(-8)}`;
 fetch('status.json', {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('status.json unavailable'); return r.json(); }).then(s => {
-  const a=s.active_reference,d=s.dataset,w=s.walk_forward,r=s.reference_results,rd=s.readiness,rec=s.recovery,re=s.reproduction;
+  const a=s.active_reference,d=s.dataset,w=s.walk_forward,r=s.reference_results,rd=s.readiness,rec=s.recovery,re=s.reproduction,rf=s.research_families;
   document.getElementById('status').innerHTML = [
     card('Active Reference',a.strategy,`${a.experiment_id} · ${a.status} · immutable=${a.immutable}`),
     card('Dataset',d.identity_state,`${d.session_rows.toLocaleString('de-DE')} M5 · ${d.session_days} Tage`),
     card('WF Contract',`${w.windows} Fenster`,`${w.train_days}/${w.oos_days}/${w.step_days} Train/OOS/Step`),
     card('Reference OOS',`${r.normal_oos_trades} Trades`,`${r.normal_oos_return_r.toFixed(4)} R · PF median ${r.median_wf_pf.toFixed(4)}`),
     card('V5 Reproduction',re.full_clean_reference,`${re.wf_metrics_rows} WF rows · ${re.selected_variants_rows} selections · ${re.trades_rows} trades`),
+    card('Research Registry',`${rf.count} Familien`,rf.registry_schema),
     card('Clean Replay',rd.clean_reference_replay),
     card('Paper',rd.paper),
     card('Live',rd.live),
     card('Recovery',rec.ci_recovery_preflight,`${rec.reconstruction_contract} · Bundle ${rec.persistent_bundle}`)
   ].join('');
+  document.getElementById('families').innerHTML = rf.items.map(item => `<tr><td>${item.id}</td><td class="${cls(item.status)}">${item.status}</td><td class="${cls(item.evidence_maturity)}">${item.evidence_maturity}</td></tr>`).join('');
   document.getElementById('details').innerHTML = Object.entries(s.detail_evidence).map(([k,v]) => `<tr><td>${k}</td><td class="${cls(v)}">${v}</td></tr>`).join('');
   document.getElementById('repro').innerHTML = [
     ['WF metrics', re.wf_metrics_rows, shortHash(re.wf_metrics_sha256)],
