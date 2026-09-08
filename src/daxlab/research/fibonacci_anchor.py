@@ -14,16 +14,20 @@ def build_opening_range_anchor(
     confirmation_time: datetime,
     direction: str,
     time_col: str = "datetime",
+    bar_minutes: int = 5,
 ) -> CausalImpulseAnchor:
-    """Build an immutable OR impulse using only bars available by OR confirmation.
+    """Build an immutable OR impulse from bars closed by confirmation time.
 
-    The first eligible bar open is the impulse start. The direction-specific OR
-    extreme is the impulse end. Later bars may be present in `bars` but are ignored.
+    `time_col` is treated as bar-open/event time. A bar is eligible only when its
+    derived close time is less than or equal to `confirmation_time`. Later/open
+    bars may be present in `bars` but are ignored by construction.
     """
     if confirmation_time.tzinfo is None:
         raise ValueError("OR confirmation time must be timezone-aware")
     if direction not in {"long", "short"}:
         raise ValueError("direction must be long or short")
+    if bar_minutes <= 0:
+        raise ValueError("bar_minutes must be positive")
 
     required = {time_col, "open", "high", "low"}
     missing = sorted(required - set(bars.columns))
@@ -31,12 +35,13 @@ def build_opening_range_anchor(
         raise ValueError(f"opening-range bars missing required columns: {missing}")
 
     times = pd.to_datetime(bars[time_col], utc=True)
+    closes = times + pd.to_timedelta(bar_minutes, unit="min")
     confirmation_utc = pd.Timestamp(confirmation_time).tz_convert("UTC")
-    eligible_mask = times <= confirmation_utc
+    eligible_mask = closes <= confirmation_utc
     eligible = bars.loc[eligible_mask].copy()
     eligible[time_col] = times.loc[eligible_mask]
     if eligible.empty:
-        raise ValueError("no bars available by OR confirmation time")
+        raise ValueError("no closed bars available by OR confirmation time")
 
     eligible = eligible.sort_values(time_col)
     first = eligible.iloc[0]
