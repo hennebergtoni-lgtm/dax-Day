@@ -18,6 +18,7 @@ EXPECTED_TABLES = {
     "trades",
     "source_artifacts",
     "detail_import_registry",
+    "detail_evidence_rows",
 }
 EXPECTED_VERSIONS = {
     "0001_research_core",
@@ -25,6 +26,7 @@ EXPECTED_VERSIONS = {
     "0003_active_reference_registry",
     "0004_detail_evidence_registry",
     "0005_reproduced_detail_sources",
+    "0006_detail_evidence_rows",
 }
 EXPECTED_DETAIL_SOURCES = {
     "WF_METRICS": "v112_reproduced_wf_metrics_20260908",
@@ -88,10 +90,15 @@ def main() -> None:
             if verified_sources != 3:
                 raise RuntimeError("restore drill reproduced source verification mismatch")
 
+            evidence_rows = conn.execute("select count(*) from detail_evidence_rows").fetchone()[0]
+            if evidence_rows != 0:
+                raise RuntimeError("restore drill must start with zero imported detail evidence rows")
+
             print(
                 "Database restore drill OK | "
                 f"schema={schema} | migrations={len(versions)} | tables={len(tables)} | "
-                "active_reference=VERIFIED | detail_sources=3 VERIFIED | detail=NOT_IMPORTED"
+                "active_reference=VERIFIED | detail_sources=3 VERIFIED | "
+                "detail_rows=0 | detail=NOT_IMPORTED"
             )
         finally:
             conn.execute("set search_path to public")
