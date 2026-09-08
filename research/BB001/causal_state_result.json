@@ -1,0 +1,67 @@
+{
+  "experiment_id": "BB001_CAUSAL_STATE_V1",
+  "status": "RESEARCH_EVIDENCE",
+  "purpose": "Replace same-entry-bar Bollinger diagnostics with a causal prior-completed-M5 state for any promotion-eligible performance interpretation.",
+  "engine_semantics": {
+    "breakout": "signal is detected on the close of bar i and entry occurs at the open of bar i+1",
+    "retest": "retest confirmation is detected on the close of retest bar j and entry occurs at the open of bar j+1",
+    "consequence": "Bollinger state on the entry bar itself is not fully known at entry and must not be used for strategy performance conclusions."
+  },
+  "causal_alignment": {
+    "baseline_trades": 856,
+    "matched_prior_states": 856,
+    "missing": 0,
+    "all_state_time_strictly_before_entry_time": true,
+    "lag_minutes": {"5.0": 856}
+  },
+  "bollinger_definition": {
+    "source": "audited Berlin-session M5 close",
+    "window": 20,
+    "center": "SMA20",
+    "std": "population ddof=0",
+    "multiplier": 2,
+    "state_rule": "latest completed M5 bar strictly before entry_time"
+  },
+  "causal_bandwidth_quartiles": {
+    "q25": 0.003940531064570813,
+    "q50": 0.006904114436795755,
+    "q75": 0.012365374685318167
+  },
+  "descriptive_bandwidth": {
+    "Q1": {"trades":214,"return_r":-38.8166,"pf":0.7091,"winrate":0.3224,"wfs":50},
+    "Q2": {"trades":214,"return_r":-1.8323,"pf":0.9854,"winrate":0.3972,"wfs":68},
+    "Q3": {"trades":214,"return_r":0.0440,"pf":1.0003,"winrate":0.3692,"wfs":71},
+    "Q4": {"trades":214,"return_r":9.2957,"pf":1.0737,"winrate":0.3925,"wfs":68}
+  },
+  "directional_findings": {
+    "long_above_upper": {"trades":109,"return_r":6.0536,"pf":1.1052,"winrate":0.4037,"wfs":48},
+    "long_upper_quarter": {"trades":118,"return_r":0.7173,"pf":1.0101,"winrate":0.3729,"wfs":57},
+    "short_below_lower": {"trades":118,"return_r":-22.4945,"pf":0.7087,"winrate":0.3305,"wfs":54}
+  },
+  "research_candidate_recheck": {
+    "definition": "long + causal position >= 0.75 + causal bandwidth > causal median",
+    "all": {"trades":111,"return_r":9.5956,"pf":1.1535,"winrate":0.4054,"wfs":57},
+    "breakout": {
+      "trades":74,"return_r":0.9458,"pf":1.0216,"winrate":0.3784,
+      "eras": {
+        "WF1-27":{"trades":38,"return_r":6.8181,"pf":1.3488},
+        "WF28-54":{"trades":22,"return_r":-8.1723,"pf":0.4937},
+        "WF55-81":{"trades":14,"return_r":2.3000,"pf":1.2856}
+      }
+    },
+    "retest": {
+      "trades":37,"return_r":8.6499,"pf":1.4609,"winrate":0.4595,
+      "eras": {
+        "WF1-27":{"trades":7,"return_r":0.7197,"pf":1.1961},
+        "WF28-54":{"trades":11,"return_r":4.0220,"pf":1.7990},
+        "WF55-81":{"trades":19,"return_r":3.9082,"pf":1.3883}
+      }
+    }
+  },
+  "interpretation": {
+    "same_entry_bar_evidence": "diagnostic only; superseded for strategy conclusions because it contains future information relative to entry",
+    "causal_result": "the earlier very strong BB effect weakens materially after removing look-ahead, but the retest branch remains positive in all three broad eras and is still hypothesis-worthy",
+    "promotion_allowed": false,
+    "next": "exact engine cost stress and prospective/fixed-threshold validation only; do not optimize thresholds on these OOS results"
+  }
+}
