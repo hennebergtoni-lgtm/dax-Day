@@ -14,7 +14,7 @@
     {"id":"GAP001","status":"RESEARCH","evidence_maturity":"PLAN_ONLY"},
     {"id":"FAIL001","status":"RETAINED","evidence_maturity":"DESCRIPTIVE"},
     {"id":"BOOST001","status":"RESEARCH","evidence_maturity":"PLAN_ONLY"},
-    {"id":"ATR001","status":"RESEARCH","evidence_maturity":"DESCRIPTIVE"},
+    {"id":"ATR001","status":"RESEARCH","evidence_maturity":"OOS_TESTED"},
     {"id":"LIQ001","status":"PLANNED","evidence_maturity":"PLAN_ONLY"},
     {"id":"STRUCT001","status":"PLANNED","evidence_maturity":"PLAN_ONLY"},
     {"id":"MOM001","status":"PLANNED","evidence_maturity":"PLAN_ONLY"},
