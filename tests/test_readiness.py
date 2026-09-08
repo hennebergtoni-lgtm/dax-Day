@@ -60,6 +60,24 @@ def test_hash_verified_allows_clean_reference_replay_when_other_gates_pass() -> 
     assert result.blockers == ()
 
 
+def test_hash_verified_recovered_source_allows_clean_replay_without_original_zip() -> None:
+    result = evaluate_run_readiness(
+        RunKind.CLEAN_REFERENCE_REPLAY,
+        ready_snapshot(audited_bundle_available=False),
+    )
+    assert result.allowed
+    assert "AUDITED_BUNDLE_UNAVAILABLE" not in result.blockers
+
+
+def test_paper_still_requires_original_audited_bundle_provenance() -> None:
+    result = evaluate_run_readiness(
+        RunKind.PAPER,
+        ready_snapshot(audited_bundle_available=False),
+    )
+    assert not result.allowed
+    assert "AUDITED_BUNDLE_UNAVAILABLE" in result.blockers
+
+
 def test_paper_requires_full_reference_replay() -> None:
     result = evaluate_run_readiness(
         RunKind.PAPER,
