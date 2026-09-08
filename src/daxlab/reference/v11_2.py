@@ -1,7 +1,7 @@
-"""Immutable metadata for the audited V11.2 reference baseline.
+"""Immutable metadata for the audited V11.2 active reference.
 
-This module contains the frozen research contracts and cryptographic references. The
-recovered executable engine is loaded separately through a strict SHA-256 gate.
+Legacy V4.0-FIX1 measurements are deliberately named separately so they cannot
+silently become active-reference targets again.
 """
 from dataclasses import dataclass
 
@@ -28,14 +28,21 @@ class V112Reference:
     train_days: int = 45
     oos_days: int = 20
     step_days: int = 20
-    positive_wfs: int = 36
-    negative_wfs: int = 45
+    positive_wfs: int = 37
+    negative_wfs: int = 44
     flat_wfs: int = 0
-    oos_trades: int = 1384
-    oos_return_r: float = -68.1095
-    exact_engine_sha256: str = (
-        "9561b9089c57c543798dc587ce240a729b7995230dd5d665a1bdd029f3990887"
+    oos_trades: int = 856
+    oos_return_r: float = -31.309210619787684
+    exact_engine_source_sha256: str = (
+        "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888"
     )
+    oracle_engine_source_sha256: str = (
+        "62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f"
+    )
+    legacy_oos_trades: int = 1384
+    legacy_oos_return_r: float = -68.10950257808015
+    legacy_positive_wfs: int = 36
+    legacy_negative_wfs: int = 45
 
 
 V11_2 = V112Reference()
@@ -48,3 +55,5 @@ def assert_reference_invariants() -> None:
     assert V11_2.valid_session_days == 1673
     assert V11_2.raw_m5_rows == 1673 * 288
     assert V11_2.m5_session_bars == 1673 * 103
+    assert V11_2.oos_trades == 856
+    assert V11_2.legacy_oos_trades == 1384
