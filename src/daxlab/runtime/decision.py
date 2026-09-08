@@ -71,7 +71,7 @@ class DecisionRecord:
         config: Any,
         core_version: str,
         final_action: FinalAction,
-    ) -> "DecisionRecord":
+    ) -> DecisionRecord:
         config_fingerprint = stable_fingerprint(config)
         decision_id = deterministic_decision_id(
             event_time=event_time,

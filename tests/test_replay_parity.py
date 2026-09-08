@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -7,7 +7,7 @@ from daxlab.runtime.replay import ReplayEngine, assert_decision_parity
 
 
 def make_candle(index: int, quality=DataQualityState.OK):
-    event = datetime(2026, 1, 2, 8, 0, tzinfo=timezone.utc) + timedelta(minutes=5 * index)
+    event = datetime(2026, 1, 2, 8, 0, tzinfo=UTC) + timedelta(minutes=5 * index)
     return Candle(
         symbol="DAX",
         timeframe="5m",
@@ -27,7 +27,9 @@ def make_candle(index: int, quality=DataQualityState.OK):
 
 def test_replay_uses_only_closed_safe_candles():
     core = lambda history: history[-1].close
-    result = ReplayEngine(core).run([make_candle(0), make_candle(1, DataQualityState.GAP), make_candle(2)])
+    result = ReplayEngine(core).run(
+        [make_candle(0), make_candle(1, DataQualityState.GAP), make_candle(2)]
+    )
     assert result.decisions == (101.0, 103.0)
     assert result.blocked_candles == 1
 

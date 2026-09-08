@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from daxlab.runtime.contracts import Candle, DataQualityState
 from daxlab.runtime.quality import classify_sequence, source_agrees
 
 
 def make_candle(minute=0, *, received_delay=1, **overrides):
-    event = datetime(2026, 1, 2, 8, minute, tzinfo=timezone.utc)
+    event = datetime(2026, 1, 2, 8, minute, tzinfo=UTC)
     values = {
         "symbol": "DAX",
         "timeframe": "5m",
@@ -31,7 +31,10 @@ def test_sequence_quality_states():
     assert classify_sequence(first, make_candle(0), interval) is DataQualityState.DUPLICATE
     assert classify_sequence(make_candle(5), first, interval) is DataQualityState.OUT_OF_ORDER
     assert classify_sequence(first, make_candle(10), interval) is DataQualityState.GAP
-    assert classify_sequence(first, make_candle(5, received_delay=180), interval) is DataQualityState.STALE
+    assert (
+        classify_sequence(first, make_candle(5, received_delay=180), interval)
+        is DataQualityState.STALE
+    )
 
 
 def test_source_disagreement_is_explicit():

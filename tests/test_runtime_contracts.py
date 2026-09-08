@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -6,7 +6,7 @@ from daxlab.runtime.contracts import Candle, DataQualityState, RuntimeMode
 
 
 def candle(**overrides):
-    event = datetime(2026, 1, 2, 8, 0, tzinfo=timezone.utc)
+    event = datetime(2026, 1, 2, 8, 0, tzinfo=UTC)
     values = {
         "symbol": "DAX",
         "timeframe": "5m",
@@ -27,7 +27,13 @@ def candle(**overrides):
 
 
 def test_runtime_modes_are_explicit():
-    assert [mode.value for mode in RuntimeMode] == ["HISTORICAL", "REPLAY", "SHADOW", "PAPER", "LIVE"]
+    assert [mode.value for mode in RuntimeMode] == [
+        "HISTORICAL",
+        "REPLAY",
+        "SHADOW",
+        "PAPER",
+        "LIVE",
+    ]
 
 
 def test_only_closed_ok_candle_is_safe_for_decision():
@@ -37,5 +43,6 @@ def test_only_closed_ok_candle_is_safe_for_decision():
 
 
 def test_timestamps_must_be_timezone_aware():
+    naive_event = datetime(2026, 1, 2, 8, 0, tzinfo=UTC).replace(tzinfo=None)
     with pytest.raises(ValueError, match="timezone-aware"):
-        candle(event_time=datetime(2026, 1, 2, 8, 0))
+        candle(event_time=naive_event)
