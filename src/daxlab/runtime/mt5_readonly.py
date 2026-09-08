@@ -88,6 +88,18 @@ def resolve_dax_symbol(
     return SymbolResolution("DAX", "NOT_FOUND", None, tuple())
 
 
+def closed_rates_start_pos(requested_start_pos: int = 1) -> int:
+    """Validate an MT5 rates request for closed bars only.
+
+    MetaTrader 5 defines position 0 as the current/open bar. Closed-bar reads
+    must therefore start at position 1 or later. This guard belongs at the SDK
+    request boundary in addition to the timestamp-based `closed_bars` filter.
+    """
+    if requested_start_pos < 1:
+        raise ValueError("MT5 closed-bar rates request must start at position >= 1")
+    return requested_start_pos
+
+
 def closed_bars(
     bars: Iterable[Mt5Bar], *, timeframe_minutes: int, observed_at: datetime
 ) -> tuple[Mt5Bar, ...]:
