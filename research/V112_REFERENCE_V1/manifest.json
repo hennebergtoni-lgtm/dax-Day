@@ -1,0 +1,49 @@
+{
+  "experiment_id": "V112_REFERENCE_V1",
+  "status": "RESEARCH",
+  "purpose": "New official reproducible reference measurement of the frozen V11.2 strategy on audited Dataset V1.0. This is not a strategy change and does not overwrite the historical V4.0-FIX1 legacy result.",
+  "strategy": {
+    "name": "V11.2",
+    "immutable": true,
+    "variants": 144,
+    "candidate_engine_source_sha256": "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888",
+    "oracle_engine_source_sha256": "62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f"
+  },
+  "dataset": {
+    "dataset_id": "dax_m5_2014_2019_audited_v1",
+    "daily_files": 1673,
+    "raw_m5_rows": 481824,
+    "session_m5_rows": 172319,
+    "session_bars_per_day": 103,
+    "timezone": "Europe/Berlin",
+    "session": "09:00-17:30",
+    "session_ohlc_sha256": "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2",
+    "audited_zip_sha256": "c46c09a391ee83a19a117fb43628cb75ab0a75703701ed7a84731d2963b24870"
+  },
+  "walk_forward": {
+    "method": "rolling_fixed",
+    "train_days": 45,
+    "oos_days": 20,
+    "step_days": 20,
+    "expected_windows": 81,
+    "note": "Chosen as the canonical new reference because it matches the frozen 45/20/20 V11.2 contract and is explicitly separated from the later expanding-window FAST research runner."
+  },
+  "cost_models": ["normal", "stress_1.5x", "stress_2x"],
+  "required_outputs": [
+    "per-WF selected variant and train metrics",
+    "per-WF OOS trades and metrics",
+    "aggregate OOS trades, return-R, PF and drawdown",
+    "positive/negative/flat WF counts",
+    "cost-stress aggregates",
+    "reproducibility/provenance hashes"
+  ],
+  "legacy_comparison": {
+    "historical_release": "V4.0-FIX1",
+    "historical_oos_trades": 1384,
+    "historical_oos_return_r": -68.1095,
+    "historical_positive_wfs": 36,
+    "historical_negative_wfs": 45,
+    "role": "comparison only; not a pass/fail target for the new measurement"
+  },
+  "promotion_rule": "No new bot version is created by this experiment. V11.2 remains frozen. New research begins only after this reference run is reproducible and recorded."
+}
