@@ -2,6 +2,14 @@
 
 The new infrastructure accelerates work; it does not change the scientific order of the project.
 
+## Evidence hierarchy
+Three evidence levels are binding:
+1. **Legacy evidence** — historical Colab/notebook outputs. Preserve them for provenance, comparison and hypothesis generation, but do not use them as pass/fail targets when their exact implementation cannot be reproduced cleanly.
+2. **Reproducible evidence** — results generated from versioned code, audited/fingerprinted data, explicit methodology and passing automated tests.
+3. **Active reference** — reproducible evidence formally frozen as the current comparison surface for subsequent research.
+
+If legacy evidence conflicts with a clean reproducible run, the discrepancy must be documented and investigated, but the new pipeline must not recreate a known legacy defect merely to hit an old aggregate. Legacy values may generate hypotheses; they do not dictate current methodology.
+
 ## Gate 0 — audited data basis
 Required before historical parity/research claims:
 - 2014–2019 basis identified by manifest/fingerprint
@@ -16,27 +24,37 @@ Required before historical parity/research claims:
 
 Gate 0 status: **GREEN (2026-09-08)**. The migration bundle was independently re-read and re-fingerprinted after creation. The earlier label “172,319 M1 candles” was an audit-label error; the number is the M5 Berlin-session bar count and no strategy/result values changed.
 
-## Gate 1 — frozen V11.2 parity
-V11.2 is reference-only and immutable. A reconstructed/adapted core must reproduce the established reference surface before research results are accepted.
+## Gate 1 — frozen V11.2 parity and clean reference
+V11.2 is reference-only and immutable. A reconstructed/adapted core must reproduce the established engine surface before research results are accepted.
 
 Two historically different WF surfaces must not be mixed:
 - **Engine/FAST parity surface**: later exact-vs-FAST runner with the known trade-bearing pre-gate and 144/144 broader parity checks. This surface has been re-run on the audited dataset and is GREEN: 1,673/1,673 daily contexts exact, 14 trades / 3.9351648669R / PF 1.5556035886, 144/144 parity with 114 trade-bearing cases, and the 34,992-evaluation normal-cost matrix sum reproduces -1122.231646R.
-- **Historical V11.2 OOS reference surface**: `V11_2_FULL_WF_SESSION_DAY_V4_FIX1/FULL_WF_SUMMARY.csv`, release `V4.0-FIX1`, engine SHA `b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888`. Its heartbeat records `FULL_WF_COMPLETE` with WF1–WF81. This run uses a fixed rolling 45-train / 20-OOS / 20-step schedule, not the later expanding-training FAST schedule.
+- **Historical V11.2 OOS legacy surface**: `V11_2_FULL_WF_SESSION_DAY_V4_FIX1/FULL_WF_SUMMARY.csv`, release `V4.0-FIX1`, engine SHA `b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888`. Its heartbeat records `FULL_WF_COMPLETE` with WF1–WF81. This run uses a fixed rolling 45-train / 20-OOS / 20-step schedule, not the later expanding-training FAST schedule.
 
-Frozen historical OOS reference from that 81-row summary:
+Historical legacy aggregate from that 81-row summary:
 - 81 WFs exactly, WF1–WF81
 - 1,384 OOS trades
-- total OOS return -68.10950257808015R (contract value -68.1095R)
+- total OOS return -68.10950257808015R
 - 36 positive WFs / 45 negative WFs / 0 flat WFs
 
-Required checks therefore include:
+These values are retained as **legacy evidence only**, not as targets for the clean reference rerun.
+
+### Legacy `_MALFORMED` finding
+The WF1–WF6 comparison exposed a concrete legacy implementation artifact: some historical selected variants serialize OR/ATR filters with a `_MALFORMED` suffix, including examples corresponding to `('between', 0.2, 0.6)` and `('above', 0.2)`. The clean runner uses the intended tuple filter representation directly and must not deliberately recreate malformed parsing/serialization behavior merely to match historical totals.
+
+The small clean comparison produced exact agreement on unaffected WFs (including WF3, WF4 and WF6) while affected WFs diverged. This is evidence that the historical aggregate contains implementation-specific legacy behavior. The discrepancy remains documented for provenance; it is not a reason to mutate frozen V11.2 strategy semantics or corrupt the new runner.
+
+Required checks for the new reference therefore include:
 - 144-variant grid contract
-- correct identification of the intended WF methodology before comparing aggregates
+- fixed rolling 45/20/20 WF methodology
 - known trade-bearing engine pre-gate: 14 trades, 3.9351648669R, PF 1.5556035886
 - broader engine parity surface: 144/144, 114 trade-bearing cases
-- historical rolling-WF OOS aggregate: 1,384 trades, -68.1095R, 36 positive / 45 negative WFs
+- explicit normal / 1.5x / 2x cost models
+- deterministic selection/tie-breaking
+- versioned output and provenance hashes
+- comparison to legacy aggregates as diagnostic information only, never as a pass/fail target
 
-Gate 1 status: **ENGINE PARITY GREEN; HISTORICAL WF PROVENANCE RESOLVED; rolling-WF full re-execution still required before declaring the entire gate fully reproduced in the new lab.**
+Gate 1 status: **ENGINE PARITY GREEN; HISTORICAL PROVENANCE RESOLVED; CLEAN V11.2 REFERENCE RERUN IN PROGRESS.**
 
 ## Gate 2 — research correctness
 Before a tool can become VALIDATED TOOL:
