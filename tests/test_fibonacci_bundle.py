@@ -19,8 +19,8 @@ def _bars() -> pd.DataFrame:
 def test_breakout_bundle_uses_signal_confirmation_before_entry():
     trades = pd.DataFrame(
         {
-            "entry_time": [pd.Timestamp("2026-01-05 08:20", tz="UTC")],
-            "signal_time": [pd.Timestamp("2026-01-05 08:15", tz="UTC")],
+            "entry_time": [pd.Timestamp("2026-01-05 08:25", tz="UTC")],
+            "signal_time": [pd.Timestamp("2026-01-05 08:20", tz="UTC")],
             "retest_time": [pd.NaT],
             "entry_mode": ["breakout"],
             "side": ["long"],
@@ -32,17 +32,17 @@ def test_breakout_bundle_uses_signal_confirmation_before_entry():
     assert len(bundle) == 1
     assert bundle.loc[0, "fib_anchor_start_price"] == 100.0
     assert bundle.loc[0, "fib_anchor_end_price"] == 106.0
-    assert bundle.loc[0, "fib_observation_price"] == 104.0
+    assert bundle.loc[0, "fib_observation_price"] == 105.0
     assert bundle.loc[0, "fib_observation_time"] < bundle.loc[0, "entry_time"]
-    assert bundle.loc[0, "fib_retracement_depth"] == pytest.approx(1.0 / 3.0)
-    assert bundle.loc[0, "fib_fixed_zone"] == "R33_R382"
+    assert bundle.loc[0, "fib_retracement_depth"] == pytest.approx(1.0 / 6.0)
+    assert bundle.loc[0, "fib_fixed_zone"] == "OUTSIDE_FIXED_ZONES"
 
 
 def test_retest_bundle_requires_retest_time():
     trades = pd.DataFrame(
         {
             "entry_time": [pd.Timestamp("2026-01-05 08:25", tz="UTC")],
-            "signal_time": [pd.Timestamp("2026-01-05 08:15", tz="UTC")],
+            "signal_time": [pd.Timestamp("2026-01-05 08:20", tz="UTC")],
             "retest_time": [pd.NaT],
             "entry_mode": ["retest"],
             "side": ["long"],
@@ -57,8 +57,8 @@ def test_bundle_does_not_change_trade_count_or_trade_columns():
     trades = pd.DataFrame(
         {
             "trade_id": ["A"],
-            "entry_time": [pd.Timestamp("2026-01-05 08:20", tz="UTC")],
-            "signal_time": [pd.Timestamp("2026-01-05 08:15", tz="UTC")],
+            "entry_time": [pd.Timestamp("2026-01-05 08:25", tz="UTC")],
+            "signal_time": [pd.Timestamp("2026-01-05 08:20", tz="UTC")],
             "retest_time": [pd.NaT],
             "entry_mode": ["breakout"],
             "side": ["long"],
