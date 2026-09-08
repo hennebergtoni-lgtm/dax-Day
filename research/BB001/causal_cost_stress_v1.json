@@ -1,0 +1,56 @@
+{
+  "experiment_id": "BB001_CAUSAL_COST_STRESS_V1",
+  "status": "RESEARCH_EVIDENCE",
+  "promotion_allowed": false,
+  "baseline_reference": "V112_REFERENCE_V1",
+  "causal_state_rule": "last fully completed M5 bar strictly before entry_time",
+  "causal_alignment": {
+    "baseline_trades": 856,
+    "matched": 856,
+    "missing": 0,
+    "ambiguous": 0,
+    "all_state_times_strictly_before_entry": true,
+    "lag_minutes": {
+      "5.0": 856
+    }
+  },
+  "candidate_definition": {
+    "side": "long",
+    "entry_mode": "retest",
+    "prior_bar_position_min": 0.75,
+    "bandwidth_rule": "above global causal OOS median",
+    "global_causal_oos_median_bandwidth": 0.006904114436795755,
+    "note": "This bandwidth threshold is descriptive/research-only because it was derived from the evaluation sample. It is not deployable or promotion-eligible."
+  },
+  "exact_v112_cost_results": {
+    "normal": {
+      "trades": 37,
+      "return_r": 8.6499,
+      "pf": 1.4609,
+      "winrate": 0.4595,
+      "positive_active_wfs": 14,
+      "negative_active_wfs": 9
+    },
+    "stress_1.5x": {
+      "trades": 37,
+      "return_r": 8.4995,
+      "pf": 1.4513,
+      "winrate": 0.4595,
+      "positive_active_wfs": 14,
+      "negative_active_wfs": 9
+    },
+    "stress_2x": {
+      "trades": 37,
+      "return_r": 8.3505,
+      "pf": 1.4418,
+      "winrate": 0.4595,
+      "positive_active_wfs": 14,
+      "negative_active_wfs": 9
+    }
+  },
+  "interpretation": "The causal retest branch survives exact cost stress, but it is not a pilot candidate until the evaluation-derived bandwidth cutoff is replaced by a fixed ex-ante or per-WF-training-derived rule and neighbourhood/trade-count stability is checked.",
+  "supersedes_for_strategy_conclusions": [
+    "same-entry-bar Bollinger descriptive profitability interpretations",
+    "same-entry-bar fixed hypothesis profitability interpretations"
+  ]
+}
