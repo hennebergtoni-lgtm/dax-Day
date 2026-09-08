@@ -16,6 +16,7 @@ def ready_snapshot(**overrides: object) -> ReadinessSnapshot:
         "audited_bundle_available": True,
         "full_reference_replay_verified": True,
         "execution_boundary_verified": True,
+        "mt5_readonly_health_verified": True,
         "dataset_identity": RecoveryIdentity.HASH_VERIFIED,
     }
     values.update(overrides)
@@ -94,3 +95,12 @@ def test_paper_still_requires_execution_boundary() -> None:
     )
     assert not result.allowed
     assert "EXECUTION_BOUNDARY_UNVERIFIED" in result.blockers
+
+
+def test_paper_requires_verified_mt5_readonly_health() -> None:
+    result = evaluate_run_readiness(
+        RunKind.PAPER,
+        ready_snapshot(mt5_readonly_health_verified=False),
+    )
+    assert not result.allowed
+    assert "MT5_READONLY_HEALTH_UNVERIFIED" in result.blockers
