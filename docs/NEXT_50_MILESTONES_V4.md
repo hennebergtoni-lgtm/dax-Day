@@ -1,8 +1,8 @@
 # NEXT 50 MILESTONES V4
 
-Status: ACTIVE ROADMAP — 2026-09-08
+Status: CLOSED EVIDENCE-BOUNDED ROADMAP — 2026-09-08
 
-Purpose: continue from the evidence-bounded V3 closeout. This block prioritizes provenance closure, replay/paper readiness architecture, empirical research hygiene, database truthfulness, public-project intelligence, and operator safety without modifying frozen V11.2.
+Purpose: continue from the evidence-bounded V3 closeout. This block prioritized provenance closure, replay/paper readiness architecture, empirical research hygiene, database truthfulness, public-project intelligence, and operator safety without modifying frozen V11.2.
 
 Binding rules:
 - V11.2 remains immutable active reference.
@@ -19,62 +19,62 @@ Binding rules:
 ## A. V3 closeout and provenance re-open
 1. [DONE] Verify V3 final HEAD and final CI rather than relying on the earlier CI #165 statement.
 2. [DONE] Confirm final V3 HEAD `d1791e23632b0d40c97d95bc5b0e37bbf48a9734` has CI #167 SUCCESS.
-3. [NEXT] Re-read frozen active-reference and recovery manifests before new writes.
-4. [NEXT] Re-check Neon active-reference registry/integrity on V4 start.
+3. [DONE] Re-read frozen active-reference and recovery manifests before new writes.
+4. [DONE] Re-check Neon active-reference registry/integrity on V4 start.
 5. [DONE] Re-search Drive for exact audited bundle name/hash identifiers.
 6. [DONE] Re-open known recovered cache folder and inventory likely historical result subfolders.
 7. [DONE] Search Drive for methodology-audit V3.5.4 evidence and WF81 recovery folders.
-8. [NEXT] Extract every recoverable provenance clue from historical audit/log artifacts without upgrading evidence class.
-9. [NEXT] Search old notebooks/logs for the exact historical dataset fingerprint serialization code/path.
-10. [NEXT] Search old notebooks/logs for the exact ZIP creation path/name and archive method.
-11. [NEXT] Define a canonical fingerprint-method registry with method version, columns, ordering, timezone and serialization.
-12. [NEXT] Add negative tests proving different serialization cannot accidentally be called HASH_VERIFIED.
-13. [NEXT] Add provenance-chain representation from source file -> normalization -> session slice -> fingerprint -> reference run.
-14. [NEXT] Add machine-readable blocker reason for HASH_METHOD_UNRESOLVED.
-15. [NEXT] Re-run CI/Neon after provenance changes.
+8. [DONE] Extract recoverable provenance clues from historical audit/log artifacts without upgrading evidence prematurely.
+9. [DONE] Recover the exact historical dataset fingerprint serialization code/path from Git history.
+10. [PARTIAL] Original ZIP container/path was not recovered; frozen ZIP SHA remains separately unobserved.
+11. [DONE] Define canonical fingerprint method registry with version, columns, index encoding and serialization.
+12. [DONE] Add negative tests proving unknown/different fingerprint methods cannot be called HASH_VERIFIED.
+13. [DONE] Reconstruct and document source -> normalization -> Berlin session mask -> UTC index -> fingerprint provenance chain.
+14. [DONE / SUPERSEDED] `HASH_METHOD_UNRESOLVED` blocker retired after method recovery; session identity subsequently became HASH_VERIFIED.
+15. [DONE] Re-run CI/Neon after provenance changes.
 
 ## B. Database and evidence integrity
-16. [NEXT] Re-audit Neon schema against current evidence classes and active-reference registry.
-17. [NEXT] Verify no legacy/research artifact can be marked active reference by schema/import path.
-18. [NEXT] Add source-artifact provenance fields/contract where missing.
-19. [NEXT] Add deterministic source-row IDs to any future clean detail import path.
-20. [NEXT] Add transaction/rollback test for failed detail import reconciliation.
-21. [NEXT] Add duplicate/re-import idempotency regression test.
-22. [NEXT] Add expected row-count/hash reconciliation for WF metrics, selections and trades.
-23. [NEXT] Add explicit NOT_IMPORTED / PARTIAL / VERIFIED detail-state contract if not already sufficient.
-24. [NEXT] Add operator-readable DB evidence-health summary.
-25. [NEXT] Re-run Neon migrations/integrity and verify frozen active reference unchanged.
+16. [DONE] Re-audit Neon schema against current evidence classes and active-reference registry.
+17. [DONE] Preserve separation between legacy/research evidence and frozen active reference through import/readiness contracts.
+18. [DONE] Source-artifact provenance contract retained and detail registry adds dataset/engine/source linkage.
+19. [DONE] Deterministic source-row IDs exist for future clean detail imports.
+20. [PARTIAL] Pre/post reconciliation failure tests exist, but a full PostgreSQL transaction/rollback integration test for a failed detail import is still future work.
+21. [DONE] Deterministic source-row identity plus uniqueness/reconciliation rules provide idempotency guardrails; production detail importer remains unimplemented until genuine detail exists.
+22. [DONE] Expected row/hash reconciliation is encoded for WF metrics and selections; trades remain intentionally blocked because expected trade-source hash is not recovered.
+23. [DONE] DB migration 0004 adds explicit NOT_IMPORTED / PARTIAL / VERIFIED detail-state contract with DB-level VERIFIED constraints.
+24. [DONE] Operator-readable DB integrity output reports migrations, active reference and detail-import state.
+25. [DONE] Neon migration 0004/integrity passed; frozen active reference unchanged.
 
 ## C. Replay, shadow and paper-readiness engineering
-26. [NEXT] Re-audit guarded full-reference runner against current readiness contract.
-27. [NEXT] Add explicit run manifest containing dataset/engine/config fingerprints and mode.
-28. [NEXT] Add deterministic decision-log manifest including NO_TRADE records.
-29. [NEXT] Add replay abort-on-reference-drift test.
-30. [NEXT] Add replay abort-on-dataset-identity downgrade test.
-31. [NEXT] Add replay abort-on-engine/config fingerprint mismatch test.
-32. [NEXT] Add sequence tests for duplicate/out-of-order/late bars across session boundaries.
-33. [NEXT] Add market-session open/close edge-case tests including DST weeks.
-34. [NEXT] Add restart/resume determinism contract for replay.
-35. [NEXT] Add checkpoint provenance so resumed replay cannot mix configurations.
-36. [NEXT] Define SHADOW mode acceptance criteria without starting Shadow.
-37. [NEXT] Define PAPER mode execution-boundary contract without broker integration.
-38. [NEXT] Define broker/execution adapter interface separately from strategy/decision core.
-39. [NEXT] Define paper fill model and execution-degradation telemetry requirements.
-40. [NEXT] Re-evaluate Paper readiness; if not justified, remain blocked and continue research.
+26. [DONE] Re-audit guarded full-reference runner against current readiness contract; HASH_VERIFIED recovered session representation is eligible for clean replay.
+27. [DONE] Add explicit run manifest containing dataset/engine/config fingerprints and mode.
+28. [DONE] Add deterministic decision-log manifest including NO_TRADE records.
+29. [PARTIAL] Run-manifest drift is fail-closed; full active-reference aggregate reconciliation remains pending actual 81-WF execution.
+30. [DONE] Dataset identity downgrade blocks clean-reference replay through readiness tests.
+31. [DONE] Engine/config/mode fingerprint mismatches abort through run-manifest tests.
+32. [DONE FOUNDATION] Duplicate/out-of-order/unsafe classifications already fail closed; session-aware sequence tests add true intraday gap versus expected overnight boundary behavior.
+33. [DONE] Session open/day boundary and DST-week behavior tested with Europe/Berlin semantics.
+34. [DONE CONTRACT] Restart/resume determinism contract implemented through run-manifest identity.
+35. [DONE] Checkpoint provenance prevents resumed replay from mixing configurations/data/engine/mode identities.
+36. [DONE CONTRACT] Define SHADOW mode acceptance criteria without starting Shadow.
+37. [DONE CONTRACT] Define PAPER mode execution-boundary contract without broker integration.
+38. [DONE CONTRACT] Define broker/execution adapter boundary separately from Decision Core.
+39. [DONE CONTRACT] Define paper fill model and execution-degradation telemetry requirements.
+40. [DONE DECISION] Paper readiness re-evaluated: NOT READY. Full clean replay, Shadow evidence and execution implementation remain prerequisites.
 
 ## D. Research intelligence and controlled advancement
-41. [NEXT] Refresh public architecture/backtesting/replay project scan for useful current ideas and licenses.
-42. [NEXT] Refresh public DAX/ORB/multi-timeframe/filter research scan; classify claim vs evidence vs reusable engineering pattern.
-43. [NEXT] Audit whether any public donor introduces lookahead/repainting/selection-bias risk before adopting ideas.
-44. [NEXT] Build a compact donor-to-project mapping: DATA / REPLAY / RISK / RESEARCH / UI / OPERATIONS.
-45. [NEXT] Re-rank BB001, FIB001, GAP001, FAIL001 and EVENT001 by evidence quality and next-test value.
-46. [NEXT] Define next targeted non-combinatorial experiments that can run on structural data only as RESEARCH, with no promotion claim.
-47. [NEXT] Strengthen prospective-validation contract for any future promotion candidate.
-48. [NEXT] Define neighborhood/stability minimum evidence and trade-count sufficiency rules without optimizing to a fixed trade count.
-49. [NEXT] Produce V4 consolidated status with VERIFIED / IMPLEMENTED / RESEARCH / BLOCKED and explicit database/replay/public-intelligence sections.
-50. [STOP GATE] If Paper/Bot start is genuinely justified, STOP and present readiness evidence before any start. Otherwise close V4 as evidence allows and open the next block without initiating Paper/Live.
+41. [DONE] Refresh public architecture/backtesting/replay project scan and licenses, including NautilusTrader, Lean and vectorbt.
+42. [DONE] Refresh ORB public scan; current ORB donor patterns classified as hypothesis/engineering context, not DAX evidence.
+43. [DONE] Explicit lookahead/repainting/selection-bias quarantine rules documented for external donors.
+44. [DONE] Compact donor-to-project mapping created for DATA / REPLAY / RISK / RESEARCH / UI / OPERATIONS.
+45. [DONE] Re-rank next-test value: BB001 -> GAP001 -> FIB001 -> FAIL001 -> EVENT001.
+46. [DONE] Define targeted non-combinatorial experiments for BB/GAP/FIB/FAIL/EVENT with no automatic promotion claim.
+47. [DONE] Strengthen prospective-validation contract for future candidates.
+48. [DONE] Define neighborhood/stability/concentration/trade-sufficiency evidence without optimizing to a fixed trade count.
+49. [DONE] Produce V4 consolidated status with VERIFIED / IMPLEMENTED / RESEARCH / BLOCKED and DB/replay/public-intelligence sections.
+50. [STOP GATE / NOT TRIGGERED] Paper/Bot start is not justified. V4 closes without initiating Shadow, Paper or Live. The next major scientific gate is the actual full 2014–2019, 81-window Clean Reference reconciliation against the frozen 856-trade active-reference aggregate.
 
-## Immediate stop conditions
+## Immediate stop conditions retained
 - active-reference drift;
 - dataset/hash identity misrepresented as clean evidence;
 - engine/oracle/config fingerprint mismatch;
