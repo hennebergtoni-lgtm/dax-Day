@@ -19,6 +19,8 @@ jobs:
         run: ruff check src tests scripts
       - name: Tests
         run: pytest
+      - name: Recovery reconstruction preflight
+        run: python scripts/recovery_preflight.py
       - name: V11.2 engine surface probe
         run: python scripts/probe_v112_engine.py
       - name: Guarded V11.2 replay smoke
