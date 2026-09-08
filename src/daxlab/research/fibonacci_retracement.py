@@ -103,6 +103,20 @@ def normalized_retracement(start: float, end: float, price: float) -> float:
     return float((end - price) / move)
 
 
+def fixed_zone(depth: float) -> str:
+    """Classify the predeclared coarse FIB001 retracement zones."""
+    value = float(depth)
+    if 1.0 / 3.0 <= value < 0.382:
+        return "R33_R382"
+    if 0.382 <= value < 0.5:
+        return "R382_R50"
+    if 0.5 <= value < 0.618:
+        return "R50_R618"
+    if 0.618 <= value <= 2.0 / 3.0:
+        return "R618_R667"
+    return "OUTSIDE_FIXED_ZONES"
+
+
 def in_zone(value: float, lower: float, upper: float) -> bool:
     lo, hi = sorted((float(lower), float(upper)))
     return lo <= float(value) <= hi
