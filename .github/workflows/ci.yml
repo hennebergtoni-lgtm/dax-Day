@@ -21,6 +21,8 @@ jobs:
         run: pytest
       - name: V11.2 engine surface probe
         run: python scripts/probe_v112_engine.py
+      - name: Guarded V11.2 replay smoke
+        run: python scripts/v112_replay_smoke.py
       - name: Neon connection gate
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
