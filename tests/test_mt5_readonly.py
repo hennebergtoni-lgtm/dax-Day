@@ -7,6 +7,7 @@ from daxlab.runtime.mt5_readonly import (
     Mt5Bar,
     Mt5Health,
     closed_bars,
+    closed_rates_start_pos,
     resolve_dax_symbol,
 )
 
@@ -32,6 +33,13 @@ def test_single_exact_tradeable_alias_resolves() -> None:
     assert result.state == "AUTO_EXACT_ALIAS"
     assert result.broker_symbol is not None
     assert result.broker_symbol.name == "GER40"
+
+
+def test_mt5_position_zero_is_forbidden_for_closed_bar_reads() -> None:
+    with pytest.raises(ValueError, match="position >= 1"):
+        closed_rates_start_pos(0)
+    assert closed_rates_start_pos() == 1
+    assert closed_rates_start_pos(2) == 2
 
 
 def test_current_open_bar_is_excluded() -> None:
