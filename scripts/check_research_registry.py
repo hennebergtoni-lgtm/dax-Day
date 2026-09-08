@@ -1,20 +1,21 @@
-"""Fail closed if the V6 research-family registry drifts from its control contract."""
+"""Fail closed if the research-family registry drifts from its control contract."""
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
 ALLOWED_STATUSES = {"PLANNED", "RESEARCH", "RETAINED", "REJECTED", "VALIDATED", "DEPLOYABLE"}
-ALLOWED_MATURITY = {
-    "PLAN_ONLY",
-    "CAUSALITY_TESTED",
-    "DESCRIPTIVE",
-    "OOS_TESTED",
-    "WF_TESTED",
-    "COST_STRESSED",
-    "STABILITY_TESTED",
-    "PROSPECTIVE_TESTED",
+MATURITY_ORDER = {
+    "PLAN_ONLY": 0,
+    "CAUSALITY_TESTED": 1,
+    "DESCRIPTIVE": 2,
+    "OOS_TESTED": 3,
+    "WF_TESTED": 4,
+    "COST_STRESSED": 5,
+    "STABILITY_TESTED": 6,
+    "PROSPECTIVE_TESTED": 7,
 }
+ALLOWED_MATURITY = set(MATURITY_ORDER)
 REQUIRED_FAMILIES = {
     "BB001",
     "FIB001",
@@ -48,16 +49,26 @@ def main() -> None:
     if missing:
         raise SystemExit(f"research registry missing required families: {missing}")
     for item in families:
-        if item.get("status") not in ALLOWED_STATUSES:
-            raise SystemExit(f"invalid status for {item.get('id')}: {item.get('status')}")
-        if item.get("evidence_maturity") not in ALLOWED_MATURITY:
-            raise SystemExit(
-                f"invalid evidence maturity for {item.get('id')}: {item.get('evidence_maturity')}"
-            )
+        family_id = item.get("id")
+        status = item.get("status")
+        maturity = item.get("evidence_maturity")
+        if status not in ALLOWED_STATUSES:
+            raise SystemExit(f"invalid status for {family_id}: {status}")
+        if maturity not in ALLOWED_MATURITY:
+            raise SystemExit(f"invalid evidence maturity for {family_id}: {maturity}")
         if item.get("promotion_allowed") is not False:
-            raise SystemExit(f"research family may not auto-promote: {item.get('id')}")
+            raise SystemExit(f"research family may not auto-promote: {family_id}")
         if "known_negative_findings" not in item or "provenance_notes" not in item:
-            raise SystemExit(f"research family evidence fields incomplete: {item.get('id')}")
+            raise SystemExit(f"research family evidence fields incomplete: {family_id}")
+
+        family_dir = root / "research" / str(family_id)
+        descriptive_runs = list(family_dir.glob("DESCRIPTIVE_RUN_*.md")) if family_dir.is_dir() else []
+        if descriptive_runs and MATURITY_ORDER[maturity] < MATURITY_ORDER["DESCRIPTIVE"]:
+            raise SystemExit(
+                f"research registry maturity drift for {family_id}: "
+                f"descriptive artifact exists but maturity={maturity}"
+            )
+
     print(f"Research registry integrity OK | families={len(families)} | baseline=V112_REFERENCE_V1")
 
 
