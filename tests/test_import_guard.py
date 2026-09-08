@@ -1,12 +1,11 @@
 from daxlab.import_guard import (
     ArtifactImportSpec,
     ArtifactObservation,
-    deterministic_source_row_id,
     ImportReconciliation,
+    deterministic_source_row_id,
     validate_postimport,
     validate_preimport,
 )
-
 
 SPEC = ArtifactImportSpec(
     experiment_key="V112_REFERENCE_V1",
