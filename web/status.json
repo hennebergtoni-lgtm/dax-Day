@@ -52,7 +52,7 @@
     "count": 12,
     "items": [
       {"id": "BB001", "status": "RESEARCH", "evidence_maturity": "COST_STRESSED"},
-      {"id": "FIB001", "status": "RESEARCH", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "FIB001", "status": "RESEARCH", "evidence_maturity": "DESCRIPTIVE"},
       {"id": "GAP001", "status": "RESEARCH", "evidence_maturity": "PLAN_ONLY"},
       {"id": "FAIL001", "status": "RETAINED", "evidence_maturity": "DESCRIPTIVE"},
       {"id": "BOOST001", "status": "RESEARCH", "evidence_maturity": "PLAN_ONLY"},
@@ -71,8 +71,14 @@
     "terminal_connected": false,
     "account_connected": false,
     "symbol_available": false,
+    "symbol_mapping_state": "UNCONFIGURED",
+    "resolved_broker_symbol": null,
     "market_data_fresh": false,
+    "latest_closed_bar_age_seconds": null,
     "clock_ok": false,
+    "engine_loop_healthy": false,
+    "single_instance_lock_state": "NOT_IMPLEMENTED",
+    "why_no_trade": "MT5 adapter not connected; architecture preparation only",
     "order_execution_enabled": false,
     "contract": "docs/MT5_ADAPTER_CONTRACT_V1.md"
   },
