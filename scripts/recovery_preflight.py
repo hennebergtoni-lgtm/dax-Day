@@ -8,10 +8,12 @@ EXPECTED_MIGRATIONS = (
     "0002_reference_provenance.sql",
     "0003_active_reference_registry.sql",
     "0004_detail_evidence_registry.sql",
+    "0005_reproduced_detail_sources.sql",
 )
 EXPECTED_FILES = (
     "data/manifests/dax_m5_2014_2019_audited.json",
     "research/V112_REFERENCE_V1/reference_result.json",
+    "research/V112_REFERENCE_V1/reproduced_evidence_2026_09_08.json",
     "src/daxlab/runtime/checkpoint.py",
     "src/daxlab/runtime/manifests.py",
     "src/daxlab/runtime/recovery_bundle.py",
