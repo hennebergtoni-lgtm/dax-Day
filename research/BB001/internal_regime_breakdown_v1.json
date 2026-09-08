@@ -1,0 +1,56 @@
+{
+  "experiment_id": "BB001_INTERNAL_REGIME_V1",
+  "status": "RESEARCH_EVIDENCE",
+  "candidate_definition": "long AND position>=0.75 AND bandwidth above median (Q3/Q4)",
+  "overall": {"trades":112,"return_r":26.702,"pf":1.473,"winrate":0.464},
+  "time_bucket": {
+    "09:00-09:59": {"trades":104,"return_r":21.600,"pf":1.397,"winrate":0.442,"wfs":52},
+    "10:00-10:59": {"trades":7,"return_r":3.105,"pf":2.545,"winrate":0.714,"wfs":7},
+    "11:00-11:59": {"trades":1,"return_r":1.996,"pf":null,"winrate":1.0,"wfs":1}
+  },
+  "structure": {
+    "orb_min": {
+      "5": {"trades":44,"return_r":11.888,"pf":1.536,"winrate":0.500,"wfs":25},
+      "15": {"trades":68,"return_r":14.814,"pf":1.432,"winrate":0.441,"wfs":29}
+    },
+    "entry_mode": {
+      "breakout": {"trades":79,"return_r":10.638,"pf":1.249,"winrate":0.430,"wfs":34},
+      "retest": {"trades":33,"return_r":16.065,"pf":2.169,"winrate":0.545,"wfs":20}
+    },
+    "stop_mode": {
+      "or_mid": {"trades":68,"return_r":19.803,"pf":1.572,"winrate":0.485,"wfs":30},
+      "or_opposite": {"trades":44,"return_r":6.899,"pf":1.315,"winrate":0.432,"wfs":24}
+    },
+    "rr": {
+      "1.5": {"trades":39,"return_r":4.541,"pf":1.232,"winrate":0.462,"wfs":19},
+      "2.0": {"trades":73,"return_r":22.161,"pf":1.600,"winrate":0.466,"wfs":35}
+    },
+    "or_atr_filter": {
+      "above_0.2": {"trades":34,"return_r":16.960,"pf":2.204,"winrate":0.588,"wfs":20},
+      "between_0.2_0.6": {"trades":30,"return_r":8.491,"pf":1.662,"winrate":0.500,"wfs":15},
+      "none": {"trades":48,"return_r":1.251,"pf":1.042,"winrate":0.354,"wfs":19}
+    }
+  },
+  "era_interactions": {
+    "WF1-27": {
+      "breakout": {"trades":43,"return_r":15.246,"pf":1.780},
+      "retest": {"trades":7,"return_r":0.720,"pf":1.196}
+    },
+    "WF28-54": {
+      "breakout": {"trades":22,"return_r":-6.908,"pf":0.544},
+      "retest": {"trades":9,"return_r":3.437,"pf":1.853}
+    },
+    "WF55-81": {
+      "breakout": {"trades":14,"return_r":2.300,"pf":1.286},
+      "retest": {"trades":17,"return_r":11.908,"pf":2.972}
+    }
+  },
+  "interpretation": [
+    "The weak middle era is concentrated primarily in breakout-mode trades, while retest remains positive there.",
+    "OR/ATR context appears materially relevant: no OR/ATR filter is near-flat overall, whereas above0.2 and between0.2-0.6 are stronger, but sample sizes remain modest.",
+    "Most candidate trades occur in the first hour; later-hour statistics are too sparse for strong conclusions.",
+    "RR2.0 and or_mid are stronger descriptively, but these are inherited V11.2 selections and must not be re-optimized from this post-hoc slice.",
+    "No promotion is allowed from this decomposition. Next step is a predeclared interaction test: BB directional momentum x entry_mode (breakout vs retest), followed by exact-engine normal/1.5x/2x cost stress and causal-state audit."
+  ],
+  "promotion_allowed": false
+}
