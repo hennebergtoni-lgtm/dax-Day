@@ -1,0 +1,49 @@
+name: reference-payload-export
+
+on:
+  push:
+    paths:
+      - '.github/workflows/reference-payload-export.yml'
+      - 'src/daxlab/reference/artifacts/**'
+      - 'src/daxlab/reference/recovered_engine.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify and export recovered engine sources
+        run: |
+          python - <<'PY'
+          import base64, hashlib, pathlib, zlib
+          root = pathlib.Path('src/daxlab/reference/artifacts')
+          specs = {
+              'oracle_v11_2.py.zlib.b64': '62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f',
+              'exact_candidate_v11_2.py.zlib.b64': 'b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888',
+          }
+          out = pathlib.Path('reference_payload_export')
+          out.mkdir()
+          for filename, expected in specs.items():
+              encoded = (root / filename).read_text(encoding='ascii').strip()
+              raw = zlib.decompress(base64.b64decode(encoded))
+              actual = hashlib.sha256(raw).hexdigest()
+              if actual != expected:
+                  raise SystemExit(f'hash mismatch for {filename}: {actual}')
+              target = out / filename.replace('.zlib.b64', '')
+              target.write_bytes(raw)
+              print(target, actual, len(raw))
+          PY
+      - name: Upload verified sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: v112-verified-reference-sources
+          path: reference_payload_export/
+          if-no-files-found: error
+          retention-days: 7
