@@ -1,8 +1,13 @@
-from daxlab.detail_import import berlin_wall_clock_to_utc, plan_detail_rows
+from daxlab.detail_import import (
+    berlin_wall_clock_to_utc,
+    plan_detail_rows,
+    reconcile_planned_rows,
+)
+from daxlab.import_guard import validate_postimport
 
 
-def test_wf_metrics_identity_is_stable() -> None:
-    row = {
+def _wf_row() -> dict[str, object]:
+    return {
         "wf": 1,
         "cost": "normal",
         "variant_index": 120,
@@ -12,6 +17,10 @@ def test_wf_metrics_identity_is_stable() -> None:
         "avg_r": 0.2,
         "max_dd_r": -3.0,
     }
+
+
+def test_wf_metrics_identity_is_stable() -> None:
+    row = _wf_row()
     first = plan_detail_rows(experiment_key="V112_REFERENCE_V1", detail_kind="WF_METRICS", rows=[row])
     second = plan_detail_rows(experiment_key="V112_REFERENCE_V1", detail_kind="WF_METRICS", rows=[dict(row)])
     assert first == second
@@ -20,16 +29,7 @@ def test_wf_metrics_identity_is_stable() -> None:
 
 
 def test_duplicate_source_identity_fails_closed() -> None:
-    row = {
-        "wf": 1,
-        "cost": "normal",
-        "variant_index": 120,
-        "trades": 12,
-        "return_r": 2.5,
-        "pf": 1.4,
-        "avg_r": 0.2,
-        "max_dd_r": -3.0,
-    }
+    row = _wf_row()
     try:
         plan_detail_rows(
             experiment_key="V112_REFERENCE_V1", detail_kind="WF_METRICS", rows=[row, row]
@@ -41,16 +41,7 @@ def test_duplicate_source_identity_fails_closed() -> None:
 
 
 def test_conflicting_duplicate_source_identity_fails_closed() -> None:
-    a = {
-        "wf": 1,
-        "cost": "normal",
-        "variant_index": 120,
-        "trades": 12,
-        "return_r": 2.5,
-        "pf": 1.4,
-        "avg_r": 0.2,
-        "max_dd_r": -3.0,
-    }
+    a = _wf_row()
     b = dict(a)
     b["return_r"] = 99.0
     try:
@@ -89,3 +80,29 @@ def test_trade_plan_rejects_invalid_side() -> None:
         assert "invalid side" in str(exc)
     else:
         raise AssertionError("invalid side must fail closed")
+
+
+def test_reconciliation_first_run_is_insert_then_second_is_unchanged() -> None:
+    planned = plan_detail_rows(
+        experiment_key="V112_REFERENCE_V1", detail_kind="WF_METRICS", rows=[_wf_row()]
+    )
+    first = reconcile_planned_rows(planned, existing_payload_hashes={})
+    assert first.reconciliation.inserted_rows == 1
+    assert first.reconciliation.unchanged_rows == 0
+    assert validate_postimport(first.reconciliation) == ()
+
+    existing = {planned[0].source_row_id: planned[0].payload_sha256}
+    second = reconcile_planned_rows(planned, existing_payload_hashes=existing)
+    assert second.reconciliation.inserted_rows == 0
+    assert second.reconciliation.unchanged_rows == 1
+    assert validate_postimport(second.reconciliation) == ()
+
+
+def test_reconciliation_conflict_blocks_commit() -> None:
+    planned = plan_detail_rows(
+        experiment_key="V112_REFERENCE_V1", detail_kind="WF_METRICS", rows=[_wf_row()]
+    )
+    existing = {planned[0].source_row_id: "0" * 64}
+    result = reconcile_planned_rows(planned, existing_payload_hashes=existing)
+    assert result.reconciliation.conflicting_rows == 1
+    assert validate_postimport(result.reconciliation) == ("CONFLICTING_ROWS",)
