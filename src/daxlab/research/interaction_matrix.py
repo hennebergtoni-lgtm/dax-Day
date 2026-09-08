@@ -5,7 +5,6 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-
 MaskFn = Callable[[pd.DataFrame], pd.Series]
 
 
