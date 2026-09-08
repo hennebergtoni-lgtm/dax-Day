@@ -26,6 +26,13 @@ def _signature(value: object) -> object:
         return "<no-signature>"
 
 
+def _string_constants(value: object) -> list[str]:
+    code = getattr(value, "__code__", None)
+    if code is None:
+        return []
+    return sorted({constant for constant in code.co_consts if isinstance(constant, str)})
+
+
 def describe(label: str, engine: object) -> None:
     print(f"[{label}]")
     for name in NAMES:
@@ -44,6 +51,7 @@ def describe(label: str, engine: object) -> None:
         print(f"param_repr: {first_param!r}")
 
     public_helpers: list[str] = []
+    helper_names: list[str] = []
     for name in sorted(dir(engine)):
         if name.startswith("_"):
             continue
@@ -52,14 +60,16 @@ def describe(label: str, engine: object) -> None:
             continue
         value = getattr(engine, name)
         if callable(value):
+            helper_names.append(name)
             public_helpers.append(f"{name}{_signature(value)}")
     print(f"public_helpers: {public_helpers}")
 
-    for name in ("daily_context", "simulate_day"):
+    for name in ("daily_context", "simulate_day", *helper_names):
         value = getattr(engine, name, None)
         code = getattr(value, "__code__", None)
         if code is not None:
             print(f"{name}_names: {sorted(set(code.co_names))}")
+            print(f"{name}_strings: {_string_constants(value)}")
 
     cost_scenarios = getattr(engine, "COST_SCENARIOS", None)
     print(f"COST_SCENARIOS: {cost_scenarios}")
