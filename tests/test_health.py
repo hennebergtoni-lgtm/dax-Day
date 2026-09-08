@@ -1,4 +1,9 @@
-from daxlab.runtime.health import HealthState, build_system_health
+from daxlab.data.recovery import RecoveryIdentity
+from daxlab.runtime.health import (
+    HealthState,
+    build_system_health,
+    recovery_identity_health,
+)
 
 
 def test_system_health_green_allows_trading() -> None:
@@ -36,3 +41,18 @@ def test_blocker_forces_red_health() -> None:
     )
     assert health.overall is HealthState.RED
     assert not health.trading_allowed
+
+
+def test_recovery_structural_match_is_yellow() -> None:
+    assert (
+        recovery_identity_health(RecoveryIdentity.STRUCTURAL_MATCH)
+        is HealthState.YELLOW
+    )
+
+
+def test_recovery_hash_verified_is_green() -> None:
+    assert recovery_identity_health(RecoveryIdentity.HASH_VERIFIED) is HealthState.GREEN
+
+
+def test_recovery_mismatch_is_red() -> None:
+    assert recovery_identity_health(RecoveryIdentity.MISMATCH) is HealthState.RED
