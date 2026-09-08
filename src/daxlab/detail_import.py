@@ -14,7 +14,7 @@ from math import isfinite
 from typing import Iterable, Mapping
 from zoneinfo import ZoneInfo
 
-from daxlab.import_guard import deterministic_source_row_id
+from daxlab.import_guard import ImportReconciliation, deterministic_source_row_id
 
 BERLIN = ZoneInfo("Europe/Berlin")
 UTC = ZoneInfo("UTC")
@@ -39,6 +39,14 @@ class PlannedDetailRow:
     source_row_id: str
     payload_sha256: str
     payload: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class ReconciliationPlan:
+    reconciliation: ImportReconciliation
+    to_insert: tuple[PlannedDetailRow, ...]
+    unchanged: tuple[PlannedDetailRow, ...]
+    conflicts: tuple[PlannedDetailRow, ...]
 
 
 def _canonical_json(value: object) -> str:
@@ -152,3 +160,36 @@ def plan_detail_rows(
             )
         )
     return tuple(planned)
+
+
+def reconcile_planned_rows(
+    planned: Iterable[PlannedDetailRow], *, existing_payload_hashes: Mapping[str, str]
+) -> ReconciliationPlan:
+    """Classify planned rows before any DB mutation.
+
+    Existing identity + identical payload is idempotent/unchanged. Existing identity
+    + different payload is a hard conflict. Missing identity is eligible for insert.
+    """
+    planned_rows = tuple(planned)
+    inserts: list[PlannedDetailRow] = []
+    unchanged: list[PlannedDetailRow] = []
+    conflicts: list[PlannedDetailRow] = []
+    for row in planned_rows:
+        observed = existing_payload_hashes.get(row.source_row_id)
+        if observed is None:
+            inserts.append(row)
+        elif observed == row.payload_sha256:
+            unchanged.append(row)
+        else:
+            conflicts.append(row)
+    return ReconciliationPlan(
+        reconciliation=ImportReconciliation(
+            source_rows=len(planned_rows),
+            inserted_rows=len(inserts),
+            unchanged_rows=len(unchanged),
+            conflicting_rows=len(conflicts),
+        ),
+        to_insert=tuple(inserts),
+        unchanged=tuple(unchanged),
+        conflicts=tuple(conflicts),
+    )
