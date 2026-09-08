@@ -49,12 +49,16 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
     if kind in (RunKind.CLEAN_REFERENCE_REPLAY, RunKind.PAPER):
         if not snapshot.dataset_verified:
             blockers.append("DATASET_UNVERIFIED")
-        if snapshot.dataset_identity is not None and (
-            snapshot.dataset_identity is not RecoveryIdentity.HASH_VERIFIED
-        ):
+        if snapshot.dataset_identity is not RecoveryIdentity.HASH_VERIFIED:
             blockers.append("DATASET_IDENTITY_NOT_HASH_VERIFIED")
-        if not snapshot.audited_bundle_available:
-            blockers.append("AUDITED_BUNDLE_UNAVAILABLE")
+
+    # A clean-reference replay may use a recovered source whose normalized session
+    # surface is HASH_VERIFIED against the frozen active-reference fingerprint.
+    # The original ZIP archive is still valuable provenance, but requiring that
+    # exact container would unnecessarily block reproducible replay from an
+    # evidence-equivalent recovered representation.
+    if kind is RunKind.PAPER and not snapshot.audited_bundle_available:
+        blockers.append("AUDITED_BUNDLE_UNAVAILABLE")
 
     # A clean-reference replay produces this evidence; requiring it beforehand
     # would create a circular gate. Paper, however, must consume verified replay
