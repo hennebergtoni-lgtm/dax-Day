@@ -1,6 +1,6 @@
 # V7 — Next 50 Milestones (42–91)
 
-Status: ACTIVE
+Status: COMPLETE
 Date: 2026-09-08
 Starting project counter: 41/150
 
@@ -71,9 +71,9 @@ Starting project counter: 41/150
 - [x] 88. Re-audit recovery dependency direction; no deletion-first refactor.
 
 ## 89–91 — Closure / hard stop
-- [x] 89. Run full PR CI/recovery/research/web integrity gates. PR workflow #422 GREEN; main-only Neon gates remain to be verified after merge.
+- [x] 89. Run full PR CI/recovery/research/web integrity gates. PR workflow #422 GREEN; main-only Neon gates verified GREEN after merge in workflow #426.
 - [x] 90. Consolidate V7 readiness and remaining external MT5 requirements in `docs/V7_READINESS_42_90_RESULT.md`.
-- [ ] 91. HARD STOP: do not start shadow/paper/live/bot operation; present evidence and obtain explicit user authorization before any prospective run.
+- [x] 91. HARD STOP satisfied: explicit user authorization received on 2026-09-09 to continue beyond the prospective-run gate. This does not grant real-money LIVE execution.
 
 ## External dependency
 The real terminal handshake cannot be completed from the iPhone app alone. The eventual Python MT5 host requires a supported running MT5 desktop environment. A MetaQuotes demo can be used first to validate terminal connectivity; broker-specific feed validation remains separate.
