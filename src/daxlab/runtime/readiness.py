@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+from daxlab.data.recovery import RecoveryIdentity
+
 
 class RunKind(StrEnum):
     FIXTURE_REPLAY_SMOKE = "FIXTURE_REPLAY_SMOKE"
@@ -22,6 +24,7 @@ class ReadinessSnapshot:
     audited_bundle_available: bool
     full_reference_replay_verified: bool
     execution_boundary_verified: bool = False
+    dataset_identity: RecoveryIdentity | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +49,10 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
     if kind in (RunKind.CLEAN_REFERENCE_REPLAY, RunKind.PAPER):
         if not snapshot.dataset_verified:
             blockers.append("DATASET_UNVERIFIED")
+        if snapshot.dataset_identity is not None and (
+            snapshot.dataset_identity is not RecoveryIdentity.HASH_VERIFIED
+        ):
+            blockers.append("DATASET_IDENTITY_NOT_HASH_VERIFIED")
         if not snapshot.audited_bundle_available:
             blockers.append("AUDITED_BUNDLE_UNAVAILABLE")
         if not snapshot.full_reference_replay_verified:
