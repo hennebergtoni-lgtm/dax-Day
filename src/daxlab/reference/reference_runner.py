@@ -64,7 +64,7 @@ def score_candidate(engine: Any, train_days: tuple[object, ...], variant_index: 
 
 
 def select_variant(engine: Any, train_days: tuple[object, ...], grid: list[Any]) -> CandidateScore:
-    """Select one V11.2 variant using the historical frozen train-ranking rule."""
+    """Select one V11.2 variant using the frozen clean train-ranking rule."""
     scored = [score_candidate(engine, train_days, i, p) for i, p in enumerate(grid, 1)]
     eligible = [row for row in scored if row.normal["trades"] >= 12]
     if not eligible:
