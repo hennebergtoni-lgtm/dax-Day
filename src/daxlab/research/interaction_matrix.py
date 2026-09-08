@@ -1,7 +1,5 @@
-from __future__ import annotations
-
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Callable, Mapping
 
 import pandas as pd
 
@@ -40,7 +38,7 @@ def summarize_mask(frame: pd.DataFrame, mask: pd.Series, *, name: str, r_col: st
     r = pd.to_numeric(selected[r_col], errors="raise").astype(float)
     return InteractionResult(
         name=name,
-        trades=int(len(selected)),
+        trades=len(selected),
         return_r=float(r.sum()),
         win_rate=float((r > 0).mean()),
     )
