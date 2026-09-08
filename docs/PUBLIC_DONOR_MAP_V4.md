@@ -12,6 +12,7 @@ External repositories may contribute architecture ideas, failure modes, test pat
 | nautechsystems/nautilus_trader | LGPL-3.0 | REPLAY / OPERATIONS / EXECUTION | event-driven architecture, separation of trading logic from venue/execution concerns, consistent research/live concepts | IDEA / ARCHITECTURE ONLY; no source copied |
 | QuantConnect/Lean | Apache-2.0 | DATA / REPLAY / EXECUTION / OPERATIONS | mature brokerage boundary, event-driven backtest/live separation, explicit order lifecycle concepts | IDEA / ARCHITECTURE ONLY; no source copied |
 | polakowo/vectorbt | Apache-2.0 + Commons Clause | RESEARCH | fast vectorized research exploration, parameter-surface analysis and research ergonomics | IDEA ONLY; no code reuse planned because of license restriction and because FAST cannot be promotion evidence |
+| jefrnc/strategy-orb15-momentum | MIT | RESEARCH / RISK / OPERATIONS | configurable 5–15 minute ORB, real-data backtesting requirement, Paper-first workflow, logging/circuit-breaker concepts | IDEA ONLY; equity/long-only evidence does not validate DAX OR15 or our performance |
 | deterministic-market-replay | Apache-2.0 (prior audit) | REPLAY | deterministic event replay and sequence reproducibility | IDEA / TEST-PATTERN DONOR |
 | QSTrader | MIT (prior audit) | REPLAY / RESEARCH | event-driven portfolio/backtest decomposition | IDEA DONOR |
 | Jenak26 donor | MIT (prior audit) | RESEARCH | strategy/research implementation patterns | IDEA DONOR; no DAX evidence substitution |
@@ -49,8 +50,9 @@ Useful donor questions:
 - Is fast screening separated from exact validation?
 - Are parameter surfaces inspected for stability rather than single-point maxima?
 - Are causality and OOS independence tested explicitly?
+- Does an ORB donor require real data, realistic costs and prospective paper validation rather than relying on a claimed headline result?
 
-Current DAX Lab response: FAST is screening only; exact/OOS/WF/cost-stress/stability/prospective validation is the promotion path.
+Current DAX Lab response: FAST is screening only; exact/OOS/WF/cost-stress/stability/prospective validation is the promotion path. External ORB parameter choices such as 5–15 minutes are hypothesis context only and never substitute for DAX-specific evidence.
 
 ### UI
 Useful donor questions:
