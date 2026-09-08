@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from daxlab.runtime.contracts import Candle, DataQualityState
+from daxlab.runtime.time import to_berlin
 
 
 def classify_sequence(
@@ -29,6 +30,32 @@ def classify_sequence(
     if current.event_time - previous.event_time > expected_interval:
         return DataQualityState.GAP
     return current.quality_state
+
+
+def classify_session_sequence(
+    previous: Candle | None,
+    current: Candle,
+    expected_interval: timedelta,
+    *,
+    max_receive_delay: timedelta = timedelta(minutes=2),
+) -> DataQualityState:
+    """Classify a stream already partitioned to the Berlin trading session.
+
+    A new Berlin calendar day resets the intraday adjacency check so the expected
+    overnight closure is not mislabeled as an M5 GAP. This function does not prove
+    that every expected trading day exists; session-calendar completeness remains a
+    separate dataset/replay gate.
+    """
+    if previous is not None and to_berlin(previous.event_time).date() != to_berlin(
+        current.event_time
+    ).date():
+        previous = None
+    return classify_sequence(
+        previous,
+        current,
+        expected_interval,
+        max_receive_delay=max_receive_delay,
+    )
 
 
 def source_agrees(left: Candle, right: Candle, *, tolerance: float = 0.0) -> DataQualityState:
