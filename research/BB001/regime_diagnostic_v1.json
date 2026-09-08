@@ -1,0 +1,45 @@
+{
+  "status": "RESEARCH_HYPOTHESIS_ONLY",
+  "promotion_allowed": false,
+  "candidate": "BB001 causal long retest + per-WF train-only BB median + causal position >=0.75",
+  "new_hypothesis": "avoid trades after unusually extended prior day, measured by PrevRange/ATR",
+  "evidence": {
+    "no_cap": {
+      "trades": 57,
+      "R": 11.1111,
+      "PF": 1.372,
+      "winrate": 0.4561,
+      "active_wfs": 26,
+      "positive_wfs": 15,
+      "negative_wfs": 11,
+      "median_active_wf_R": 0.5933
+    },
+    "cap_1_25": {
+      "trades": 35,
+      "R": 12.3718,
+      "PF": 1.7847,
+      "winrate": 0.5143,
+      "active_wfs": 22,
+      "positive_wfs": 13,
+      "negative_wfs": 9,
+      "median_active_wf_R": 0.6639
+    },
+    "cap_1_50": {
+      "trades": 43,
+      "R": 15.2912,
+      "PF": 1.7727,
+      "winrate": 0.5116,
+      "active_wfs": 23,
+      "positive_wfs": 13,
+      "negative_wfs": 10,
+      "median_active_wf_R": 0.5444
+    }
+  },
+  "interpretation": [
+    "both coarse caps improve aggregate PF and turn WF1-27 from negative to non-negative/positive",
+    "the effect survives a broad 1.25-1.50 neighborhood rather than one exact threshold",
+    "trade count drops materially, so sample size remains modest",
+    "the cap was discovered from existing OOS diagnostics, therefore it is not promotion-eligible without a new prospective/train-derived test"
+  ],
+  "next_step": "test the prior-day-extension hypothesis prospectively using train-derived or predeclared thresholds, then exact cost stress; only afterwards consider cross-market interaction"
+}
