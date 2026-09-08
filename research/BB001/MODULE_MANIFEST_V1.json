@@ -1,0 +1,98 @@
+{
+  "artifact": "BB001_MODULE_MANIFEST_V1",
+  "status": "RESEARCH_TOOL",
+  "promotion_allowed": false,
+  "baseline_mutated": false,
+  "baseline": "V11.2 frozen active reference",
+  "code": {
+    "module": "src/daxlab/research/bollinger_filter.py",
+    "bundle_tool": "scripts/bb001_feature_bundle.py",
+    "tests": [
+      "tests/test_bollinger_filter.py",
+      "tests/test_bollinger_no_lookahead_property.py"
+    ],
+    "module_capabilities": [
+      "causal M5 Bollinger state",
+      "strict prior-bar entry alignment",
+      "train-only quantile thresholds",
+      "prior-day range/ATR context",
+      "completed 15/30/60m higher-timeframe state",
+      "completed-HTF breakout/mean regime labels",
+      "fully detachable eligibility filter"
+    ]
+  },
+  "integration_preflight": {
+    "baseline_trades_aligned": 856,
+    "missing_bb_states": 0,
+    "all_state_times_strictly_before_entry": true,
+    "lag_minutes_unique": [5.0],
+    "train_only_bb_candidate": {
+      "trades": 57,
+      "return_r": 11.1111
+    },
+    "train_only_bb_plus_prior_day_q75_candidate": {
+      "trades": 38,
+      "return_r": 17.3248,
+      "pf_normal": 2.0987,
+      "return_r_stress_1_5x": 17.1462,
+      "pf_stress_1_5x": 2.0828,
+      "return_r_stress_2x": 16.9697,
+      "pf_stress_2x": 2.0673
+    }
+  },
+  "interpretation": "Bollinger is retained as a secondary quality/regime filter whose value appears stronger in combination with DAX structure and prior-day regime than as a standalone trading rule.",
+  "public_project_intelligence": [
+    {
+      "project": "JN842/multitf-bollinger-switching",
+      "use": "idea only / independent reimplementation",
+      "preserved_ideas": [
+        "completed higher-timeframe state",
+        "breakout-like versus mean-reversion-like regime switching",
+        "no repaint/look-ahead"
+      ]
+    },
+    {
+      "project": "dws-data/nas-orb-backtester",
+      "use": "idea only / independent reimplementation",
+      "preserved_ideas": [
+        "confirmed breakout before retrace continuation",
+        "precomputed reusable day context",
+        "conservative entry-bar semantics",
+        "MFE/MAE diagnostics"
+      ]
+    },
+    {
+      "project": "DaruFinance/quant-research-framework",
+      "license": "Apache-2.0",
+      "use": "research-engineering inspiration",
+      "preserved_ideas": [
+        "future-pollution no-lookahead property testing",
+        "WFO and robustness discipline",
+        "friction stress",
+        "overfitting diagnostics"
+      ]
+    }
+  ],
+  "negative_findings": [
+    "same-entry-bar BB state is non-causal for current V11.2 entry semantics",
+    "completed 15m BB above-mid filter did not improve the current BB001 candidate",
+    "completed 15m BB position >= 0.75 reduced current candidate PF",
+    "tight retest-time filter is not justified",
+    "extra OR/ATR threshold is not stable enough to add"
+  ],
+  "next_milestones": [
+    "independent/prospective validation of BB001 interactions",
+    "Fibonacci/retracement research with public-project scan first",
+    "gap research in isolation",
+    "targeted regime-tool interactions",
+    "EVENT001 interactions",
+    "cross-market context only after DAX-internal evidence is stable"
+  ],
+  "ci_at_manifest_creation": {
+    "workflow": "research-lab-ci",
+    "head_before_manifest": "d8e11c58414d9361239218ba74b8e36b2302c4f7",
+    "run_id": 34185118539,
+    "status": "queued",
+    "conclusion": null
+  }
+}
