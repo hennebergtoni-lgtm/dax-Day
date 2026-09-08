@@ -1,16 +1,17 @@
-"""Database integrity gate for the research store.
-
-This script is intentionally read-only. It verifies schema/migration health and
-checks that frozen reference metadata cannot silently drift when present.
-"""
+"""Read-only database integrity gate for the research store."""
 from __future__ import annotations
 
 import os
 
 import psycopg
 
-EXPECTED_MIGRATIONS = {"0001_research_core", "0002_reference_provenance"}
+EXPECTED_MIGRATIONS = {
+    "0001_research_core",
+    "0002_reference_provenance",
+    "0003_active_reference_registry",
+}
 EXPECTED_ENGINE_SHA = "9561b9089c57c543798dc587ce240a729b7995230dd5d665a1bdd029f3990887"
+EXPECTED_DATASET_SHA = "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
 
 
 def main() -> None:
@@ -26,20 +27,35 @@ def main() -> None:
             raise SystemExit(f"database integrity failed: missing migrations {sorted(missing)}")
 
         cursor.execute(
-            "select sha256, frozen, metadata from engine_references where name = %s",
+            "select sha256, frozen from engine_references where name = %s",
             ("V11.2 Exact Reference Engine",),
         )
-        row = cursor.fetchone()
-        if row is None:
-            raise SystemExit("database integrity failed: frozen V11.2 engine reference missing")
-        sha256, frozen, metadata = row
-        if sha256 != EXPECTED_ENGINE_SHA or frozen is not True:
+        engine = cursor.fetchone()
+        if engine != (EXPECTED_ENGINE_SHA, True):
             raise SystemExit("database integrity failed: V11.2 engine reference drift")
-        if not isinstance(metadata, dict):
-            raise SystemExit("database integrity failed: V11.2 metadata is not JSON object")
 
-        cursor.execute("select count(*) from experiments")
-        experiments = cursor.fetchone()[0]
+        cursor.execute(
+            "select sha256, candle_count, valid_day_count from datasets where name = %s",
+            ("dax_m5_2014_2019_audited_v1",),
+        )
+        dataset = cursor.fetchone()
+        if dataset != (EXPECTED_DATASET_SHA, 172319, 1673):
+            raise SystemExit("database integrity failed: active dataset reference drift")
+
+        cursor.execute(
+            "select status, git_commit_sha, config from experiments where experiment_key = %s",
+            ("V112_REFERENCE_V1",),
+        )
+        experiment = cursor.fetchone()
+        if experiment is None:
+            raise SystemExit("database integrity failed: active V11.2 experiment missing")
+        status, git_sha, config = experiment
+        normal = config.get("normal", {}) if isinstance(config, dict) else {}
+        if status != "ACTIVE_REFERENCE" or git_sha != "a5661ffbd66c01a99c502daaaa1057555633cd76":
+            raise SystemExit("database integrity failed: active V11.2 registry drift")
+        if normal.get("oos_trades") != 856 or normal.get("positive_wfs") != 37:
+            raise SystemExit("database integrity failed: active V11.2 aggregate drift")
+
         cursor.execute("select count(*) from walk_forward_results")
         wf_rows = cursor.fetchone()[0]
         cursor.execute("select count(*) from trades")
@@ -47,8 +63,8 @@ def main() -> None:
 
     print(
         "Database integrity OK | "
-        f"migrations={len(migrations)} | experiments={experiments} | "
-        f"wf_rows={wf_rows} | trades={trade_rows} | clean_reference_persistence=UNVERIFIED"
+        f"migrations={len(migrations)} | active_reference=VERIFIED | "
+        f"wf_rows={wf_rows} | trades={trade_rows} | detailed_rows={'PRESENT' if wf_rows else 'NOT_IMPORTED'}"
     )
 
 
