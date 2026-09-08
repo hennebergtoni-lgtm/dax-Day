@@ -25,7 +25,7 @@ class RunManifest:
         engine_fingerprint: str,
         config: Any,
         mode: RuntimeMode,
-    ) -> "RunManifest":
+    ) -> RunManifest:
         config_fingerprint = stable_fingerprint(config)
         payload = {
             "dataset_fingerprint": dataset_fingerprint,
@@ -50,7 +50,7 @@ class DecisionLogManifest:
     decision_ids_fingerprint: str
 
     @classmethod
-    def build(cls, records: tuple[DecisionRecord, ...]) -> "DecisionLogManifest":
+    def build(cls, records: tuple[DecisionRecord, ...]) -> DecisionLogManifest:
         trades = sum(record.final_action is FinalAction.TRADE for record in records)
         no_trades = sum(record.final_action is FinalAction.NO_TRADE for record in records)
         return cls(
