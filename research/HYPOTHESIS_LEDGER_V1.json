@@ -1,0 +1,21 @@
+{
+  "schema_version": "DAXLAB_HYPOTHESIS_LEDGER_V1",
+  "purpose": "Count and classify research trials so OOS-diagnostic discoveries cannot be relabeled as independent validation.",
+  "rules": {
+    "unique_trial_id": true,
+    "oos_diagnostic_requires_fresh_proof": true,
+    "dead_ideas_remain_logged": true,
+    "promotion_from_oos_diagnostic_only": false
+  },
+  "trials": [
+    {"id":"T001","family":"BB001","hypothesis":"causal BB position/bandwidth can improve frozen V11.2 selection","origin":"OOS_DIAGNOSTIC_DERIVED","state":"RETAINED_RESEARCH","promotion_proof":false},
+    {"id":"T002","family":"FIB001","hypothesis":"causal confirmed-breakout retracement zone explains setup quality","origin":"INDEPENDENT_PREDECLARED","state":"DESCRIPTIVE_ONLY","promotion_proof":false},
+    {"id":"T003","family":"ATR001","hypothesis":"broad ATR HIGH regime improves V11.2","origin":"TRAIN_DERIVED","state":"REJECTED_UNSTABLE","promotion_proof":false},
+    {"id":"T004","family":"ATR001","hypothesis":"OR15 x ATR HIGH x ORATR MID diagnostic cell","origin":"OOS_DIAGNOSTIC_DERIVED","state":"FROZEN_FOR_FRESH_TEST","promotion_proof":false},
+    {"id":"T005","family":"GAP001","hypothesis":"opening-gap direction agreement improves frozen trade quality","origin":"OOS_DIAGNOSTIC_DERIVED","state":"REJECTED_NO_INCREMENT","promotion_proof":false},
+    {"id":"T006","family":"MOM001","hypothesis":"three completed directional closes improve continuation quality","origin":"OOS_DIAGNOSTIC_DERIVED","state":"REJECTED_UNSTABLE","promotion_proof":false},
+    {"id":"T007","family":"SESSION001","hypothesis":"fixed MIDDLE session phase is a poor V11.2 environment","origin":"OOS_DIAGNOSTIC_DERIVED","state":"FROZEN_FOR_FRESH_TEST","promotion_proof":false},
+    {"id":"T008","family":"LIQ001","hypothesis":"pre-entry wick-rejection sweep has incremental selection value","origin":"OOS_DIAGNOSTIC_DERIVED","state":"REJECTED_SESSION_CONFOUNDED","promotion_proof":false},
+    {"id":"T009","family":"STRUCT001","hypothesis":"pre-entry BOS has incremental selection value","origin":"OOS_DIAGNOSTIC_DERIVED","state":"REJECTED_SESSION_CONFOUNDED_UNSTABLE","promotion_proof":false}
+  ]
+}
