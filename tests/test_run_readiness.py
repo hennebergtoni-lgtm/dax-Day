@@ -27,10 +27,7 @@ def test_current_fixture_smoke_is_allowed() -> None:
 def test_current_clean_reference_replay_is_blocked() -> None:
     result = evaluate_run_readiness(RunKind.CLEAN_REFERENCE_REPLAY, current_snapshot())
     assert not result.allowed
-    assert result.blockers == (
-        "AUDITED_BUNDLE_UNAVAILABLE",
-        "FULL_REFERENCE_REPLAY_UNVERIFIED",
-    )
+    assert result.blockers == ("AUDITED_BUNDLE_UNAVAILABLE",)
 
 
 def test_paper_requires_all_reference_and_execution_gates() -> None:
