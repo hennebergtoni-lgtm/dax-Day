@@ -1,0 +1,50 @@
+{
+  "schema_version": "DAXLAB_WEB_STATUS_V1",
+  "generated_from": "versioned verified repository state",
+  "active_reference": {
+    "experiment_id": "V112_REFERENCE_V1",
+    "strategy": "V11.2",
+    "immutable": true,
+    "status": "ACTIVE_REFERENCE"
+  },
+  "dataset": {
+    "identity_state": "HASH_VERIFIED",
+    "session_rows": 172319,
+    "session_days": 1673,
+    "session_sha256": "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2",
+    "original_zip_state": "UNOBSERVED"
+  },
+  "engine": {
+    "exact_candidate_sha256": "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888",
+    "oracle_sha256": "62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f",
+    "variants": 144
+  },
+  "walk_forward": {
+    "train_days": 45,
+    "oos_days": 20,
+    "step_days": 20,
+    "windows": 81
+  },
+  "reference_results": {
+    "normal_oos_trades": 856,
+    "normal_oos_return_r": -31.309210619787684,
+    "positive_wfs": 37,
+    "negative_wfs": 44,
+    "median_wf_pf": 0.905769310256018
+  },
+  "detail_evidence": {
+    "wf_metrics": "NOT_IMPORTED",
+    "selected_variants": "NOT_IMPORTED",
+    "trades": "NOT_IMPORTED"
+  },
+  "readiness": {
+    "clean_reference_replay": "ELIGIBLE",
+    "paper": "BLOCKED",
+    "live": "BLOCKED"
+  },
+  "recovery": {
+    "reconstruction_contract": "ACTIVE",
+    "persistent_bundle": "IMPLEMENTED",
+    "ci_recovery_preflight": "GREEN"
+  }
+}
