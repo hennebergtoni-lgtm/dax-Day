@@ -4,6 +4,7 @@ import pytest
 
 from daxlab.research.fibonacci_retracement import (
     CausalImpulseAnchor,
+    fixed_zone,
     in_zone,
     normalized_retracement,
     retracement_levels,
@@ -38,6 +39,14 @@ def test_zero_impulse_is_rejected():
 def test_zone_check_is_order_independent():
     assert in_zone(0.5, 0.382, 0.618)
     assert in_zone(0.5, 0.618, 0.382)
+
+
+def test_fixed_zone_uses_predeclared_coarse_boundaries():
+    assert fixed_zone(1.0 / 3.0) == "R33_R382"
+    assert fixed_zone(0.4) == "R382_R50"
+    assert fixed_zone(0.55) == "R50_R618"
+    assert fixed_zone(0.63) == "R618_R667"
+    assert fixed_zone(0.8) == "OUTSIDE_FIXED_ZONES"
 
 
 def _anchor() -> CausalImpulseAnchor:
