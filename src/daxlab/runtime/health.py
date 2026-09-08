@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+from daxlab.data.recovery import RecoveryIdentity
+
 
 class HealthState(StrEnum):
     GREEN = "GREEN"
@@ -33,6 +35,15 @@ class SystemHealth:
     @property
     def trading_allowed(self) -> bool:
         return self.overall is HealthState.GREEN
+
+
+def recovery_identity_health(identity: RecoveryIdentity) -> HealthState:
+    """Translate recovery evidence into operator-visible data health."""
+    if identity is RecoveryIdentity.HASH_VERIFIED:
+        return HealthState.GREEN
+    if identity is RecoveryIdentity.STRUCTURAL_MATCH:
+        return HealthState.YELLOW
+    return HealthState.RED
 
 
 def build_system_health(
