@@ -45,10 +45,28 @@ def test_structural_match_blocks_clean_reference_replay() -> None:
     assert "DATASET_IDENTITY_NOT_HASH_VERIFIED" in result.blockers
 
 
+def test_clean_reference_replay_does_not_require_its_own_future_result() -> None:
+    result = evaluate_run_readiness(
+        RunKind.CLEAN_REFERENCE_REPLAY,
+        ready_snapshot(full_reference_replay_verified=False),
+    )
+    assert result.allowed
+    assert "FULL_REFERENCE_REPLAY_UNVERIFIED" not in result.blockers
+
+
 def test_hash_verified_allows_clean_reference_replay_when_other_gates_pass() -> None:
     result = evaluate_run_readiness(RunKind.CLEAN_REFERENCE_REPLAY, ready_snapshot())
     assert result.allowed
     assert result.blockers == ()
+
+
+def test_paper_requires_full_reference_replay() -> None:
+    result = evaluate_run_readiness(
+        RunKind.PAPER,
+        ready_snapshot(full_reference_replay_verified=False),
+    )
+    assert not result.allowed
+    assert "FULL_REFERENCE_REPLAY_UNVERIFIED" in result.blockers
 
 
 def test_paper_still_requires_execution_boundary() -> None:
