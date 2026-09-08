@@ -18,12 +18,25 @@ Gate 0 status: **GREEN (2026-09-08)**. The migration bundle was independently re
 
 ## Gate 1 — frozen V11.2 parity
 V11.2 is reference-only and immutable. A reconstructed/adapted core must reproduce the established reference surface before research results are accepted.
-Required checks include:
+
+Two historically different WF surfaces must not be mixed:
+- **Engine/FAST parity surface**: later exact-vs-FAST runner with the known trade-bearing pre-gate and 144/144 broader parity checks. This surface has been re-run on the audited dataset and is GREEN: 1,673/1,673 daily contexts exact, 14 trades / 3.9351648669R / PF 1.5556035886, 144/144 parity with 114 trade-bearing cases, and the 34,992-evaluation normal-cost matrix sum reproduces -1122.231646R.
+- **Historical V11.2 OOS reference surface**: `V11_2_FULL_WF_SESSION_DAY_V4_FIX1/FULL_WF_SUMMARY.csv`, release `V4.0-FIX1`, engine SHA `b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888`. Its heartbeat records `FULL_WF_COMPLETE` with WF1–WF81. This run uses a fixed rolling 45-train / 20-OOS / 20-step schedule, not the later expanding-training FAST schedule.
+
+Frozen historical OOS reference from that 81-row summary:
+- 81 WFs exactly, WF1–WF81
+- 1,384 OOS trades
+- total OOS return -68.10950257808015R (contract value -68.1095R)
+- 36 positive WFs / 45 negative WFs / 0 flat WFs
+
+Required checks therefore include:
 - 144-variant grid contract
-- 81 WF schedule, 45 train / 20 OOS / 20 step
-- known trade-bearing pre-gate: 14 trades, 3.9351648669R, PF 1.5556035886
-- broader parity surface: 144/144, 114 trade-bearing cases where the reference fixture is available
-- reference OOS aggregate: 1,384 trades, -68.1095R, 36 positive / 45 negative WFs
+- correct identification of the intended WF methodology before comparing aggregates
+- known trade-bearing engine pre-gate: 14 trades, 3.9351648669R, PF 1.5556035886
+- broader engine parity surface: 144/144, 114 trade-bearing cases
+- historical rolling-WF OOS aggregate: 1,384 trades, -68.1095R, 36 positive / 45 negative WFs
+
+Gate 1 status: **ENGINE PARITY GREEN; HISTORICAL WF PROVENANCE RESOLVED; rolling-WF full re-execution still required before declaring the entire gate fully reproduced in the new lab.**
 
 ## Gate 2 — research correctness
 Before a tool can become VALIDATED TOOL:
