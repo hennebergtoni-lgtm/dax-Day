@@ -37,6 +37,24 @@ def test_twap_ignores_prior_session_and_future_suffix() -> None:
     assert state.completed_bar_count == 2
 
 
+def test_twap_excludes_pre_session_bar() -> None:
+    # 07:55 UTC == 08:55 Berlin and must not enter the 09:00-reset TWAP.
+    bars = [TwapBar(utc(7, 55), 1.0), TwapBar(utc(8, 0), 100.0)]
+    state = session_twap_before_entry(bars, entry_time=utc(8, 10))
+    assert state is not None
+    assert state.completed_bar_count == 1
+    assert state.session_twap_close == 100.0
+
+
+def test_twap_excludes_post_session_bar() -> None:
+    # 16:35 UTC == 17:35 Berlin in January and must be excluded.
+    bars = [TwapBar(utc(16, 30), 100.0), TwapBar(utc(16, 35), 9999.0)]
+    state = session_twap_before_entry(bars, entry_time=utc(17, 0))
+    assert state is not None
+    assert state.completed_bar_count == 1
+    assert state.session_twap_close == 100.0
+
+
 def test_twap_returns_none_before_any_session_bar_is_available() -> None:
     state = session_twap_before_entry([TwapBar(utc(8, 0), 100.0)], entry_time=utc(8, 5))
     assert state is None
