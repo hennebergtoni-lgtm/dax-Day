@@ -1,0 +1,42 @@
+{
+  "experiment_id": "BB001_DESCRIPTIVE_V1",
+  "status": "RESEARCH_EVIDENCE",
+  "baseline": {
+    "trades": 856,
+    "return_r": -31.30921061978769,
+    "pf": 0.9393192895457654,
+    "avg_r": -0.0365761806305931,
+    "winrate": 0.3703271028037383
+  },
+  "bandwidth_quartile_edges": {
+    "q0": 0.0007329239832304,
+    "q25": 0.00417680455279805,
+    "q50": 0.0071012349967863,
+    "q75": 0.012713173502674275,
+    "q100": 0.1451930031601465
+  },
+  "bandwidth_buckets": {
+    "Q1_narrow": {"trades": 214, "return_r": -35.64560543281985, "avg_r": -0.16656824968607406, "pf": 0.7298898632448677, "winrate": 0.3317757009345794, "active_wfs": 50, "positive_wfs": 16, "negative_wfs": 34},
+    "Q2": {"trades": 214, "return_r": -19.674920805668854, "avg_r": -0.09193888226948063, "pf": 0.8512701098098079, "winrate": 0.3598130841121495, "active_wfs": 67, "positive_wfs": 24, "negative_wfs": 43},
+    "Q3": {"trades": 214, "return_r": 16.604191724539625, "avg_r": 0.07758968095579263, "pf": 1.132140303225565, "winrate": 0.40186915887850466, "active_wfs": 70, "positive_wfs": 38, "negative_wfs": 32},
+    "Q4_wide": {"trades": 214, "return_r": 7.407123894161375, "avg_r": 0.0346127284773896, "pf": 1.0587598883736762, "winrate": 0.3878504672897196, "active_wfs": 70, "positive_wfs": 32, "negative_wfs": 38}
+  },
+  "position_buckets": {
+    "below_lower": {"trades": 86, "return_r": 8.659044461479828, "avg_r": 0.1006865635055794, "pf": 1.1808671006927531, "winrate": 0.4186046511627907},
+    "lower_quarter": {"trades": 200, "return_r": -32.49372927167687, "avg_r": -0.16246864635838434, "pf": 0.7531713199782284, "winrate": 0.33},
+    "middle": {"trades": 296, "return_r": -27.333642331294094, "avg_r": -0.09234338625437194, "pf": 0.8509015920072208, "winrate": 0.3581081081081081},
+    "upper_quarter": {"trades": 190, "return_r": 8.234347054593382, "avg_r": 0.04333866870838622, "pf": 1.075074884064102, "winrate": 0.3894736842105263},
+    "above_upper": {"trades": 84, "return_r": 11.624769467110053, "avg_r": 0.13839011270369111, "pf": 1.2676148329676924, "winrate": 0.4166666666666667}
+  },
+  "directional_position_examples": {
+    "long_upper_quarter": {"trades": 141, "return_r": 15.496365149776356, "avg_r": 0.10990329893458409, "pf": 1.2006801091580674, "winrate": 0.41843971631205673},
+    "long_above_upper": {"trades": 73, "return_r": 11.845019318435977, "avg_r": 0.162260538608712, "pf": 1.3264785052128316, "winrate": 0.4246575342465753},
+    "short_below_lower": {"trades": 74, "return_r": 20.292946925984655, "avg_r": 0.27422901251330617, "pf": 1.5640433321876035, "winrate": 0.47297297297297297}
+  },
+  "interpretation": [
+    "Narrow-band Q1/Q2 are descriptively weaker than Q3/Q4 in this frozen baseline sample.",
+    "Band-position results are direction-dependent: long trades are stronger near/above the upper band; short trades are strongest below the lower band.",
+    "These observations are hypothesis-generating only and are not validated filters."
+  ],
+  "promotion_allowed": false
+}
