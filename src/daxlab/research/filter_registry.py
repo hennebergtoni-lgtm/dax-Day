@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable
+from collections.abc import Iterable
 
 
 class EvidenceStatus(str, Enum):
