@@ -26,7 +26,9 @@ def make_candle(index: int, quality=DataQualityState.OK):
 
 
 def test_replay_uses_only_closed_safe_candles():
-    core = lambda history: history[-1].close
+    def core(history):
+        return history[-1].close
+
     result = ReplayEngine(core).run(
         [make_candle(0), make_candle(1, DataQualityState.GAP), make_candle(2)]
     )
