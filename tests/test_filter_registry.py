@@ -11,9 +11,11 @@ from daxlab.research.filter_registry import (
 
 def test_research_filters_are_visible_only():
     registry = default_research_registry()
-    bb = registry.get("bb001")
-    assert bb.evidence_status is EvidenceStatus.RESEARCH
-    assert bb.allowed_modes == (ControlMode.VISIBLE_ONLY,)
+    for key in ("bb001", "fib001", "gap001", "prev_range_atr"):
+        item = registry.get(key)
+        assert item.evidence_status is EvidenceStatus.RESEARCH
+        assert item.allowed_modes == (ControlMode.VISIBLE_ONLY,)
+        assert not item.default_enabled
 
 
 def test_research_filter_cannot_be_live_switchable():
