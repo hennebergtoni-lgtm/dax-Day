@@ -1,3 +1,4 @@
+from daxlab.data.recovery import RecoveryIdentity
 from daxlab.runtime.readiness import (
     ReadinessSnapshot,
     RunKind,
@@ -15,6 +16,7 @@ def current_snapshot() -> ReadinessSnapshot:
         audited_bundle_available=False,
         full_reference_replay_verified=False,
         execution_boundary_verified=False,
+        dataset_identity=RecoveryIdentity.HASH_VERIFIED,
     )
 
 
@@ -24,10 +26,10 @@ def test_current_fixture_smoke_is_allowed() -> None:
     assert result.blockers == ()
 
 
-def test_current_clean_reference_replay_is_blocked() -> None:
+def test_current_clean_reference_replay_is_allowed() -> None:
     result = evaluate_run_readiness(RunKind.CLEAN_REFERENCE_REPLAY, current_snapshot())
-    assert not result.allowed
-    assert result.blockers == ("AUDITED_BUNDLE_UNAVAILABLE",)
+    assert result.allowed
+    assert result.blockers == ()
 
 
 def test_paper_requires_all_reference_and_execution_gates() -> None:
