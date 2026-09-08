@@ -89,12 +89,7 @@ def resolve_dax_symbol(
 
 
 def closed_rates_start_pos(requested_start_pos: int = 1) -> int:
-    """Validate an MT5 rates request for closed bars only.
-
-    MetaTrader 5 defines position 0 as the current/open bar. Closed-bar reads
-    must therefore start at position 1 or later. This guard belongs at the SDK
-    request boundary in addition to the timestamp-based `closed_bars` filter.
-    """
+    """Validate an MT5 rates request for closed bars only."""
     if requested_start_pos < 1:
         raise ValueError("MT5 closed-bar rates request must start at position >= 1")
     return requested_start_pos
@@ -116,3 +111,27 @@ def closed_bars(
         if bar.open_time + delta <= observed_at:
             result.append(bar)
     return tuple(sorted(result, key=lambda b: b.open_time))
+
+
+def closed_bar_age_seconds(*, latest_closed_bar_open: datetime, timeframe_minutes: int, observed_at: datetime) -> float:
+    """Return age of the latest bar close at the observation time."""
+    if latest_closed_bar_open.tzinfo is None or observed_at.tzinfo is None:
+        raise ValueError("MT5 freshness timestamps must be timezone-aware")
+    if timeframe_minutes <= 0:
+        raise ValueError("timeframe_minutes must be positive")
+    closed_at = latest_closed_bar_open + timedelta(minutes=timeframe_minutes)
+    age = (observed_at - closed_at).total_seconds()
+    if age < 0:
+        raise ValueError("latest_closed_bar_open is not closed at observed_at")
+    return age
+
+
+def market_data_is_fresh(*, latest_closed_bar_open: datetime, timeframe_minutes: int, observed_at: datetime, max_age_seconds: float) -> bool:
+    """Fail closed when the latest completed bar is older than the configured watchdog limit."""
+    if max_age_seconds < 0:
+        raise ValueError("max_age_seconds must be non-negative")
+    return closed_bar_age_seconds(
+        latest_closed_bar_open=latest_closed_bar_open,
+        timeframe_minutes=timeframe_minutes,
+        observed_at=observed_at,
+    ) <= max_age_seconds
