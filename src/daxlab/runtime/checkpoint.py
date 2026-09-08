@@ -22,7 +22,7 @@ class ReplayCheckpoint:
         processed_candles: int,
         last_event_time_iso: str | None,
         decision_log: DecisionLogManifest,
-    ) -> "ReplayCheckpoint":
+    ) -> ReplayCheckpoint:
         if processed_candles < 0:
             raise ValueError("processed_candles must be non-negative")
         return cls(
