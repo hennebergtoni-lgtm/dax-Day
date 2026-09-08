@@ -1,0 +1,39 @@
+{
+  "schema_version": "FIB001_CONFIRMED_BREAKOUT_STABILITY_V1",
+  "status": "DESCRIPTIVE_STABILITY_EVIDENCE",
+  "source_result": "FIB001_CONFIRMED_BREAKOUT_DESCRIPTIVE_V1",
+  "eligible_by_year": {
+    "2014": 43,
+    "2015": 34,
+    "2016": 22,
+    "2017": 40,
+    "2018": 48,
+    "2019": 26
+  },
+  "fixed_zone_by_year": {
+    "2014": 8,
+    "2015": 9,
+    "2016": 6,
+    "2017": 6,
+    "2018": 8,
+    "2019": 8
+  },
+  "median_depth_by_year": {
+    "2014": 0.809533,
+    "2015": 0.696137,
+    "2016": 0.733228,
+    "2017": 0.796086,
+    "2018": 0.775194,
+    "2019": 0.636622
+  },
+  "wf_bands": {
+    "WF1-20": {"eligible": 50, "fixed_zone": 9, "median_depth": 0.807688},
+    "WF21-40": {"eligible": 41, "fixed_zone": 11, "median_depth": 0.719772},
+    "WF41-60": {"eligible": 67, "fixed_zone": 11, "median_depth": 0.804625},
+    "WF61-81": {"eligible": 55, "fixed_zone": 14, "median_depth": 0.672013}
+  },
+  "active_wfs_with_eligible_observation": 42,
+  "active_wfs_with_fixed_zone_observation": 26,
+  "interpretation": "Coverage and fixed-zone observations are distributed across all six years and across all broad WF bands, so the descriptive phenomenon is not confined to one period. Sample size remains insufficient for promotion or dense zone selection.",
+  "promotion": "BLOCKED"
+}
