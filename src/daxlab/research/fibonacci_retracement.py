@@ -1,6 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
+
+
+ALLOWED_ANCHOR_RULES = frozenset(
+    {
+        "OR_COMPLETED_IMPULSE",
+        "CONFIRMED_BREAKOUT_IMPULSE",
+        "STRUCTURE_CONFIRMED_IMPULSE",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -13,6 +23,45 @@ class FibonacciLevels:
     r50: float
     r618: float
     r667: float
+
+
+@dataclass(frozen=True)
+class CausalImpulseAnchor:
+    rule_id: str
+    start_price: float
+    start_time: datetime
+    end_price: float
+    end_time: datetime
+    confirmation_time: datetime
+
+    def __post_init__(self) -> None:
+        if self.rule_id not in ALLOWED_ANCHOR_RULES:
+            raise ValueError("unknown Fibonacci anchor rule")
+        if self.start_price == self.end_price:
+            raise ValueError("impulse start and end must differ")
+        timestamps = (self.start_time, self.end_time, self.confirmation_time)
+        if any(value.tzinfo is None for value in timestamps):
+            raise ValueError("Fibonacci anchor timestamps must be timezone-aware")
+        if not self.start_time <= self.end_time <= self.confirmation_time:
+            raise ValueError("invalid Fibonacci anchor timestamp ordering")
+
+
+def validate_retracement_observation(
+    anchor: CausalImpulseAnchor,
+    *,
+    observation_time: datetime,
+    entry_time: datetime | None = None,
+) -> None:
+    """Fail closed unless a retracement observation is causally usable."""
+    if observation_time.tzinfo is None:
+        raise ValueError("retracement observation time must be timezone-aware")
+    if observation_time <= anchor.confirmation_time:
+        raise ValueError("retracement observation must follow anchor confirmation")
+    if entry_time is not None:
+        if entry_time.tzinfo is None:
+            raise ValueError("entry time must be timezone-aware")
+        if observation_time > entry_time:
+            raise ValueError("retracement observation cannot occur after entry")
 
 
 def retracement_levels(start: float, end: float) -> FibonacciLevels:
