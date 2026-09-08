@@ -42,3 +42,8 @@ jobs:
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
         run: python scripts/check_db_integrity.py
+      - name: Isolated database restore drill
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: python scripts/db_restore_drill.py
