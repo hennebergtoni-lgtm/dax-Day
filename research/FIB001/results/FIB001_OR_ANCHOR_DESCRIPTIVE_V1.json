@@ -1,0 +1,57 @@
+{
+  "schema_version": "FIB001_OR_ANCHOR_DESCRIPTIVE_V1",
+  "status": "NEGATIVE_EVIDENCE_RETAINED",
+  "strategy_reference": "V112_REFERENCE_V1",
+  "dataset": {
+    "session_ohlc_sha256": "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2",
+    "raw_csv_sha256": "a1379e13d70005363e60eb0015e2a648af392becbe7c4d5825bb00a8193f5103"
+  },
+  "trade_evidence": {
+    "rows": 856,
+    "sha256": "f60bb5fc15b5e620a37ca44bdb5bdcea20381261c06d40cb78aba34387f56023"
+  },
+  "anchor_rule": "OR_COMPLETED_IMPULSE",
+  "observation_rule": "retest_time for retest trades, signal_time for breakout trades",
+  "timing_rule": "anchor_confirmation_time < observation_time < entry_time",
+  "counts": {
+    "reference_trades": 856,
+    "eligible_observations": 667,
+    "ineligible_observations": 189,
+    "timing_rejections": 150,
+    "zero_impulse_rejections": 39,
+    "fixed_zone_observations": 0
+  },
+  "timing_rejections_by_entry_mode": {
+    "breakout": 150,
+    "retest": 0
+  },
+  "zero_impulse_rejections_by_entry_mode": {
+    "breakout": 14,
+    "retest": 25
+  },
+  "eligible_by_or_and_entry_mode": {
+    "OR5_breakout": 111,
+    "OR5_retest": 161,
+    "OR15_breakout": 196,
+    "OR15_retest": 199
+  },
+  "fixed_zone_counts": {
+    "R33_R382": 0,
+    "R382_R50": 0,
+    "R50_R618": 0,
+    "R618_R667": 0,
+    "OUTSIDE_FIXED_ZONES": 667
+  },
+  "depth_quantiles": {
+    "min": -80.5833333331986,
+    "p10": -1.764001775013607,
+    "p25": -0.6834514170033588,
+    "median": -0.29599999999991267,
+    "p75": -0.11668344121318922,
+    "p90": -0.049038080330041506,
+    "max": 0.0
+  },
+  "interpretation": "Session-open to directional OR-extreme measures extension at V11.2 trade confirmation, not a meaningful retracement. This anchor rule is rejected for the first FIB001 trade-time retracement hypothesis. No threshold tuning or rule promotion is allowed from this result.",
+  "next_hypothesis": "CONFIRMED_BREAKOUT_IMPULSE",
+  "promotion": "BLOCKED"
+}
