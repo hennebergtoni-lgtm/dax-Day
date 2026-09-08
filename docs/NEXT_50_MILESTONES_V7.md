@@ -50,25 +50,25 @@ Starting project counter: 41/150
 - [x] 71. Produce broker/session normalization contract doc.
 
 ## 72–81 — Health, watchdog, observability
-- [ ] 72. Define deterministic health snapshot payload.
-- [ ] 73. Add terminal connectivity reason codes.
-- [ ] 74. Add account connectivity reason codes without account identifiers.
-- [ ] 75. Add clock-skew observation contract.
-- [ ] 76. Add engine-loop heartbeat age contract.
-- [ ] 77. Add feed-age watchdog state.
-- [ ] 78. Add single-instance-lock status field.
-- [ ] 79. Extend read-only web status for host handshake.
-- [ ] 80. Add `why_no_trade` mapping for host/feed blockers.
-- [ ] 81. Add integrity tests ensuring web status cannot imply execution readiness.
+- [x] 72. Define deterministic health snapshot payload.
+- [x] 73. Add terminal connectivity reason codes.
+- [x] 74. Add account connectivity reason codes without account identifiers.
+- [x] 75. Add clock-skew observation contract.
+- [x] 76. Add engine-loop heartbeat age contract.
+- [x] 77. Add feed-age watchdog state.
+- [x] 78. Add single-instance-lock status field.
+- [x] 79. Extend read-only web status for host handshake.
+- [x] 80. Add `why_no_trade` mapping for host/feed blockers.
+- [x] 81. Add integrity tests ensuring web status cannot imply execution readiness.
 
 ## 82–88 — Recovery and evidence
-- [ ] 82. Define immutable host-observation evidence ID.
-- [ ] 83. Define payload hash canonicalization.
-- [ ] 84. Exclude credentials/account identifiers from recoverable evidence.
-- [ ] 85. Add host-probe evidence to recovery manifest contract.
-- [ ] 86. Add duplicate/conflict detection rules.
-- [ ] 87. Add recovery round-trip test for synthetic read-only evidence.
-- [ ] 88. Re-audit recovery dependency direction; no deletion-first refactor.
+- [x] 82. Define immutable host-observation evidence ID.
+- [x] 83. Define payload hash canonicalization.
+- [x] 84. Exclude credentials/account identifiers from recoverable evidence.
+- [x] 85. Add host-probe evidence to recovery manifest contract.
+- [x] 86. Add duplicate/conflict detection rules.
+- [x] 87. Add recovery round-trip test for synthetic read-only evidence.
+- [x] 88. Re-audit recovery dependency direction; no deletion-first refactor.
 
 ## 89–91 — Closure / hard stop
 - [ ] 89. Run full CI/recovery/research/web integrity gates.
