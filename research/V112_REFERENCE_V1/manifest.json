@@ -1,7 +1,8 @@
 {
   "experiment_id": "V112_REFERENCE_V1",
-  "status": "RESEARCH",
-  "purpose": "New official reproducible reference measurement of the frozen V11.2 strategy on audited Dataset V1.0. This is not a strategy change and does not overwrite the historical V4.0-FIX1 legacy result.",
+  "status": "ACTIVE_REFERENCE",
+  "reference_state": "FROZEN_REFERENCE",
+  "purpose": "Official reproducible reference measurement of the frozen V11.2 strategy on audited Dataset V1.0. This is not a strategy change and does not overwrite the historical V4.0-FIX1 legacy result.",
   "strategy": {
     "name": "V11.2",
     "immutable": true,
@@ -26,7 +27,7 @@
     "oos_days": 20,
     "step_days": 20,
     "expected_windows": 81,
-    "note": "Chosen as the canonical new reference because it matches the frozen 45/20/20 V11.2 contract and is explicitly separated from the later expanding-window FAST research runner."
+    "note": "Canonical reference schedule matching the frozen 45/20/20 V11.2 contract; explicitly separate from later expanding-window research runners."
   },
   "cost_models": ["normal", "stress_1.5x", "stress_2x"],
   "required_outputs": [
@@ -43,7 +44,7 @@
     "historical_oos_return_r": -68.1095,
     "historical_positive_wfs": 36,
     "historical_negative_wfs": 45,
-    "role": "comparison only; not a pass/fail target for the new measurement"
+    "role": "comparison only; not a pass/fail target for the active clean reference"
   },
-  "promotion_rule": "No new bot version is created by this experiment. V11.2 remains frozen. New research begins only after this reference run is reproducible and recorded."
+  "promotion_rule": "No new bot version is created by this reference. V11.2 remains frozen; research remains subject to the normal promotion gates."
 }
