@@ -1,0 +1,53 @@
+{
+  "experiment_id": "BB001_TEN_STEP_BLOCK_V1",
+  "status": "RESEARCH_EVIDENCE",
+  "promotion_allowed": false,
+  "baseline": "V11.2 frozen active reference",
+  "principle": "Bollinger is a secondary quality/regime filter, not the primary strategy logic.",
+  "public_project_findings": {
+    "JN842/multitf-bollinger-switching": {
+      "verified": true,
+      "use": "idea-only",
+      "license_file_checked": "not_found_at_default_LICENSE_path",
+      "usable_idea": "higher-timeframe regime state must use the last fully closed HTF bar"
+    },
+    "dws-data/nas-orb-backtester": {
+      "verified": true,
+      "use": "idea-only",
+      "license_file_checked": "not_found_at_default_LICENSE_path",
+      "usable_idea": "confirmed breakout followed by retrace; precompute day context; conservative entry-bar handling"
+    }
+  },
+  "core_candidate": {
+    "logic": "long + retest + causal BB position>=0.75 + causal BB bandwidth>per-WF train median",
+    "train_only_prior_day_filter": "PrevRange/ATR <= per-WF train Q75",
+    "normal": {"trades":38,"R":17.3248,"PF":2.0987,"WR":0.5526},
+    "stress_1.5x": {"trades":38,"R":17.1462,"PF":2.0828},
+    "stress_2x": {"trades":38,"R":16.9697,"PF":2.0673},
+    "era_results": {
+      "WF1-27":{"trades":8,"R":2.1732,"PF":1.5893},
+      "WF28-54":{"trades":9,"R":4.7584,"PF":2.5734},
+      "WF55-81":{"trades":21,"R":10.3932,"PF":2.1475}
+    }
+  },
+  "negative_findings": {
+    "15m_BB_above_SMA": "did not improve the Q75 candidate",
+    "15m_BB_position_ge_0.75": "reduced PF versus the Q75 candidate",
+    "tight_retest_time_filter": "not justified; 5-10m, 15-30m and >30m were all positive in small samples",
+    "extra_OR_ATR_threshold": "not yet stable enough to add"
+  },
+  "marginal_decomposition": {
+    "long_retest_only":{"trades":173,"R":1.7762,"PF":1.0183},
+    "plus_train_Q75_prior_day":{"trades":119,"R":12.0458,"PF":1.1939},
+    "plus_BB_position":{"trades":51,"R":18.7720,"PF":1.8492},
+    "plus_BB_bandwidth":{"trades":89,"R":15.0705,"PF":1.3282},
+    "plus_both_BB":{"trades":38,"R":17.3248,"PF":2.0987}
+  },
+  "next_milestones": [
+    "Do not promote BB001 yet; sample size is modest.",
+    "Validate prior-day extension and BB interaction prospectively on later/unseen data or a held-back regime.",
+    "Continue public-project intelligence before Fibonacci, gaps, OR/retest, exits and cross-market experiment design.",
+    "Next research family should prioritize regime/structure interactions over adding more indicators.",
+    "Only after isolated evidence survives should cross-market context be added."
+  ]
+}
