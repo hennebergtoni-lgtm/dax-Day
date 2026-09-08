@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+from dataclasses import fields, is_dataclass
 
 from daxlab.reference.recovered_engine import (
     load_exact_candidate_engine,
@@ -18,6 +19,13 @@ NAMES = (
 )
 
 
+def _signature(value: object) -> object:
+    try:
+        return inspect.signature(value)
+    except (TypeError, ValueError):
+        return "<no-signature>"
+
+
 def describe(label: str, engine: object) -> None:
     print(f"[{label}]")
     for name in NAMES:
@@ -25,14 +33,37 @@ def describe(label: str, engine: object) -> None:
         if value is None:
             print(f"{name}: MISSING")
             continue
-        try:
-            signature = inspect.signature(value)
-        except (TypeError, ValueError):
-            signature = "<no-signature>"
-        print(f"{name}: {signature}")
+        print(f"{name}: {_signature(value)}")
+
+    grid = list(engine.grid())
+    first_param = grid[0]
+    print(f"param_type: {type(first_param).__name__}")
+    if is_dataclass(first_param):
+        print(f"param_fields: {[field.name for field in fields(first_param)]}")
+    else:
+        print(f"param_repr: {first_param!r}")
+
+    public_helpers: list[str] = []
+    for name in sorted(dir(engine)):
+        if name.startswith("_"):
+            continue
+        lowered = name.lower()
+        if not any(token in lowered for token in ("cache", "day", "session", "prepare", "build")):
+            continue
+        value = getattr(engine, name)
+        if callable(value):
+            public_helpers.append(f"{name}{_signature(value)}")
+    print(f"public_helpers: {public_helpers}")
+
+    for name in ("daily_context", "simulate_day"):
+        value = getattr(engine, name, None)
+        code = getattr(value, "__code__", None)
+        if code is not None:
+            print(f"{name}_names: {sorted(set(code.co_names))}")
+
     cost_scenarios = getattr(engine, "COST_SCENARIOS", None)
     print(f"COST_SCENARIOS: {cost_scenarios}")
-    print(f"grid_size: {len(list(engine.grid()))}")
+    print(f"grid_size: {len(grid)}")
 
 
 def main() -> None:
