@@ -1,0 +1,42 @@
+{
+  "experiment_id": "BB001_FIXED_TEST_V1",
+  "status": "RESEARCH_EVIDENCE",
+  "basis": "856 aligned OOS trades from active V112_REFERENCE_V1",
+  "purpose": "Test predeclared coarse Bollinger hypotheses without threshold search.",
+  "definitions": {
+    "exclude_narrowest_bandwidth_quartile": "bandwidth > full-sample descriptive Q1 = 0.00417680455279805; research-only threshold derived from prior descriptive block",
+    "directional_momentum": "long position >= 0.75 OR short position <= 0.25",
+    "combined": "both conditions"
+  },
+  "normal_cost_results": {
+    "baseline": {"trades": 856, "return_r": -31.3092, "pf": 0.9393, "winrate": 0.3703},
+    "exclude_narrowest_q1": {"trades": 642, "return_r": 4.3364, "pf": 1.0113, "winrate": 0.3832, "positive_wfs": 35, "negative_wfs": 46, "flat_wfs": 0},
+    "directional_momentum": {"trades": 432, "return_r": 24.3721, "pf": 1.1000, "winrate": 0.4028, "positive_wfs": 37, "negative_wfs": 41, "flat_wfs": 3},
+    "combined": {"trades": 330, "return_r": 26.1227, "pf": 1.1385, "winrate": 0.4091, "positive_wfs": 36, "negative_wfs": 41, "flat_wfs": 4}
+  },
+  "temporal_robustness": {
+    "exclude_narrowest_q1": {
+      "wf_1_27": {"trades": 242, "return_r": 11.817, "pf": 1.081},
+      "wf_28_54": {"trades": 206, "return_r": -11.035, "pf": 0.910},
+      "wf_55_81": {"trades": 194, "return_r": 3.554, "pf": 1.031}
+    },
+    "directional_momentum": {
+      "wf_1_27": {"trades": 155, "return_r": 7.921, "pf": 1.088},
+      "wf_28_54": {"trades": 143, "return_r": 0.286, "pf": 1.004},
+      "wf_55_81": {"trades": 134, "return_r": 16.166, "pf": 1.210}
+    },
+    "combined": {
+      "wf_1_27": {"trades": 130, "return_r": 13.569, "pf": 1.187},
+      "wf_28_54": {"trades": 101, "return_r": -9.623, "pf": 0.844},
+      "wf_55_81": {"trades": 99, "return_r": 22.177, "pf": 1.408}
+    }
+  },
+  "interpretation": {
+    "directional_momentum": "promising research signal: positive in all three broad WF eras, but middle era is effectively flat and requires deeper validation",
+    "bandwidth_filter": "not temporally stable by itself",
+    "combined": "strong aggregate but unstable; middle era materially negative, so not eligible for promotion",
+    "cost_stress": "not calculated from aligned-trade artifact because per-trade cost/risk inputs needed for exact stress recomputation are not present in that artifact; must be rerun through engine before validation"
+  },
+  "promotion_allowed": false,
+  "next_test": "Investigate directional-momentum stability by WF/regime and then exact engine cost stress. Do not optimize thresholds yet."
+}
