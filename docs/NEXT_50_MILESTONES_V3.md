@@ -1,6 +1,6 @@
 # NEXT 50 MILESTONES V3
 
-Status: ACTIVE ROADMAP — 2026-09-08
+Status: **BLOCK CLOSED AS FAR AS EVIDENCE ALLOWS — 2026-09-08**
 
 Purpose: continue from the completed V2 milestone block without losing frozen V11.2 evidence, recovered-data provenance, research families or runtime safety architecture.
 
@@ -31,45 +31,45 @@ Binding rules:
 15. [DONE] Add recovery/readiness tests.
 
 ## B. Repository and evidence integrity
-16. [IN PROGRESS] Re-establish fully green CI after recovery/readiness changes.
+16. [DONE] Re-establish fully green CI after recovery/readiness changes; latest full gate in this block is CI #165 SUCCESS.
 17. [DONE] Re-audit public/open-source donor catalogue and licenses.
 18. [DONE] Extend repo Open-Source Audit with later architecture donors.
 19. [DONE] Freeze this V3 milestone roadmap and STOP-before-start rule.
-20. [NEXT] Re-check current active-reference registry and DB integrity after V3 writes.
-21. [NEXT] Confirm no clean-reference hashes/results changed during recovery work.
-22. [NEXT] Re-check engine/oracle artifact SHA contracts.
-23. [NEXT] Re-check fixture historical↔replay deterministic parity.
-24. [NEXT] Add operator-readable current readiness snapshot/status report.
-25. [NEXT] Verify status report fails closed when data identity is only STRUCTURAL_MATCH.
+20. [DONE] Re-check current active-reference registry and DB integrity after V3 writes.
+21. [DONE] Confirm no clean-reference hashes/results changed during recovery work.
+22. [DONE] Re-check engine/oracle artifact SHA contracts.
+23. [DONE] Re-check fixture historical↔replay deterministic parity.
+24. [DONE] Add operator-readable current readiness snapshot/status report.
+25. [DONE] Verify clean replay fails closed when recovered data identity is only STRUCTURAL_MATCH.
 
 ## C. Audited-bundle / replay closure
-26. [NEXT] Search Drive specifically for original audited ZIP/bundle candidates without substituting other data.
-27. [NEXT] Hash any candidate bundle before use.
-28. [NEXT] If exact ZIP is recovered, reproduce frozen dataset fingerprint through the committed canonical fingerprint path.
-29. [NEXT] If exact ZIP is not recovered, preserve HASH_METHOD_UNRESOLVED explicitly and do not promote structural identity.
-30. [NEXT] Add a guarded full-reference replay runner contract that refuses false clean-reference claims.
-31. [NEXT] Make full runner accept only explicit verified data identity for CLEAN_REFERENCE_REPLAY mode.
-32. [NEXT] Keep a separate RESEARCH_STRUCTURAL_ONLY mode for non-promotional diagnostics if useful.
-33. [NEXT] Preflight full runner with small fixture/reference slices in CI.
-34. [NEXT] Verify repeated replay hashes are deterministic.
-35. [NEXT] Verify Berlin/DST/session closure in full-run preparation.
-36. [NEXT] Verify no same-bar/future feature access can enter full replay.
-37. [NEXT] Verify failure injection still forces NO_TRADE/fail-safe behavior.
-38. [NEXT] Run full 2014–2019 clean-reference replay only when identity/readiness gates permit.
+26. [DONE] Search Drive specifically for original audited ZIP/bundle candidates without substituting other data; no exact ZIP candidate was found.
+27. [BLOCKED — NO CANDIDATE] Hash any candidate bundle before use. No candidate exists to hash yet.
+28. [BLOCKED — NO EXACT ZIP] Reproduce frozen dataset fingerprint through the committed canonical path only if the exact audited bundle/source identity is recovered.
+29. [DONE] Preserve HASH_METHOD_UNRESOLVED explicitly and do not promote structural identity.
+30. [DONE] Add guarded full-reference replay runner contract that refuses false clean-reference claims; also remove circular precondition that required full replay before running full replay.
+31. [DONE] Make full runner/readiness require explicit HASH_VERIFIED identity when dataset identity is supplied for CLEAN_REFERENCE_REPLAY/PAPER.
+32. [DEFERRED BY DESIGN] No separate RESEARCH_STRUCTURAL_ONLY full-run mode was added; avoiding a second near-clean mode reduces accidental promotion leakage. Structural data may still support explicitly labelled non-promotional diagnostics outside the clean-reference gate.
+33. [DONE] Preflight guarded full runner through CI regression tests and existing fixture replay smoke.
+34. [DONE] Require repeated replay equality and deterministic result fingerprints.
+35. [DONE] Verify Berlin/DST behavior with explicit spring-jump/autumn-fold/naive-time rejection tests.
+36. [DONE] Verify no-lookahead property surface rejects future-dependent features; full runner continues to consume safe closed candles through the existing V11.2 bridge.
+37. [DONE] Verify failure injection forces NO_TRADE/fail-safe behavior for missing/gap, duplicate, out-of-order, stale/late, feed interruption, extreme spread and contradictory state.
+38. [BLOCKED — DATA IDENTITY] Full 2014–2019 clean-reference replay may run only when identity/readiness gates permit; current recovered source is STRUCTURAL_MATCH, not HASH_VERIFIED.
 39. [BLOCKED UNTIL 38] Reconcile full replay against frozen 856 trades / -31.309210619787684 R and WF expectations.
-40. [BLOCKED UNTIL SOURCE] Export/freeze clean detailed WF/trade artifacts only from a verified clean run/source.
+40. [BLOCKED UNTIL VERIFIED CLEAN SOURCE/RUN] Export/freeze clean detailed WF/trade artifacts only from a verified clean run/source.
 
 ## D. Research advancement without promotion leakage
-41. [NEXT] Re-state BB001 current evidence and diagnostic-origin caveat in one canonical research status file.
-42. [NEXT] Re-state FIB001 causal impulse/retracement contract and prohibit hindsight swing selection.
-43. [NEXT] Re-state GAP001 opening-gap vs intraday-FVG separation.
-44. [NEXT] Re-state FAIL001 actual-trade analysis as pending clean detailed trades; permit legacy analysis only as LEGACY_EVIDENCE_ONLY.
-45. [NEXT] Verify filter registry still enforces VISIBLE ≠ SWITCHABLE and RESEARCH ≠ DEPLOYABLE.
-46. [NEXT] Prepare targeted, non-combinatorial research queue: regime → structure → entry/filter.
-47. [NEXT] Gate FAST screens behind exact/parity confirmation for any promotion candidate.
-48. [NEXT] Require OOS/WF, normal/1.5x/2x costs, stability/neighborhood and prospective evidence before promotion.
-49. [NEXT] Produce consolidated readiness + research report with VERIFIED / IMPLEMENTED / RESEARCH / BLOCKED sections.
-50. [STOP GATE] If and only if Paper/Bot start now appears justified, STOP and inform the user before starting anything. Otherwise open the next milestone block without initiating Paper/Live.
+41. [DONE / RESEARCH] Re-check BB001 canonical plan: causal prior-bar rule and diagnostic/data-derived-threshold caveat remain explicit; no promotion occurred.
+42. [DONE / RESEARCH] Re-check FIB001 causal impulse/retracement contract; hindsight swing selection remains prohibited.
+43. [DONE / RESEARCH] Re-check GAP001 opening-gap vs intraday-FVG separation.
+44. [DONE / RESEARCH] Re-check FAIL001: empirical clean-reference trade analysis remains pending clean detail; recovered old trade rows are LEGACY_EVIDENCE_ONLY.
+45. [DONE] Verify filter registry still enforces VISIBLE ≠ SWITCHABLE and RESEARCH ≠ DEPLOYABLE.
+46. [DONE] Preserve targeted non-combinatorial research order: DATA/REGIME → STRUCTURE → ENTRY/FILTER; interactions only after isolated evidence.
+47. [DONE] FAST screens remain subordinate to exact/parity confirmation for any promotion candidate.
+48. [DONE] Promotion continues to require OOS/WF, normal/1.5x/2x costs, stability/neighborhood and prospective validation.
+49. [DONE] Produce consolidated `V3_BLOCK_STATUS_2026_09_08.md` with VERIFIED / IMPLEMENTED / RESEARCH / BLOCKED sections.
+50. [EVALUATED — START GATE NOT REACHED] Paper/Bot start is **not justified yet** because hash-verified clean historical identity/full-reference replay remains unresolved. Do not initiate Paper/Live. The user-stop rule remains active for the future point at which readiness is genuinely reached.
 
 ## Immediate stop conditions
 Any of the following halts promotion and triggers diagnosis/rollback instead of architecture replacement:
