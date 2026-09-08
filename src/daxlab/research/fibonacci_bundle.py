@@ -7,23 +7,12 @@ import pandas as pd
 
 from daxlab.research.fibonacci_anchor import build_opening_range_anchor
 from daxlab.research.fibonacci_retracement import (
+    fixed_zone,
     normalized_retracement,
     validate_retracement_observation,
 )
 
 BERLIN = ZoneInfo("Europe/Berlin")
-
-
-def _zone(depth: float) -> str:
-    if 1.0 / 3.0 <= depth < 0.382:
-        return "R33_R382"
-    if 0.382 <= depth < 0.5:
-        return "R382_R50"
-    if 0.5 <= depth < 0.618:
-        return "R50_R618"
-    if 0.618 <= depth <= 2.0 / 3.0:
-        return "R618_R667"
-    return "OUTSIDE_FIXED_ZONES"
 
 
 def build_fib001_trade_bundle(
@@ -109,7 +98,7 @@ def build_fib001_trade_bundle(
                 "fib_observation_time": observation_time,
                 "fib_observation_price": observation_price,
                 "fib_retracement_depth": depth,
-                "fib_fixed_zone": _zone(depth),
+                "fib_fixed_zone": fixed_zone(depth),
             }
         )
 
