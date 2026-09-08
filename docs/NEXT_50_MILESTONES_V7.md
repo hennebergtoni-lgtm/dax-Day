@@ -38,16 +38,16 @@ Starting project counter: 41/150
 - [x] 61. Add tests for all feed-safety failures.
 
 ## 62–71 — Broker/session normalization
-- [ ] 62. Capture broker timezone as observation metadata.
-- [ ] 63. Define broker-to-Europe/Berlin conversion boundary.
-- [ ] 64. Preserve DST-aware conversion tests.
-- [ ] 65. Define session-open/session-close metadata observation.
-- [ ] 66. Prevent inferred broker sessions from silently becoming historical assumptions.
-- [ ] 67. Extend symbol resolution evidence with candidate metadata.
-- [ ] 68. Add configured-symbol exact-match audit record.
-- [ ] 69. Add ambiguous-symbol audit record.
-- [ ] 70. Add disabled/close-only symbol tests.
-- [ ] 71. Produce broker/session normalization contract doc.
+- [x] 62. Capture broker timezone as observation metadata.
+- [x] 63. Define broker-to-Europe/Berlin conversion boundary.
+- [x] 64. Preserve DST-aware conversion tests.
+- [x] 65. Define session-open/session-close metadata observation.
+- [x] 66. Prevent inferred broker sessions from silently becoming historical assumptions.
+- [x] 67. Extend symbol resolution evidence with candidate metadata.
+- [x] 68. Add configured-symbol exact-match audit record.
+- [x] 69. Add ambiguous-symbol audit record.
+- [x] 70. Add disabled/close-only symbol tests.
+- [x] 71. Produce broker/session normalization contract doc.
 
 ## 72–81 — Health, watchdog, observability
 - [ ] 72. Define deterministic health snapshot payload.
