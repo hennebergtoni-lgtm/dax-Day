@@ -32,6 +32,16 @@
     "negative_wfs": 44,
     "median_wf_pf": 0.905769310256018
   },
+  "reproduction": {
+    "full_clean_reference": "EXACT_MATCH",
+    "wf_metrics_rows": 243,
+    "wf_metrics_sha256": "4f61f57c21f469685488c52481f779b87b17b599fbcda0da942b5a2ed713709a",
+    "selected_variants_rows": 81,
+    "selected_variants_sha256": "8b604de454b615a3d789577be3295765e04eab06448cbcd0844a995af9b0a41e",
+    "trades_rows": 856,
+    "trades_sha256": "f60bb5fc15b5e620",
+    "trade_hash_semantics": "NEW_REPRODUCIBLE_CLEAN_EVIDENCE_NOT_HISTORICAL_FILE_IDENTITY"
+  },
   "detail_evidence": {
     "wf_metrics": "NOT_IMPORTED",
     "selected_variants": "NOT_IMPORTED",
