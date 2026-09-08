@@ -47,6 +47,24 @@
     "selected_variants": "NOT_IMPORTED",
     "trades": "NOT_IMPORTED"
   },
+  "research_families": {
+    "registry_schema": "DAXLAB_RESEARCH_FAMILY_REGISTRY_V1",
+    "count": 12,
+    "items": [
+      {"id": "BB001", "status": "RESEARCH", "evidence_maturity": "COST_STRESSED"},
+      {"id": "FIB001", "status": "RESEARCH", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "GAP001", "status": "RESEARCH", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "FAIL001", "status": "RETAINED", "evidence_maturity": "DESCRIPTIVE"},
+      {"id": "BOOST001", "status": "RESEARCH", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "ATR001", "status": "PLANNED", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "LIQ001", "status": "PLANNED", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "STRUCT001", "status": "PLANNED", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "MOM001", "status": "PLANNED", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "SESSION001", "status": "PLANNED", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "ENTRY001", "status": "PLANNED", "evidence_maturity": "PLAN_ONLY"},
+      {"id": "EXIT001", "status": "PLANNED", "evidence_maturity": "PLAN_ONLY"}
+    ]
+  },
   "readiness": {
     "clean_reference_replay": "ELIGIBLE",
     "paper": "BLOCKED",
