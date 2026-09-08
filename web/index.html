@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DAX Research Lab</title>
+  <style>
+    :root { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color-scheme: dark; }
+    body { margin:0; background:#0b0d10; color:#f3f4f6; }
+    main { max-width:980px; margin:auto; padding:24px 16px 48px; }
+    h1 { margin:0 0 6px; font-size:28px; }
+    .sub { color:#9ca3af; margin-bottom:24px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+    .card { background:#15181d; border:1px solid #272b33; border-radius:12px; padding:16px; }
+    .label { color:#9ca3af; font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
+    .value { font-size:22px; margin-top:6px; font-weight:700; overflow-wrap:anywhere; }
+    .small { font-size:13px; color:#c7cbd1; margin-top:8px; overflow-wrap:anywhere; }
+    .ok { color:#86efac; } .warn { color:#fbbf24; } .block { color:#fca5a5; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th,td { text-align:left; padding:8px 6px; border-bottom:1px solid #272b33; font-size:14px; }
+    footer { margin-top:24px; color:#6b7280; font-size:12px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>DAX Research Lab</h1>
+  <div class="sub">Read-only observability surface — keine Orders, keine Strategieänderungen.</div>
+  <div id="status" class="grid"><div class="card">Status wird geladen …</div></div>
+  <div class="card" style="margin-top:12px">
+    <div class="label">Detail Evidence</div>
+    <table><thead><tr><th>Artefakt</th><th>Status</th></tr></thead><tbody id="details"></tbody></table>
+  </div>
+  <footer>Canonical state remains in versioned repository contracts, verified DB registries and hashed run artifacts.</footer>
+</main>
+<script>
+const cls = v => v === 'GREEN' || v === 'HASH_VERIFIED' || v === 'ELIGIBLE' || v === 'ACTIVE' || v === 'IMPLEMENTED' ? 'ok' : v === 'BLOCKED' ? 'block' : 'warn';
+const card = (label,value,small='') => `<div class="card"><div class="label">${label}</div><div class="value ${cls(String(value))}">${value}</div>${small ? `<div class="small">${small}</div>` : ''}</div>`;
+fetch('status.json', {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('status.json unavailable'); return r.json(); }).then(s => {
+  const a=s.active_reference,d=s.dataset,e=s.engine,w=s.walk_forward,r=s.reference_results,rd=s.readiness,rec=s.recovery;
+  document.getElementById('status').innerHTML = [
+    card('Active Reference',a.strategy,`${a.experiment_id} · ${a.status} · immutable=${a.immutable}`),
+    card('Dataset',d.identity_state,`${d.session_rows.toLocaleString('de-DE')} M5 · ${d.session_days} Tage`),
+    card('WF Contract',`${w.windows} Fenster`,`${w.train_days}/${w.oos_days}/${w.step_days} Train/OOS/Step`),
+    card('Reference OOS',`${r.normal_oos_trades} Trades`,`${r.normal_oos_return_r.toFixed(4)} R · PF median ${r.median_wf_pf.toFixed(4)}`),
+    card('Clean Replay',rd.clean_reference_replay),
+    card('Paper',rd.paper),
+    card('Live',rd.live),
+    card('Recovery',rec.ci_recovery_preflight,`${rec.reconstruction_contract} · Bundle ${rec.persistent_bundle}`)
+  ].join('');
+  document.getElementById('details').innerHTML = Object.entries(s.detail_evidence).map(([k,v]) => `<tr><td>${k}</td><td class="${cls(v)}">${v}</td></tr>`).join('');
+}).catch(err => {
+  document.getElementById('status').innerHTML = card('Dashboard State','UNKNOWN',String(err));
+});
+</script>
+</body>
+</html>
