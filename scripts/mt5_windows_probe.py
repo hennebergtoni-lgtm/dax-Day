@@ -65,6 +65,8 @@ def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: 
         raise RuntimeError("MetaTrader5 Python package is not installed") from exc
     if bars < 2:
         raise ValueError("bars must be >= 2")
+    if max_age_seconds < 0:
+        raise ValueError("max_age_seconds must be non-negative")
     if not mt5.initialize():
         code, message = mt5.last_error()
         raise RuntimeError(f"MT5 initialize failed: {code} {message}")
@@ -94,19 +96,15 @@ def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: 
             if s.name in resolution.candidates or (selected and s.name == selected.name)
         ]
 
-        host_probe = {
-            "observed_at": observed.isoformat(),
-            "terminal_connected": bool(terminal and terminal.connected),
-            "account_connected": bool(account is not None),
-            "account_trade_allowed": bool(account and account.trade_allowed),
-            "order_execution_enabled": False,
-            "engine_loop_healthy": True,
-            "clock_ok": True,
-            "symbols": safe_symbols,
-        }
+        tick_delta_seconds = None
+        clock_ok = False
         feed = None
         if selected is not None:
             mt5.symbol_select(selected.name, True)
+            tick = mt5.symbol_info_tick(selected.name)
+            if tick is not None and getattr(tick, "time", None):
+                tick_delta_seconds = observed.timestamp() - float(tick.time)
+                clock_ok = abs(tick_delta_seconds) <= max_age_seconds
             start_pos = closed_rates_start_pos(1)
             rates = mt5.copy_rates_from_pos(selected.name, mt5.TIMEFRAME_M5, start_pos, bars)
             rate_rows = rates if rates is not None else ()
@@ -126,12 +124,25 @@ def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: 
                 ],
             }
 
+        host_probe = {
+            "observed_at": observed.isoformat(),
+            "terminal_connected": bool(terminal and terminal.connected),
+            "account_connected": bool(account is not None),
+            "account_trade_allowed": bool(account and account.trade_allowed),
+            "order_execution_enabled": False,
+            "engine_loop_healthy": True,
+            "clock_ok": clock_ok,
+            "symbols": safe_symbols,
+        }
+        notes = ["READ_ONLY", "BAR_0_EXCLUDED", "NO_CREDENTIALS", "NO_ORDER_API"]
+        if tick_delta_seconds is not None:
+            notes.append(f"TICK_CLOCK_DELTA_SECONDS={tick_delta_seconds:.3f}")
         bundle = {
             "schema": "DAXLAB_MT5_WINDOWS_BUNDLE_V1",
             "symbol_resolution_state": resolution.state,
             "host_probe": host_probe,
             "closed_m5_feed": feed,
-            "notes": ["READ_ONLY", "BAR_0_EXCLUDED", "NO_CREDENTIALS", "NO_ORDER_API"],
+            "notes": notes,
         }
         _assert_credential_free(bundle)
         bundle["sha256"] = _fingerprint(bundle)
@@ -146,6 +157,7 @@ def main() -> int:
     parser.add_argument("--bars", type=int, default=20)
     parser.add_argument("--max-age-seconds", type=float, default=600.0)
     parser.add_argument("--output", default="mt5_probe.json")
+    parser.add_argument("--timestamped", action="store_true")
     args = parser.parse_args()
     payload = collect_probe(
         configured_symbol=args.symbol,
@@ -153,6 +165,9 @@ def main() -> int:
         max_age_seconds=args.max_age_seconds,
     )
     path = Path(args.output)
+    if args.timestamped:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        path = path.with_name(f"{path.stem}_{stamp}{path.suffix}")
     if path.exists():
         raise RuntimeError(f"refusing to overwrite existing evidence file: {path}")
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
