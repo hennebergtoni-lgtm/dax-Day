@@ -1,4 +1,4 @@
-from scripts.shadow_soak_smoke import BARS_PER_SESSION, SESSIONS
+from daxlab.runtime.shadow_soak_fixture import BARS_PER_SESSION, SESSIONS
 
 
 def test_soak_smoke_constants_define_3090_closed_m5_observations() -> None:
