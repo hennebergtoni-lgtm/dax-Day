@@ -26,6 +26,11 @@ from daxlab.runtime.shadow_observation import (
     recovery_payload,
     verify_recovery_payload,
 )
+from daxlab.runtime.shadow_soak import (
+    SoakCheckpoint as ShadowSoakCheckpoint,
+    SoakResult,
+    run_shadow_soak,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +100,42 @@ def evaluate_shadow_from_bundle(
         single_instance_lock_held=single_instance_lock_held,
     )
     return gate, build_shadow_decision(observation), status
+
+
+def evaluate_shadow_soak_from_bundle(
+    bundle: WindowsMt5Bundle,
+    *,
+    authorization: ProspectiveAuthorization,
+    single_instance_lock_held: bool,
+    checkpoint: ShadowSoakCheckpoint | None = None,
+) -> tuple[ProspectiveGateResult, SoakResult | None, HostShadowStatus]:
+    """Process every validated closed M5 bar with deterministic resume semantics.
+
+    The normal prospective SHADOW gate is evaluated first. A blocked bundle
+    produces no soak result. An allowed bundle is then passed to the existing
+    deterministic SHADOW soak engine, which has no execution capability and
+    suppresses bars already sealed in the supplied checkpoint.
+    """
+    gate, _, status = evaluate_shadow_from_bundle(
+        bundle,
+        authorization=authorization,
+        single_instance_lock_held=single_instance_lock_held,
+    )
+    if not gate.allowed or bundle.feed is None or status.symbol is None:
+        return gate, None, status
+
+    result = run_shadow_soak(
+        bundle.feed.bars,
+        symbol=status.symbol,
+        checkpoint=checkpoint,
+    )
+    if result.execution_capability != "NONE":
+        raise RuntimeError("MT5 SHADOW soak unexpectedly gained execution capability")
+    if result.order_execution_enabled is not False:
+        raise RuntimeError("MT5 SHADOW soak unexpectedly enabled order execution")
+    if any(item.action != "NO_ORDER" for item in result.decisions):
+        raise RuntimeError("MT5 SHADOW soak emitted an order-capable action")
+    return gate, result, status
 
 
 def host_readiness_summary(status: HostShadowStatus) -> dict[str, Any]:
