@@ -1,6 +1,5 @@
-from scripts.shadow_soak_smoke import BARS_PER_SESSION, SESSIONS, build_bars
-
 from daxlab.runtime.shadow_soak import run_shadow_soak
+from daxlab.runtime.shadow_soak_fixture import BARS_PER_SESSION, SESSIONS, build_bars
 
 
 def test_30_session_soak_fixture_has_expected_size() -> None:
