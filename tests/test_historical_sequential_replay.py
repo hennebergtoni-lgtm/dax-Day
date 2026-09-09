@@ -76,12 +76,49 @@ def test_decision_log_bar_identity_matches_replay_record() -> None:
         assert log.reason_codes[:-1] == record.decision.reason_codes
 
 
-def test_replay_rejects_out_of_order_or_duplicate_bar_time() -> None:
+def test_future_bar_mutation_cannot_change_prior_records() -> None:
+    bars = _bars(4)
+    baseline = run_historical_sequential_replay(bars)
+    changed_future = Mt5Bar(
+        open_time=bars[3].open_time,
+        open=500.0,
+        high=510.0,
+        low=490.0,
+        close=505.0,
+    )
+    mutated = run_historical_sequential_replay((*bars[:3], changed_future))
+    assert baseline.records[:3] == mutated.records[:3]
+    assert [record.decision_log.log_id for record in baseline.records[:3]] == [
+        record.decision_log.log_id for record in mutated.records[:3]
+    ]
+
+
+def test_exact_duplicate_bar_is_idempotently_suppressed() -> None:
+    bars = _bars(3)
+    baseline = run_historical_sequential_replay(bars)
+    duplicated = run_historical_sequential_replay((bars[0], bars[1], bars[1], bars[2]))
+    assert duplicated.records == baseline.records
+    assert duplicated.replay_fingerprint == baseline.replay_fingerprint
+    assert duplicated.duplicates_suppressed == 1
+
+
+def test_duplicate_timestamp_with_changed_ohlc_fails_closed() -> None:
+    bars = _bars(2)
+    conflicting = Mt5Bar(
+        open_time=bars[1].open_time,
+        open=200.0,
+        high=201.0,
+        low=199.0,
+        close=200.5,
+    )
+    with pytest.raises(ValueError, match="conflicting OHLC"):
+        run_historical_sequential_replay((bars[0], bars[1], conflicting))
+
+
+def test_replay_rejects_out_of_order_unique_bar() -> None:
     bars = _bars(2)
     with pytest.raises(ValueError, match="strictly chronological"):
         run_historical_sequential_replay((bars[1], bars[0]))
-    with pytest.raises(ValueError, match="strictly chronological"):
-        run_historical_sequential_replay((bars[0], bars[0]))
 
 
 def test_replay_rejects_non_m5_contract() -> None:
