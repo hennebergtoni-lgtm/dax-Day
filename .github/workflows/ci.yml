@@ -34,14 +34,16 @@ jobs:
       - name: V11.2 temporary cost contract diagnostic
         run: |
           python - <<'PY'
-          import inspect
+          import dis
           from daxlab.reference.recovered_engine import load_exact_candidate_engine
           engine = load_exact_candidate_engine()
           print('COST_SCENARIOS_REPR=', repr(engine.COST_SCENARIOS))
-          print('SIMULATE_DAY_SIGNATURE=', inspect.signature(engine.simulate_day))
-          print('EXECUTE_TRADE_SOURCE_BEGIN')
-          print(inspect.getsource(engine.execute_trade))
-          print('EXECUTE_TRADE_SOURCE_END')
+          print('EXECUTE_TRADE_DIS_BEGIN')
+          dis.dis(engine.execute_trade)
+          print('EXECUTE_TRADE_DIS_END')
+          print('TRADE_OUTCOME_DIS_BEGIN')
+          dis.dis(engine._trade_outcome)
+          print('TRADE_OUTCOME_DIS_END')
           PY
       - name: Guarded V11.2 replay smoke
         run: python scripts/v112_replay_smoke.py
