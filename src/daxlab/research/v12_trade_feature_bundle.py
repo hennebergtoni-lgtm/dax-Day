@@ -14,7 +14,7 @@ from __future__ import annotations
 from bisect import bisect_right
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Iterable, Sequence
+from typing import Iterable, Mapping, Sequence
 
 from daxlab.research.v12_evidence_gate import (
     OhlcEvidenceIdentity,
@@ -106,6 +106,30 @@ def last_completed_bar_index(times: Sequence[datetime], *, entry_time: datetime)
     return index
 
 
+def signal_bar_index(
+    index_by_time: Mapping[datetime, int], *, signal_time: datetime, entry_time: datetime
+) -> int:
+    """Return the exact completed signal-bar index or fail closed."""
+    if signal_time.tzinfo is None or entry_time.tzinfo is None:
+        raise ValueError("signal and entry timestamps must be timezone-aware")
+    if signal_time not in index_by_time:
+        raise ValueError("signal_time does not map to verified M5 bar")
+    if signal_time + _M5 > entry_time:
+        raise ValueError("signal bar is not fully closed before entry")
+    return index_by_time[signal_time]
+
+
+def breakout_side_close_location(*, close_location: float, side: str) -> float:
+    """Mirror raw close location so 1.0 always means close near breakout-side extreme."""
+    if not 0.0 <= close_location <= 1.0:
+        raise ValueError("close_location outside [0, 1]")
+    if side == "long":
+        return close_location
+    if side == "short":
+        return 1.0 - close_location
+    raise ValueError("unsupported side")
+
+
 def build_trade_feature_bundle(
     bars: Sequence[TimedClosedBar],
     trades: Iterable[ReproducedTrade],
@@ -131,20 +155,17 @@ def build_trade_feature_bundle(
     output: list[V12TradeFeatures] = []
 
     for trade in trades:
-        if trade.signal_time not in index_by_time:
-            raise ValueError("signal_time does not map to verified M5 bar")
-        if trade.signal_time + _M5 > trade.entry_time:
-            raise ValueError("signal bar is not fully closed before entry")
-
-        signal_index = index_by_time[trade.signal_time]
+        signal_index = signal_bar_index(
+            index_by_time, signal_time=trade.signal_time, entry_time=trade.entry_time
+        )
         signal_bar_time = times[signal_index]
 
         adx = adx_feature(closed, signal_index)
         body = body_quality(closed, signal_index)
         diagnostic_compression = range_compression(closed, signal_index)
 
-        breakout_side_location = (
-            body.close_location if trade.side == "long" else 1.0 - body.close_location
+        breakout_side_location = breakout_side_close_location(
+            close_location=body.close_location, side=trade.side
         )
         expected_direction = 1 if trade.side == "long" else -1
 
