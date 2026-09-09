@@ -5,7 +5,7 @@ The bridge is deliberately observation-only. It cannot place orders and keeps
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
 from typing import Any, Mapping
@@ -31,7 +31,10 @@ from daxlab.runtime.shadow_soak import (
     SoakCheckpoint as ShadowSoakCheckpoint,
     SoakResult,
     run_shadow_soak,
+    verify_soak_checkpoint,
 )
+
+_MT5_RESUME_SCHEMA = "DAXLAB_MT5_SHADOW_RESUME_V1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +47,120 @@ class HostShadowStatus:
     single_instance_lock_held: bool
     order_execution_enabled: bool
     evidence_fingerprint: str
+
+
+@dataclass(frozen=True, slots=True)
+class Mt5ShadowResumeState:
+    """Hashed provenance envelope for an MT5 read-only SHADOW checkpoint."""
+
+    schema_version: str
+    evidence_state: str
+    symbol: str
+    checkpoint: ShadowSoakCheckpoint
+    payload_sha256: str
+
+
+def build_mt5_shadow_resume_state(
+    *,
+    symbol: str,
+    checkpoint: ShadowSoakCheckpoint,
+) -> Mt5ShadowResumeState:
+    """Bind a verified soak checkpoint to MT5 read-only provenance and symbol."""
+    clean_symbol = symbol.strip()
+    if not clean_symbol:
+        raise ValueError("MT5 SHADOW resume symbol must be non-empty")
+    verify_soak_checkpoint(checkpoint)
+    payload = _mt5_resume_payload(
+        schema_version=_MT5_RESUME_SCHEMA,
+        evidence_state=MT5_READONLY_EVIDENCE_STATE,
+        symbol=clean_symbol,
+        checkpoint=checkpoint,
+    )
+    return Mt5ShadowResumeState(
+        schema_version=_MT5_RESUME_SCHEMA,
+        evidence_state=MT5_READONLY_EVIDENCE_STATE,
+        symbol=clean_symbol,
+        checkpoint=checkpoint,
+        payload_sha256=_hash(payload),
+    )
+
+
+def verify_mt5_shadow_resume_state(
+    state: Mt5ShadowResumeState,
+    *,
+    expected_symbol: str,
+) -> None:
+    """Fail closed if resume provenance, symbol, checkpoint or hash is invalid."""
+    if not isinstance(state, Mt5ShadowResumeState):
+        raise ValueError("MT5 SHADOW resume state type mismatch")
+    if state.schema_version != _MT5_RESUME_SCHEMA:
+        raise ValueError("MT5 SHADOW resume schema mismatch")
+    if state.evidence_state != MT5_READONLY_EVIDENCE_STATE:
+        raise ValueError("MT5 SHADOW resume evidence state mismatch")
+    clean_expected = expected_symbol.strip()
+    if not clean_expected or state.symbol != clean_expected:
+        raise ValueError("MT5 SHADOW resume symbol mismatch")
+    verify_soak_checkpoint(state.checkpoint)
+    expected_hash = _hash(
+        _mt5_resume_payload(
+            schema_version=state.schema_version,
+            evidence_state=state.evidence_state,
+            symbol=state.symbol,
+            checkpoint=state.checkpoint,
+        )
+    )
+    if state.payload_sha256 != expected_hash:
+        raise ValueError("MT5 SHADOW resume hash mismatch")
+
+
+def mt5_shadow_resume_payload(state: Mt5ShadowResumeState) -> dict[str, Any]:
+    """Return a JSON-safe persistence payload after validating the envelope."""
+    verify_mt5_shadow_resume_state(state, expected_symbol=state.symbol)
+    return {
+        "schema_version": state.schema_version,
+        "evidence_state": state.evidence_state,
+        "symbol": state.symbol,
+        "checkpoint": asdict(state.checkpoint),
+        "payload_sha256": state.payload_sha256,
+        "execution_capability": "NONE",
+        "order_execution_enabled": False,
+    }
+
+
+def parse_mt5_shadow_resume_payload(payload: Mapping[str, Any]) -> Mt5ShadowResumeState:
+    """Reconstruct and verify a persisted credential-free MT5 resume envelope."""
+    allowed = {
+        "schema_version",
+        "evidence_state",
+        "symbol",
+        "checkpoint",
+        "payload_sha256",
+        "execution_capability",
+        "order_execution_enabled",
+    }
+    unknown = payload.keys() - allowed
+    if unknown:
+        raise ValueError(f"unknown MT5 SHADOW resume fields: {sorted(unknown)}")
+    if payload.get("execution_capability") != "NONE":
+        raise ValueError("MT5 SHADOW resume execution capability invalid")
+    if payload.get("order_execution_enabled") is not False:
+        raise ValueError("MT5 SHADOW resume must keep order execution disabled")
+    checkpoint_raw = payload.get("checkpoint")
+    if not isinstance(checkpoint_raw, Mapping):
+        raise ValueError("MT5 SHADOW resume checkpoint missing")
+    try:
+        checkpoint = ShadowSoakCheckpoint(**dict(checkpoint_raw))
+    except TypeError as exc:
+        raise ValueError("MT5 SHADOW resume checkpoint invalid") from exc
+    state = Mt5ShadowResumeState(
+        schema_version=str(payload.get("schema_version", "")),
+        evidence_state=str(payload.get("evidence_state", "")),
+        symbol=str(payload.get("symbol", "")),
+        checkpoint=checkpoint,
+        payload_sha256=str(payload.get("payload_sha256", "")),
+    )
+    verify_mt5_shadow_resume_state(state, expected_symbol=state.symbol)
+    return state
 
 
 def evaluate_shadow_from_bundle(
@@ -108,15 +225,9 @@ def evaluate_shadow_soak_from_bundle(
     *,
     authorization: ProspectiveAuthorization,
     single_instance_lock_held: bool,
-    checkpoint: ShadowSoakCheckpoint | None = None,
+    resume_state: Mt5ShadowResumeState | None = None,
 ) -> tuple[ProspectiveGateResult, SoakResult | None, HostShadowStatus]:
-    """Process every validated closed M5 bar with deterministic resume semantics.
-
-    The normal prospective SHADOW gate is evaluated first. A blocked bundle
-    produces no soak result. An allowed bundle is then passed to the existing
-    deterministic SHADOW soak engine, which has no execution capability and
-    suppresses bars already sealed in the supplied checkpoint.
-    """
+    """Process validated closed M5 bars with provenance-bound resume semantics."""
     gate, _, status = evaluate_shadow_from_bundle(
         bundle,
         authorization=authorization,
@@ -124,6 +235,11 @@ def evaluate_shadow_soak_from_bundle(
     )
     if not gate.allowed or bundle.feed is None or status.symbol is None:
         return gate, None, status
+
+    checkpoint: ShadowSoakCheckpoint | None = None
+    if resume_state is not None:
+        verify_mt5_shadow_resume_state(resume_state, expected_symbol=status.symbol)
+        checkpoint = resume_state.checkpoint
 
     result = run_shadow_soak(
         bundle.feed.bars,
@@ -197,6 +313,21 @@ def verify_combined_recovery_payload(payload: Mapping[str, Any]) -> None:
     if not isinstance(shadow, Mapping):
         raise ValueError("shadow recovery payload missing")
     verify_recovery_payload(shadow)
+
+
+def _mt5_resume_payload(
+    *,
+    schema_version: str,
+    evidence_state: str,
+    symbol: str,
+    checkpoint: ShadowSoakCheckpoint,
+) -> dict[str, Any]:
+    return {
+        "schema_version": schema_version,
+        "evidence_state": evidence_state,
+        "symbol": symbol,
+        "checkpoint": asdict(checkpoint),
+    }
 
 
 def _hash(value: Mapping[str, Any]) -> str:

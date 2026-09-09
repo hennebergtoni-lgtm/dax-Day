@@ -1,13 +1,20 @@
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 
+import pytest
+
 from daxlab.runtime.mt5_shadow_integration import (
+    build_mt5_shadow_resume_state,
     combined_recovery_payload,
     evaluate_shadow_from_bundle,
     evaluate_shadow_soak_from_bundle,
     host_readiness_summary,
+    mt5_shadow_resume_payload,
+    parse_mt5_shadow_resume_payload,
     verify_combined_recovery_payload,
+    verify_mt5_shadow_resume_state,
 )
 from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
 from daxlab.runtime.prospective_gate import ProspectiveAuthorization
@@ -99,12 +106,8 @@ def test_missing_bars_is_rejected() -> None:
     payload.pop("sha256")
     payload["closed_m5_feed"]["bars"] = []
     payload = _seal(payload)
-    try:
+    with pytest.raises(ValueError, match="non-empty list"):
         parse_windows_mt5_bundle(payload)
-    except ValueError as exc:
-        assert "non-empty list" in str(exc)
-    else:
-        raise AssertionError("missing bars must be rejected")
 
 
 def test_ambiguous_symbol_is_blocked() -> None:
@@ -157,25 +160,139 @@ def test_multi_bar_shadow_soak_is_no_order_only() -> None:
     assert all(item.action == "NO_ORDER" for item in result.decisions)
 
 
-def test_multi_bar_shadow_resume_is_idempotent() -> None:
+def test_multi_bar_shadow_resume_is_provenance_bound_and_idempotent() -> None:
     bundle = parse_windows_mt5_bundle(_bundle_payload())
-    _, first, _ = evaluate_shadow_soak_from_bundle(
+    _, first, status = evaluate_shadow_soak_from_bundle(
         bundle,
         authorization=_auth(),
         single_instance_lock_held=True,
     )
     assert first is not None
+    assert status.symbol == "DE40"
+    resume_state = build_mt5_shadow_resume_state(
+        symbol=status.symbol,
+        checkpoint=first.checkpoint,
+    )
+    verify_mt5_shadow_resume_state(resume_state, expected_symbol="DE40")
     _, resumed, _ = evaluate_shadow_soak_from_bundle(
         bundle,
         authorization=_auth(),
         single_instance_lock_held=True,
-        checkpoint=first.checkpoint,
+        resume_state=resume_state,
     )
     assert resumed is not None
     assert resumed.processed == first.processed
     assert resumed.evidence_state == MT5_READONLY_EVIDENCE_STATE
     assert resumed.duplicates_suppressed == 3
     assert resumed.decisions == ()
+
+
+def test_mt5_resume_payload_round_trip_is_credential_free() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    _, result, status = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert result is not None and status.symbol is not None
+    state = build_mt5_shadow_resume_state(
+        symbol=status.symbol,
+        checkpoint=result.checkpoint,
+    )
+    payload = mt5_shadow_resume_payload(state)
+    parsed = parse_mt5_shadow_resume_payload(payload)
+    assert parsed == state
+    serialized = json.dumps(payload).lower()
+    for forbidden in ("password", "login", "token", "secret", "account_id"):
+        assert forbidden not in serialized
+    assert payload["execution_capability"] == "NONE"
+    assert payload["order_execution_enabled"] is False
+
+
+def test_mt5_resume_rejects_evidence_state_tamper() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    _, result, status = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert result is not None and status.symbol is not None
+    state = build_mt5_shadow_resume_state(
+        symbol=status.symbol,
+        checkpoint=result.checkpoint,
+    )
+    bad = replace(state, evidence_state="SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE")
+    with pytest.raises(ValueError, match="evidence state mismatch"):
+        verify_mt5_shadow_resume_state(bad, expected_symbol="DE40")
+
+
+def test_mt5_resume_rejects_symbol_tamper() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    _, result, status = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert result is not None and status.symbol is not None
+    state = build_mt5_shadow_resume_state(
+        symbol=status.symbol,
+        checkpoint=result.checkpoint,
+    )
+    bad = replace(state, symbol="GER40")
+    with pytest.raises(ValueError, match="symbol mismatch"):
+        verify_mt5_shadow_resume_state(bad, expected_symbol="DE40")
+
+
+def test_mt5_resume_rejects_hash_tamper() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    _, result, status = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert result is not None and status.symbol is not None
+    state = build_mt5_shadow_resume_state(
+        symbol=status.symbol,
+        checkpoint=result.checkpoint,
+    )
+    bad = replace(state, payload_sha256="0" * 64)
+    with pytest.raises(ValueError, match="hash mismatch"):
+        verify_mt5_shadow_resume_state(bad, expected_symbol="DE40")
+
+
+def test_mt5_resume_payload_rejects_execution_capability() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    _, result, status = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert result is not None and status.symbol is not None
+    state = build_mt5_shadow_resume_state(
+        symbol=status.symbol,
+        checkpoint=result.checkpoint,
+    )
+    payload = mt5_shadow_resume_payload(state)
+    payload["order_execution_enabled"] = True
+    with pytest.raises(ValueError, match="keep order execution disabled"):
+        parse_mt5_shadow_resume_payload(payload)
+
+
+def test_bare_generic_checkpoint_is_not_public_mt5_resume_api() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    _, result, _ = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert result is not None
+    with pytest.raises(TypeError, match="unexpected keyword argument 'checkpoint'"):
+        evaluate_shadow_soak_from_bundle(
+            bundle,
+            authorization=_auth(),
+            single_instance_lock_held=True,
+            checkpoint=result.checkpoint,  # type: ignore[call-arg]
+        )
 
 
 def test_multi_bar_shadow_blocked_gate_produces_no_result() -> None:
@@ -206,12 +323,8 @@ def test_combined_recovery_round_trip_and_tamper_detection() -> None:
     )
     verify_combined_recovery_payload(payload)
     payload["host_evidence_sha256"] = "0" * 64
-    try:
+    with pytest.raises(ValueError, match="hash mismatch"):
         verify_combined_recovery_payload(payload)
-    except ValueError as exc:
-        assert "hash mismatch" in str(exc)
-    else:
-        raise AssertionError("tampered recovery payload must fail")
 
 
 def test_readiness_summary_is_credential_free() -> None:
