@@ -12,6 +12,7 @@ from daxlab.runtime.mt5_shadow_integration import (
 from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
 from daxlab.runtime.prospective_gate import ProspectiveAuthorization
 from daxlab.runtime.shadow_observation import advance_checkpoint, initial_checkpoint
+from daxlab.runtime.shadow_soak import MT5_READONLY_EVIDENCE_STATE
 
 
 def _seal(payload: dict) -> dict:
@@ -150,6 +151,7 @@ def test_multi_bar_shadow_soak_is_no_order_only() -> None:
     assert result is not None
     assert status.status == "GREEN"
     assert result.processed == 3
+    assert result.evidence_state == MT5_READONLY_EVIDENCE_STATE
     assert result.execution_capability == "NONE"
     assert result.order_execution_enabled is False
     assert all(item.action == "NO_ORDER" for item in result.decisions)
@@ -171,6 +173,7 @@ def test_multi_bar_shadow_resume_is_idempotent() -> None:
     )
     assert resumed is not None
     assert resumed.processed == first.processed
+    assert resumed.evidence_state == MT5_READONLY_EVIDENCE_STATE
     assert resumed.duplicates_suppressed == 3
     assert resumed.decisions == ()
 

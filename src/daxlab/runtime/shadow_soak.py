@@ -1,8 +1,8 @@
-"""Deterministic multi-bar SHADOW soak runner for synthetic/offline evidence only.
+"""Deterministic multi-bar SHADOW soak runner with explicit evidence provenance.
 
-This module has no broker dependency and no order capability. It exercises the
-observation, duplicate-suppression, checkpoint and recovery surfaces over longer
-closed-M5 sequences before a real Windows MT5 host is available.
+This module has no broker dependency and no order capability. Offline callers
+remain synthetic by default; validated adapters may supply a supported explicit
+evidence state without changing the deterministic observation semantics.
 """
 from __future__ import annotations
 
@@ -19,7 +19,11 @@ from daxlab.runtime.shadow_observation import (
     build_shadow_decision,
 )
 
-_EVIDENCE_STATE = "SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE"
+SYNTHETIC_EVIDENCE_STATE = "SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE"
+MT5_READONLY_EVIDENCE_STATE = "MT5_READONLY_BROKER_EVIDENCE"
+_ALLOWED_EVIDENCE_STATES = frozenset(
+    {SYNTHETIC_EVIDENCE_STATE, MT5_READONLY_EVIDENCE_STATE}
+)
 _CHECKPOINT_SCHEMA = "DAXLAB_SHADOW_SOAK_CHECKPOINT_V2"
 _RESULT_SCHEMA = "DAXLAB_SHADOW_SOAK_RESULT_V1"
 _RECOVERY_SCHEMA = "DAXLAB_SHADOW_SOAK_RECOVERY_V2"
@@ -107,9 +111,12 @@ def run_shadow_soak(
     symbol: str = "DE40",
     checkpoint: SoakCheckpoint | None = None,
     faults: Mapping[int, SoakFault] | None = None,
+    evidence_state: str = SYNTHETIC_EVIDENCE_STATE,
 ) -> SoakResult:
     if not symbol.strip():
         raise ValueError("symbol must be non-empty")
+    if evidence_state not in _ALLOWED_EVIDENCE_STATES:
+        raise ValueError("unsupported shadow soak evidence state")
     state = checkpoint or initial_soak_checkpoint()
     verify_soak_checkpoint(state)
 
@@ -160,16 +167,17 @@ def run_shadow_soak(
     blocked = sum(
         item.reason_codes != ("OBSERVATION_ONLY_NO_ORDER",) for item in decisions
     )
-    run_fingerprint = _hash(
-        {
-            "prior_processed": state.processed_count,
-            "decision_ids": [item.decision_id for item in decisions],
-            "checkpoint_sha256": checkpoint_out.payload_sha256,
-        }
-    )
+    fingerprint_payload: dict[str, Any] = {
+        "prior_processed": state.processed_count,
+        "decision_ids": [item.decision_id for item in decisions],
+        "checkpoint_sha256": checkpoint_out.payload_sha256,
+    }
+    if evidence_state != SYNTHETIC_EVIDENCE_STATE:
+        fingerprint_payload["evidence_state"] = evidence_state
+    run_fingerprint = _hash(fingerprint_payload)
     return SoakResult(
         schema_version=_RESULT_SCHEMA,
-        evidence_state=_EVIDENCE_STATE,
+        evidence_state=evidence_state,
         symbol=symbol,
         decisions=tuple(decisions),
         processed=processed,
@@ -197,9 +205,11 @@ def soak_summary(result: SoakResult) -> dict[str, Any]:
 
 
 def soak_recovery_payload(result: SoakResult) -> dict[str, Any]:
+    if result.evidence_state not in _ALLOWED_EVIDENCE_STATES:
+        raise ValueError("unsupported shadow soak evidence state")
     payload: dict[str, Any] = {
         "schema_version": _RECOVERY_SCHEMA,
-        "evidence_state": _EVIDENCE_STATE,
+        "evidence_state": result.evidence_state,
         "checkpoint": asdict(result.checkpoint),
         "decision_ids": [item.decision_id for item in result.decisions],
         "run_fingerprint": result.run_fingerprint,
@@ -213,7 +223,7 @@ def soak_recovery_payload(result: SoakResult) -> dict[str, Any]:
 def verify_soak_recovery_payload(payload: Mapping[str, Any]) -> None:
     if payload.get("schema_version") != _RECOVERY_SCHEMA:
         raise ValueError("shadow soak recovery schema mismatch")
-    if payload.get("evidence_state") != _EVIDENCE_STATE:
+    if payload.get("evidence_state") not in _ALLOWED_EVIDENCE_STATES:
         raise ValueError("shadow soak evidence state mismatch")
     if payload.get("execution_capability") != "NONE":
         raise ValueError("shadow soak recovery execution capability invalid")
