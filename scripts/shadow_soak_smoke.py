@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from daxlab.runtime.shadow_soak import run_shadow_soak, soak_summary
-from daxlab.runtime.shadow_soak_fixture import BARS_PER_SESSION, SESSIONS, build_bars
+from daxlab.runtime.shadow_soak_fixture import SESSIONS, build_bars
 
 
 def main() -> None:
