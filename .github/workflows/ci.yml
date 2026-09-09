@@ -31,6 +31,15 @@ jobs:
         run: python scripts/v11_prehost_smoke.py
       - name: V11.2 engine surface probe
         run: python scripts/probe_v112_engine.py
+      - name: V11.2 temporary cost contract diagnostic
+        run: |
+          python - <<'PY'
+          import inspect
+          from daxlab.reference.recovered_engine import load_exact_candidate_engine
+          engine = load_exact_candidate_engine()
+          print('COST_SCENARIOS_REPR=', repr(engine.COST_SCENARIOS))
+          print('SIMULATE_DAY_SIGNATURE=', inspect.signature(engine.simulate_day))
+          PY
       - name: Guarded V11.2 replay smoke
         run: python scripts/v112_replay_smoke.py
       - name: Offline SHADOW soak smoke
