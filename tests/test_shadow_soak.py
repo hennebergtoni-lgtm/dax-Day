@@ -62,7 +62,7 @@ def test_repeated_resume_is_idempotent() -> None:
 def test_checkpoint_tamper_is_rejected() -> None:
     result = run_shadow_soak(bars(3))
     bad = replace(result.checkpoint, processed_count=999)
-    with pytest.raises(ValueError, match="hash mismatch"):
+    with pytest.raises(ValueError, match="processed_count/bar identity mismatch|hash mismatch"):
         verify_soak_checkpoint(bad)
 
 
