@@ -8,14 +8,14 @@ Goal: one bounded pre-Paper optimization/replay phase before external Windows MT
 ## 231–235 — Freeze and research intake
 - [x] 231. Confirm V11 merged and main CI green, including Neon/database gates.
 - [x] 232. Create V12 pre-paper optimization branch from green main.
-- [ ] 233. Record a bounded public-research intake for additional non-volume filters; provenance only, no automatic promotion.
-- [ ] 234. Define ADX/trend-strength candidate with causal closed-bar calculation.
-- [ ] 235. Define breakout candle-body/quality candidate without lookahead.
+- [x] 233. Record a bounded public-research intake for additional non-volume filters; provenance only, no automatic promotion.
+- [x] 234. Define ADX/trend-strength candidate with causal closed-bar calculation.
+- [x] 235. Define breakout candle-body/quality candidate without lookahead.
 
 ## 236–240 — Additional isolated candidates
-- [ ] 236. Define ATR/range-compression candidate, separated from existing ATR001 evidence.
-- [ ] 237. Define retest-staleness candidate using bars-since-breakout only.
-- [ ] 238. Add candidate registry/status labels: RESEARCH / TESTED / REJECTED / ROBUST_CANDIDATE.
+- [x] 236. Define ATR/range-compression candidate, separated from existing ATR001 evidence.
+- [x] 237. Define retest-staleness candidate using bars-since-breakout only.
+- [x] 238. Add candidate registry/status labels: RESEARCH / TESTED / REJECTED / ROBUST_CANDIDATE.
 - [ ] 239. Add leakage/lookahead tests for all four candidates.
 - [ ] 240. Add deterministic feature tests and missing/warm-up handling.
 
