@@ -9,6 +9,7 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     ref = json.loads((root / "research/V112_REFERENCE_V1/reference_result.json").read_text())
     registry = json.loads((root / "research/RESEARCH_FAMILY_REGISTRY_V1.json").read_text())
+    v12_registry = json.loads((root / "research/V12_CANDIDATE_REGISTRY.json").read_text())
     web = json.loads((root / "web/status.json").read_text())
 
     checks = {
@@ -40,6 +41,59 @@ def main() -> None:
         raise SystemExit("web status must mark V11.2 active reference immutable")
     if web["readiness"]["paper"] != "BLOCKED" or web["readiness"]["live"] != "BLOCKED":
         raise SystemExit("web status must not expose Paper/Live as ready")
+
+    replay = web.get("historical_sequential_replay")
+    if not isinstance(replay, dict):
+        raise SystemExit("web status must expose historical sequential replay state")
+    if replay.get("state") != "COMPLETE" or replay.get("milestones") != "241-245":
+        raise SystemExit("historical replay milestones must be represented as complete")
+    if replay.get("schema") != "DAXLAB_HISTORICAL_SEQUENTIAL_REPLAY_V1":
+        raise SystemExit("unexpected historical replay schema")
+    if replay.get("evidence_state") != "HISTORICAL_REPLAY_ONLY_NOT_BROKER_EVIDENCE":
+        raise SystemExit("historical replay must never be represented as broker evidence")
+    if replay.get("dataset_identity") != "HASH_VERIFIED":
+        raise SystemExit("historical replay must remain bound to hash-verified dataset evidence")
+    if replay.get("reference_experiment_id") != ref["experiment_id"]:
+        raise SystemExit("historical replay experiment binding drift")
+    if replay.get("reference_engine_sha256") != ref["engine"]["exact_candidate_source_sha256"]:
+        raise SystemExit("historical replay engine binding drift")
+    if replay.get("closed_m5_only") is not True or replay.get("chronological_only") is not True:
+        raise SystemExit("historical replay must remain closed-M5 chronological only")
+    if replay.get("future_bar_access") != "PROHIBITED_AND_TESTED":
+        raise SystemExit("historical replay future-bar guard missing")
+    if replay.get("duplicate_bar_idempotency") != "TESTED":
+        raise SystemExit("historical replay duplicate idempotency must remain tested")
+    if replay.get("checkpoint_resume_parity") != "TESTED":
+        raise SystemExit("historical replay checkpoint/resume parity must remain tested")
+    if replay.get("deterministic_replay_fingerprint") != "IMPLEMENTED":
+        raise SystemExit("historical replay fingerprint contract missing")
+    if replay.get("action") != "NO_ORDER_ONLY" or replay.get("execution_capability") != "NONE":
+        raise SystemExit("historical replay must remain observation-only")
+    if replay.get("order_execution_enabled") is not False:
+        raise SystemExit("historical replay must keep execution disabled")
+
+    selection = web.get("v12_candidate_selection")
+    if not isinstance(selection, dict):
+        raise SystemExit("web status must expose V12 candidate-selection state")
+    if selection.get("state") != "MILESTONES_246_248_COMPLETE":
+        raise SystemExit("V12 selection milestones 246-248 must be complete")
+    if selection.get("registry_schema") != v12_registry["schema_version"]:
+        raise SystemExit("V12 candidate registry schema drift")
+    web_candidates = {item["id"]: item["state"] for item in selection.get("items", [])}
+    registry_candidates = {item["family"]: item["state"] for item in v12_registry["candidates"]}
+    if web_candidates != registry_candidates:
+        raise SystemExit(f"V12 candidate-selection drift detected: web={web_candidates} registry={registry_candidates}")
+    robust_count = sum(state == "ROBUST_CANDIDATE" for state in registry_candidates.values())
+    if selection.get("robust_candidate_count") != robust_count:
+        raise SystemExit("V12 robust-candidate count drift")
+    if robust_count != 0 or selection.get("interaction_test") != "NO_INTERACTION_AUTHORIZED":
+        raise SystemExit("V12 interaction telemetry must remain blocked without a robust candidate")
+    if selection.get("production_promotion") is not False:
+        raise SystemExit("V12 selection must not imply production promotion")
+    if selection.get("paper_started") is not False or selection.get("live_authorized") is not False:
+        raise SystemExit("V12 selection must not imply Paper/LIVE readiness")
+    if selection.get("order_execution_enabled") is not False:
+        raise SystemExit("V12 selection must keep execution disabled")
 
     mt5 = web.get("mt5_adapter")
     if not isinstance(mt5, dict):
@@ -114,7 +168,7 @@ def main() -> None:
     if web["recovery"].get("mt5_host_evidence_manifest") != "IMPLEMENTED_CREDENTIAL_FREE":
         raise SystemExit("MT5 host evidence recovery manifest contract missing")
 
-    print("Web status integrity OK | V11.2 frozen | pre-host blocked | synthetic NO_ORDER | Paper/Live BLOCKED")
+    print("Web status integrity OK | V11.2 frozen | V12 replay/selection truthful | Paper/Live BLOCKED")
 
 
 if __name__ == "__main__":
