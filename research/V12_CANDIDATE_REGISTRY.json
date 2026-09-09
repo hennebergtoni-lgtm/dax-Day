@@ -1,0 +1,40 @@
+{
+  "schema_version": "DAXLAB_V12_CANDIDATE_REGISTRY_V1",
+  "allowed_states": ["RESEARCH", "TESTED", "REJECTED", "ROBUST_CANDIDATE"],
+  "promotion_rule": "No candidate becomes production logic without isolated causal evidence, stability review, and a later explicit promotion decision.",
+  "candidates": [
+    {
+      "family": "ADX001",
+      "state": "RESEARCH",
+      "data": "OHLC_M5_CLOSED_ONLY",
+      "lookahead_allowed": false,
+      "volume_required": false,
+      "isolated_test_required": true
+    },
+    {
+      "family": "BODY001",
+      "state": "RESEARCH",
+      "data": "OHLC_M5_CLOSED_ONLY",
+      "lookahead_allowed": false,
+      "volume_required": false,
+      "isolated_test_required": true
+    },
+    {
+      "family": "COMP001",
+      "state": "RESEARCH",
+      "data": "OHLC_M5_CLOSED_ONLY",
+      "lookahead_allowed": false,
+      "volume_required": false,
+      "isolated_test_required": true,
+      "distinct_from": "ATR001"
+    },
+    {
+      "family": "STALE001",
+      "state": "RESEARCH",
+      "data": "OHLC_M5_CLOSED_ONLY",
+      "lookahead_allowed": false,
+      "volume_required": false,
+      "isolated_test_required": true
+    }
+  ]
+}
