@@ -22,19 +22,26 @@ _REQUIRED = {
     "clock_ok",
     "symbols",
 }
+_OPTIONAL = {"broker_timezone"}
 _SYMBOL_REQUIRED = {"name", "digits", "point", "trade_mode"}
 
 
 def parse_mt5_probe_payload(payload: Mapping[str, Any]) -> Mt5HostObservation:
     """Convert a strict JSON-like payload into the fail-closed host contract."""
     missing = _REQUIRED - payload.keys()
-    unknown = payload.keys() - _REQUIRED
+    unknown = payload.keys() - (_REQUIRED | _OPTIONAL)
     if missing:
         raise ValueError(f"missing MT5 probe fields: {sorted(missing)}")
     if unknown:
         raise ValueError(f"unknown MT5 probe fields: {sorted(unknown)}")
 
     observed_at = _timestamp(payload["observed_at"])
+    if "broker_timezone" in payload:
+        broker_timezone = payload["broker_timezone"]
+        if broker_timezone is not None and (
+            not isinstance(broker_timezone, str) or not broker_timezone.strip()
+        ):
+            raise ValueError("broker_timezone must be a non-empty string or null")
     symbols_raw = payload["symbols"]
     if not isinstance(symbols_raw, list):
         raise ValueError("symbols must be a list")
