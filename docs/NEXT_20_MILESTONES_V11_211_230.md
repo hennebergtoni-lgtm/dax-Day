@@ -28,10 +28,10 @@ Scope: continue offline/pre-host hardening only. This block does **not** authori
 
 ## 226–230 — CI and handoff readiness
 - [x] 226. Add deterministic V11 pre-host hardening smoke to CI.
-- [ ] 227. Re-run frozen V11.2 replay guard unchanged.
-- [ ] 228. Re-run SHADOW 3,090-bar soak after duplicate-bar hardening.
-- [ ] 229. Record V11 hard review with explicit blockers and next external step 102.
-- [ ] 230. Merge V11 only if Ruff, full pytest, replay, soak and truthfulness gates are all green.
+- [x] 227. Re-run frozen V11.2 replay guard unchanged. PR CI #461: GREEN.
+- [x] 228. Re-run SHADOW 3,090-bar soak after duplicate-bar hardening. PR CI #461: GREEN.
+- [x] 229. Record V11 hard review with explicit blockers and next external step 102 in `docs/V11_HARD_REVIEW.md`.
+- [ ] 230. Merge V11 only if Ruff, full pytest, replay, soak and truthfulness gates are all green; then require post-merge main CI including Neon/database gates.
 
 ## Binding constraints
 - V11.2 remains the frozen active reference baseline.
