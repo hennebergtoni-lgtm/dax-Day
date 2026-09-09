@@ -25,6 +25,26 @@ from daxlab.runtime.shadow_soak import bar_fingerprint
 
 _SCHEMA = "DAXLAB_HISTORICAL_SEQUENTIAL_REPLAY_V1"
 _EVIDENCE_STATE = "HISTORICAL_REPLAY_ONLY_NOT_BROKER_EVIDENCE"
+VERIFIED_DATASET_ID = "dax_m5_2014_2019_audited_v1"
+VERIFIED_DATASET_SHA256 = "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
+
+
+@dataclass(frozen=True, slots=True)
+class HistoricalReplayBinding:
+    dataset_id: str = VERIFIED_DATASET_ID
+    dataset_sha256: str = VERIFIED_DATASET_SHA256
+    reference_experiment_id: str = V112_EXPERIMENT_ID
+    reference_engine_sha256: str = V112_ENGINE_SHA256
+
+    def __post_init__(self) -> None:
+        if self.dataset_id != VERIFIED_DATASET_ID:
+            raise ValueError("historical replay dataset ID mismatch")
+        if self.dataset_sha256 != VERIFIED_DATASET_SHA256:
+            raise ValueError("historical replay dataset fingerprint mismatch")
+        if self.reference_experiment_id != V112_EXPERIMENT_ID:
+            raise ValueError("historical replay V11.2 experiment mismatch")
+        if self.reference_engine_sha256 != V112_ENGINE_SHA256:
+            raise ValueError("historical replay V11.2 engine fingerprint mismatch")
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,14 +64,20 @@ class HistoricalReplayResult:
     timeframe_minutes: int
     records: tuple[HistoricalReplayRecord, ...]
     replay_fingerprint: str
-    reference_experiment_id: str = V112_EXPERIMENT_ID
-    reference_engine_sha256: str = V112_ENGINE_SHA256
+    dataset_id: str
+    dataset_sha256: str
+    reference_experiment_id: str
+    reference_engine_sha256: str
     execution_capability: str = "NONE"
     order_execution_enabled: bool = False
 
 
 def run_historical_sequential_replay(
-    bars: Iterable[Mt5Bar], *, symbol: str = "DAX", timeframe_minutes: int = 5
+    bars: Iterable[Mt5Bar],
+    *,
+    symbol: str = "DAX",
+    timeframe_minutes: int = 5,
+    binding: HistoricalReplayBinding | None = None,
 ) -> HistoricalReplayResult:
     """Feed closed M5 bars one-by-one in chronological order.
 
@@ -63,6 +89,14 @@ def run_historical_sequential_replay(
         raise ValueError("symbol must be non-empty")
     if timeframe_minutes != 5:
         raise ValueError("historical sequential replay currently requires M5")
+    active_binding = binding or HistoricalReplayBinding()
+    # Reconstructing validates even a forged/partially deserialized binding.
+    HistoricalReplayBinding(
+        dataset_id=active_binding.dataset_id,
+        dataset_sha256=active_binding.dataset_sha256,
+        reference_experiment_id=active_binding.reference_experiment_id,
+        reference_engine_sha256=active_binding.reference_engine_sha256,
+    )
 
     ordered = tuple(bars)
     _validate_strict_chronology(ordered, timeframe_minutes=timeframe_minutes)
@@ -80,6 +114,8 @@ def run_historical_sequential_replay(
                 feed_fresh=True,
                 clock_ok=True,
                 single_instance_lock_held=True,
+                reference_experiment_id=active_binding.reference_experiment_id,
+                reference_engine_sha256=active_binding.reference_engine_sha256,
             )
         )
         if decision.action != "NO_ORDER":
@@ -101,8 +137,10 @@ def run_historical_sequential_replay(
             "timeframe_minutes": timeframe_minutes,
             "bar_fingerprints": [record.bar_fingerprint for record in records],
             "decision_ids": [record.decision.decision_id for record in records],
-            "reference_experiment_id": V112_EXPERIMENT_ID,
-            "reference_engine_sha256": V112_ENGINE_SHA256,
+            "dataset_id": active_binding.dataset_id,
+            "dataset_sha256": active_binding.dataset_sha256,
+            "reference_experiment_id": active_binding.reference_experiment_id,
+            "reference_engine_sha256": active_binding.reference_engine_sha256,
         }
     )
     return HistoricalReplayResult(
@@ -112,6 +150,10 @@ def run_historical_sequential_replay(
         timeframe_minutes=timeframe_minutes,
         records=tuple(records),
         replay_fingerprint=replay_fingerprint,
+        dataset_id=active_binding.dataset_id,
+        dataset_sha256=active_binding.dataset_sha256,
+        reference_experiment_id=active_binding.reference_experiment_id,
+        reference_engine_sha256=active_binding.reference_engine_sha256,
     )
 
 
