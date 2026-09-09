@@ -1,6 +1,6 @@
 """Fail-closed contract for observations from a real MT5 host.
 
-This module deliberately has no MetaTrader5 dependency and no order API.  A
+This module deliberately has no MetaTrader5 dependency and no order API. A
 Windows-side probe can serialize observations into this contract; the research
 lab only accepts them after validation.
 """
@@ -37,14 +37,19 @@ def validate_read_only_host(
     *,
     market_data_fresh: bool,
     configured_symbol: str | None = None,
+    allow_data_only: bool = False,
 ) -> Mt5Handshake:
     """Validate a host observation without ever granting execution capability."""
     if observation.observed_at.tzinfo is None:
         raise ValueError("MT5 host observation timestamp must be timezone-aware")
     if observation.order_execution_enabled:
-        return _blocked(observation, "ORDER_EXECUTION_ENABLED")
+        return _blocked(observation, "ORDER_EXECUTION_ENABLED", allow_data_only=allow_data_only)
 
-    resolution = resolve_dax_symbol(observation.symbols, configured_symbol=configured_symbol)
+    resolution = resolve_dax_symbol(
+        observation.symbols,
+        configured_symbol=configured_symbol,
+        allow_data_only=allow_data_only,
+    )
     symbol_available = resolution.broker_symbol is not None
     health = Mt5Health(
         terminal_connected=observation.terminal_connected,
@@ -72,8 +77,13 @@ def validate_read_only_host(
     return Mt5Handshake(health=health, symbol_resolution=resolution, reason=reason)
 
 
-def _blocked(observation: Mt5HostObservation, reason: str) -> Mt5Handshake:
-    resolution = resolve_dax_symbol(observation.symbols)
+def _blocked(
+    observation: Mt5HostObservation,
+    reason: str,
+    *,
+    allow_data_only: bool = False,
+) -> Mt5Handshake:
+    resolution = resolve_dax_symbol(observation.symbols, allow_data_only=allow_data_only)
     health = Mt5Health(
         terminal_connected=observation.terminal_connected,
         account_connected=observation.account_connected,
