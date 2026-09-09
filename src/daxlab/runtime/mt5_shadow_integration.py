@@ -5,7 +5,7 @@ The bridge is deliberately observation-only. It cannot place orders and keeps
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from hashlib import sha256
 import json
 from typing import Any, Mapping
@@ -21,8 +21,10 @@ from daxlab.runtime.shadow_observation import (
     ShadowCheckpoint,
     ShadowDecision,
     ShadowObservationInput,
+    build_counters,
     build_shadow_decision,
     recovery_payload,
+    verify_recovery_payload,
 )
 
 
@@ -119,7 +121,7 @@ def combined_recovery_payload(
     shadow = recovery_payload(
         checkpoint=checkpoint,
         decisions=(decision,),
-        counters=_one_decision_counters(decision),
+        counters=build_counters((decision,)),
     )
     payload: dict[str, Any] = {
         "schema_version": "DAXLAB_MT5_SHADOW_RECOVERY_V1",
@@ -151,15 +153,7 @@ def verify_combined_recovery_payload(payload: Mapping[str, Any]) -> None:
     shadow = payload.get("shadow")
     if not isinstance(shadow, Mapping):
         raise ValueError("shadow recovery payload missing")
-    from daxlab.runtime.shadow_observation import verify_recovery_payload
-
     verify_recovery_payload(shadow)
-
-
-def _one_decision_counters(decision: ShadowDecision):
-    from daxlab.runtime.shadow_observation import build_counters
-
-    return build_counters((decision,))
 
 
 def _hash(value: Mapping[str, Any]) -> str:
