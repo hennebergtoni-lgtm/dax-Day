@@ -22,7 +22,7 @@ Goal: one bounded pre-Paper optimization/replay phase before external Windows MT
 ## 241–245 — Historical sequential SHADOW replay
 - [x] 241. Build a historical sequential replay contract that feeds only closed M5 bars in chronological order.
 - [x] 242. Bind replay to the verified 2014–2019 clean dataset fingerprint and frozen V11.2 reference.
-- [ ] 243. Produce deterministic decision/no-decision logs with bar identity and reason codes.
+- [x] 243. Produce deterministic decision/no-decision logs with bar identity and reason codes.
 - [ ] 244. Prove no future-bar access and duplicate-bar idempotency during historical replay.
 - [ ] 245. Add checkpoint/resume parity and deterministic replay fingerprint.
 
