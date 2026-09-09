@@ -75,11 +75,31 @@ def main() -> None:
     if host.get("order_execution_enabled") is not False:
         raise SystemExit("host readiness must keep execution disabled")
 
+    gate = web.get("pre_host_gate")
+    if not isinstance(gate, dict):
+        raise SystemExit("web status must expose explicit pre-host gate")
+    if gate.get("external_mt5_milestones_102_110_complete") is not False:
+        raise SystemExit("external MT5 milestones 102-110 must remain incomplete before real host evidence")
+    if gate.get("next_external_milestone") != 102:
+        raise SystemExit("next external milestone must remain 102")
+    if gate.get("synthetic_evidence_satisfies_real_host_readiness") is not False:
+        raise SystemExit("synthetic evidence must never satisfy real-host readiness")
+    if gate.get("paper_started") is not False:
+        raise SystemExit("Paper must remain not started before verified host evidence")
+    if gate.get("live_authorized") is not False:
+        raise SystemExit("LIVE must remain unauthorized")
+    if gate.get("order_execution_enabled") is not False:
+        raise SystemExit("pre-host gate must keep execution disabled")
+
     soak = web.get("synthetic_shadow_soak")
     if not isinstance(soak, dict):
         raise SystemExit("web status must expose synthetic SHADOW soak state")
     if soak.get("evidence_state") != "SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE":
         raise SystemExit("synthetic soak must never be represented as broker evidence")
+    if soak.get("checkpoint_schema") != "DAXLAB_SHADOW_SOAK_CHECKPOINT_V2":
+        raise SystemExit("synthetic soak must expose strengthened checkpoint V2")
+    if soak.get("recovery_schema") != "DAXLAB_SHADOW_SOAK_RECOVERY_V2":
+        raise SystemExit("synthetic soak must expose strengthened recovery V2")
     if soak.get("action") != "NO_ORDER_ONLY" or soak.get("order_execution_enabled") is not False:
         raise SystemExit("synthetic soak must remain observation-only")
 
@@ -94,7 +114,7 @@ def main() -> None:
     if web["recovery"].get("mt5_host_evidence_manifest") != "IMPLEMENTED_CREDENTIAL_FREE":
         raise SystemExit("MT5 host evidence recovery manifest contract missing")
 
-    print("Web status integrity OK | V11.2 frozen | synthetic soak NO_ORDER | Paper/Live BLOCKED")
+    print("Web status integrity OK | V11.2 frozen | pre-host blocked | synthetic NO_ORDER | Paper/Live BLOCKED")
 
 
 if __name__ == "__main__":
