@@ -7,7 +7,7 @@ closed-M5 sequences before a real Windows MT5 host is available.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from hashlib import sha256
 import json
 from typing import Any, Iterable, Mapping
