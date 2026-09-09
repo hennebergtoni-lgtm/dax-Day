@@ -27,6 +27,7 @@ from daxlab.runtime.shadow_observation import (
     verify_recovery_payload,
 )
 from daxlab.runtime.shadow_soak import (
+    MT5_READONLY_EVIDENCE_STATE,
     SoakCheckpoint as ShadowSoakCheckpoint,
     SoakResult,
     run_shadow_soak,
@@ -128,6 +129,7 @@ def evaluate_shadow_soak_from_bundle(
         bundle.feed.bars,
         symbol=status.symbol,
         checkpoint=checkpoint,
+        evidence_state=MT5_READONLY_EVIDENCE_STATE,
     )
     if result.execution_capability != "NONE":
         raise RuntimeError("MT5 SHADOW soak unexpectedly gained execution capability")
