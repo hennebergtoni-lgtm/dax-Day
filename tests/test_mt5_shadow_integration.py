@@ -5,6 +5,7 @@ import json
 from daxlab.runtime.mt5_shadow_integration import (
     combined_recovery_payload,
     evaluate_shadow_from_bundle,
+    evaluate_shadow_soak_from_bundle,
     host_readiness_summary,
     verify_combined_recovery_payload,
 )
@@ -135,6 +136,54 @@ def test_single_instance_lock_is_bound_to_status_and_gate() -> None:
     assert not gate.allowed
     assert decision is None
     assert "SINGLE_INSTANCE_LOCK_NOT_HELD" in status.blockers
+    assert status.status == "BLOCKED"
+
+
+def test_multi_bar_shadow_soak_is_no_order_only() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    gate, result, status = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert gate.allowed
+    assert result is not None
+    assert status.status == "GREEN"
+    assert result.processed == 3
+    assert result.execution_capability == "NONE"
+    assert result.order_execution_enabled is False
+    assert all(item.action == "NO_ORDER" for item in result.decisions)
+
+
+def test_multi_bar_shadow_resume_is_idempotent() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    _, first, _ = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert first is not None
+    _, resumed, _ = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+        checkpoint=first.checkpoint,
+    )
+    assert resumed is not None
+    assert resumed.processed == first.processed
+    assert resumed.duplicates_suppressed == 3
+    assert resumed.decisions == ()
+
+
+def test_multi_bar_shadow_blocked_gate_produces_no_result() -> None:
+    bundle = parse_windows_mt5_bundle(_bundle_payload())
+    gate, result, status = evaluate_shadow_soak_from_bundle(
+        bundle,
+        authorization=_auth(),
+        single_instance_lock_held=False,
+    )
+    assert not gate.allowed
+    assert result is None
     assert status.status == "BLOCKED"
 
 
