@@ -48,12 +48,26 @@ class HistoricalReplayBinding:
 
 
 @dataclass(frozen=True, slots=True)
+class HistoricalDecisionLog:
+    sequence: int
+    bar_open_time: str
+    bar_fingerprint: str
+    visible_bar_count: int
+    strategy_decision_state: str
+    action: str
+    reason_codes: tuple[str, ...]
+    shadow_decision_id: str
+    log_id: str
+
+
+@dataclass(frozen=True, slots=True)
 class HistoricalReplayRecord:
     sequence: int
     bar_open_time: str
     bar_fingerprint: str
     visible_bar_count: int
     decision: ShadowDecision
+    decision_log: HistoricalDecisionLog
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,18 +93,12 @@ def run_historical_sequential_replay(
     timeframe_minutes: int = 5,
     binding: HistoricalReplayBinding | None = None,
 ) -> HistoricalReplayResult:
-    """Feed closed M5 bars one-by-one in chronological order.
-
-    Input represents historical bars that are already complete. At sequence N,
-    the replay contract exposes exactly N+1 bars: the prefix through the current
-    bar. It never exposes a later bar to the current decision.
-    """
+    """Feed closed M5 bars one-by-one in chronological order."""
     if not symbol.strip():
         raise ValueError("symbol must be non-empty")
     if timeframe_minutes != 5:
         raise ValueError("historical sequential replay currently requires M5")
     active_binding = binding or HistoricalReplayBinding()
-    # Reconstructing validates even a forged/partially deserialized binding.
     HistoricalReplayBinding(
         dataset_id=active_binding.dataset_id,
         dataset_sha256=active_binding.dataset_sha256,
@@ -120,6 +128,13 @@ def run_historical_sequential_replay(
         )
         if decision.action != "NO_ORDER":
             raise RuntimeError("historical replay emitted order-capable action")
+        decision_log = _decision_log(
+            sequence=sequence,
+            bar=bar,
+            bar_identity=fingerprint,
+            visible_bar_count=sequence + 1,
+            decision=decision,
+        )
         records.append(
             HistoricalReplayRecord(
                 sequence=sequence,
@@ -127,6 +142,7 @@ def run_historical_sequential_replay(
                 bar_fingerprint=fingerprint,
                 visible_bar_count=sequence + 1,
                 decision=decision,
+                decision_log=decision_log,
             )
         )
 
@@ -137,6 +153,7 @@ def run_historical_sequential_replay(
             "timeframe_minutes": timeframe_minutes,
             "bar_fingerprints": [record.bar_fingerprint for record in records],
             "decision_ids": [record.decision.decision_id for record in records],
+            "decision_log_ids": [record.decision_log.log_id for record in records],
             "dataset_id": active_binding.dataset_id,
             "dataset_sha256": active_binding.dataset_sha256,
             "reference_experiment_id": active_binding.reference_experiment_id,
@@ -154,6 +171,39 @@ def run_historical_sequential_replay(
         dataset_sha256=active_binding.dataset_sha256,
         reference_experiment_id=active_binding.reference_experiment_id,
         reference_engine_sha256=active_binding.reference_engine_sha256,
+    )
+
+
+def _decision_log(
+    *,
+    sequence: int,
+    bar: Mt5Bar,
+    bar_identity: str,
+    visible_bar_count: int,
+    decision: ShadowDecision,
+) -> HistoricalDecisionLog:
+    state = "NO_STRATEGY_DECISION"
+    reasons = tuple(decision.reason_codes) + ("HISTORICAL_REPLAY_OBSERVATION_ONLY",)
+    payload = {
+        "sequence": sequence,
+        "bar_open_time": bar.open_time.isoformat(),
+        "bar_fingerprint": bar_identity,
+        "visible_bar_count": visible_bar_count,
+        "strategy_decision_state": state,
+        "action": decision.action,
+        "reason_codes": list(reasons),
+        "shadow_decision_id": decision.decision_id,
+    }
+    return HistoricalDecisionLog(
+        sequence=sequence,
+        bar_open_time=bar.open_time.isoformat(),
+        bar_fingerprint=bar_identity,
+        visible_bar_count=visible_bar_count,
+        strategy_decision_state=state,
+        action=decision.action,
+        reason_codes=reasons,
+        shadow_decision_id=decision.decision_id,
+        log_id=_hash(payload),
     )
 
 
