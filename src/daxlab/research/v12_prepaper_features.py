@@ -45,6 +45,13 @@ class CompressionFeature:
     tr_ratio: float
 
 
+@dataclass(frozen=True, slots=True)
+class Comp001Feature:
+    recent_tr_mean_3: float
+    atr14: float
+    ratio: float
+
+
 def _closed_prefix(bars: Sequence[ClosedBar], asof_index: int) -> Sequence[ClosedBar]:
     if asof_index < 0 or asof_index >= len(bars):
         raise IndexError("asof_index outside closed-bar sequence")
@@ -92,6 +99,36 @@ def range_compression(
         true_range=current_tr,
         mean_true_range=mean_tr,
         tr_ratio=current_tr / mean_tr,
+    )
+
+
+def comp001_atr14(bars: Sequence[ClosedBar], asof_index: int) -> Comp001Feature | None:
+    """Return the preregistered COMP001 ratio: mean(TR[-3:]) / causal ATR14.
+
+    The constants 3 and 14 are intentionally fixed by the milestone-246
+    preregistration and are not exposed as tuning parameters.
+    """
+    prefix = _closed_prefix(bars, asof_index)
+    atr_period = 14
+    recent_window = 3
+    if len(prefix) < atr_period + 1:
+        return None
+
+    trs: list[float] = []
+    for idx in range(1, len(prefix)):
+        trs.append(_true_range(prefix[idx], prefix[idx - 1].close))
+
+    atr14 = fsum(trs[:atr_period]) / atr_period
+    for tr in trs[atr_period:]:
+        atr14 = ((atr14 * (atr_period - 1)) + tr) / atr_period
+    if atr14 <= 0:
+        return None
+
+    recent_tr_mean_3 = fsum(trs[-recent_window:]) / recent_window
+    return Comp001Feature(
+        recent_tr_mean_3=recent_tr_mean_3,
+        atr14=atr14,
+        ratio=recent_tr_mean_3 / atr14,
     )
 
 
