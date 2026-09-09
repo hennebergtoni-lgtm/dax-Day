@@ -20,20 +20,26 @@ class ClosedM5Feed:
     age_seconds: float
     fresh: bool
     discontinuities: tuple[str, ...]
+    broker_timezone: str | None = None
+    timestamp_interpretation: str | None = None
 
 
 _REQUIRED = {"observed_at", "requested_start_pos", "max_age_seconds", "bars"}
+_OPTIONAL = {"broker_timezone", "timestamp_interpretation"}
 _BAR_REQUIRED = {"open_time", "open", "high", "low", "close"}
+_RAW_UTC = "RAW_UTC_ASSUMPTION"
+_EXPLICIT_BROKER = "EXPLICIT_BROKER_WALL_CLOCK"
 
 
 def parse_closed_m5_feed(payload: Mapping[str, Any]) -> ClosedM5Feed:
     missing = _REQUIRED - payload.keys()
-    unknown = payload.keys() - _REQUIRED
+    unknown = payload.keys() - (_REQUIRED | _OPTIONAL)
     if missing:
         raise ValueError(f"missing feed fields: {sorted(missing)}")
     if unknown:
         raise ValueError(f"unknown feed fields: {sorted(unknown)}")
 
+    broker_timezone, timestamp_interpretation = _timestamp_contract(payload)
     observed = _ts(payload["observed_at"], "observed_at")
     requested_start_pos = payload["requested_start_pos"]
     if type(requested_start_pos) is not int:
@@ -82,6 +88,8 @@ def parse_closed_m5_feed(payload: Mapping[str, Any]) -> ClosedM5Feed:
         age_seconds=age_seconds,
         fresh=age_seconds <= max_age_seconds,
         discontinuities=tuple(discontinuities),
+        broker_timezone=broker_timezone,
+        timestamp_interpretation=timestamp_interpretation,
     )
 
 
@@ -91,6 +99,31 @@ def feed_blocker(feed: ClosedM5Feed) -> str | None:
     if feed.discontinuities:
         return "MARKET_DATA_DISCONTINUITY"
     return None
+
+
+def _timestamp_contract(payload: Mapping[str, Any]) -> tuple[str | None, str | None]:
+    timezone_present = "broker_timezone" in payload
+    interpretation_present = "timestamp_interpretation" in payload
+    if timezone_present != interpretation_present:
+        raise ValueError("broker timestamp fields must be supplied together")
+    if not timezone_present:
+        return None, None
+
+    broker_timezone = payload["broker_timezone"]
+    interpretation = payload["timestamp_interpretation"]
+    if broker_timezone is not None and (
+        not isinstance(broker_timezone, str) or not broker_timezone.strip()
+    ):
+        raise ValueError("broker_timezone must be a non-empty string or null")
+    if not isinstance(interpretation, str):
+        raise ValueError("timestamp_interpretation must be a string")
+    if interpretation not in {_RAW_UTC, _EXPLICIT_BROKER}:
+        raise ValueError("unsupported timestamp_interpretation")
+    if broker_timezone is None and interpretation != _RAW_UTC:
+        raise ValueError("raw UTC interpretation required without broker timezone")
+    if broker_timezone is not None and interpretation != _EXPLICIT_BROKER:
+        raise ValueError("explicit broker wall-clock interpretation required with timezone")
+    return broker_timezone, interpretation
 
 
 def _bar(value: Any) -> Mt5Bar:

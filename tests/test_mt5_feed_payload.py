@@ -34,7 +34,58 @@ def test_valid_closed_feed() -> None:
     assert feed.fresh
     assert not feed.discontinuities
     assert len(feed.latest_closed_fingerprint) == 64
+    assert feed.broker_timezone is None
+    assert feed.timestamp_interpretation is None
     assert feed_blocker(feed) is None
+
+
+def test_explicit_broker_timestamp_contract_is_preserved() -> None:
+    item = payload()
+    item["broker_timezone"] = "Europe/Berlin"
+    item["timestamp_interpretation"] = "EXPLICIT_BROKER_WALL_CLOCK"
+    feed = parse_closed_m5_feed(item)
+    assert feed.broker_timezone == "Europe/Berlin"
+    assert feed.timestamp_interpretation == "EXPLICIT_BROKER_WALL_CLOCK"
+
+
+def test_raw_utc_timestamp_contract_is_valid_without_timezone() -> None:
+    item = payload()
+    item["broker_timezone"] = None
+    item["timestamp_interpretation"] = "RAW_UTC_ASSUMPTION"
+    feed = parse_closed_m5_feed(item)
+    assert feed.broker_timezone is None
+    assert feed.timestamp_interpretation == "RAW_UTC_ASSUMPTION"
+
+
+def test_rejects_partial_broker_timestamp_contract() -> None:
+    item = payload()
+    item["broker_timezone"] = "Europe/Berlin"
+    with pytest.raises(ValueError, match="supplied together"):
+        parse_closed_m5_feed(item)
+
+
+def test_rejects_explicit_interpretation_without_timezone() -> None:
+    item = payload()
+    item["broker_timezone"] = None
+    item["timestamp_interpretation"] = "EXPLICIT_BROKER_WALL_CLOCK"
+    with pytest.raises(ValueError, match="raw UTC interpretation required"):
+        parse_closed_m5_feed(item)
+
+
+def test_rejects_raw_interpretation_with_timezone() -> None:
+    item = payload()
+    item["broker_timezone"] = "Europe/Berlin"
+    item["timestamp_interpretation"] = "RAW_UTC_ASSUMPTION"
+    with pytest.raises(ValueError, match="explicit broker wall-clock"):
+        parse_closed_m5_feed(item)
+
+
+def test_rejects_unknown_timestamp_interpretation() -> None:
+    item = payload()
+    item["broker_timezone"] = "Europe/Berlin"
+    item["timestamp_interpretation"] = "GUESS"
+    with pytest.raises(ValueError, match="unsupported timestamp_interpretation"):
+        parse_closed_m5_feed(item)
 
 
 def test_rejects_bar_zero_request() -> None:
