@@ -20,14 +20,14 @@ Scope: continue offline/pre-host hardening only. This block does **not** authori
 - [x] 220. Prove repeated resume remains idempotent after fault-state changes.
 
 ## 221–225 — Pre-host truthfulness and operator safety
-- [ ] 221. Add explicit pre-host status marker showing external MT5 milestones 102–110 remain incomplete.
-- [ ] 222. Add test that synthetic evidence can never satisfy real-host readiness.
-- [ ] 223. Add test that Paper remains NOT STARTED without verified Windows MT5 host evidence.
-- [ ] 224. Add test that LIVE remains blocked regardless of synthetic soak success.
-- [ ] 225. Add credential-surface scan covering new V11 recovery/status payloads.
+- [x] 221. Add explicit pre-host status marker showing external MT5 milestones 102–110 remain incomplete.
+- [x] 222. Add test that synthetic evidence can never satisfy real-host readiness.
+- [x] 223. Add test that Paper remains NOT STARTED without verified Windows MT5 host evidence.
+- [x] 224. Add test that LIVE remains blocked regardless of synthetic soak success.
+- [x] 225. Add credential-surface scan covering new V11 recovery/status payloads.
 
 ## 226–230 — CI and handoff readiness
-- [ ] 226. Add deterministic V11 pre-host hardening smoke to CI.
+- [x] 226. Add deterministic V11 pre-host hardening smoke to CI.
 - [ ] 227. Re-run frozen V11.2 replay guard unchanged.
 - [ ] 228. Re-run SHADOW 3,090-bar soak after duplicate-bar hardening.
 - [ ] 229. Record V11 hard review with explicit blockers and next external step 102.
