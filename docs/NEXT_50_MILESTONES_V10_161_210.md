@@ -2,12 +2,13 @@
 
 Status: IMPLEMENTED / PENDING PR CI
 Date: 2026-09-09
+Authorization scope: AUTHORIZED FOR NON-LIVE DEVELOPMENT
 
 User authorization covers the next 50 project steps. It authorizes continued offline engineering, synthetic SHADOW soak testing and PAPER preparation. It does **not** authorize LIVE real-money execution. Real MT5 host evidence remains mandatory for external milestones 102–110.
 
 ## 161–170 — V9 closeout and soak foundation
 - [x] 161. Confirm final V9 PR #6 head CI #436 GREEN.
-- [ ] 162. Merge CI-green V9 offline MT5-to-SHADOW integration. Deferred until V10 branch validation; V10 is based on the same CI-green V9 head.
+- [x] 162. Merge CI-green V9 offline MT5-to-SHADOW integration.
 - [x] 163. Create dedicated V10 offline soak branch from the CI-green V9 head.
 - [x] 164. Freeze V10 scope: synthetic/offline only; no broker order API.
 - [x] 165. Add deterministic multi-bar SHADOW soak runner.
