@@ -21,6 +21,7 @@ def test_soak_summary_is_compact_and_credential_free() -> None:
         "blocked",
         "duplicates_suppressed",
         "run_fingerprint",
+        "checkpoint_schema_version",
         "checkpoint_sha256",
         "execution_capability",
         "order_execution_enabled",

@@ -20,8 +20,9 @@ from daxlab.runtime.shadow_observation import (
 )
 
 _EVIDENCE_STATE = "SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE"
-_CHECKPOINT_SCHEMA = "DAXLAB_SHADOW_SOAK_CHECKPOINT_V1"
+_CHECKPOINT_SCHEMA = "DAXLAB_SHADOW_SOAK_CHECKPOINT_V2"
 _RESULT_SCHEMA = "DAXLAB_SHADOW_SOAK_RESULT_V1"
+_RECOVERY_SCHEMA = "DAXLAB_SHADOW_SOAK_RECOVERY_V2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +39,7 @@ class SoakCheckpoint:
     processed_count: int
     last_bar_fingerprint: str | None
     seen_decision_ids: tuple[str, ...]
+    seen_bar_fingerprints: tuple[str, ...]
     payload_sha256: str
 
 
@@ -69,7 +71,7 @@ def bar_fingerprint(bar: Mt5Bar) -> str:
 
 
 def initial_soak_checkpoint() -> SoakCheckpoint:
-    return _checkpoint(0, None, ())
+    return _checkpoint(0, None, (), ())
 
 
 def verify_soak_checkpoint(checkpoint: SoakCheckpoint) -> None:
@@ -81,12 +83,19 @@ def verify_soak_checkpoint(checkpoint: SoakCheckpoint) -> None:
         _require_sha(checkpoint.last_bar_fingerprint, "last_bar_fingerprint")
     if len(set(checkpoint.seen_decision_ids)) != len(checkpoint.seen_decision_ids):
         raise ValueError("shadow soak checkpoint contains duplicate decision IDs")
+    if len(set(checkpoint.seen_bar_fingerprints)) != len(checkpoint.seen_bar_fingerprints):
+        raise ValueError("shadow soak checkpoint contains duplicate bar fingerprints")
     for value in checkpoint.seen_decision_ids:
         _require_sha(value, "seen_decision_id")
+    for value in checkpoint.seen_bar_fingerprints:
+        _require_sha(value, "seen_bar_fingerprint")
+    if checkpoint.processed_count != len(checkpoint.seen_bar_fingerprints):
+        raise ValueError("shadow soak checkpoint processed_count/bar identity mismatch")
     expected = _checkpoint_hash(
         checkpoint.processed_count,
         checkpoint.last_bar_fingerprint,
         checkpoint.seen_decision_ids,
+        checkpoint.seen_bar_fingerprints,
     )
     if checkpoint.payload_sha256 != expected:
         raise ValueError("shadow soak checkpoint hash mismatch")
@@ -104,7 +113,8 @@ def run_shadow_soak(
     state = checkpoint or initial_soak_checkpoint()
     verify_soak_checkpoint(state)
 
-    seen = set(state.seen_decision_ids)
+    seen_decisions = set(state.seen_decision_ids)
+    seen_bars = set(state.seen_bar_fingerprints)
     decisions: list[ShadowDecision] = []
     duplicates = 0
     last_bar_fingerprint = state.last_bar_fingerprint
@@ -115,6 +125,9 @@ def run_shadow_soak(
         if bar.open_time.tzinfo is None:
             raise ValueError("shadow soak bars must be timezone-aware")
         fingerprint = bar_fingerprint(bar)
+        if fingerprint in seen_bars:
+            duplicates += 1
+            continue
         fault = fault_map.get(index, SoakFault())
         observed_at = bar.open_time + timedelta(minutes=5, seconds=1)
         observation = ShadowObservationInput(
@@ -129,15 +142,21 @@ def run_shadow_soak(
         decision = build_shadow_decision(observation)
         if decision.action != "NO_ORDER":
             raise RuntimeError("shadow soak emitted order-capable action")
-        if decision.decision_id in seen:
+        if decision.decision_id in seen_decisions:
             duplicates += 1
             continue
-        seen.add(decision.decision_id)
+        seen_decisions.add(decision.decision_id)
+        seen_bars.add(fingerprint)
         decisions.append(decision)
         last_bar_fingerprint = fingerprint
 
     processed = state.processed_count + len(decisions)
-    checkpoint_out = _checkpoint(processed, last_bar_fingerprint, tuple(sorted(seen)))
+    checkpoint_out = _checkpoint(
+        processed,
+        last_bar_fingerprint,
+        tuple(sorted(seen_decisions)),
+        tuple(sorted(seen_bars)),
+    )
     blocked = sum(
         item.reason_codes != ("OBSERVATION_ONLY_NO_ORDER",) for item in decisions
     )
@@ -170,6 +189,7 @@ def soak_summary(result: SoakResult) -> dict[str, Any]:
         "blocked": result.blocked,
         "duplicates_suppressed": result.duplicates_suppressed,
         "run_fingerprint": result.run_fingerprint,
+        "checkpoint_schema_version": result.checkpoint.schema_version,
         "checkpoint_sha256": result.checkpoint.payload_sha256,
         "execution_capability": "NONE",
         "order_execution_enabled": False,
@@ -178,7 +198,7 @@ def soak_summary(result: SoakResult) -> dict[str, Any]:
 
 def soak_recovery_payload(result: SoakResult) -> dict[str, Any]:
     payload: dict[str, Any] = {
-        "schema_version": "DAXLAB_SHADOW_SOAK_RECOVERY_V1",
+        "schema_version": _RECOVERY_SCHEMA,
         "evidence_state": _EVIDENCE_STATE,
         "checkpoint": asdict(result.checkpoint),
         "decision_ids": [item.decision_id for item in result.decisions],
@@ -191,7 +211,7 @@ def soak_recovery_payload(result: SoakResult) -> dict[str, Any]:
 
 
 def verify_soak_recovery_payload(payload: Mapping[str, Any]) -> None:
-    if payload.get("schema_version") != "DAXLAB_SHADOW_SOAK_RECOVERY_V1":
+    if payload.get("schema_version") != _RECOVERY_SCHEMA:
         raise ValueError("shadow soak recovery schema mismatch")
     if payload.get("evidence_state") != _EVIDENCE_STATE:
         raise ValueError("shadow soak evidence state mismatch")
@@ -216,16 +236,19 @@ def _checkpoint(
     processed_count: int,
     last_bar_fingerprint: str | None,
     seen_decision_ids: tuple[str, ...],
+    seen_bar_fingerprints: tuple[str, ...],
 ) -> SoakCheckpoint:
     return SoakCheckpoint(
         schema_version=_CHECKPOINT_SCHEMA,
         processed_count=processed_count,
         last_bar_fingerprint=last_bar_fingerprint,
         seen_decision_ids=seen_decision_ids,
+        seen_bar_fingerprints=seen_bar_fingerprints,
         payload_sha256=_checkpoint_hash(
             processed_count,
             last_bar_fingerprint,
             seen_decision_ids,
+            seen_bar_fingerprints,
         ),
     )
 
@@ -234,6 +257,7 @@ def _checkpoint_hash(
     processed_count: int,
     last_bar_fingerprint: str | None,
     seen_decision_ids: tuple[str, ...],
+    seen_bar_fingerprints: tuple[str, ...],
 ) -> str:
     return _hash(
         {
@@ -241,6 +265,7 @@ def _checkpoint_hash(
             "processed_count": processed_count,
             "last_bar_fingerprint": last_bar_fingerprint,
             "seen_decision_ids": list(seen_decision_ids),
+            "seen_bar_fingerprints": list(seen_bar_fingerprints),
         }
     )
 
