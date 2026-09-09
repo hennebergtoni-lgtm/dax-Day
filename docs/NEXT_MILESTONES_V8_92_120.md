@@ -33,14 +33,17 @@ It does **not** authorize real-money LIVE execution. LIVE remains a separate exp
 - [ ] 110. Persist credential-free host evidence and health snapshot.
 
 ## 111–118 — Shadow/paper observation layer
-- [ ] 111. Define observation-only decision loop input contract.
-- [ ] 112. Bind V11.2 frozen decision engine without mutation.
-- [ ] 113. Emit NO_ORDER shadow decisions with reason codes.
-- [ ] 114. Add deterministic decision IDs and duplicate suppression.
-- [ ] 115. Add checkpoint/resume for observation loop.
-- [ ] 116. Add watchdog stop conditions and stale-feed fail-closed behavior.
-- [ ] 117. Add read-only dashboard counters for prospective observations.
-- [ ] 118. Add recovery round-trip for synthetic prospective observations.
+- [x] 111. Define observation-only decision loop input contract.
+- [x] 112. Bind V11.2 frozen decision engine identity without mutation.
+- [x] 113. Emit NO_ORDER shadow decisions with reason codes.
+- [x] 114. Add deterministic decision IDs and duplicate suppression.
+- [x] 115. Add checkpoint/resume for observation loop.
+- [x] 116. Add watchdog stop conditions and stale-feed fail-closed behavior.
+- [x] 117. Add read-only dashboard counters for prospective observations.
+- [x] 118. Add recovery round-trip for synthetic prospective observations.
+
+### Offline hardening note
+The observation layer was intentionally implemented before the external MT5 handshake so development can continue without broker data. A synthetic closed-M5 fixture harness exists only for contract tests and is explicitly marked `SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE`; it cannot satisfy steps 102–110 or the prospective start gate.
 
 ## 119–120 — Prospective start gate
 - [ ] 119. Run full CI + main Neon/recovery gates after implementation.
