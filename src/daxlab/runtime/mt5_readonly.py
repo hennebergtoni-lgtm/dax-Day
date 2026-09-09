@@ -65,14 +65,26 @@ class Mt5Health:
 
 
 def resolve_dax_symbol(
-    symbols: Iterable[BrokerSymbol], *, configured_symbol: str | None = None
+    symbols: Iterable[BrokerSymbol],
+    *,
+    configured_symbol: str | None = None,
+    allow_data_only: bool = False,
 ) -> SymbolResolution:
-    """Resolve DAX broker symbol conservatively; ambiguity fails closed."""
+    """Resolve DAX broker symbol conservatively; ambiguity fails closed.
+
+    `allow_data_only=True` permits a uniquely identified disabled/close-only DAX
+    symbol for market-data observation only. It does not imply trading capability.
+    """
     items = tuple(symbols)
     if configured_symbol is not None:
         exact = [s for s in items if s.name == configured_symbol]
         if len(exact) == 1:
-            return SymbolResolution("DAX", "CONFIGURED_EXACT", exact[0], (exact[0].name,))
+            mode = exact[0].trade_mode.upper()
+            if mode in {"DISABLED", "CLOSEONLY"} and allow_data_only:
+                state = "CONFIGURED_EXACT_DATA_ONLY"
+            else:
+                state = "CONFIGURED_EXACT"
+            return SymbolResolution("DAX", state, exact[0], (exact[0].name,))
         return SymbolResolution("DAX", "CONFIGURED_NOT_FOUND", None, tuple())
 
     aliases = {"DAX", "DAX40", "DE40", "GER40", "GER30"}
@@ -84,6 +96,13 @@ def resolve_dax_symbol(
     if len(tradeable) > 1:
         return SymbolResolution(
             "DAX", "AMBIGUOUS", None, tuple(sorted(s.name for s in tradeable))
+        )
+    if allow_data_only and len(exact_aliases) == 1:
+        s = exact_aliases[0]
+        return SymbolResolution("DAX", "AUTO_EXACT_ALIAS_DATA_ONLY", s, (s.name,))
+    if allow_data_only and len(exact_aliases) > 1:
+        return SymbolResolution(
+            "DAX", "AMBIGUOUS_DATA_ONLY", None, tuple(sorted(s.name for s in exact_aliases))
         )
     return SymbolResolution("DAX", "NOT_FOUND", None, tuple())
 
