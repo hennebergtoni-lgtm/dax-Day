@@ -9,15 +9,15 @@ Scope: continue offline/pre-host hardening only. This block does **not** authori
 - [x] 211. Confirm V10 PR #7 head CI is green before merge.
 - [x] 212. Merge V10 only after green CI.
 - [x] 213. Create V11 pre-host hardening branch from merged V10 main.
-- [ ] 214. Strengthen SHADOW soak duplicate suppression so an already-seen closed bar is suppressed even if fault state changes.
-- [ ] 215. Add regression test proving same closed-bar identity cannot create a second decision under changed safety faults.
+- [x] 214. Strengthen SHADOW soak duplicate suppression so an already-seen closed bar is suppressed even if fault state changes.
+- [x] 215. Add regression test proving same closed-bar identity cannot create a second decision under changed safety faults.
 
 ## 216–220 — Checkpoint and recovery hardening
-- [ ] 216. Extend soak checkpoint state with deterministic seen-bar identity tracking.
-- [ ] 217. Version the strengthened checkpoint contract without weakening validation.
-- [ ] 218. Add tamper detection for seen-bar identities.
-- [ ] 219. Prove split-run/resume parity under the strengthened checkpoint contract.
-- [ ] 220. Prove repeated resume remains idempotent after fault-state changes.
+- [x] 216. Extend soak checkpoint state with deterministic seen-bar identity tracking.
+- [x] 217. Version the strengthened checkpoint contract without weakening validation.
+- [x] 218. Add tamper detection for seen-bar identities.
+- [x] 219. Prove split-run/resume parity under the strengthened checkpoint contract.
+- [x] 220. Prove repeated resume remains idempotent after fault-state changes.
 
 ## 221–225 — Pre-host truthfulness and operator safety
 - [ ] 221. Add explicit pre-host status marker showing external MT5 milestones 102–110 remain incomplete.
