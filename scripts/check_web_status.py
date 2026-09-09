@@ -75,10 +75,26 @@ def main() -> None:
     if host.get("order_execution_enabled") is not False:
         raise SystemExit("host readiness must keep execution disabled")
 
+    soak = web.get("synthetic_shadow_soak")
+    if not isinstance(soak, dict):
+        raise SystemExit("web status must expose synthetic SHADOW soak state")
+    if soak.get("evidence_state") != "SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE":
+        raise SystemExit("synthetic soak must never be represented as broker evidence")
+    if soak.get("action") != "NO_ORDER_ONLY" or soak.get("order_execution_enabled") is not False:
+        raise SystemExit("synthetic soak must remain observation-only")
+
+    paper = web.get("paper_preparation")
+    if not isinstance(paper, dict):
+        raise SystemExit("web status must expose paper preparation state")
+    if paper.get("paper_started") is not False or paper.get("broker_adapter_present") is not False:
+        raise SystemExit("paper preparation must not imply Paper start or broker adapter")
+    if paper.get("execution_capability") != "SIMULATION_ONLY":
+        raise SystemExit("paper preparation capability must remain simulation-only")
+
     if web["recovery"].get("mt5_host_evidence_manifest") != "IMPLEMENTED_CREDENTIAL_FREE":
         raise SystemExit("MT5 host evidence recovery manifest contract missing")
 
-    print("Web status integrity OK | canonical reference + research registry match | MT5 read-only host readiness | Paper/Live BLOCKED")
+    print("Web status integrity OK | V11.2 frozen | synthetic soak NO_ORDER | Paper/Live BLOCKED")
 
 
 if __name__ == "__main__":
