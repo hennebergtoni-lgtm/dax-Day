@@ -1,9 +1,9 @@
 """Historical sequential SHADOW replay over already-closed M5 bars.
 
 Historical replay is research evidence only. It is not broker/MT5 evidence and
-has no order capability. Bars are accepted only in strict chronological order;
-each emitted observation sees the prefix ending at that closed bar, never a
-future bar.
+has no order capability. Bars are accepted chronologically; exact duplicate
+closed bars are idempotently suppressed. Each emitted observation sees only the
+prefix ending at that closed bar, never a future bar.
 """
 from __future__ import annotations
 
@@ -82,6 +82,7 @@ class HistoricalReplayResult:
     dataset_sha256: str
     reference_experiment_id: str
     reference_engine_sha256: str
+    duplicates_suppressed: int = 0
     execution_capability: str = "NONE"
     order_execution_enabled: bool = False
 
@@ -93,7 +94,7 @@ def run_historical_sequential_replay(
     timeframe_minutes: int = 5,
     binding: HistoricalReplayBinding | None = None,
 ) -> HistoricalReplayResult:
-    """Feed closed M5 bars one-by-one in chronological order."""
+    """Feed closed M5 bars one-by-one with duplicate idempotency."""
     if not symbol.strip():
         raise ValueError("symbol must be non-empty")
     if timeframe_minutes != 5:
@@ -106,12 +107,31 @@ def run_historical_sequential_replay(
         reference_engine_sha256=active_binding.reference_engine_sha256,
     )
 
-    ordered = tuple(bars)
-    _validate_strict_chronology(ordered, timeframe_minutes=timeframe_minutes)
     records: list[HistoricalReplayRecord] = []
+    seen_fingerprints: set[str] = set()
+    seen_time_identity: dict[str, str] = {}
+    previous_unique_time = None
+    duplicates = 0
+    minimum_delta = timedelta(minutes=timeframe_minutes)
 
-    for sequence, bar in enumerate(ordered):
+    for bar in tuple(bars):
+        _validate_bar(bar)
         fingerprint = bar_fingerprint(bar)
+        time_key = bar.open_time.isoformat()
+        existing_identity = seen_time_identity.get(time_key)
+        if existing_identity is not None and existing_identity != fingerprint:
+            raise ValueError("historical replay duplicate timestamp has conflicting OHLC")
+        if fingerprint in seen_fingerprints:
+            duplicates += 1
+            continue
+        if previous_unique_time is not None:
+            if bar.open_time <= previous_unique_time:
+                raise ValueError("historical replay bars must be strictly chronological")
+            if bar.open_time - previous_unique_time < minimum_delta:
+                raise ValueError("historical replay bars overlap M5 chronology")
+
+        sequence = len(records)
+        visible_bar_count = sequence + 1
         observed_at = bar.open_time + timedelta(minutes=timeframe_minutes, seconds=1)
         decision = build_shadow_decision(
             ShadowObservationInput(
@@ -132,7 +152,7 @@ def run_historical_sequential_replay(
             sequence=sequence,
             bar=bar,
             bar_identity=fingerprint,
-            visible_bar_count=sequence + 1,
+            visible_bar_count=visible_bar_count,
             decision=decision,
         )
         records.append(
@@ -140,11 +160,14 @@ def run_historical_sequential_replay(
                 sequence=sequence,
                 bar_open_time=bar.open_time.isoformat(),
                 bar_fingerprint=fingerprint,
-                visible_bar_count=sequence + 1,
+                visible_bar_count=visible_bar_count,
                 decision=decision,
                 decision_log=decision_log,
             )
         )
+        seen_fingerprints.add(fingerprint)
+        seen_time_identity[time_key] = fingerprint
+        previous_unique_time = bar.open_time
 
     replay_fingerprint = _hash(
         {
@@ -171,6 +194,7 @@ def run_historical_sequential_replay(
         dataset_sha256=active_binding.dataset_sha256,
         reference_experiment_id=active_binding.reference_experiment_id,
         reference_engine_sha256=active_binding.reference_engine_sha256,
+        duplicates_suppressed=duplicates,
     )
 
 
@@ -207,22 +231,13 @@ def _decision_log(
     )
 
 
-def _validate_strict_chronology(bars: tuple[Mt5Bar, ...], *, timeframe_minutes: int) -> None:
-    previous = None
-    minimum_delta = timedelta(minutes=timeframe_minutes)
-    for bar in bars:
-        if bar.open_time.tzinfo is None:
-            raise ValueError("historical replay timestamps must be timezone-aware")
-        if bar.high < max(bar.open, bar.close) or bar.low > min(bar.open, bar.close):
-            raise ValueError("historical replay OHLC envelope invalid")
-        if bar.high < bar.low:
-            raise ValueError("historical replay high below low")
-        if previous is not None:
-            if bar.open_time <= previous:
-                raise ValueError("historical replay bars must be strictly chronological")
-            if bar.open_time - previous < minimum_delta:
-                raise ValueError("historical replay bars overlap M5 chronology")
-        previous = bar.open_time
+def _validate_bar(bar: Mt5Bar) -> None:
+    if bar.open_time.tzinfo is None:
+        raise ValueError("historical replay timestamps must be timezone-aware")
+    if bar.high < max(bar.open, bar.close) or bar.low > min(bar.open, bar.close):
+        raise ValueError("historical replay OHLC envelope invalid")
+    if bar.high < bar.low:
+        raise ValueError("historical replay high below low")
 
 
 def _hash(value: dict[str, Any]) -> str:
