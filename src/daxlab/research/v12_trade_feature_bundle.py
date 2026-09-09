@@ -7,7 +7,7 @@ never loads arbitrary external data and cannot execute orders.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Iterable, Sequence
 
 from daxlab.research.v12_evidence_gate import (
@@ -23,6 +23,8 @@ from daxlab.research.v12_prepaper_features import (
     range_compression,
     retest_staleness,
 )
+
+_M5 = timedelta(minutes=5)
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,23 +85,25 @@ def build_trade_feature_bundle(
     ohlc_identity: OhlcEvidenceIdentity,
     trade_identity: TradeEvidenceIdentity,
 ) -> tuple[V12TradeFeatures, ...]:
-    """Attach causal V12 features to reproduced trades using only closed bars before entry."""
+    """Attach causal V12 features to reproduced trades using only completed M5 bars."""
     verify_ohlc_evidence(ohlc_identity)
     verify_reproduced_trade_evidence(trade_identity)
-    if not bars:
-        raise ValueError("verified OHLC evidence cannot be empty")
+    if len(bars) != ohlc_identity.session_rows:
+        raise ValueError("OHLC sequence length does not match verified identity")
 
     times = [bar.open_time for bar in bars]
     if times != sorted(times) or len(times) != len(set(times)):
         raise ValueError("OHLC bars must be unique and chronological")
+    session_days = {bar.open_time.date() for bar in bars}
+    if len(session_days) != ohlc_identity.session_days:
+        raise ValueError("OHLC sequence day count does not match verified identity")
 
     closed = tuple(ClosedBar(bar.open, bar.high, bar.low, bar.close) for bar in bars)
     index_by_time = {bar.open_time: index for index, bar in enumerate(bars)}
     output: list[V12TradeFeatures] = []
 
     for trade in trades:
-        asof_time = trade.entry_time
-        eligible = [time for time in times if time < asof_time]
+        eligible = [time for time in times if time + _M5 <= trade.entry_time]
         if not eligible:
             raise ValueError("trade has no completed M5 bar before entry")
         last_time = eligible[-1]
