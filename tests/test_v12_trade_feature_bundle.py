@@ -12,8 +12,10 @@ from daxlab.research.v12_evidence_gate import (
 from daxlab.research.v12_trade_feature_bundle import (
     ReproducedTrade,
     TimedClosedBar,
+    breakout_side_close_location,
     build_trade_feature_bundle,
     last_completed_bar_index,
+    signal_bar_index,
 )
 
 
@@ -72,6 +74,35 @@ def test_last_completed_bar_index_excludes_in_progress_m5_bar() -> None:
     ) == 1
 
 
+def test_signal_bar_index_requires_exact_completed_signal_bar() -> None:
+    t0 = datetime(2019, 1, 2, 9, 0, tzinfo=timezone.utc)
+    t1 = datetime(2019, 1, 2, 9, 5, tzinfo=timezone.utc)
+    index_by_time = {t0: 0, t1: 1}
+
+    assert signal_bar_index(index_by_time, signal_time=t0, entry_time=t1) == 0
+    with pytest.raises(ValueError, match="does not map"):
+        signal_bar_index(
+            index_by_time,
+            signal_time=datetime(2019, 1, 2, 9, 10, tzinfo=timezone.utc),
+            entry_time=datetime(2019, 1, 2, 9, 15, tzinfo=timezone.utc),
+        )
+    with pytest.raises(ValueError, match="not fully closed"):
+        signal_bar_index(
+            index_by_time,
+            signal_time=t0,
+            entry_time=datetime(2019, 1, 2, 9, 4, 59, tzinfo=timezone.utc),
+        )
+
+
+def test_breakout_side_close_location_mirrors_short() -> None:
+    assert breakout_side_close_location(close_location=0.8, side="long") == pytest.approx(0.8)
+    assert breakout_side_close_location(close_location=0.8, side="short") == pytest.approx(0.2)
+    with pytest.raises(ValueError, match="unsupported side"):
+        breakout_side_close_location(close_location=0.8, side="other")
+    with pytest.raises(ValueError, match="outside"):
+        breakout_side_close_location(close_location=1.1, side="long")
+
+
 def test_timed_bar_rejects_naive_timestamp_and_invalid_ohlc() -> None:
     with pytest.raises(ValueError, match="timezone-aware"):
         _bar(datetime(2019, 1, 2, 9, 0))
@@ -85,7 +116,7 @@ def test_timed_bar_rejects_naive_timestamp_and_invalid_ohlc() -> None:
         )
 
 
-def test_reproduced_trade_requires_valid_timestamp_and_mode_contract() -> None:
+def test_reproduced_trade_requires_valid_timestamp_mode_and_side_contract() -> None:
     with pytest.raises(ValueError, match="timezone-aware"):
         ReproducedTrade(
             1,
@@ -93,6 +124,7 @@ def test_reproduced_trade_requires_valid_timestamp_and_mode_contract() -> None:
             datetime(2019, 1, 2, 9, 0),
             None,
             "breakout",
+            "long",
             1.0,
         )
     with pytest.raises(ValueError, match="unsupported entry_mode"):
@@ -101,6 +133,17 @@ def test_reproduced_trade_requires_valid_timestamp_and_mode_contract() -> None:
             datetime(2019, 1, 2, 9, 10, tzinfo=timezone.utc),
             datetime(2019, 1, 2, 9, 0, tzinfo=timezone.utc),
             None,
+            "other",
+            "long",
+            1.0,
+        )
+    with pytest.raises(ValueError, match="unsupported side"):
+        ReproducedTrade(
+            1,
+            datetime(2019, 1, 2, 9, 10, tzinfo=timezone.utc),
+            datetime(2019, 1, 2, 9, 0, tzinfo=timezone.utc),
+            None,
+            "breakout",
             "other",
             1.0,
         )
