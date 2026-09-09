@@ -37,6 +37,36 @@ def test_single_exact_tradeable_alias_resolves() -> None:
     assert result.broker_symbol.name == "GER40"
 
 
+def test_single_disabled_alias_can_resolve_for_data_only() -> None:
+    blocked = resolve_dax_symbol([_symbol("DE40", "DISABLED")])
+    assert blocked.state == "NOT_FOUND"
+    assert blocked.broker_symbol is None
+
+    data_only = resolve_dax_symbol([_symbol("DE40", "DISABLED")], allow_data_only=True)
+    assert data_only.state == "AUTO_EXACT_ALIAS_DATA_ONLY"
+    assert data_only.broker_symbol is not None
+    assert data_only.broker_symbol.name == "DE40"
+
+
+def test_multiple_disabled_aliases_remain_ambiguous_for_data_only() -> None:
+    result = resolve_dax_symbol(
+        [_symbol("DE40", "DISABLED"), _symbol("GER40", "DISABLED")],
+        allow_data_only=True,
+    )
+    assert result.state == "AMBIGUOUS_DATA_ONLY"
+    assert result.broker_symbol is None
+
+
+def test_configured_disabled_symbol_is_explicit_data_only() -> None:
+    result = resolve_dax_symbol(
+        [_symbol("DE40", "DISABLED")],
+        configured_symbol="DE40",
+        allow_data_only=True,
+    )
+    assert result.state == "CONFIGURED_EXACT_DATA_ONLY"
+    assert result.broker_symbol is not None
+
+
 def test_mt5_position_zero_is_forbidden_for_closed_bar_reads() -> None:
     with pytest.raises(ValueError, match="position >= 1"):
         closed_rates_start_pos(0)
