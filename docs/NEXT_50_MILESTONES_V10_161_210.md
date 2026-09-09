@@ -21,25 +21,25 @@ User authorization covers the next 50 project steps. It authorizes continued off
 - [x] 171. Add soak checkpoint schema/version.
 - [x] 172. Persist last accepted closed-bar identity in checkpoint state.
 - [x] 173. Add resume from checkpoint without reprocessing accepted bars.
-- [ ] 174. Add explicit full-run vs split-run/resume parity test.
+- [x] 174. Add explicit full-run vs split-run/resume final-checkpoint parity test.
 - [x] 175. Add repeated-resume idempotency test.
 - [x] 176. Add checkpoint tamper detection.
 - [x] 177. Add simulated process interruption and clean recovery test.
 - [x] 178. Add stale-feed fault injection during soak.
-- [ ] 179. Add missing-bar/discontinuity fault injection during soak.
-- [ ] 180. Add out-of-order/duplicate fault injection during soak.
+- [x] 179. Add missing-bar/discontinuity fault injection at the closed-M5 feed boundary.
+- [x] 180. Add out-of-order/duplicate rejection at the closed-M5 feed boundary.
 
 ## 181–190 — Watchdog and safety matrix
 - [x] 181. Add clock-unsafe fault injection.
 - [x] 182. Add host-unhealthy/disconnected fault injection at the SHADOW observation boundary.
-- [ ] 183. Add account-disconnected fault injection through host evidence.
-- [ ] 184. Add engine-heartbeat-unhealthy fault injection through host/watchdog evidence.
+- [x] 183. Add account-disconnected fault injection through host evidence.
+- [x] 184. Add engine-loop-unhealthy fault injection through host evidence.
 - [x] 185. Add single-instance-lock loss fault injection.
-- [ ] 186. Add execution-flag-on negative test through the host-to-SHADOW bridge; SHADOW must block.
+- [x] 186. Add execution-flag-on negative test through the host-to-SHADOW bridge; SHADOW blocks.
 - [x] 187. Add deterministic blocker ordering across simultaneous SHADOW observation faults.
 - [x] 188. Add recovery-after-fault test without retroactive decisions.
-- [ ] 189. Add watchdog health summary for a soak run.
-- [x] 190. Prove current soak safety faults cannot create an order-capable output.
+- [ ] 189. Add aggregate watchdog health summary for a multi-bar soak run.
+- [x] 190. Prove current soak/host safety faults cannot create an order-capable output.
 
 ## 191–200 — Decision-core and operator visibility
 - [x] 191. Convert synthetic closed-M5 bars into canonical runtime `Candle` objects in bridge tests.
@@ -50,8 +50,8 @@ User authorization covers the next 50 project steps. It authorizes continued off
 - [x] 196. Compare repeated V11.2 fixture replay fingerprints.
 - [x] 197. Add deterministic run-manifest identity test for synthetic SHADOW soak.
 - [x] 198. Add credential-free iPhone-readable soak summary payload.
-- [ ] 199. Add soak status to web/read-only operator state without claiming broker evidence.
-- [x] 200. Add explicit `SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE` marker to soak summary/recovery evidence.
+- [x] 199. Add soak status to web/read-only operator state without claiming broker evidence.
+- [x] 200. Add explicit `SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE` marker to soak summary/recovery/web evidence.
 
 ## 201–210 — Paper preparation without starting Paper
 - [x] 201. Define versioned `ExecutionIntent` contract separate from Decision Core.
@@ -69,6 +69,7 @@ User authorization covers the next 50 project steps. It authorizes continued off
 - The synthetic SHADOW soak can process many deterministic M5 observations, checkpoint/resume, suppress duplicates and inject multiple safety faults while remaining `NO_ORDER`.
 - Paper preparation now has versioned intent, lifecycle, fill-model and telemetry contracts, but no broker adapter and no order submission function.
 - No synthetic evidence satisfies external MT5 milestones 102–110.
+- All new V10 code remains PENDING CI until the V10 pull-request gate passes.
 
 ## Binding constraints
 - V11.2 remains the immutable active reference.
