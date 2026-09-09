@@ -167,14 +167,14 @@ def run_shadow_soak(
     blocked = sum(
         item.reason_codes != ("OBSERVATION_ONLY_NO_ORDER",) for item in decisions
     )
-    run_fingerprint = _hash(
-        {
-            "prior_processed": state.processed_count,
-            "decision_ids": [item.decision_id for item in decisions],
-            "checkpoint_sha256": checkpoint_out.payload_sha256,
-            "evidence_state": evidence_state,
-        }
-    )
+    fingerprint_payload: dict[str, Any] = {
+        "prior_processed": state.processed_count,
+        "decision_ids": [item.decision_id for item in decisions],
+        "checkpoint_sha256": checkpoint_out.payload_sha256,
+    }
+    if evidence_state != SYNTHETIC_EVIDENCE_STATE:
+        fingerprint_payload["evidence_state"] = evidence_state
+    run_fingerprint = _hash(fingerprint_payload)
     return SoakResult(
         schema_version=_RESULT_SCHEMA,
         evidence_state=evidence_state,
