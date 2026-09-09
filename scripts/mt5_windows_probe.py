@@ -109,6 +109,7 @@ def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: 
             mt5.symbol_select(selected.name, True)
             start_pos = closed_rates_start_pos(1)
             rates = mt5.copy_rates_from_pos(selected.name, mt5.TIMEFRAME_M5, start_pos, bars)
+            rate_rows = rates if rates is not None else ()
             feed = {
                 "observed_at": observed.isoformat(),
                 "requested_start_pos": start_pos,
@@ -121,7 +122,7 @@ def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: 
                         "low": float(row["low"]),
                         "close": float(row["close"]),
                     }
-                    for row in (rates or ())
+                    for row in rate_rows
                 ],
             }
 
