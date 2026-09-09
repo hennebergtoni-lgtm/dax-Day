@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from daxlab.runtime.mt5_broker_session import server_wall_clock_epoch_to_utc
 from daxlab.runtime.mt5_readonly import BrokerSymbol, closed_rates_start_pos, resolve_dax_symbol
 
 FORBIDDEN_OUTPUT_KEYS = {"login", "password", "token", "secret", "email", "phone", "account_id"}
@@ -50,6 +51,7 @@ def _assert_credential_free(payload: dict[str, Any]) -> None:
         elif isinstance(value, list):
             for item in value:
                 walk(item)
+
     walk(payload)
 
 
@@ -58,7 +60,19 @@ def _fingerprint(payload: dict[str, Any]) -> str:
     return hashlib.sha256(canonical.encode()).hexdigest()
 
 
-def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: float) -> dict[str, Any]:
+def _mt5_epoch_to_utc(value: int | float, broker_timezone: str | None) -> datetime:
+    if broker_timezone is None:
+        return datetime.fromtimestamp(float(value), timezone.utc)
+    return server_wall_clock_epoch_to_utc(value, broker_timezone)
+
+
+def collect_probe(
+    *,
+    configured_symbol: str | None,
+    bars: int,
+    max_age_seconds: float,
+    broker_timezone: str | None = None,
+) -> dict[str, Any]:
     try:
         import MetaTrader5 as mt5
     except ImportError as exc:  # pragma: no cover
@@ -96,15 +110,19 @@ def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: 
             if s.name in resolution.candidates or (selected and s.name == selected.name)
         ]
 
-        tick_delta_seconds = None
+        raw_tick_delta_seconds = None
+        normalized_tick_delta_seconds = None
         clock_ok = False
         feed = None
         if selected is not None:
             mt5.symbol_select(selected.name, True)
             tick = mt5.symbol_info_tick(selected.name)
             if tick is not None and getattr(tick, "time", None):
-                tick_delta_seconds = observed.timestamp() - float(tick.time)
-                clock_ok = abs(tick_delta_seconds) <= max_age_seconds
+                raw_tick_time = datetime.fromtimestamp(float(tick.time), timezone.utc)
+                raw_tick_delta_seconds = (observed - raw_tick_time).total_seconds()
+                normalized_tick_time = _mt5_epoch_to_utc(tick.time, broker_timezone)
+                normalized_tick_delta_seconds = (observed - normalized_tick_time).total_seconds()
+                clock_ok = abs(normalized_tick_delta_seconds) <= max_age_seconds
             start_pos = closed_rates_start_pos(1)
             rates = mt5.copy_rates_from_pos(selected.name, mt5.TIMEFRAME_M5, start_pos, bars)
             rate_rows = rates if rates is not None else ()
@@ -112,9 +130,15 @@ def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: 
                 "observed_at": observed.isoformat(),
                 "requested_start_pos": start_pos,
                 "max_age_seconds": max_age_seconds,
+                "broker_timezone": broker_timezone,
+                "timestamp_interpretation": (
+                    "EXPLICIT_BROKER_WALL_CLOCK" if broker_timezone else "RAW_UTC_ASSUMPTION"
+                ),
                 "bars": [
                     {
-                        "open_time": datetime.fromtimestamp(int(row["time"]), timezone.utc).isoformat(),
+                        "open_time": _mt5_epoch_to_utc(
+                            int(row["time"]), broker_timezone
+                        ).isoformat(),
                         "open": float(row["open"]),
                         "high": float(row["high"]),
                         "low": float(row["low"]),
@@ -132,11 +156,18 @@ def collect_probe(*, configured_symbol: str | None, bars: int, max_age_seconds: 
             "order_execution_enabled": False,
             "engine_loop_healthy": True,
             "clock_ok": clock_ok,
+            "broker_timezone": broker_timezone,
             "symbols": safe_symbols,
         }
         notes = ["READ_ONLY", "BAR_0_EXCLUDED", "NO_CREDENTIALS", "NO_ORDER_API"]
-        if tick_delta_seconds is not None:
-            notes.append(f"TICK_CLOCK_DELTA_SECONDS={tick_delta_seconds:.3f}")
+        if raw_tick_delta_seconds is not None:
+            notes.append(f"RAW_TICK_CLOCK_DELTA_SECONDS={raw_tick_delta_seconds:.3f}")
+        if normalized_tick_delta_seconds is not None:
+            notes.append(
+                f"NORMALIZED_TICK_CLOCK_DELTA_SECONDS={normalized_tick_delta_seconds:.3f}"
+            )
+        if broker_timezone is None:
+            notes.append("BROKER_TIMEZONE_NOT_CONFIGURED")
         bundle = {
             "schema": "DAXLAB_MT5_WINDOWS_BUNDLE_V1",
             "symbol_resolution_state": resolution.state,
@@ -156,6 +187,7 @@ def main() -> int:
     parser.add_argument("--symbol", default=None)
     parser.add_argument("--bars", type=int, default=20)
     parser.add_argument("--max-age-seconds", type=float, default=600.0)
+    parser.add_argument("--broker-timezone", default=None)
     parser.add_argument("--output", default="mt5_probe.json")
     parser.add_argument("--timestamped", action="store_true")
     args = parser.parse_args()
@@ -163,6 +195,7 @@ def main() -> int:
         configured_symbol=args.symbol,
         bars=args.bars,
         max_age_seconds=args.max_age_seconds,
+        broker_timezone=args.broker_timezone,
     )
     path = Path(args.output)
     if args.timestamped:
