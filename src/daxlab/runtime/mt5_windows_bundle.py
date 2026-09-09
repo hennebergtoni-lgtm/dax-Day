@@ -88,7 +88,11 @@ def parse_windows_mt5_bundle(payload: Mapping[str, Any]) -> WindowsMt5Bundle:
         if blocker:
             blockers.append(blocker)
 
-    handshake = validate_read_only_host(host, market_data_fresh=market_data_fresh)
+    handshake = validate_read_only_host(
+        host,
+        market_data_fresh=market_data_fresh,
+        allow_data_only=True,
+    )
     if handshake.reason != "READ_ONLY_HEALTHY":
         blockers.append(handshake.reason)
     if state in {"AMBIGUOUS", "AMBIGUOUS_DATA_ONLY", "NOT_FOUND", "CONFIGURED_NOT_FOUND"}:
