@@ -1,6 +1,6 @@
 # V10 — Next 50 Milestones (161–210)
 
-Status: IN PROGRESS — AUTHORIZED FOR NON-LIVE DEVELOPMENT
+Status: IMPLEMENTED / PENDING PR CI
 Date: 2026-09-09
 
 User authorization covers the next 50 project steps. It authorizes continued offline engineering, synthetic SHADOW soak testing and PAPER preparation. It does **not** authorize LIVE real-money execution. Real MT5 host evidence remains mandatory for external milestones 102–110.
@@ -63,10 +63,11 @@ User authorization covers the next 50 project steps. It authorizes continued off
 - [x] 207. Add same-bar stop/target ambiguity policy contract.
 - [x] 208. Add gap-through and partial-fill policy contracts.
 - [x] 209. Add paper telemetry/reconciliation schema with simulation-only capability and no broker credentials.
-- [ ] 210. HARD REVIEW: Paper remains NOT STARTED; LIVE remains NOT AUTHORIZED; real MT5 host evidence and full readiness evidence are still required.
+- [x] 210. HARD REVIEW recorded in `docs/V10_HARD_REVIEW.md`: Paper remains NOT STARTED; LIVE remains NOT AUTHORIZED; external MT5 milestones 102–110 remain incomplete.
 
 ## Current boundary
 - The synthetic SHADOW soak can process many deterministic M5 observations, checkpoint/resume, suppress duplicates and inject multiple safety faults while remaining `NO_ORDER`.
+- A 30-session / 3,090-bar deterministic soak smoke is wired into CI.
 - Paper preparation now has versioned intent, lifecycle, fill-model and telemetry contracts, but no broker adapter and no order submission function.
 - No synthetic evidence satisfies external MT5 milestones 102–110.
 - All new V10 code remains PENDING CI until the V10 pull-request gate passes.
