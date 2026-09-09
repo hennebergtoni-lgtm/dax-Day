@@ -58,10 +58,27 @@ def main() -> None:
         raise SystemExit("missing credential-free MT5 host evidence schema")
     if not isinstance(mt5.get("why_no_trade"), str) or not mt5["why_no_trade"]:
         raise SystemExit("MT5 why_no_trade blocker must be explicit")
+
+    host = web.get("host_readiness")
+    if not isinstance(host, dict):
+        raise SystemExit("web status must expose credential-free host readiness")
+    if host.get("state") != "AWAITING_REAL_WINDOWS_HOST":
+        raise SystemExit("host readiness must remain externally blocked until real host evidence exists")
+    if host.get("bundle_schema") != "DAXLAB_MT5_WINDOWS_BUNDLE_V1":
+        raise SystemExit("unexpected Windows MT5 bundle schema")
+    if host.get("shadow_bridge") != "IMPLEMENTED_OFFLINE":
+        raise SystemExit("offline MT5-to-SHADOW bridge state missing")
+    if host.get("single_instance_lock_required") is not True:
+        raise SystemExit("single-instance lock must be required")
+    if host.get("real_host_evidence_present") is not False:
+        raise SystemExit("web status must not fabricate real host evidence")
+    if host.get("order_execution_enabled") is not False:
+        raise SystemExit("host readiness must keep execution disabled")
+
     if web["recovery"].get("mt5_host_evidence_manifest") != "IMPLEMENTED_CREDENTIAL_FREE":
         raise SystemExit("MT5 host evidence recovery manifest contract missing")
 
-    print("Web status integrity OK | canonical reference + research registry match | MT5 read-only watchdog/evidence | Paper/Live BLOCKED")
+    print("Web status integrity OK | canonical reference + research registry match | MT5 read-only host readiness | Paper/Live BLOCKED")
 
 
 if __name__ == "__main__":
