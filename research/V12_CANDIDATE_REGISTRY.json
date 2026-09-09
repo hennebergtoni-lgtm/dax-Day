@@ -5,7 +5,7 @@
   "candidates": [
     {
       "family": "ADX001",
-      "state": "RESEARCH",
+      "state": "REJECTED",
       "data": "OHLC_M5_CLOSED_ONLY",
       "lookahead_allowed": false,
       "volume_required": false,
@@ -13,7 +13,7 @@
     },
     {
       "family": "BODY001",
-      "state": "RESEARCH",
+      "state": "REJECTED",
       "data": "OHLC_M5_CLOSED_ONLY",
       "lookahead_allowed": false,
       "volume_required": false,
@@ -21,7 +21,7 @@
     },
     {
       "family": "COMP001",
-      "state": "RESEARCH",
+      "state": "REJECTED",
       "data": "OHLC_M5_CLOSED_ONLY",
       "lookahead_allowed": false,
       "volume_required": false,
@@ -30,7 +30,7 @@
     },
     {
       "family": "STALE001",
-      "state": "RESEARCH",
+      "state": "TESTED",
       "data": "OHLC_M5_CLOSED_ONLY",
       "lookahead_allowed": false,
       "volume_required": false,
