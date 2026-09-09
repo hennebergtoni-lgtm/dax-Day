@@ -16,8 +16,8 @@ Goal: one bounded pre-Paper optimization/replay phase before external Windows MT
 - [x] 236. Define ATR/range-compression candidate, separated from existing ATR001 evidence.
 - [x] 237. Define retest-staleness candidate using bars-since-breakout only.
 - [x] 238. Add candidate registry/status labels: RESEARCH / TESTED / REJECTED / ROBUST_CANDIDATE.
-- [ ] 239. Add leakage/lookahead tests for all four candidates.
-- [ ] 240. Add deterministic feature tests and missing/warm-up handling.
+- [x] 239. Add leakage/lookahead tests for all four candidates.
+- [x] 240. Add deterministic feature tests and missing/warm-up handling.
 
 ## 241–245 — Historical sequential SHADOW replay
 - [ ] 241. Build a historical sequential replay contract that feeds only closed M5 bars in chronological order.
