@@ -38,7 +38,7 @@ User authorization covers the next 50 project steps. It authorizes continued off
 - [x] 186. Add execution-flag-on negative test through the host-to-SHADOW bridge; SHADOW blocks.
 - [x] 187. Add deterministic blocker ordering across simultaneous SHADOW observation faults.
 - [x] 188. Add recovery-after-fault test without retroactive decisions.
-- [ ] 189. Add aggregate watchdog health summary for a multi-bar soak run.
+- [x] 189. Add aggregate watchdog health summary for soak readiness/fault state; it never reports execution-ready.
 - [x] 190. Prove current soak/host safety faults cannot create an order-capable output.
 
 ## 191–200 — Decision-core and operator visibility
