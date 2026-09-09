@@ -74,6 +74,10 @@ def resolve_dax_symbol(
 
     `allow_data_only=True` permits a uniquely identified disabled/close-only DAX
     symbol for market-data observation only. It does not imply trading capability.
+
+    Bare ``DAX`` is intentionally not auto-resolved because brokers may use that
+    ticker for ETFs or other non-index instruments. A broker whose index really is
+    named ``DAX`` remains supported through ``configured_symbol="DAX"``.
     """
     items = tuple(symbols)
     if configured_symbol is not None:
@@ -87,7 +91,7 @@ def resolve_dax_symbol(
             return SymbolResolution("DAX", state, exact[0], (exact[0].name,))
         return SymbolResolution("DAX", "CONFIGURED_NOT_FOUND", None, tuple())
 
-    aliases = {"DAX", "DAX40", "DE40", "GER40", "GER30"}
+    aliases = {"DAX40", "DE40", "GER40", "GER30"}
     exact_aliases = [s for s in items if s.name.upper() in aliases]
     tradeable = [s for s in exact_aliases if s.trade_mode.upper() not in {"DISABLED", "CLOSEONLY"}]
     if len(tradeable) == 1:
@@ -132,7 +136,9 @@ def closed_bars(
     return tuple(sorted(result, key=lambda b: b.open_time))
 
 
-def closed_bar_age_seconds(*, latest_closed_bar_open: datetime, timeframe_minutes: int, observed_at: datetime) -> float:
+def closed_bar_age_seconds(
+    *, latest_closed_bar_open: datetime, timeframe_minutes: int, observed_at: datetime
+) -> float:
     """Return age of the latest bar close at the observation time."""
     if latest_closed_bar_open.tzinfo is None or observed_at.tzinfo is None:
         raise ValueError("MT5 freshness timestamps must be timezone-aware")
@@ -145,7 +151,13 @@ def closed_bar_age_seconds(*, latest_closed_bar_open: datetime, timeframe_minute
     return age
 
 
-def market_data_is_fresh(*, latest_closed_bar_open: datetime, timeframe_minutes: int, observed_at: datetime, max_age_seconds: float) -> bool:
+def market_data_is_fresh(
+    *,
+    latest_closed_bar_open: datetime,
+    timeframe_minutes: int,
+    observed_at: datetime,
+    max_age_seconds: float,
+) -> bool:
     """Fail closed when the latest completed bar is older than the configured watchdog limit."""
     if max_age_seconds < 0:
         raise ValueError("max_age_seconds must be non-negative")

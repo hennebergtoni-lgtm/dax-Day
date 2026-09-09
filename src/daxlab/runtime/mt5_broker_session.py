@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from zoneinfo import ZoneInfo
 
 from daxlab.runtime.mt5_readonly import BrokerSymbol, resolve_dax_symbol
@@ -31,6 +31,22 @@ def normalize_to_berlin(value: datetime, broker_timezone: str) -> datetime:
         raise ValueError("broker timestamp must be timezone-aware")
     ZoneInfo(broker_timezone)
     return value.astimezone(ZoneInfo("Europe/Berlin"))
+
+
+def server_wall_clock_epoch_to_utc(value: int | float, broker_timezone: str) -> datetime:
+    """Interpret an MT5 server-wall-clock epoch using an explicit IANA timezone.
+
+    Some MT5 feeds expose server-local wall-clock values through integer timestamp
+    fields that appear shifted when interpreted directly as UTC. This helper does
+    not guess an offset. It requires the caller to supply a valid broker timezone,
+    interprets the encoded wall clock in that zone, and returns the corresponding
+    UTC instant. DST is therefore handled by the timezone database rather than by
+    a fixed seconds adjustment.
+    """
+    broker_tz = ZoneInfo(broker_timezone)
+    encoded_wall_clock = datetime.fromtimestamp(float(value), timezone.utc).replace(tzinfo=None)
+    broker_local = encoded_wall_clock.replace(tzinfo=broker_tz)
+    return broker_local.astimezone(timezone.utc)
 
 
 def validate_session_observation(obs: BrokerSessionObservation) -> None:
