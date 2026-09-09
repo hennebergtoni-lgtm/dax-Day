@@ -6,6 +6,7 @@ never loads arbitrary external data and cannot execute orders.
 """
 from __future__ import annotations
 
+from bisect import bisect_right
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Iterable, Sequence
@@ -78,6 +79,19 @@ class V12TradeFeatures:
     bars_since_breakout: int | None
 
 
+def last_completed_bar_index(times: Sequence[datetime], *, entry_time: datetime) -> int:
+    """Return the last M5 index fully closed at entry_time; never return bar-0-in-progress."""
+    if entry_time.tzinfo is None:
+        raise ValueError("entry_time must be timezone-aware")
+    if not times:
+        raise ValueError("OHLC timeline cannot be empty")
+    cutoff_open_time = entry_time - _M5
+    index = bisect_right(times, cutoff_open_time) - 1
+    if index < 0:
+        raise ValueError("trade has no completed M5 bar before entry")
+    return index
+
+
 def build_trade_feature_bundle(
     bars: Sequence[TimedClosedBar],
     trades: Iterable[ReproducedTrade],
@@ -99,15 +113,11 @@ def build_trade_feature_bundle(
         raise ValueError("OHLC sequence day count does not match verified identity")
 
     closed = tuple(ClosedBar(bar.open, bar.high, bar.low, bar.close) for bar in bars)
-    index_by_time = {bar.open_time: index for index, bar in enumerate(bars)}
     output: list[V12TradeFeatures] = []
 
     for trade in trades:
-        eligible = [time for time in times if time + _M5 <= trade.entry_time]
-        if not eligible:
-            raise ValueError("trade has no completed M5 bar before entry")
-        last_time = eligible[-1]
-        asof_index = index_by_time[last_time]
+        asof_index = last_completed_bar_index(times, entry_time=trade.entry_time)
+        last_time = times[asof_index]
 
         adx = adx_feature(closed, asof_index)
         body = body_quality(closed, asof_index)
