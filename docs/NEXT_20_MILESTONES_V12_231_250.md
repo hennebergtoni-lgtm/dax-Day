@@ -27,8 +27,8 @@ Goal: one bounded pre-Paper optimization/replay phase before external Windows MT
 - [x] 245. Add checkpoint/resume parity and deterministic replay fingerprint.
 
 ## 246–250 — Selection discipline and handoff
-- [ ] 246. Evaluate each new filter in isolation before any interaction test; include costs, trade count, PF, Return-R, DD and stability.
-- [ ] 247. Reject candidates that only improve in-sample or collapse trade count; do not optimize to one headline PF.
+- [x] 246. Evaluate each new filter in isolation before any interaction test; include costs, trade count, PF, Return-R, DD and stability.
+- [x] 247. Reject candidates that only improve in-sample or collapse trade count; do not optimize to one headline PF.
 - [ ] 248. Permit only a small predeclared interaction test among robust isolated candidates and existing research candidates.
 - [ ] 249. Extend web/status telemetry contract for historical replay/research visibility without execution controls.
 - [ ] 250. Hard review + CI: frozen-reference guard, leakage tests, deterministic replay, recovery/status truthfulness; merge only if green.
