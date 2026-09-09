@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -7,6 +8,7 @@ from daxlab.runtime.historical_sequential_replay import (
     VERIFIED_DATASET_ID,
     VERIFIED_DATASET_SHA256,
     run_historical_sequential_replay,
+    verify_historical_replay_checkpoint,
 )
 from daxlab.runtime.mt5_readonly import Mt5Bar
 from daxlab.runtime.shadow_observation import V112_ENGINE_SHA256, V112_EXPERIMENT_ID
@@ -33,6 +35,7 @@ def test_replay_feeds_closed_m5_prefix_sequentially() -> None:
     assert [record.sequence for record in result.records] == [0, 1, 2, 3]
     assert [record.visible_bar_count for record in result.records] == [1, 2, 3, 4]
     assert all(record.decision.action == "NO_ORDER" for record in result.records)
+    assert result.processed_total == 4
     assert result.execution_capability == "NONE"
     assert result.order_execution_enabled is False
 
@@ -113,6 +116,27 @@ def test_duplicate_timestamp_with_changed_ohlc_fails_closed() -> None:
     )
     with pytest.raises(ValueError, match="conflicting OHLC"):
         run_historical_sequential_replay((bars[0], bars[1], conflicting))
+
+
+def test_replay_checkpoint_resume_matches_uninterrupted_fingerprint() -> None:
+    bars = _bars(4)
+    uninterrupted = run_historical_sequential_replay(bars)
+    first_half = run_historical_sequential_replay(bars[:2])
+    resumed = run_historical_sequential_replay(bars[2:], checkpoint=first_half.checkpoint)
+    assert resumed.processed_total == uninterrupted.processed_total
+    assert resumed.replay_fingerprint == uninterrupted.replay_fingerprint
+    assert resumed.checkpoint == uninterrupted.checkpoint
+    assert [record.sequence for record in resumed.records] == [2, 3]
+    assert [record.visible_bar_count for record in resumed.records] == [3, 4]
+
+
+def test_replay_checkpoint_rejects_tamper() -> None:
+    result = run_historical_sequential_replay(_bars(2))
+    tampered = replace(result.checkpoint, payload_sha256="0" * 64)
+    with pytest.raises(ValueError, match="checkpoint hash mismatch"):
+        verify_historical_replay_checkpoint(tampered)
+    with pytest.raises(ValueError, match="checkpoint hash mismatch"):
+        run_historical_sequential_replay(_bars()[2:], checkpoint=tampered)
 
 
 def test_replay_rejects_out_of_order_unique_bar() -> None:
