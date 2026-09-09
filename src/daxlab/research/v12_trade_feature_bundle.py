@@ -3,6 +3,11 @@
 The bundle is intentionally input-bound: callers must provide a verified full
 2014-2019 session OHLC sequence and reproduced clean trade rows. This module
 never loads arbitrary external data and cannot execute orders.
+
+ADX001 and BODY001 are evaluated on the completed breakout/signal bar exactly
+as predeclared. The current range-compression primitive is retained only as a
+diagnostic engineering value; it is not treated as formal COMP001 evidence
+because the intake definition requires a recent-range / causal-ATR14 contract.
 """
 from __future__ import annotations
 
@@ -26,6 +31,7 @@ from daxlab.research.v12_prepaper_features import (
 )
 
 _M5 = timedelta(minutes=5)
+_DIAGNOSTIC_COMP_STATE = "DIAGNOSTIC_PRIMITIVE_NOT_FORMAL_COMP001"
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +55,7 @@ class ReproducedTrade:
     signal_time: datetime
     retest_time: datetime | None
     entry_mode: str
+    side: str
     r: float
 
     def __post_init__(self) -> None:
@@ -60,13 +67,17 @@ class ReproducedTrade:
             raise ValueError("retest_time must be timezone-aware")
         if self.entry_mode not in {"breakout", "retest"}:
             raise ValueError("unsupported entry_mode")
+        if self.side not in {"long", "short"}:
+            raise ValueError("unsupported side")
 
 
 @dataclass(frozen=True, slots=True)
 class V12TradeFeatures:
     wf: int
     entry_time: str
+    signal_time: str
     entry_mode: str
+    side: str
     r: float
     asof_bar_open_time: str
     adx: float | None
@@ -74,8 +85,11 @@ class V12TradeFeatures:
     minus_di: float | None
     body_fraction: float
     close_location: float
+    breakout_side_close_location: float
     body_direction: int
+    body_direction_agrees: bool
     compression_ratio: float | None
+    compression_evidence_state: str
     bars_since_breakout: int | None
 
 
@@ -99,7 +113,7 @@ def build_trade_feature_bundle(
     ohlc_identity: OhlcEvidenceIdentity,
     trade_identity: TradeEvidenceIdentity,
 ) -> tuple[V12TradeFeatures, ...]:
-    """Attach causal V12 features to reproduced trades using only completed M5 bars."""
+    """Attach causal V12 features to reproduced trades using closed M5 bars only."""
     verify_ohlc_evidence(ohlc_identity)
     verify_reproduced_trade_evidence(trade_identity)
     if len(bars) != ohlc_identity.session_rows:
@@ -113,15 +127,26 @@ def build_trade_feature_bundle(
         raise ValueError("OHLC sequence day count does not match verified identity")
 
     closed = tuple(ClosedBar(bar.open, bar.high, bar.low, bar.close) for bar in bars)
+    index_by_time = {bar.open_time: index for index, bar in enumerate(bars)}
     output: list[V12TradeFeatures] = []
 
     for trade in trades:
-        asof_index = last_completed_bar_index(times, entry_time=trade.entry_time)
-        last_time = times[asof_index]
+        if trade.signal_time not in index_by_time:
+            raise ValueError("signal_time does not map to verified M5 bar")
+        if trade.signal_time + _M5 > trade.entry_time:
+            raise ValueError("signal bar is not fully closed before entry")
 
-        adx = adx_feature(closed, asof_index)
-        body = body_quality(closed, asof_index)
-        compression = range_compression(closed, asof_index)
+        signal_index = index_by_time[trade.signal_time]
+        signal_bar_time = times[signal_index]
+
+        adx = adx_feature(closed, signal_index)
+        body = body_quality(closed, signal_index)
+        diagnostic_compression = range_compression(closed, signal_index)
+
+        breakout_side_location = (
+            body.close_location if trade.side == "long" else 1.0 - body.close_location
+        )
+        expected_direction = 1 if trade.side == "long" else -1
 
         stale = None
         if trade.entry_mode == "retest" and trade.retest_time is not None:
@@ -137,16 +162,23 @@ def build_trade_feature_bundle(
             V12TradeFeatures(
                 wf=trade.wf,
                 entry_time=trade.entry_time.isoformat(),
+                signal_time=trade.signal_time.isoformat(),
                 entry_mode=trade.entry_mode,
+                side=trade.side,
                 r=trade.r,
-                asof_bar_open_time=last_time.isoformat(),
+                asof_bar_open_time=signal_bar_time.isoformat(),
                 adx=None if adx is None else adx.adx,
                 plus_di=None if adx is None else adx.plus_di,
                 minus_di=None if adx is None else adx.minus_di,
                 body_fraction=body.body_fraction,
                 close_location=body.close_location,
+                breakout_side_close_location=breakout_side_location,
                 body_direction=body.direction,
-                compression_ratio=None if compression is None else compression.tr_ratio,
+                body_direction_agrees=body.direction == expected_direction,
+                compression_ratio=(
+                    None if diagnostic_compression is None else diagnostic_compression.tr_ratio
+                ),
+                compression_evidence_state=_DIAGNOSTIC_COMP_STATE,
                 bars_since_breakout=stale,
             )
         )
