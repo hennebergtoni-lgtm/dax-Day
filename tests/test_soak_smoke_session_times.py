@@ -1,6 +1,6 @@
 from zoneinfo import ZoneInfo
 
-from scripts.shadow_soak_smoke import build_bars
+from daxlab.runtime.shadow_soak_fixture import build_bars
 
 BERLIN = ZoneInfo("Europe/Berlin")
 
