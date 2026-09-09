@@ -70,10 +70,8 @@ def main() -> int:
     try:
         lock.acquire()
     except Exception:
-        atomic_write_json(
-            heartbeat_path,
-            supervisor_error_heartbeat(error_code="SINGLE_INSTANCE_LOCK_FAILED"),
-        )
+        # A losing second instance must never overwrite the legitimate owner's
+        # shared heartbeat or resume state.
         return 4
 
     try:
