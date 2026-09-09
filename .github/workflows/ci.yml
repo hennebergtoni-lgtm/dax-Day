@@ -39,6 +39,9 @@ jobs:
           engine = load_exact_candidate_engine()
           print('COST_SCENARIOS_REPR=', repr(engine.COST_SCENARIOS))
           print('SIMULATE_DAY_SIGNATURE=', inspect.signature(engine.simulate_day))
+          print('EXECUTE_TRADE_SOURCE_BEGIN')
+          print(inspect.getsource(engine.execute_trade))
+          print('EXECUTE_TRADE_SOURCE_END')
           PY
       - name: Guarded V11.2 replay smoke
         run: python scripts/v112_replay_smoke.py
