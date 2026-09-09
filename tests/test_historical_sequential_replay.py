@@ -52,6 +52,30 @@ def test_replay_is_deterministic_for_same_closed_bars() -> None:
     assert len(first.replay_fingerprint) == 64
 
 
+def test_replay_emits_deterministic_no_strategy_decision_logs() -> None:
+    first = run_historical_sequential_replay(_bars())
+    second = run_historical_sequential_replay(_bars())
+    first_logs = [record.decision_log for record in first.records]
+    second_logs = [record.decision_log for record in second.records]
+    assert first_logs == second_logs
+    assert all(log.strategy_decision_state == "NO_STRATEGY_DECISION" for log in first_logs)
+    assert all(log.action == "NO_ORDER" for log in first_logs)
+    assert all("HISTORICAL_REPLAY_OBSERVATION_ONLY" in log.reason_codes for log in first_logs)
+    assert all(len(log.log_id) == 64 for log in first_logs)
+    assert [log.sequence for log in first_logs] == [0, 1, 2, 3]
+
+
+def test_decision_log_bar_identity_matches_replay_record() -> None:
+    result = run_historical_sequential_replay(_bars())
+    for record in result.records:
+        log = record.decision_log
+        assert log.bar_fingerprint == record.bar_fingerprint
+        assert log.bar_open_time == record.bar_open_time
+        assert log.visible_bar_count == record.visible_bar_count
+        assert log.shadow_decision_id == record.decision.decision_id
+        assert log.reason_codes[:-1] == record.decision.reason_codes
+
+
 def test_replay_rejects_out_of_order_or_duplicate_bar_time() -> None:
     bars = _bars(2)
     with pytest.raises(ValueError, match="strictly chronological"):
