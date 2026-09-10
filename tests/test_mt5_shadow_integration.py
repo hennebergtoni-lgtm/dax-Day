@@ -183,8 +183,66 @@ def test_multi_bar_shadow_resume_is_provenance_bound_and_idempotent() -> None:
     assert resumed is not None
     assert resumed.processed == first.processed
     assert resumed.evidence_state == MT5_READONLY_EVIDENCE_STATE
-    assert resumed.duplicates_suppressed == 3
+    assert resumed.duplicates_suppressed == 0
     assert resumed.decisions == ()
+
+
+def test_mt5_resume_processes_only_bars_after_anchor() -> None:
+    first_payload = _bundle_payload()
+    first_payload.pop("sha256")
+    first_payload["closed_m5_feed"]["bars"] = first_payload["closed_m5_feed"]["bars"][:2]
+    first_bundle = parse_windows_mt5_bundle(_seal(first_payload))
+    _, first, status = evaluate_shadow_soak_from_bundle(
+        first_bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert first is not None and status.symbol is not None
+    assert first.processed == 2
+    resume_state = build_mt5_shadow_resume_state(
+        symbol=status.symbol,
+        checkpoint=first.checkpoint,
+    )
+
+    full_bundle = parse_windows_mt5_bundle(_bundle_payload())
+    _, resumed, _ = evaluate_shadow_soak_from_bundle(
+        full_bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+        resume_state=resume_state,
+    )
+    assert resumed is not None
+    assert resumed.processed == 3
+    assert len(resumed.decisions) == 1
+    assert resumed.duplicates_suppressed == 0
+    assert resumed.execution_capability == "NONE"
+    assert resumed.order_execution_enabled is False
+
+
+def test_mt5_resume_missing_anchor_fails_closed() -> None:
+    changed_payload = _bundle_payload()
+    changed_payload.pop("sha256")
+    changed_payload["closed_m5_feed"]["bars"][-1]["close"] = 25000.5
+    changed_bundle = parse_windows_mt5_bundle(_seal(changed_payload))
+    _, first, status = evaluate_shadow_soak_from_bundle(
+        changed_bundle,
+        authorization=_auth(),
+        single_instance_lock_held=True,
+    )
+    assert first is not None and status.symbol is not None
+    resume_state = build_mt5_shadow_resume_state(
+        symbol=status.symbol,
+        checkpoint=first.checkpoint,
+    )
+
+    original_bundle = parse_windows_mt5_bundle(_bundle_payload())
+    with pytest.raises(RuntimeError, match="anchor not found"):
+        evaluate_shadow_soak_from_bundle(
+            original_bundle,
+            authorization=_auth(),
+            single_instance_lock_held=True,
+            resume_state=resume_state,
+        )
 
 
 def test_mt5_resume_payload_round_trip_is_credential_free() -> None:
