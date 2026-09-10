@@ -30,7 +30,7 @@ def _declare(rows, trial_id="VT001", mode=PREDECLARED, params=None):
 def test_single_predeclared_trial_starts_from_genesis():
     row = _declare([])
     assert row.previous_hash == GENESIS_HASH
-    assert row.independently_predeclared is True
+    assert row.claimed_predeclared is True
     assert verify_trial_chain([row]) == row.record_hash
 
 
@@ -106,22 +106,26 @@ def test_semantically_invalid_rehashed_row_is_rejected():
         verify_trial_chain([tampered])
 
 
-def test_retroactive_trial_is_never_counted_as_predeclared():
+def test_retroactive_trial_is_never_claimed_predeclared():
     row = _declare([], mode=RETROACTIVE)
     payload = registry_payload([row])
-    assert row.independently_predeclared is False
-    assert payload["predeclared_trial_ids"] == []
+    assert row.claimed_predeclared is False
+    assert payload["claimed_predeclared_trial_ids"] == []
+    assert payload["verified_predeclared_trial_ids"] == []
     assert payload["trial_count"] == 1
 
 
-def test_registry_payload_exposes_only_true_predeclarations():
+def test_registry_requires_repo_chronology_before_verified_predeclaration():
     first = _declare([], "VT001", PREDECLARED)
     second = _declare([first], "VT002", RETROACTIVE)
     payload = registry_payload([first, second])
     assert payload["append_only"] is True
     assert payload["hash_chain"] == "SHA256_PREVIOUS_HASH"
     assert payload["head_hash"] == second.record_hash
-    assert payload["predeclared_trial_ids"] == ["VT001"]
+    assert payload["chronology_verification_state"] == "REPO_CHRONOLOGY_REQUIRED"
+    assert payload["claimed_predeclared_trial_ids"] == ["VT001"]
+    assert payload["verified_predeclared_trial_ids"] == []
+    assert payload["declarations"][0]["repo_chronology_verified"] is False
 
 
 def test_unsupported_declaration_mode_rejected():
