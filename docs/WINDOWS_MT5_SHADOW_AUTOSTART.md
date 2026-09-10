@@ -22,9 +22,19 @@ This runbook configures MetaTrader 5 Desktop and the DAXLAB read-only SHADOW sup
 4. Exact DAX symbol is known.
 5. Broker/server timezone has been verified separately. Do not guess it.
 
-## Install
+## Mandatory read-only preflight
 
 Open PowerShell in the repository root while MT5 is running, then execute:
+
+```powershell
+.\scripts\preflight_windows_mt5_shadow_autostart.ps1 -BrokerTimezone '<VERIFIED_TIMEZONE>'
+```
+
+Do not install the scheduled tasks unless the preflight ends with `PREFLIGHT GREEN`. The preflight creates no scheduled task and performs exactly one read-only SHADOW cycle with `execution_capability=NONE` and `order_execution_enabled=false`.
+
+## Install
+
+Only after a green preflight, execute:
 
 ```powershell
 .\scripts\install_windows_mt5_shadow_task.ps1 -BrokerTimezone '<VERIFIED_TIMEZONE>'
