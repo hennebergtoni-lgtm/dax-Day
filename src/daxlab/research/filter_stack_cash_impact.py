@@ -8,7 +8,15 @@ from typing import Sequence
 import numpy as np
 
 from daxlab.research.filter_stack_ablation import FilterStackAblation, evaluate_filter_stack
-from daxlab.research.shadow_cash_ledger import ShadowCashLedger, simulate_fixed_risk_cash_ledger
+from daxlab.research.shadow_cash_ledger import (
+    COMPLETE,
+    ShadowCashLedger,
+    simulate_fixed_risk_cash_ledger,
+)
+
+
+COMPLETE_COMPARISON = "COMPLETE_COMPARISON"
+INCOMPLETE_CAPITAL_PATH = "INCOMPLETE_CAPITAL_PATH"
 
 
 @dataclass(frozen=True)
@@ -16,6 +24,7 @@ class FilterStackCashImpact:
     stack: FilterStackAblation
     baseline_ledger: ShadowCashLedger
     filtered_ledger: ShadowCashLedger
+    comparison_status: str
     final_balance_delta_eur: float
     cash_pnl_delta_eur: float
     max_drawdown_delta_eur: float
@@ -28,6 +37,7 @@ class FilterStackCashImpact:
             "stack": self.stack.to_payload(),
             "baseline_ledger": self.baseline_ledger.to_payload(),
             "filtered_ledger": self.filtered_ledger.to_payload(),
+            "comparison_status": self.comparison_status,
             "final_balance_delta_eur": self.final_balance_delta_eur,
             "cash_pnl_delta_eur": self.cash_pnl_delta_eur,
             "max_drawdown_delta_eur": self.max_drawdown_delta_eur,
@@ -70,6 +80,11 @@ def evaluate_filter_stack_cash_impact(
         starting_balance_eur=starting_balance_eur,
         fixed_risk_eur=fixed_risk_eur,
     )
+    comparison_status = (
+        COMPLETE_COMPARISON
+        if baseline_ledger.status == COMPLETE and filtered_ledger.status == COMPLETE
+        else INCOMPLETE_CAPITAL_PATH
+    )
 
     final_balance_delta = filtered_ledger.final_balance_eur - baseline_ledger.final_balance_eur
     cash_pnl_delta = filtered_ledger.cash_pnl_eur - baseline_ledger.cash_pnl_eur
@@ -80,6 +95,7 @@ def evaluate_filter_stack_cash_impact(
         "stack_sha256": stack.stack_sha256,
         "baseline_ledger_sha256": baseline_ledger.ledger_sha256,
         "filtered_ledger_sha256": filtered_ledger.ledger_sha256,
+        "comparison_status": comparison_status,
         "final_balance_delta_eur": final_balance_delta,
         "cash_pnl_delta_eur": cash_pnl_delta,
         "max_drawdown_delta_eur": max_drawdown_delta,
@@ -93,6 +109,7 @@ def evaluate_filter_stack_cash_impact(
         stack=stack,
         baseline_ledger=baseline_ledger,
         filtered_ledger=filtered_ledger,
+        comparison_status=comparison_status,
         final_balance_delta_eur=final_balance_delta,
         cash_pnl_delta_eur=cash_pnl_delta,
         max_drawdown_delta_eur=max_drawdown_delta,
