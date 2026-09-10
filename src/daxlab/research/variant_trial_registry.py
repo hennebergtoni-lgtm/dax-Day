@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import hashlib
 import json
+import re
 from typing import Any, Iterable, Mapping
 
 SCHEMA_VERSION = "DAXLAB_VARIANT_TRIAL_REGISTRY_V1"
@@ -11,6 +12,7 @@ GENESIS_HASH = "0" * 64
 PREDECLARED = "PREDECLARED"
 RETROACTIVE = "RETROACTIVE_RECONSTRUCTED"
 _ALLOWED_MODES = {PREDECLARED, RETROACTIVE}
+_GIT_SHA_RE = re.compile(r"^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$")
 
 
 @dataclass(frozen=True)
@@ -39,7 +41,13 @@ class TrialDeclaration:
 
 
 def _canonical_json(value: object) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    )
 
 
 def _normalize_timestamp(value: str) -> str:
@@ -59,8 +67,60 @@ def _validate_nonempty(value: str, label: str) -> str:
     return text
 
 
+def _validate_source_commit(value: str) -> str:
+    text = _validate_nonempty(value, "source_commit")
+    if not _GIT_SHA_RE.fullmatch(text):
+        raise ValueError("source_commit must be a 40- or 64-character hexadecimal Git SHA")
+    return text.lower()
+
+
+def _validated_parameters(parameters: Mapping[str, Any]) -> dict[str, Any]:
+    if not isinstance(parameters, Mapping):
+        raise ValueError("parameters must be a mapping")
+    normalized = dict(parameters)
+    try:
+        _canonical_json(normalized)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("parameters must be strict JSON-serializable") from exc
+    return normalized
+
+
 def _hash_record(core: Mapping[str, Any]) -> str:
     return hashlib.sha256(_canonical_json(core).encode("utf-8")).hexdigest()
+
+
+def _normalized_core(
+    *,
+    trial_id: str,
+    experiment_id: str,
+    hypothesis_trial_id: str,
+    family_id: str,
+    variant_key: str,
+    parameters: Mapping[str, Any],
+    declared_at_utc: str,
+    declaration_mode: str,
+    source_commit: str,
+    previous_hash: str,
+) -> dict[str, Any]:
+    mode = declaration_mode.strip().upper()
+    if mode not in _ALLOWED_MODES:
+        raise ValueError("unsupported declaration_mode")
+    if not re.fullmatch(r"[0-9a-f]{64}", previous_hash):
+        raise ValueError("previous_hash must be lowercase SHA256 hex")
+    return {
+        "trial_id": _validate_nonempty(trial_id, "trial_id"),
+        "experiment_id": _validate_nonempty(experiment_id, "experiment_id"),
+        "hypothesis_trial_id": _validate_nonempty(
+            hypothesis_trial_id, "hypothesis_trial_id"
+        ),
+        "family_id": _validate_nonempty(family_id, "family_id"),
+        "variant_key": _validate_nonempty(variant_key, "variant_key"),
+        "parameters": _validated_parameters(parameters),
+        "declared_at_utc": _normalize_timestamp(declared_at_utc),
+        "declaration_mode": mode,
+        "source_commit": _validate_source_commit(source_commit),
+        "previous_hash": previous_hash,
+    }
 
 
 def declare_trial(
@@ -79,64 +139,48 @@ def declare_trial(
     """Create one immutable declaration linked to the previous declaration hash."""
     rows = list(existing)
     verify_trial_chain(rows)
-
-    normalized_trial_id = _validate_nonempty(trial_id, "trial_id")
-    if normalized_trial_id in {row.trial_id for row in rows}:
+    if trial_id.strip() in {row.trial_id for row in rows}:
         raise ValueError("trial_id must be unique")
 
-    mode = declaration_mode.strip().upper()
-    if mode not in _ALLOWED_MODES:
-        raise ValueError("unsupported declaration_mode")
-    if not isinstance(parameters, Mapping):
-        raise ValueError("parameters must be a mapping")
-    try:
-        _canonical_json(dict(parameters))
-    except (TypeError, ValueError) as exc:
-        raise ValueError("parameters must be JSON-serializable") from exc
-
     previous_hash = rows[-1].record_hash if rows else GENESIS_HASH
-    core = {
-        "trial_id": normalized_trial_id,
-        "experiment_id": _validate_nonempty(experiment_id, "experiment_id"),
-        "hypothesis_trial_id": _validate_nonempty(
-            hypothesis_trial_id, "hypothesis_trial_id"
-        ),
-        "family_id": _validate_nonempty(family_id, "family_id"),
-        "variant_key": _validate_nonempty(variant_key, "variant_key"),
-        "parameters": dict(parameters),
-        "declared_at_utc": _normalize_timestamp(declared_at_utc),
-        "declaration_mode": mode,
-        "source_commit": _validate_nonempty(source_commit, "source_commit"),
-        "previous_hash": previous_hash,
-    }
+    core = _normalized_core(
+        trial_id=trial_id,
+        experiment_id=experiment_id,
+        hypothesis_trial_id=hypothesis_trial_id,
+        family_id=family_id,
+        variant_key=variant_key,
+        parameters=parameters,
+        declared_at_utc=declared_at_utc,
+        declaration_mode=declaration_mode,
+        source_commit=source_commit,
+        previous_hash=previous_hash,
+    )
     return TrialDeclaration(**core, record_hash=_hash_record(core))
 
 
 def verify_trial_chain(rows: Iterable[TrialDeclaration]) -> str:
-    """Fail closed on duplicate IDs, broken links, or modified declaration content."""
+    """Fail closed on duplicates, broken links, semantic invalidity, or modification."""
     expected_previous = GENESIS_HASH
     seen: set[str] = set()
     last_hash = GENESIS_HASH
     for row in rows:
-        if row.trial_id in seen:
+        core = _normalized_core(
+            trial_id=row.trial_id,
+            experiment_id=row.experiment_id,
+            hypothesis_trial_id=row.hypothesis_trial_id,
+            family_id=row.family_id,
+            variant_key=row.variant_key,
+            parameters=row.parameters,
+            declared_at_utc=row.declared_at_utc,
+            declaration_mode=row.declaration_mode,
+            source_commit=row.source_commit,
+            previous_hash=row.previous_hash,
+        )
+        if core["trial_id"] in seen:
             raise ValueError("duplicate trial_id in registry")
-        seen.add(row.trial_id)
-        if row.declaration_mode not in _ALLOWED_MODES:
-            raise ValueError("unsupported declaration_mode in registry")
+        seen.add(core["trial_id"])
         if row.previous_hash != expected_previous:
             raise ValueError("broken previous_hash link")
-        core = {
-            "trial_id": row.trial_id,
-            "experiment_id": row.experiment_id,
-            "hypothesis_trial_id": row.hypothesis_trial_id,
-            "family_id": row.family_id,
-            "variant_key": row.variant_key,
-            "parameters": dict(row.parameters),
-            "declared_at_utc": _normalize_timestamp(row.declared_at_utc),
-            "declaration_mode": row.declaration_mode,
-            "source_commit": row.source_commit,
-            "previous_hash": row.previous_hash,
-        }
         expected_hash = _hash_record(core)
         if row.record_hash != expected_hash:
             raise ValueError("record_hash mismatch")
