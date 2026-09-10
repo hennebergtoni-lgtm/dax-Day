@@ -20,7 +20,7 @@ def _declare(rows, trial_id="VT001", mode=PREDECLARED, params=None):
         hypothesis_trial_id="T012",
         family_id="ADX001",
         variant_key=f"ADX001:{trial_id}",
-        parameters=params or {"adx_min": 20, "period": 14},
+        parameters={"adx_min": 20, "period": 14} if params is None else params,
         declared_at_utc="2026-09-10T03:40:00Z",
         declaration_mode=mode,
         source_commit="a" * 40,
@@ -76,6 +76,34 @@ def test_non_utc_declaration_rejected():
             declaration_mode=PREDECLARED,
             source_commit="a" * 40,
         )
+
+
+def test_non_finite_parameter_rejected():
+    with pytest.raises(ValueError, match="strict JSON"):
+        _declare([], params={"threshold": float("nan")})
+
+
+def test_invalid_source_commit_rejected():
+    with pytest.raises(ValueError, match="Git SHA"):
+        declare_trial(
+            [],
+            trial_id="VT001",
+            experiment_id="EXP001",
+            hypothesis_trial_id="T012",
+            family_id="ADX001",
+            variant_key="ADX001:VT001",
+            parameters={"period": 14},
+            declared_at_utc="2026-09-10T03:40:00Z",
+            declaration_mode=PREDECLARED,
+            source_commit="not-a-git-sha",
+        )
+
+
+def test_semantically_invalid_rehashed_row_is_rejected():
+    row = _declare([])
+    tampered = replace(row, trial_id=" ")
+    with pytest.raises(ValueError, match="trial_id"):
+        verify_trial_chain([tampered])
 
 
 def test_retroactive_trial_is_never_counted_as_predeclared():
