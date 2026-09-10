@@ -52,7 +52,8 @@ class DSREvidenceStatistics:
             "evidence_sha256": self.evidence_sha256,
             "sharpe_unit": "NATIVE_PERIOD",
             "annualized": False,
-            "statistics_computed": False,
+            "summary_statistics_computed": True,
+            "dsr_computed": False,
         }
 
 
