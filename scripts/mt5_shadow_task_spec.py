@@ -14,7 +14,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "DAXLAB_MT5_WINDOWS_TASK_SPEC_V1"
-TASK_NAME = "DAXLAB-MT5-SHADOW"
+TASK_NAME = "DAXLAB MT5 SHADOW"
 
 
 @dataclass(frozen=True)
@@ -93,7 +93,7 @@ def build_windows_shadow_task_spec(
         execution_time_limit_seconds=0,
         restart_interval_minutes=1,
         restart_count=999,
-        startup_delay_seconds=60,
+        startup_delay_seconds=0,
         python_exe=str(python),
         supervisor_script=str(supervisor.resolve()),
         working_directory=str(root),
