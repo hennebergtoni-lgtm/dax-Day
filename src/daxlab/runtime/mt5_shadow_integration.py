@@ -5,7 +5,7 @@ The bridge is deliberately observation-only. It cannot place orders and keeps
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from hashlib import sha256
 import json
 from typing import Any, Mapping
@@ -27,6 +27,7 @@ from daxlab.runtime.shadow_observation import (
     verify_recovery_payload,
 )
 from daxlab.runtime.shadow_resume_anchor import (
+    ShadowResumeAnchorResult,
     bars_after_resume_anchor,
     reconcile_shadow_resume_anchor,
 )
@@ -42,6 +43,18 @@ _MT5_RESUME_SCHEMA = "DAXLAB_MT5_SHADOW_RESUME_V1"
 
 
 @dataclass(frozen=True, slots=True)
+class Mt5ShadowResumeTelemetry:
+    """Read-only visibility into fresh-start and resume catch-up semantics."""
+
+    fresh_start: bool
+    anchor_found: bool
+    anchor_index: int | None
+    feed_bar_count: int
+    catchup_bar_count: int
+    prior_anchor_filtered_bar_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class HostShadowStatus:
     status: str
     blockers: tuple[str, ...]
@@ -51,6 +64,7 @@ class HostShadowStatus:
     single_instance_lock_held: bool
     order_execution_enabled: bool
     evidence_fingerprint: str
+    resume_telemetry: Mt5ShadowResumeTelemetry | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -250,11 +264,21 @@ def evaluate_shadow_soak_from_bundle(
 
     checkpoint: ShadowSoakCheckpoint | None = None
     bars = bundle.feed.bars
+    telemetry = Mt5ShadowResumeTelemetry(
+        fresh_start=True,
+        anchor_found=False,
+        anchor_index=None,
+        feed_bar_count=len(bars),
+        catchup_bar_count=len(bars),
+        prior_anchor_filtered_bar_count=0,
+    )
     if resume_state is not None:
         verify_mt5_shadow_resume_state(resume_state, expected_symbol=status.symbol)
         checkpoint = resume_state.checkpoint
         anchor = reconcile_shadow_resume_anchor(bars, checkpoint=checkpoint)
+        telemetry = _resume_telemetry(anchor)
         bars = bars_after_resume_anchor(bars, result=anchor)
+    status = replace(status, resume_telemetry=telemetry)
 
     result = run_shadow_soak(
         bars,
@@ -282,6 +306,9 @@ def host_readiness_summary(status: HostShadowStatus) -> dict[str, Any]:
         "single_instance_lock_held": status.single_instance_lock_held,
         "order_execution_enabled": False,
         "evidence_fingerprint": status.evidence_fingerprint,
+        "resume_telemetry": (
+            asdict(status.resume_telemetry) if status.resume_telemetry is not None else None
+        ),
     }
 
 
@@ -328,6 +355,18 @@ def verify_combined_recovery_payload(payload: Mapping[str, Any]) -> None:
     if not isinstance(shadow, Mapping):
         raise ValueError("shadow recovery payload missing")
     verify_recovery_payload(shadow)
+
+
+def _resume_telemetry(anchor: ShadowResumeAnchorResult) -> Mt5ShadowResumeTelemetry:
+    filtered = 0 if anchor.fresh_start else (anchor.anchor_index or 0) + 1
+    return Mt5ShadowResumeTelemetry(
+        fresh_start=anchor.fresh_start,
+        anchor_found=not anchor.fresh_start and anchor.anchor_index is not None,
+        anchor_index=anchor.anchor_index,
+        feed_bar_count=anchor.feed_bar_count,
+        catchup_bar_count=anchor.catchup_bar_count,
+        prior_anchor_filtered_bar_count=filtered,
+    )
 
 
 def _mt5_resume_payload(
