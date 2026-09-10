@@ -48,7 +48,7 @@ def stable_summary():
     return summarize_forward_shadow_windows(
         (
             report("W1", (1.0,)),
-            report("W2", (-0.5, 1.0)),
+            report("W2", (-1.5, 1.0)),
             report("W3", (0.5,), blocked=1),
         )
     )
