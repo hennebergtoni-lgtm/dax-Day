@@ -1,8 +1,15 @@
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 import pytest
 
-from scripts.mt5_shadow_task_spec import build_windows_shadow_task_spec
+
+_MODULE_PATH = Path("scripts/mt5_shadow_task_spec.py")
+_SPEC = spec_from_file_location("mt5_shadow_task_spec", _MODULE_PATH)
+assert _SPEC is not None and _SPEC.loader is not None
+_MODULE = module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_MODULE)
+build_windows_shadow_task_spec = _MODULE.build_windows_shadow_task_spec
 
 
 def _host_layout(tmp_path: Path):
@@ -66,7 +73,7 @@ def test_task_spec_rejects_wrong_repo_root(tmp_path: Path):
 
 
 def test_module_has_no_task_mutation_or_order_api():
-    source = Path("scripts/mt5_shadow_task_spec.py").read_text(encoding="utf-8").lower()
+    source = _MODULE_PATH.read_text(encoding="utf-8").lower()
     for forbidden in (
         "order_send",
         "order_check",
