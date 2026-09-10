@@ -3,8 +3,14 @@ import math
 import pytest
 
 from daxlab.research.backtest_forward_degradation import (
+    V112_ENGINE_SHA256,
+    V112_REFERENCE_ID,
+    V112_REFERENCE_RESULT_BLOB_SHA,
+    V112_REFERENCE_SOURCE,
+    V112_SESSION_OHLC_SHA256,
     HistoricalOOSReference,
     build_backtest_forward_degradation_report,
+    v11_2_active_reference,
 )
 from daxlab.research.forward_shadow_performance import (
     ALLOWED,
@@ -33,14 +39,28 @@ def shadow_report(window, r_values=(), blocked=0):
 
 
 def historical_reference():
-    return HistoricalOOSReference(
-        reference_id="V11.2_NORMAL_OOS_2014_2019",
-        windows=81,
-        trades=856,
-        net_r=-31.309210619787684,
-        positive_windows=37,
-        negative_windows=44,
+    return v11_2_active_reference()
+
+
+def test_canonical_v11_2_reference_matches_active_repository_reference():
+    reference = v11_2_active_reference()
+
+    assert reference.reference_id == V112_REFERENCE_ID == "V112_REFERENCE_V1"
+    assert reference.windows == 81
+    assert reference.trades == 856
+    assert reference.net_r == pytest.approx(-31.309210619787684)
+    assert reference.positive_windows == 37
+    assert reference.negative_windows == 44
+    assert reference.flat_windows == 0
+    assert reference.source_path == V112_REFERENCE_SOURCE == "research/V112_REFERENCE_V1/reference_result.json"
+    assert reference.source_blob_sha == V112_REFERENCE_RESULT_BLOB_SHA == "397af5ae3d17fc1ad427cf6abbfa72f3c7a8564d"
+    assert reference.session_ohlc_sha256 == V112_SESSION_OHLC_SHA256 == (
+        "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
     )
+    assert reference.engine_sha256 == V112_ENGINE_SHA256 == (
+        "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888"
+    )
+    reference.validate()
 
 
 def test_report_uses_verified_v11_2_reference_and_normalized_forward_metrics():
@@ -54,6 +74,7 @@ def test_report_uses_verified_v11_2_reference_and_normalized_forward_metrics():
 
     result = build_backtest_forward_degradation_report(historical_reference(), summary)
 
+    assert result.historical_reference_id == "V112_REFERENCE_V1"
     assert result.historical_windows == 81
     assert result.forward_windows == 3
     assert result.historical_trades_per_window == pytest.approx(856 / 81)
@@ -68,6 +89,10 @@ def test_report_uses_verified_v11_2_reference_and_normalized_forward_metrics():
     assert result.forward_negative_window_rate == pytest.approx(1 / 3)
     assert result.forward_signal_to_trade_conversion == pytest.approx(4 / 5)
     assert result.forward_total_cash_pnl_eur == pytest.approx(0.0)
+    assert result.historical_source_path == V112_REFERENCE_SOURCE
+    assert result.historical_source_blob_sha == V112_REFERENCE_RESULT_BLOB_SHA
+    assert result.historical_session_ohlc_sha256 == V112_SESSION_OHLC_SHA256
+    assert result.historical_engine_sha256 == V112_ENGINE_SHA256
     assert result.descriptive_only is True
     assert result.composite_score is None
     assert result.automatic_promotion is False

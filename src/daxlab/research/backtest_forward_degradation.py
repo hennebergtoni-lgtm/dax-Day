@@ -14,6 +14,13 @@ import math
 from daxlab.research.forward_shadow_rolling_summary import ForwardShadowRollingSummary
 
 
+V112_REFERENCE_ID = "V112_REFERENCE_V1"
+V112_REFERENCE_SOURCE = "research/V112_REFERENCE_V1/reference_result.json"
+V112_REFERENCE_RESULT_BLOB_SHA = "397af5ae3d17fc1ad427cf6abbfa72f3c7a8564d"
+V112_SESSION_OHLC_SHA256 = "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
+V112_ENGINE_SHA256 = "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888"
+
+
 @dataclass(frozen=True)
 class HistoricalOOSReference:
     reference_id: str
@@ -23,6 +30,10 @@ class HistoricalOOSReference:
     positive_windows: int
     negative_windows: int
     flat_windows: int = 0
+    source_path: str | None = None
+    source_blob_sha: str | None = None
+    session_ohlc_sha256: str | None = None
+    engine_sha256: str | None = None
 
     def validate(self) -> None:
         if not self.reference_id.strip():
@@ -35,6 +46,28 @@ class HistoricalOOSReference:
             raise ValueError("historical window counts must sum to windows")
         if not math.isfinite(self.net_r):
             raise ValueError("historical net_r must be finite")
+
+
+def v11_2_active_reference() -> HistoricalOOSReference:
+    """Return the frozen clean V11.2 ACTIVE_REFERENCE declared in the repository.
+
+    Values and source identities are intentionally explicit. Changing this factory is a
+    scientific reference change and must be supported by a new audited reference artifact;
+    callers cannot silently mutate the canonical V11.2 measurement.
+    """
+    return HistoricalOOSReference(
+        reference_id=V112_REFERENCE_ID,
+        windows=81,
+        trades=856,
+        net_r=-31.309210619787684,
+        positive_windows=37,
+        negative_windows=44,
+        flat_windows=0,
+        source_path=V112_REFERENCE_SOURCE,
+        source_blob_sha=V112_REFERENCE_RESULT_BLOB_SHA,
+        session_ohlc_sha256=V112_SESSION_OHLC_SHA256,
+        engine_sha256=V112_ENGINE_SHA256,
+    )
 
 
 @dataclass(frozen=True)
@@ -58,6 +91,10 @@ class BacktestForwardDegradationReport:
     forward_total_cash_pnl_eur: float
     forward_best_window_share_of_positive_cash: float | None
     source_summary_sha256: str
+    historical_source_path: str | None
+    historical_source_blob_sha: str | None
+    historical_session_ohlc_sha256: str | None
+    historical_engine_sha256: str | None
     report_sha256: str
     descriptive_only: bool = True
     composite_score: None = None
@@ -133,5 +170,9 @@ def build_backtest_forward_degradation_report(
         forward_total_cash_pnl_eur=forward.total_cash_pnl_eur,
         forward_best_window_share_of_positive_cash=forward.best_window_share_of_positive_cash,
         source_summary_sha256=forward.summary_sha256,
+        historical_source_path=historical.source_path,
+        historical_source_blob_sha=historical.source_blob_sha,
+        historical_session_ohlc_sha256=historical.session_ohlc_sha256,
+        historical_engine_sha256=historical.engine_sha256,
         report_sha256=digest,
     )
