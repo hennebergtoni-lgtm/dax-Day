@@ -33,6 +33,7 @@ def test_task_spec_is_logon_bound_and_no_order(tmp_path: Path):
         broker_timezone="Europe/Berlin",
     )
     payload = spec.to_payload()
+    assert payload["task_name"] == "DAXLAB MT5 SHADOW"
     assert payload["trigger"] == "AT_LOGON"
     assert payload["run_only_when_user_logged_on"] is True
     assert payload["multiple_instances"] == "IGNORE_NEW"
@@ -42,7 +43,7 @@ def test_task_spec_is_logon_bound_and_no_order(tmp_path: Path):
     assert payload["execution_time_limit_seconds"] == 0
     assert payload["restart_interval_minutes"] == 1
     assert payload["restart_count"] == 999
-    assert payload["startup_delay_seconds"] == 60
+    assert payload["startup_delay_seconds"] == 0
     assert payload["execution_capability"] == "NONE"
     assert payload["order_execution_enabled"] is False
     assert payload["state_directory"].endswith(str(Path(".runtime") / "mt5_shadow"))
@@ -52,6 +53,10 @@ def test_task_spec_matches_installer_core_settings():
     installer = Path("scripts/install_windows_mt5_shadow_task.ps1").read_text(
         encoding="utf-8"
     )
+    assert "$ShadowTaskName = 'DAXLAB MT5 SHADOW'" in installer
+    assert "New-ScheduledTaskTrigger -AtLogOn" in installer
+    assert "-LogonType Interactive" in installer
+    assert "-RunLevel Limited" in installer
     assert "-StartWhenAvailable" in installer
     assert "-AllowStartIfOnBatteries" in installer
     assert "-DontStopIfGoingOnBatteries" in installer
