@@ -14,7 +14,6 @@ class ClassicalDSRResult:
     probability: float
     z_score: float
     observed_sr: float
-    benchmark_sr: float
     sr_star: float
     expected_max_z: float
     n_obs: int
@@ -32,7 +31,6 @@ class ClassicalDSRResult:
             "probability": self.probability,
             "z_score": self.z_score,
             "observed_sr": self.observed_sr,
-            "benchmark_sr": self.benchmark_sr,
             "sr_star": self.sr_star,
             "expected_max_z": self.expected_max_z,
             "n_obs": self.n_obs,
@@ -104,13 +102,14 @@ def classical_deflated_sharpe_ratio_from_statistics(
     n_trials: int,
     trial_sharpe_variance: float,
     trial_variance_ddof: int,
-    benchmark_sr: float = 0.0,
     sharpe_unit: str = _NATIVE_UNIT,
 ) -> ClassicalDSRResult:
     """Compute classical DSR from explicit native-frequency summary statistics.
 
     The caller owns estimation of the cross-trial Sharpe variance. ``ddof`` is
-    recorded for provenance but is not silently transformed here.
+    recorded for provenance but is not silently transformed here. DSR V1 uses
+    the classical zero-skill multiple-testing benchmark only; arbitrary PSR
+    benchmarks belong to ``probabilistic_sharpe_ratio_from_statistics``.
     """
     if sharpe_unit != _NATIVE_UNIT:
         raise ValueError("sharpe_unit must be NATIVE_PERIOD; convert annualized Sharpe explicitly")
@@ -121,8 +120,7 @@ def classical_deflated_sharpe_ratio_from_statistics(
         raise ValueError("trial_sharpe_variance must be >= 0")
 
     expected_max_z = expected_max_standard_normal(n_trials)
-    base_benchmark = _finite(benchmark_sr, "benchmark_sr")
-    sr_star = base_benchmark + math.sqrt(variance) * expected_max_z
+    sr_star = math.sqrt(variance) * expected_max_z
     probability, z_score = probabilistic_sharpe_ratio_from_statistics(
         observed_sr=observed_sr,
         benchmark_sr=sr_star,
@@ -134,7 +132,6 @@ def classical_deflated_sharpe_ratio_from_statistics(
         probability=probability,
         z_score=z_score,
         observed_sr=float(observed_sr),
-        benchmark_sr=base_benchmark,
         sr_star=sr_star,
         expected_max_z=expected_max_z,
         n_obs=n_obs,
