@@ -19,21 +19,8 @@ def make_report(window, observations):
 
 
 def test_rolling_summary_aggregates_activity_and_cash():
-    w1 = make_report(
-        "W1",
-        (
-            ShadowSignalObservation("a1", ALLOWED, r_result=2.0),
-            ShadowSignalObservation("a2", BLOCKED, block_reason="F"),
-        ),
-    )
-    w2 = make_report(
-        "W2",
-        (
-            ShadowSignalObservation("b1", ALLOWED, r_result=-1.0),
-            ShadowSignalObservation("b2", ALLOWED, r_result=0.5),
-            ShadowSignalObservation("b3", BLOCKED, block_reason="G"),
-        ),
-    )
+    w1 = make_report("W1", (ShadowSignalObservation("a1", ALLOWED, r_result=2.0), ShadowSignalObservation("a2", BLOCKED, block_reason="F")))
+    w2 = make_report("W2", (ShadowSignalObservation("b1", ALLOWED, r_result=-1.0), ShadowSignalObservation("b2", ALLOWED, r_result=0.5), ShadowSignalObservation("b3", BLOCKED, block_reason="G")))
     summary = summarize_forward_shadow_windows((w1, w2))
     assert summary.window_count == 2
     assert summary.positive_cash_windows == 1
@@ -48,6 +35,8 @@ def test_rolling_summary_aggregates_activity_and_cash():
     assert summary.best_window_cash_pnl_eur == pytest.approx(40.0)
     assert summary.worst_window_id == "W2"
     assert summary.worst_window_cash_pnl_eur == pytest.approx(-10.0)
+    assert summary.max_consecutive_positive_windows == 1
+    assert summary.max_consecutive_negative_windows == 1
 
 
 def test_single_positive_window_concentration_is_explicit():
@@ -56,6 +45,25 @@ def test_single_positive_window_concentration_is_explicit():
     w3 = make_report("W3", (ShadowSignalObservation("c", ALLOWED, r_result=-1.0),))
     summary = summarize_forward_shadow_windows((w1, w2, w3))
     assert summary.best_window_share_of_positive_cash == 1.0
+    assert summary.max_consecutive_negative_windows == 2
+
+
+def test_three_negative_windows_create_streak_of_three():
+    reports = tuple(
+        make_report(f"W{i}", (ShadowSignalObservation(f"s{i}", ALLOWED, r_result=-1.0),))
+        for i in range(3)
+    )
+    summary = summarize_forward_shadow_windows(reports)
+    assert summary.max_consecutive_negative_windows == 3
+    assert summary.max_consecutive_positive_windows == 0
+
+
+def test_flat_window_breaks_negative_streak():
+    w1 = make_report("W1", (ShadowSignalObservation("a", ALLOWED, r_result=-1.0),))
+    w2 = make_report("W2", ())
+    w3 = make_report("W3", (ShadowSignalObservation("c", ALLOWED, r_result=-1.0),))
+    summary = summarize_forward_shadow_windows((w1, w2, w3))
+    assert summary.max_consecutive_negative_windows == 1
 
 
 def test_no_signal_windows_do_not_create_fake_conversion():
@@ -65,20 +73,19 @@ def test_no_signal_windows_do_not_create_fake_conversion():
     assert summary.no_signal_windows == 2
     assert summary.aggregate_signal_to_trade_conversion is None
     assert summary.total_cash_pnl_eur == 0.0
+    assert summary.max_consecutive_positive_windows == 0
+    assert summary.max_consecutive_negative_windows == 0
 
 
 def test_global_conversion_is_weighted_by_signal_count_not_window_average():
     w1 = make_report("W1", (ShadowSignalObservation("a", ALLOWED, r_result=1.0),))
-    w2 = make_report(
-        "W2",
-        tuple(ShadowSignalObservation(f"b{i}", BLOCKED, block_reason="F") for i in range(9)),
-    )
+    w2 = make_report("W2", tuple(ShadowSignalObservation(f"b{i}", BLOCKED, block_reason="F") for i in range(9)))
     summary = summarize_forward_shadow_windows((w1, w2))
     assert summary.aggregate_signal_to_trade_conversion == pytest.approx(0.1)
 
 
 def test_window_order_is_bound_into_hash():
-    w1 = make_report("W1", ())
+    w1 = make_report("W1", (ShadowSignalObservation("a", ALLOWED, r_result=-1.0),))
     w2 = make_report("W2", ())
     first = summarize_forward_shadow_windows((w1, w2))
     second = summarize_forward_shadow_windows((w2, w1))
