@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
+from daxlab.runtime.mt5_cross_cycle_integrity import evaluate_cross_cycle_integrity
 from daxlab.runtime.mt5_shadow_integration import (
     Mt5ShadowResumeState,
     build_mt5_shadow_resume_state,
@@ -48,6 +49,7 @@ def process_mt5_shadow_cycle(
     resume_state: Mt5ShadowResumeState | None = None,
     single_instance_lock_held: bool,
     observed_at: datetime | None = None,
+    previous_bundle_payload: Mapping[str, Any] | None = None,
 ) -> SupervisorCycleResult:
     """Validate one broker bundle and produce a credential-free NO_ORDER heartbeat."""
     now = observed_at or datetime.now(timezone.utc)
@@ -55,6 +57,46 @@ def process_mt5_shadow_cycle(
         raise ValueError("supervisor observed_at must be timezone-aware")
 
     bundle = parse_windows_mt5_bundle(bundle_payload)
+    cross_cycle_status = "NOT_AVAILABLE"
+    cross_cycle_overlapping_bars = 0
+    cross_cycle_identical_overlaps = 0
+    cross_cycle_mutated_overlaps = 0
+
+    if previous_bundle_payload is not None:
+        previous_bundle = parse_windows_mt5_bundle(previous_bundle_payload)
+        if previous_bundle.feed is not None and bundle.feed is not None:
+            integrity = evaluate_cross_cycle_integrity(previous_bundle.feed, bundle.feed)
+            cross_cycle_status = integrity.status
+            cross_cycle_overlapping_bars = integrity.overlapping_bars
+            cross_cycle_identical_overlaps = integrity.identical_overlaps
+            cross_cycle_mutated_overlaps = integrity.mutated_overlaps
+            if integrity.blockers:
+                symbol = bundle.host.symbols[0].name if bundle.host.symbols else None
+                blockers = list(dict.fromkeys([*bundle.blockers, *integrity.blockers]))
+                heartbeat = {
+                    "schema_version": _HEARTBEAT_SCHEMA,
+                    "observed_at_utc": now.astimezone(timezone.utc).isoformat(),
+                    "status": "BLOCKED",
+                    "blockers": blockers,
+                    "symbol": symbol,
+                    "bundle_sha256": bundle.fingerprint,
+                    "closed_m5_bars": len(bundle.feed.bars),
+                    "latest_closed_bar_age_seconds": bundle.feed.age_seconds,
+                    "single_instance_lock_held": single_instance_lock_held,
+                    "processed_total": None,
+                    "new_decisions": 0,
+                    "duplicates_suppressed": 0,
+                    "evidence_state": None,
+                    "cross_cycle_status": cross_cycle_status,
+                    "cross_cycle_overlapping_bars": cross_cycle_overlapping_bars,
+                    "cross_cycle_identical_overlaps": cross_cycle_identical_overlaps,
+                    "cross_cycle_mutated_overlaps": cross_cycle_mutated_overlaps,
+                    "execution_capability": "NONE",
+                    "order_execution_enabled": False,
+                }
+                _assert_credential_free(heartbeat)
+                return SupervisorCycleResult(heartbeat=heartbeat, resume_state=None)
+
     gate, result, status = evaluate_shadow_soak_from_bundle(
         bundle,
         authorization=shadow_authorization(),
@@ -85,6 +127,10 @@ def process_mt5_shadow_cycle(
         "new_decisions": len(result.decisions) if result is not None else 0,
         "duplicates_suppressed": result.duplicates_suppressed if result is not None else 0,
         "evidence_state": result.evidence_state if result is not None else None,
+        "cross_cycle_status": cross_cycle_status,
+        "cross_cycle_overlapping_bars": cross_cycle_overlapping_bars,
+        "cross_cycle_identical_overlaps": cross_cycle_identical_overlaps,
+        "cross_cycle_mutated_overlaps": cross_cycle_mutated_overlaps,
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }
@@ -126,6 +172,10 @@ def supervisor_error_heartbeat(
         "new_decisions": 0,
         "duplicates_suppressed": 0,
         "evidence_state": None,
+        "cross_cycle_status": "NOT_AVAILABLE",
+        "cross_cycle_overlapping_bars": 0,
+        "cross_cycle_identical_overlaps": 0,
+        "cross_cycle_mutated_overlaps": 0,
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }
@@ -151,6 +201,10 @@ def supervisor_stopped_heartbeat(*, observed_at: datetime | None = None) -> dict
         "new_decisions": 0,
         "duplicates_suppressed": 0,
         "evidence_state": None,
+        "cross_cycle_status": "NOT_AVAILABLE",
+        "cross_cycle_overlapping_bars": 0,
+        "cross_cycle_identical_overlaps": 0,
+        "cross_cycle_mutated_overlaps": 0,
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }

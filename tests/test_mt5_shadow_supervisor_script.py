@@ -21,7 +21,19 @@ def test_supervisor_script_has_no_order_api() -> None:
     assert 'parser.add_argument("--broker-timezone", required=True)' in text
     assert 'resume_path = state_dir / "resume.json"' in text
     assert 'heartbeat_path = state_dir / "heartbeat.json"' in text
+    assert 'latest_bundle_path = state_dir / "latest_bundle.json"' in text
+    assert 'rejected_bundle_path = state_dir / "rejected_bundle.json"' in text
     assert "single_instance_lock_held=lock.held" in text
+    assert "previous_bundle_payload=previous_bundle_payload" in text
+
+
+def test_compare_happens_before_latest_bundle_replace() -> None:
+    text = Path("scripts/mt5_shadow_supervisor.py").read_text(encoding="utf-8")
+    process_index = text.index("cycle = process_mt5_shadow_cycle(")
+    accepted_write_index = text.index("atomic_write_json(latest_bundle_path, bundle_payload)")
+    assert process_index < accepted_write_index
+    assert 'cycle.heartbeat.get("cross_cycle_status") == "BLOCKED"' in text
+    assert "atomic_write_json(rejected_bundle_path, bundle_payload)" in text
 
 
 def test_losing_second_instance_does_not_write_shared_state() -> None:

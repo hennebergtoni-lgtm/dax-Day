@@ -75,6 +75,19 @@ def _bundle() -> dict:
     )
 
 
+def _mutated_bundle() -> dict:
+    bundle = _bundle()
+    payload = dict(bundle)
+    payload.pop("sha256")
+    feed = dict(payload["closed_m5_feed"])
+    bars = [dict(item) for item in feed["bars"]]
+    bars[1]["close"] += 25.0
+    bars[1]["high"] += 25.0
+    feed["bars"] = bars
+    payload["closed_m5_feed"] = feed
+    return _seal(payload)
+
+
 def test_supervisor_green_cycle_is_no_order_and_builds_resume() -> None:
     result = process_mt5_shadow_cycle(
         _bundle(),
@@ -87,6 +100,7 @@ def test_supervisor_green_cycle_is_no_order_and_builds_resume() -> None:
     assert result.heartbeat["evidence_state"] == MT5_READONLY_EVIDENCE_STATE
     assert result.heartbeat["execution_capability"] == "NONE"
     assert result.heartbeat["order_execution_enabled"] is False
+    assert result.heartbeat["cross_cycle_status"] == "NOT_AVAILABLE"
     assert result.resume_state is not None
 
 
@@ -103,6 +117,43 @@ def test_supervisor_resume_suppresses_seen_bars() -> None:
     assert second.heartbeat["duplicates_suppressed"] == 3
     assert second.resume_state is not None
     assert second.resume_state.checkpoint == first.resume_state.checkpoint
+
+
+def test_cross_cycle_identical_snapshot_stays_green() -> None:
+    first = process_mt5_shadow_cycle(_bundle(), single_instance_lock_held=True)
+    assert first.resume_state is not None
+    second = process_mt5_shadow_cycle(
+        _bundle(),
+        single_instance_lock_held=True,
+        resume_state=first.resume_state,
+        previous_bundle_payload=_bundle(),
+    )
+    assert second.heartbeat["status"] == "GREEN"
+    assert second.heartbeat["cross_cycle_status"] == "GREEN"
+    assert second.heartbeat["cross_cycle_overlapping_bars"] == 3
+    assert second.heartbeat["cross_cycle_identical_overlaps"] == 3
+    assert second.heartbeat["cross_cycle_mutated_overlaps"] == 0
+    assert second.heartbeat["new_decisions"] == 0
+    assert second.resume_state is not None
+
+
+def test_cross_cycle_mutation_blocks_before_resume_advance() -> None:
+    first = process_mt5_shadow_cycle(_bundle(), single_instance_lock_held=True)
+    assert first.resume_state is not None
+    blocked = process_mt5_shadow_cycle(
+        _mutated_bundle(),
+        single_instance_lock_held=True,
+        resume_state=first.resume_state,
+        previous_bundle_payload=_bundle(),
+    )
+    assert blocked.heartbeat["status"] == "BLOCKED"
+    assert blocked.heartbeat["blockers"] == ["HISTORICAL_BAR_MUTATION"]
+    assert blocked.heartbeat["cross_cycle_status"] == "BLOCKED"
+    assert blocked.heartbeat["cross_cycle_mutated_overlaps"] == 1
+    assert blocked.heartbeat["new_decisions"] == 0
+    assert blocked.resume_state is None
+    assert blocked.heartbeat["execution_capability"] == "NONE"
+    assert blocked.heartbeat["order_execution_enabled"] is False
 
 
 def test_supervisor_lost_lock_blocks_and_does_not_advance_resume() -> None:
