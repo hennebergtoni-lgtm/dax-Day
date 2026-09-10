@@ -8,8 +8,13 @@ from daxlab.research.multiple_testing_preflight import (
     preflight_multiple_testing_evidence,
 )
 
-READY = "READY_FOR_OVERFITTING_STATISTICS"
-BLOCKED = "BLOCKED_STATISTICS_INPUT_NOT_READY"
+READY = "READY_FOR_CONFIRMATORY_OVERFITTING_STATISTICS"
+BLOCKED = "BLOCKED_CONFIRMATORY_STATISTICS_INPUT_NOT_READY"
+_PBO_ONLY_BLOCKERS = {
+    "PBO_BLOCK_COUNT_MUST_BE_EVEN_AND_AT_LEAST_4",
+    "PBO_BLOCK_COUNT_EXCEEDS_PERIOD_COUNT",
+    "PERIOD_COUNT_NOT_DIVISIBLE_BY_PBO_BLOCKS",
+}
 
 
 @dataclass(frozen=True)
@@ -19,6 +24,7 @@ class StatisticsReadinessResult:
     trial_count: int
     period_count: int
     pbo_blocks: int
+    confirmatory_governance_required: bool
     dsr_ready: bool
     pbo_ready: bool
     multiple_testing_evidence_sha256: str
@@ -36,6 +42,7 @@ class StatisticsReadinessResult:
             "trial_count": self.trial_count,
             "period_count": self.period_count,
             "pbo_blocks": self.pbo_blocks,
+            "confirmatory_governance_required": self.confirmatory_governance_required,
             "dsr_ready": self.dsr_ready,
             "pbo_ready": self.pbo_ready,
             "multiple_testing_evidence_sha256": self.multiple_testing_evidence_sha256,
@@ -58,11 +65,13 @@ def preflight_statistics_readiness(
     period_order: Sequence[str],
     pbo_blocks: int,
 ) -> StatisticsReadinessResult:
-    """Fail closed before DSR/PBO calculation is allowed.
+    """Fail closed before confirmatory DSR/PBO reporting is allowed.
 
-    The underlying matrix completeness is delegated to the established
-    multiple-testing preflight. This layer adds chronology verification,
-    explicit temporal ordering, and CSCV/PBO partition requirements.
+    Full Git-verified predeclaration is a DAXLAB confirmatory-governance rule,
+    not a mathematical prerequisite of the DSR formula itself. Matrix
+    completeness is delegated to the established multiple-testing preflight;
+    this layer adds chronology governance, explicit temporal ordering and
+    CSCV/PBO partition readiness. No statistic is computed here.
     """
     materialized = list(rows)
     base = preflight_multiple_testing_evidence(
@@ -101,15 +110,7 @@ def preflight_statistics_readiness(
         blockers.add("PERIOD_COUNT_NOT_DIVISIBLE_BY_PBO_BLOCKS")
 
     ordered = tuple(sorted(blockers))
-    dsr_specific = {
-        "INSUFFICIENT_PERIODS_FOR_DSR_MOMENTS",
-    }
-    common_blockers = set(ordered) - {
-        "PBO_BLOCK_COUNT_MUST_BE_EVEN_AND_AT_LEAST_4",
-        "PBO_BLOCK_COUNT_EXCEEDS_PERIOD_COUNT",
-        "PERIOD_COUNT_NOT_DIVISIBLE_BY_PBO_BLOCKS",
-    }
-    dsr_ready = not (common_blockers | (set(ordered) & dsr_specific))
+    dsr_ready = not (set(ordered) - _PBO_ONLY_BLOCKERS)
     pbo_ready = not ordered
 
     return StatisticsReadinessResult(
@@ -118,6 +119,7 @@ def preflight_statistics_readiness(
         trial_count=base.observed_trial_count,
         period_count=len(order),
         pbo_blocks=pbo_blocks,
+        confirmatory_governance_required=True,
         dsr_ready=dsr_ready,
         pbo_ready=pbo_ready,
         multiple_testing_evidence_sha256=base.evidence_sha256,
