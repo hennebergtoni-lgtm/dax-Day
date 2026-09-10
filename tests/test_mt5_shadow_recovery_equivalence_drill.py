@@ -12,6 +12,10 @@ from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
 from daxlab.runtime.prospective_gate import ProspectiveAuthorization
 
 
+_TOTAL_BARS = 6
+_FIRST_OPEN = datetime(2026, 9, 9, 7, 30, tzinfo=timezone.utc)
+
+
 def _seal(payload: dict) -> dict:
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     value = dict(payload)
@@ -20,12 +24,10 @@ def _seal(payload: dict) -> dict:
 
 
 def _bundle(bar_count: int):
-    observed = datetime(2026, 9, 9, 8, 0, tzinfo=timezone.utc)
-    latest = observed - timedelta(minutes=5)
-    first = latest - timedelta(minutes=5 * (bar_count - 1))
+    assert 1 <= bar_count <= _TOTAL_BARS
     bars = []
     for index in range(bar_count):
-        t = first + timedelta(minutes=5 * index)
+        t = _FIRST_OPEN + timedelta(minutes=5 * index)
         base = 25000.0 + index
         bars.append(
             {
@@ -36,6 +38,7 @@ def _bundle(bar_count: int):
                 "close": base + 1.0,
             }
         )
+    observed = _FIRST_OPEN + timedelta(minutes=5 * bar_count)
     return parse_windows_mt5_bundle(
         _seal(
             {
