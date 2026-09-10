@@ -33,6 +33,12 @@ def _load_resume(path: Path):
     return load_mt5_resume_payload(read_json_object(path))
 
 
+def _load_previous_bundle(path: Path):
+    if not path.exists():
+        return None
+    return read_json_object(path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="DE40")
@@ -53,6 +59,7 @@ def main() -> int:
     heartbeat_path = state_dir / "heartbeat.json"
     resume_path = state_dir / "resume.json"
     latest_bundle_path = state_dir / "latest_bundle.json"
+    rejected_bundle_path = state_dir / "rejected_bundle.json"
     lock_path = state_dir / "supervisor.lock"
     state_dir.mkdir(parents=True, exist_ok=True)
 
@@ -77,10 +84,11 @@ def main() -> int:
     try:
         try:
             resume_state = _load_resume(resume_path)
+            previous_bundle_payload = _load_previous_bundle(latest_bundle_path)
         except Exception:
             atomic_write_json(
                 heartbeat_path,
-                supervisor_error_heartbeat(error_code="RESUME_STATE_INVALID"),
+                supervisor_error_heartbeat(error_code="RESUME_OR_BUNDLE_STATE_INVALID"),
             )
             return 3
 
@@ -92,12 +100,21 @@ def main() -> int:
                     max_age_seconds=args.max_age_seconds,
                     broker_timezone=args.broker_timezone,
                 )
-                atomic_write_json(latest_bundle_path, bundle_payload)
                 cycle = process_mt5_shadow_cycle(
                     bundle_payload,
                     resume_state=resume_state,
                     single_instance_lock_held=lock.held,
+                    previous_bundle_payload=previous_bundle_payload,
                 )
+
+                if cycle.heartbeat.get("cross_cycle_status") == "BLOCKED":
+                    atomic_write_json(rejected_bundle_path, bundle_payload)
+                else:
+                    atomic_write_json(latest_bundle_path, bundle_payload)
+                    previous_bundle_payload = bundle_payload
+                    if rejected_bundle_path.exists():
+                        rejected_bundle_path.unlink()
+
                 if cycle.resume_state is not None:
                     resume_state = cycle.resume_state
                     atomic_write_json(resume_path, mt5_shadow_resume_payload(resume_state))
