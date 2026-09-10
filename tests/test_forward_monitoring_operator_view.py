@@ -12,7 +12,7 @@ from daxlab.research.forward_shadow_performance import (
     build_forward_shadow_performance_report,
 )
 from daxlab.research.rolling_backtest_forward_degradation import (
-    build_rolling_backtest_forward_degradation,
+    build_rolling_backtest_forward_degradation_series,
 )
 from daxlab.research.rolling_degradation_monitoring_view import (
     build_rolling_degradation_monitoring_view,
@@ -42,7 +42,7 @@ def _monitoring_view():
                 fixed_risk_eur=10.0,
             )
         )
-    series = build_rolling_backtest_forward_degradation(
+    series = build_rolling_backtest_forward_degradation_series(
         v11_2_active_reference(), reports, rolling_width=2
     )
     return build_rolling_degradation_monitoring_view(series)
