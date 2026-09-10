@@ -95,6 +95,32 @@ def main() -> None:
     if selection.get("order_execution_enabled") is not False:
         raise SystemExit("V12 selection must keep execution disabled")
 
+    forward = web.get("forward_monitoring")
+    if not isinstance(forward, dict):
+        raise SystemExit("web status must expose Forward SHADOW monitoring state")
+    if forward.get("state") != "CONTRACT_IMPLEMENTED_AWAITING_REAL_FORWARD_EVIDENCE":
+        raise SystemExit("Forward monitoring must remain awaiting real forward evidence")
+    if forward.get("schema") != "DAXLAB_FORWARD_MONITORING_OPERATOR_VIEW_V1":
+        raise SystemExit("unexpected Forward monitoring schema")
+    if forward.get("source") != "src/daxlab/operator/forward_monitoring_view.py":
+        raise SystemExit("Forward monitoring source contract drift")
+    if forward.get("mode") != "SHADOW" or forward.get("read_only") is not True:
+        raise SystemExit("Forward monitoring must remain read-only SHADOW")
+    if forward.get("monitoring_only") is not True:
+        raise SystemExit("Forward monitoring must remain monitoring-only")
+    if forward.get("real_forward_evidence_present") is not False:
+        raise SystemExit("web status must not fabricate real forward evidence")
+    if forward.get("rolling_degradation_available") is not False:
+        raise SystemExit("rolling degradation must not be shown available without real forward evidence")
+    if forward.get("statistical_significance_claimed") is not False:
+        raise SystemExit("Forward monitoring must not claim statistical significance")
+    if forward.get("composite_score") is not None:
+        raise SystemExit("Forward monitoring must not expose a composite score")
+    if forward.get("automatic_promotion") is not False:
+        raise SystemExit("Forward monitoring must not auto-promote")
+    if forward.get("execution_capability") != "NONE" or forward.get("order_execution_enabled") is not False:
+        raise SystemExit("Forward monitoring must preserve NO_ORDER")
+
     mt5 = web.get("mt5_adapter")
     if not isinstance(mt5, dict):
         raise SystemExit("web status must expose MT5 adapter preparation state")
@@ -168,7 +194,7 @@ def main() -> None:
     if web["recovery"].get("mt5_host_evidence_manifest") != "IMPLEMENTED_CREDENTIAL_FREE":
         raise SystemExit("MT5 host evidence recovery manifest contract missing")
 
-    print("Web status integrity OK | V11.2 frozen | V12 replay/selection truthful | Paper/Live BLOCKED")
+    print("Web status integrity OK | V11.2 frozen | Forward SHADOW truthful | Paper/Live BLOCKED")
 
 
 if __name__ == "__main__":
