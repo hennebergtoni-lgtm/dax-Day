@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
+from daxlab.runtime.mt5_broker_timezone_diagnostic import diagnose_broker_timezone
+
 
 SCRIPT = Path("scripts/diagnose_mt5_broker_timezone.py")
-
-
-def _load_module():
-    spec = importlib.util.spec_from_file_location("diagnose_mt5_broker_timezone", SCRIPT)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def _fake_probe(*, configured_symbol, bars, max_age_seconds, broker_timezone):
@@ -44,14 +38,14 @@ def _fake_probe(*, configured_symbol, bars, max_age_seconds, broker_timezone):
     }
 
 
-def test_diagnostic_never_auto_verifies_even_with_best_candidate(monkeypatch) -> None:
-    module = _load_module()
-    monkeypatch.setattr(module, "collect_probe", _fake_probe)
-    payload = module.diagnose(
+def test_diagnostic_never_auto_verifies_even_with_best_candidate() -> None:
+    payload = diagnose_broker_timezone(
+        probe=_fake_probe,
         symbol="DE40",
         candidates=("UTC", "Europe/Berlin", "Europe/Helsinki"),
         bars=20,
         max_age_seconds=600.0,
+        observed_at=datetime(2026, 9, 10, 1, 40, tzinfo=timezone.utc),
     )
     assert payload["decision_state"] == "HUMAN_REVIEW_REQUIRED"
     assert payload["auto_selected_timezone"] is None
@@ -65,13 +59,18 @@ def test_diagnostic_never_auto_verifies_even_with_best_candidate(monkeypatch) ->
     assert berlin["normalized_tick_clock_delta_seconds"] == pytest.approx(0.25)
 
 
-def test_requires_multiple_unique_candidates(monkeypatch) -> None:
-    module = _load_module()
-    monkeypatch.setattr(module, "collect_probe", _fake_probe)
+def test_requires_multiple_unique_candidates() -> None:
     with pytest.raises(ValueError, match="at least two"):
-        module.diagnose(symbol="DE40", candidates=("UTC",), bars=20, max_age_seconds=600.0)
+        diagnose_broker_timezone(
+            probe=_fake_probe,
+            symbol="DE40",
+            candidates=("UTC",),
+            bars=20,
+            max_age_seconds=600.0,
+        )
     with pytest.raises(ValueError, match="unique"):
-        module.diagnose(
+        diagnose_broker_timezone(
+            probe=_fake_probe,
             symbol="DE40",
             candidates=("UTC", "UTC"),
             bars=20,
@@ -79,8 +78,7 @@ def test_requires_multiple_unique_candidates(monkeypatch) -> None:
         )
 
 
-def test_invalid_iana_timezone_fails_before_probe(monkeypatch) -> None:
-    module = _load_module()
+def test_invalid_iana_timezone_fails_before_probe() -> None:
     called = False
 
     def should_not_run(**kwargs):
@@ -88,9 +86,9 @@ def test_invalid_iana_timezone_fails_before_probe(monkeypatch) -> None:
         called = True
         return _fake_probe(**kwargs)
 
-    monkeypatch.setattr(module, "collect_probe", should_not_run)
     with pytest.raises(Exception):
-        module.diagnose(
+        diagnose_broker_timezone(
+            probe=should_not_run,
             symbol="DE40",
             candidates=("UTC", "Not/A_Timezone"),
             bars=20,
@@ -99,10 +97,9 @@ def test_invalid_iana_timezone_fails_before_probe(monkeypatch) -> None:
     assert called is False
 
 
-def test_diagnostic_output_surface_is_credential_free(monkeypatch) -> None:
-    module = _load_module()
-    monkeypatch.setattr(module, "collect_probe", _fake_probe)
-    payload = module.diagnose(
+def test_diagnostic_output_surface_is_credential_free() -> None:
+    payload = diagnose_broker_timezone(
+        probe=_fake_probe,
         symbol="DE40",
         candidates=("UTC", "Europe/Berlin"),
         bars=20,
@@ -114,11 +111,38 @@ def test_diagnostic_output_surface_is_credential_free(monkeypatch) -> None:
     assert all(item["order_execution_enabled"] is False for item in payload["observations"])
 
 
-def test_script_contains_no_order_api_or_auto_selection() -> None:
+def test_probe_payload_with_forbidden_key_is_rejected() -> None:
+    def bad_probe(**kwargs):
+        payload = _fake_probe(**kwargs)
+        payload["password"] = "must-not-leak"
+        return payload
+
+    with pytest.raises(RuntimeError, match="forbidden diagnostic output key"):
+        diagnose_broker_timezone(
+            probe=bad_probe,
+            symbol="DE40",
+            candidates=("UTC", "Europe/Berlin"),
+            bars=20,
+            max_age_seconds=600.0,
+        )
+
+
+def test_naive_observed_at_is_rejected() -> None:
+    with pytest.raises(ValueError, match="timezone-aware"):
+        diagnose_broker_timezone(
+            probe=_fake_probe,
+            symbol="DE40",
+            candidates=("UTC", "Europe/Berlin"),
+            bars=20,
+            max_age_seconds=600.0,
+            observed_at=datetime(2026, 9, 10, 1, 40),
+        )
+
+
+def test_cli_is_thin_and_contains_no_order_api() -> None:
     text = SCRIPT.read_text(encoding="utf-8")
     lower = text.lower()
+    assert "diagnose_broker_timezone" in text
+    assert "from mt5_windows_probe import collect_probe" in text
     for forbidden in ("order_send", "order_check", "positions_get", "history_deals_get"):
         assert forbidden not in lower
-    assert '"auto_selected_timezone": None' in text
-    assert '"verification_state": "UNVERIFIED"' in text
-    assert '"decision_state": "HUMAN_REVIEW_REQUIRED"' in text
