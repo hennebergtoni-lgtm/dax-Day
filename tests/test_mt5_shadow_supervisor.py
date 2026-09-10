@@ -11,6 +11,7 @@ from daxlab.runtime.mt5_shadow_supervisor import (
     shadow_authorization,
     supervisor_error_heartbeat,
     supervisor_stopped_heartbeat,
+    with_history_archive_status,
 )
 from daxlab.runtime.shadow_soak import MT5_READONLY_EVIDENCE_STATE
 
@@ -154,6 +155,25 @@ def test_cross_cycle_mutation_blocks_before_resume_advance() -> None:
     assert blocked.resume_state is None
     assert blocked.heartbeat["execution_capability"] == "NONE"
     assert blocked.heartbeat["order_execution_enabled"] is False
+
+
+def test_history_archive_status_annotation_preserves_no_order() -> None:
+    heartbeat = process_mt5_shadow_cycle(_bundle(), single_instance_lock_held=True).heartbeat
+    ok = with_history_archive_status(heartbeat, archived=True)
+    failed = with_history_archive_status(heartbeat, archived=False)
+    assert ok["history_archive_status"] == "OK"
+    assert failed["history_archive_status"] == "FAILED"
+    for item in (ok, failed):
+        assert item["execution_capability"] == "NONE"
+        assert item["order_execution_enabled"] is False
+        assert item["status"] == heartbeat["status"]
+
+
+def test_history_archive_status_rejects_execution_capability() -> None:
+    heartbeat = process_mt5_shadow_cycle(_bundle(), single_instance_lock_held=True).heartbeat
+    heartbeat["execution_capability"] = "PAPER"
+    with pytest.raises(ValueError, match="execution_capability"):
+        with_history_archive_status(heartbeat, archived=True)
 
 
 def test_supervisor_lost_lock_blocks_and_does_not_advance_resume() -> None:
