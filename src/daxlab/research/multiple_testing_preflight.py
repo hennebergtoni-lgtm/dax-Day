@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import math
 from typing import Iterable, Mapping, Sequence
 
 READY = "READY_FOR_MULTIPLE_TESTING"
@@ -79,6 +80,8 @@ def preflight_multiple_testing_evidence(
         if not row.trial_id.strip() or not row.period_id.strip():
             blockers.add("EMPTY_TRIAL_OR_PERIOD_ID")
             continue
+        if not math.isfinite(row.return_value):
+            blockers.add("NON_FINITE_RETURN_VALUE")
         status = row.status.upper()
         if status not in _ALLOWED_STATUSES:
             blockers.add("UNKNOWN_TRIAL_STATUS")
@@ -88,6 +91,9 @@ def preflight_multiple_testing_evidence(
         else:
             cells[key] = row
         trial_statuses.setdefault(row.trial_id, set()).add(status)
+
+    if any(len(statuses) != 1 for statuses in trial_statuses.values()):
+        blockers.add("INCONSISTENT_TRIAL_STATUS")
 
     trial_ids = sorted(trial_statuses)
     periods = sorted({period_id for _, period_id in cells})
@@ -103,9 +109,10 @@ def preflight_multiple_testing_evidence(
         if set(declared) != set(trial_ids):
             blockers.add("DECLARED_TRIAL_SET_MISMATCH")
 
+    all_periods = set(periods)
     for trial_id in trial_ids:
         observed_periods = {period for trial, period in cells if trial == trial_id}
-        if observed_periods != set(periods):
+        if observed_periods != all_periods:
             blockers.add("INCOMPLETE_TRIAL_PERIOD_MATRIX")
             break
 
