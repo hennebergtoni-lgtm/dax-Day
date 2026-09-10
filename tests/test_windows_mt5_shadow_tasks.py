@@ -9,6 +9,7 @@ import pytest
 
 SCRIPTS = (
     Path("scripts/windows_mt5_shadow_start.ps1"),
+    Path("scripts/preflight_windows_mt5_shadow_autostart.ps1"),
     Path("scripts/install_windows_mt5_shadow_task.ps1"),
     Path("scripts/check_windows_mt5_shadow_runtime.ps1"),
     Path("scripts/uninstall_windows_mt5_shadow_tasks.ps1"),
@@ -42,6 +43,22 @@ def test_start_wrapper_is_shadow_only() -> None:
     assert "--broker-timezone" in text
     assert "--state-dir" in text
     for forbidden in ("order_send", "order_check", "live_authorized", "paper_authorized"):
+        assert forbidden not in lower
+
+
+def test_preflight_is_read_only_and_requires_green_heartbeat() -> None:
+    text = Path("scripts/preflight_windows_mt5_shadow_autostart.ps1").read_text(
+        encoding="utf-8"
+    )
+    lower = text.lower()
+    assert "--once" in text
+    assert "execution_capability -ne 'NONE'" in text
+    assert "order_execution_enabled -ne $false" in text
+    assert "heartbeat.status -ne 'GREEN'" in text
+    assert "Register-ScheduledTask" in text
+    assert "Get-Command $command" in text
+    assert "register-scheduledtask -taskname" not in lower
+    for forbidden in ("order_send", "order_check", "--login", "--password"):
         assert forbidden not in lower
 
 
