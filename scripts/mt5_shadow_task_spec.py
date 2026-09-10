@@ -3,7 +3,8 @@
 
 This module does not register, start, stop, or delete Windows tasks. It only
 validates host paths/configuration and emits a deterministic task specification
-for later host-side installation after the broker timezone is VERIFIED.
+that mirrors the existing PowerShell installer contract for later host-side
+verification after the broker timezone is VERIFIED.
 """
 from __future__ import annotations
 
@@ -23,6 +24,10 @@ class WindowsShadowTaskSpec:
     trigger: str
     run_only_when_user_logged_on: bool
     multiple_instances: str
+    start_when_available: bool
+    allow_start_if_on_batteries: bool
+    dont_stop_if_going_on_batteries: bool
+    execution_time_limit_seconds: int
     restart_interval_minutes: int
     restart_count: int
     startup_delay_seconds: int
@@ -82,8 +87,12 @@ def build_windows_shadow_task_spec(
         trigger="AT_LOGON",
         run_only_when_user_logged_on=True,
         multiple_instances="IGNORE_NEW",
-        restart_interval_minutes=5,
-        restart_count=3,
+        start_when_available=True,
+        allow_start_if_on_batteries=True,
+        dont_stop_if_going_on_batteries=True,
+        execution_time_limit_seconds=0,
+        restart_interval_minutes=1,
+        restart_count=999,
         startup_delay_seconds=60,
         python_exe=str(python),
         supervisor_script=str(supervisor.resolve()),
