@@ -160,9 +160,6 @@ def build_rolling_backtest_forward_degradation_series(
         "source_window_id_order": window_ids,
         "source_report_sha256_order": [item.report_sha256 for item in items],
         "point_sha256_order": [point.point_sha256 for point in points],
-        "points_overlap": points_overlap,
-        "monitoring_only": True,
-        "independence_claimed": False,
     }
     series_sha = hashlib.sha256(
         json.dumps(series_identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
