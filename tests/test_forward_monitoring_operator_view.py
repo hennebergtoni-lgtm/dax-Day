@@ -6,7 +6,11 @@ from daxlab.operator.forward_monitoring_view import (
     build_forward_monitoring_operator_view,
 )
 from daxlab.research.backtest_forward_degradation import v11_2_active_reference
-from daxlab.research.forward_shadow_performance import build_forward_shadow_performance
+from daxlab.research.forward_shadow_performance import (
+    ALLOWED,
+    ShadowSignalObservation,
+    build_forward_shadow_performance_report,
+)
 from daxlab.research.rolling_backtest_forward_degradation import (
     build_rolling_backtest_forward_degradation,
 )
@@ -18,13 +22,24 @@ from daxlab.research.rolling_degradation_monitoring_view import (
 def _monitoring_view():
     reports = []
     for idx, net_r in enumerate((1.0, -0.5, 1.5), start=1):
+        observations = (
+            ShadowSignalObservation(
+                signal_id=f"W{idx}-S1",
+                status=ALLOWED,
+                r_result=net_r,
+            ),
+            ShadowSignalObservation(
+                signal_id=f"W{idx}-S2",
+                status=ALLOWED,
+                r_result=0.0,
+            ),
+        )
         reports.append(
-            build_forward_shadow_performance(
+            build_forward_shadow_performance_report(
                 window_id=f"W{idx}",
-                shadow_signals=4,
-                shadow_trades=2,
-                net_r=net_r,
-                simulated_cash_pnl_eur=net_r * 10.0,
+                observations=observations,
+                starting_balance_eur=2000.0,
+                fixed_risk_eur=10.0,
             )
         )
     series = build_rolling_backtest_forward_degradation(
