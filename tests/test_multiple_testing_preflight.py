@@ -35,16 +35,14 @@ def test_missing_trial_blocks():
 
 
 def test_missing_period_cell_blocks():
-    rows = _rows()[:-1]
-    result = preflight_multiple_testing_evidence(rows, expected_trial_count=2)
+    result = preflight_multiple_testing_evidence(_rows()[:-1], expected_trial_count=2)
     assert result.status == BLOCKED
     assert "INCOMPLETE_TRIAL_PERIOD_MATRIX" in result.blockers
     assert "MATRIX_CELL_COUNT_MISMATCH" in result.blockers
 
 
 def test_duplicate_cell_blocks():
-    rows = _rows() + [_rows()[0]]
-    result = preflight_multiple_testing_evidence(rows, expected_trial_count=2)
+    result = preflight_multiple_testing_evidence(_rows() + [_rows()[0]], expected_trial_count=2)
     assert result.status == BLOCKED
     assert "DUPLICATE_TRIAL_PERIOD_CELL" in result.blockers
 
@@ -63,6 +61,22 @@ def test_unknown_status_blocks():
     result = preflight_multiple_testing_evidence(rows, expected_trial_count=2)
     assert result.status == BLOCKED
     assert "UNKNOWN_TRIAL_STATUS" in result.blockers
+
+
+def test_non_finite_return_blocks():
+    rows = _rows()
+    rows[0] = {**rows[0], "return_value": float("nan")}
+    result = preflight_multiple_testing_evidence(rows, expected_trial_count=2)
+    assert result.status == BLOCKED
+    assert "NON_FINITE_RETURN_VALUE" in result.blockers
+
+
+def test_inconsistent_trial_status_blocks():
+    rows = _rows()
+    rows[1] = {**rows[1], "status": "REJECTED"}
+    result = preflight_multiple_testing_evidence(rows, expected_trial_count=2)
+    assert result.status == BLOCKED
+    assert "INCONSISTENT_TRIAL_STATUS" in result.blockers
 
 
 def test_rejected_abandoned_failed_trials_are_not_filtered():
