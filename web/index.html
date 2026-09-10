@@ -45,12 +45,13 @@ const cls = v => ['GREEN','HASH_VERIFIED','ELIGIBLE','ACTIVE','IMPLEMENTED','EXA
 const card = (label,value,small='') => `<div class="card"><div class="label">${label}</div><div class="value ${cls(String(value))}">${value}</div>${small ? `<div class="small">${small}</div>` : ''}</div>`;
 const shortHash = v => `${v.slice(0,12)}…${v.slice(-8)}`;
 fetch('status.json', {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('status.json unavailable'); return r.json(); }).then(s => {
-  const a=s.active_reference,d=s.dataset,w=s.walk_forward,r=s.reference_results,rd=s.readiness,rec=s.recovery,re=s.reproduction,rf=s.research_families;
+  const a=s.active_reference,d=s.dataset,w=s.walk_forward,r=s.reference_results,rd=s.readiness,rec=s.recovery,re=s.reproduction,rf=s.research_families,fm=s.forward_monitoring;
   document.getElementById('status').innerHTML = [
     card('Active Reference',a.strategy,`${a.experiment_id} · ${a.status} · immutable=${a.immutable}`),
     card('Dataset',d.identity_state,`${d.session_rows.toLocaleString('de-DE')} M5 · ${d.session_days} Tage`),
     card('WF Contract',`${w.windows} Fenster`,`${w.train_days}/${w.oos_days}/${w.step_days} Train/OOS/Step`),
     card('Reference OOS',`${r.normal_oos_trades} Trades`,`${r.normal_oos_return_r.toFixed(4)} R · PF median ${r.median_wf_pf.toFixed(4)}`),
+    card('Forward Monitoring',fm.mode,`${fm.read_only ? 'read-only' : 'write-enabled'} · echte Forward-Evidenz: ${fm.real_forward_evidence_present ? 'vorhanden' : 'ausstehend'}`),
     card('V5 Reproduction',re.full_clean_reference,`${re.wf_metrics_rows} WF rows · ${re.selected_variants_rows} selections · ${re.trades_rows} trades`),
     card('Research Registry',`${rf.count} Familien`,rf.registry_schema),
     card('Clean Replay',rd.clean_reference_replay),
