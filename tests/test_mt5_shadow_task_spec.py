@@ -1,13 +1,16 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+import sys
 
 import pytest
 
 
 _MODULE_PATH = Path("scripts/mt5_shadow_task_spec.py")
-_SPEC = spec_from_file_location("mt5_shadow_task_spec", _MODULE_PATH)
+_MODULE_NAME = "mt5_shadow_task_spec"
+_SPEC = spec_from_file_location(_MODULE_NAME, _MODULE_PATH)
 assert _SPEC is not None and _SPEC.loader is not None
 _MODULE = module_from_spec(_SPEC)
+sys.modules[_MODULE_NAME] = _MODULE
 _SPEC.loader.exec_module(_MODULE)
 build_windows_shadow_task_spec = _MODULE.build_windows_shadow_task_spec
 
