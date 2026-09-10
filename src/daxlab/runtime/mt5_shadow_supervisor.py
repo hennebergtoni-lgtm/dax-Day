@@ -33,6 +33,25 @@ class SupervisorCycleResult:
     resume_state: Mt5ShadowResumeState | None
 
 
+def with_history_archive_status(
+    heartbeat: Mapping[str, Any], *, archived: bool
+) -> dict[str, Any]:
+    """Annotate evidence archival status without changing NO_ORDER safety fields."""
+    _assert_credential_free(heartbeat)
+    if heartbeat.get("execution_capability") != "NONE":
+        raise ValueError("heartbeat execution_capability must be NONE")
+    if heartbeat.get("order_execution_enabled") is not False:
+        raise ValueError("heartbeat order_execution_enabled must be false")
+    annotated = dict(heartbeat)
+    annotated["history_archive_status"] = "OK" if archived else "FAILED"
+    if annotated.get("execution_capability") != "NONE":
+        raise RuntimeError("history status changed execution capability")
+    if annotated.get("order_execution_enabled") is not False:
+        raise RuntimeError("history status enabled order execution")
+    _assert_credential_free(annotated)
+    return annotated
+
+
 def shadow_authorization() -> ProspectiveAuthorization:
     """Return the fixed research authorization scope for read-only SHADOW only."""
     return ProspectiveAuthorization(

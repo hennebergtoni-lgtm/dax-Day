@@ -11,16 +11,19 @@ import argparse
 from pathlib import Path
 import signal
 import threading
+from typing import Any, Mapping
 
 from mt5_windows_probe import collect_probe
 
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object
+from daxlab.runtime.mt5_heartbeat_history import archive_heartbeat_snapshot
 from daxlab.runtime.mt5_shadow_integration import mt5_shadow_resume_payload
 from daxlab.runtime.mt5_shadow_supervisor import (
     load_mt5_resume_payload,
     process_mt5_shadow_cycle,
     supervisor_error_heartbeat,
     supervisor_stopped_heartbeat,
+    with_history_archive_status,
 )
 from daxlab.runtime.single_instance import SingleInstanceLock
 
@@ -39,6 +42,29 @@ def _load_previous_bundle(path: Path):
     return read_json_object(path)
 
 
+def _persist_heartbeat(
+    heartbeat_path: Path,
+    history_dir: Path,
+    heartbeat: Mapping[str, Any],
+    *,
+    max_history_entries: int,
+) -> dict[str, Any]:
+    """Persist current heartbeat and best-effort bounded history with visible status."""
+    archived = with_history_archive_status(heartbeat, archived=True)
+    try:
+        archive_heartbeat_snapshot(
+            history_dir,
+            archived,
+            max_entries=max_history_entries,
+        )
+    except Exception:
+        current = with_history_archive_status(heartbeat, archived=False)
+        atomic_write_json(heartbeat_path, current)
+        return current
+    atomic_write_json(heartbeat_path, archived)
+    return archived
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="DE40")
@@ -47,6 +73,7 @@ def main() -> int:
     parser.add_argument("--broker-timezone", required=True)
     parser.add_argument("--interval-seconds", type=float, default=60.0)
     parser.add_argument("--state-dir", default=".runtime/mt5_shadow")
+    parser.add_argument("--heartbeat-history-max-entries", type=int, default=2000)
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
 
@@ -54,9 +81,12 @@ def main() -> int:
         raise SystemExit("--interval-seconds must be >= 1")
     if args.bars < 2:
         raise SystemExit("--bars must be >= 2")
+    if args.heartbeat_history_max_entries < 1:
+        raise SystemExit("--heartbeat-history-max-entries must be >= 1")
 
     state_dir = Path(args.state_dir).resolve()
     heartbeat_path = state_dir / "heartbeat.json"
+    heartbeat_history_dir = state_dir / "heartbeat_history"
     resume_path = state_dir / "resume.json"
     latest_bundle_path = state_dir / "latest_bundle.json"
     rejected_bundle_path = state_dir / "rejected_bundle.json"
@@ -78,7 +108,7 @@ def main() -> int:
         lock.acquire()
     except Exception:
         # A losing second instance must never overwrite the legitimate owner's
-        # shared heartbeat or resume state.
+        # shared heartbeat, history, or resume state.
         return 4
 
     try:
@@ -86,9 +116,11 @@ def main() -> int:
             resume_state = _load_resume(resume_path)
             previous_bundle_payload = _load_previous_bundle(latest_bundle_path)
         except Exception:
-            atomic_write_json(
+            _persist_heartbeat(
                 heartbeat_path,
+                heartbeat_history_dir,
                 supervisor_error_heartbeat(error_code="RESUME_OR_BUNDLE_STATE_INVALID"),
+                max_history_entries=args.heartbeat_history_max_entries,
             )
             return 3
 
@@ -118,11 +150,18 @@ def main() -> int:
                 if cycle.resume_state is not None:
                     resume_state = cycle.resume_state
                     atomic_write_json(resume_path, mt5_shadow_resume_payload(resume_state))
-                atomic_write_json(heartbeat_path, cycle.heartbeat)
-            except Exception:
-                atomic_write_json(
+                _persist_heartbeat(
                     heartbeat_path,
+                    heartbeat_history_dir,
+                    cycle.heartbeat,
+                    max_history_entries=args.heartbeat_history_max_entries,
+                )
+            except Exception:
+                _persist_heartbeat(
+                    heartbeat_path,
+                    heartbeat_history_dir,
                     supervisor_error_heartbeat(error_code="PROBE_OR_CYCLE_FAILED"),
+                    max_history_entries=args.heartbeat_history_max_entries,
                 )
                 if args.once:
                     return 2
@@ -133,7 +172,12 @@ def main() -> int:
     finally:
         lock.release()
         if stop.is_set():
-            atomic_write_json(heartbeat_path, supervisor_stopped_heartbeat())
+            _persist_heartbeat(
+                heartbeat_path,
+                heartbeat_history_dir,
+                supervisor_stopped_heartbeat(),
+                max_history_entries=args.heartbeat_history_max_entries,
+            )
 
     return 0
 
