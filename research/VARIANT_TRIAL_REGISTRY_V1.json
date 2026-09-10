@@ -1,0 +1,11 @@
+{
+  "schema_version": "DAXLAB_VARIANT_TRIAL_REGISTRY_V1",
+  "append_only": true,
+  "hash_chain": "SHA256_PREVIOUS_HASH",
+  "head_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "trial_count": 0,
+  "chronology_verification_state": "REPO_CHRONOLOGY_REQUIRED",
+  "claimed_predeclared_trial_ids": [],
+  "verified_predeclared_trial_ids": [],
+  "declarations": []
+}
