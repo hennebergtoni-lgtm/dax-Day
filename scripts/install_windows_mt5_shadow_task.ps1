@@ -68,8 +68,8 @@ $mt5Settings = New-ScheduledTaskSettingsSet `
     -DontStopIfGoingOnBatteries `
     -StartWhenAvailable `
     -MultipleInstances IgnoreNew `
-    -RestartCount 999 `
-    -RestartInterval (New-TimeSpan -Minutes 1) `
+    -RestartCount 5 `
+    -RestartInterval (New-TimeSpan -Minutes 2) `
     -ExecutionTimeLimit ([TimeSpan]::Zero)
 $mt5Action = New-ScheduledTaskAction -Execute $mt5Path -WorkingDirectory $mt5Directory
 $mt5Task = New-ScheduledTask `
@@ -90,8 +90,8 @@ $shadowSettings = New-ScheduledTaskSettingsSet `
     -DontStopIfGoingOnBatteries `
     -StartWhenAvailable `
     -MultipleInstances IgnoreNew `
-    -RestartCount 999 `
-    -RestartInterval (New-TimeSpan -Minutes 1) `
+    -RestartCount 3 `
+    -RestartInterval (New-TimeSpan -Minutes 5) `
     -ExecutionTimeLimit ([TimeSpan]::Zero)
 $shadowTask = New-ScheduledTask `
     -Action $shadowAction `
@@ -115,4 +115,5 @@ Write-Host "Repo: $repoRoot"
 Write-Host "Symbol: $Symbol"
 Write-Host "Broker timezone: $BrokerTimezone"
 Write-Host 'Mode: SHADOW / execution_capability=NONE / order_execution_enabled=false'
+Write-Host 'Restart policy: MT5 terminal 5 attempts / 2 min; SHADOW supervisor 3 attempts / 5 min.'
 Write-Host 'Both tasks start at user logon. The SHADOW supervisor fails closed until MT5 is reachable.'

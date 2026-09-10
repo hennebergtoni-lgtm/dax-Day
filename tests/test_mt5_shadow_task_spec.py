@@ -41,8 +41,8 @@ def test_task_spec_is_logon_bound_and_no_order(tmp_path: Path):
     assert payload["allow_start_if_on_batteries"] is True
     assert payload["dont_stop_if_going_on_batteries"] is True
     assert payload["execution_time_limit_seconds"] == 0
-    assert payload["restart_interval_minutes"] == 1
-    assert payload["restart_count"] == 999
+    assert payload["restart_interval_minutes"] == 5
+    assert payload["restart_count"] == 3
     assert payload["startup_delay_seconds"] == 0
     assert payload["execution_capability"] == "NONE"
     assert payload["order_execution_enabled"] is False
@@ -61,8 +61,11 @@ def test_task_spec_matches_installer_core_settings():
     assert "-AllowStartIfOnBatteries" in installer
     assert "-DontStopIfGoingOnBatteries" in installer
     assert "-MultipleInstances IgnoreNew" in installer
-    assert "-RestartCount 999" in installer
-    assert "-RestartInterval (New-TimeSpan -Minutes 1)" in installer
+    assert "-RestartCount 5" in installer
+    assert "-RestartInterval (New-TimeSpan -Minutes 2)" in installer
+    assert "-RestartCount 3" in installer
+    assert "-RestartInterval (New-TimeSpan -Minutes 5)" in installer
+    assert "-RestartCount 999" not in installer
     assert "-ExecutionTimeLimit ([TimeSpan]::Zero)" in installer
 
 
