@@ -78,7 +78,7 @@ def _bundle(bar_count: int):
 
 def _auth() -> ProspectiveAuthorization:
     return ProspectiveAuthorization(
-        gate_id="RECOVERY_EQUIVALENCE_DRILL",
+        gate_id="STEP_91_USER_AUTHORIZATION",
         shadow_authorized=True,
         paper_authorized=False,
         live_authorized=False,
