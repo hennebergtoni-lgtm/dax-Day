@@ -9,7 +9,7 @@ from typing import Sequence
 
 COMPLETE = "COMPLETE"
 CAPITAL_INSUFFICIENT = "CAPITAL_INSUFFICIENT"
-NEGATIVE_BALANCE_AFTER_TRADE = "NEGATIVE_BALANCE_AFTER_TRADE"
+CAPITAL_EXHAUSTED_AFTER_TRADE = "CAPITAL_EXHAUSTED_AFTER_TRADE"
 
 
 @dataclass(frozen=True)
@@ -120,8 +120,8 @@ def simulate_fixed_risk_cash_ledger(
         processed_r.append(r_value)
         pnl_values.append(pnl)
         equity.append(balance)
-        if balance < 0.0:
-            status = NEGATIVE_BALANCE_AFTER_TRADE
+        if balance <= 0.0:
+            status = CAPITAL_EXHAUSTED_AFTER_TRADE
             halted = index
             break
 
