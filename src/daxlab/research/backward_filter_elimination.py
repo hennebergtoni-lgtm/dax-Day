@@ -108,8 +108,8 @@ def evaluate_backward_filter_elimination(
             and reduced.comparison_status == COMPLETE_COMPARISON
             else "INCOMPLETE_CAPITAL_PATH"
         )
-        full_surviving = full.stack.final_trade_count
-        reduced_surviving = reduced.stack.final_trade_count
+        full_surviving = full.stack.final_kept_trades
+        reduced_surviving = reduced.stack.final_kept_trades
         removals.append(
             RemovalImpact(
                 removed_filter_id=removed_id,
