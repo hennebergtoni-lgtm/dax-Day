@@ -15,6 +15,7 @@ from daxlab.research.pbo_evidence_adapter import PBOEvidenceMatrix
 @dataclass(frozen=True)
 class SPABlockLengthDiagnostic:
     model_stationary_block_lengths: tuple[float, ...]
+    model_practical_integer_candidates: tuple[int, ...]
     stationary_min: float
     stationary_median: float
     stationary_max: float
@@ -34,6 +35,7 @@ class SPABlockLengthDiagnostic:
             "method": self.method,
             "arch_version": self.arch_version,
             "model_stationary_block_lengths": list(self.model_stationary_block_lengths),
+            "model_practical_integer_candidates": list(self.model_practical_integer_candidates),
             "stationary_min": self.stationary_min,
             "stationary_median": self.stationary_median,
             "stationary_max": self.stationary_max,
@@ -58,8 +60,9 @@ def diagnose_spa_stationary_block_lengths(
     """Estimate per-model stationary-bootstrap block lengths using arch.
 
     Uses Politis-White (2004), with the Patton-Politis-White (2009) correction,
-    as implemented by ``arch.bootstrap.optimal_block_length``. No single common
-    block size is selected here.
+    as implemented by ``arch.bootstrap.optimal_block_length``. The theoretical
+    estimate is preserved even when below one. A practical integer candidate is
+    reported separately as ``max(1, ceil(estimate))``. No common block is selected.
     """
     matrix = np.asarray(evidence.matrix, dtype=float)
     benchmark = np.asarray(tuple(float(value) for value in benchmark_returns), dtype=float)
@@ -88,10 +91,11 @@ def diagnose_spa_stationary_block_lengths(
     stationary = np.asarray(estimates["stationary"], dtype=float)
     if stationary.shape != (n_models,) or not np.isfinite(stationary).all():
         raise RuntimeError("arch returned invalid stationary block-length estimates")
-    if np.any(stationary < 1.0):
-        raise RuntimeError("arch returned a stationary block length below one")
+    if np.any(stationary < 0.0):
+        raise RuntimeError("arch returned a negative stationary block length")
 
     values = tuple(float(value) for value in stationary)
+    practical = tuple(max(1, int(math.ceil(value))) for value in values)
     stationary_min = float(np.min(stationary))
     stationary_median = float(np.median(stationary))
     stationary_max = float(np.max(stationary))
@@ -106,6 +110,7 @@ def diagnose_spa_stationary_block_lengths(
         "method": method,
         "arch_version": arch_version,
         "model_stationary_block_lengths": list(values),
+        "model_practical_integer_candidates": list(practical),
         "stationary_min": stationary_min,
         "stationary_median": stationary_median,
         "stationary_max": stationary_max,
@@ -125,6 +130,7 @@ def diagnose_spa_stationary_block_lengths(
 
     return SPABlockLengthDiagnostic(
         model_stationary_block_lengths=values,
+        model_practical_integer_candidates=practical,
         stationary_min=stationary_min,
         stationary_median=stationary_median,
         stationary_max=stationary_max,
