@@ -21,6 +21,8 @@ class ForwardShadowRollingSummary:
     negative_cash_windows: int
     flat_cash_windows: int
     no_signal_windows: int
+    max_consecutive_positive_windows: int
+    max_consecutive_negative_windows: int
     total_generated_signals: int
     total_allowed_shadow_trades: int
     total_blocked_signals: int
@@ -46,6 +48,8 @@ class ForwardShadowRollingSummary:
             "negative_cash_windows": self.negative_cash_windows,
             "flat_cash_windows": self.flat_cash_windows,
             "no_signal_windows": self.no_signal_windows,
+            "max_consecutive_positive_windows": self.max_consecutive_positive_windows,
+            "max_consecutive_negative_windows": self.max_consecutive_negative_windows,
             "total_generated_signals": self.total_generated_signals,
             "total_allowed_shadow_trades": self.total_allowed_shadow_trades,
             "total_blocked_signals": self.total_blocked_signals,
@@ -63,6 +67,19 @@ class ForwardShadowRollingSummary:
             "execution_capability": self.execution_capability,
             "order_execution_enabled": self.order_execution_enabled,
         }
+
+
+def _max_streak(values: Sequence[float], *, positive: bool) -> int:
+    best = 0
+    current = 0
+    for value in values:
+        matches = value > 0.0 if positive else value < 0.0
+        if matches:
+            current += 1
+            best = max(best, current)
+        else:
+            current = 0
+    return best
 
 
 def summarize_forward_shadow_windows(
@@ -89,6 +106,8 @@ def summarize_forward_shadow_windows(
     negative = sum(value < 0.0 for value in cash)
     flat = sum(value == 0.0 for value in cash)
     no_signal = sum(item.generated_signals == 0 for item in items)
+    positive_streak = _max_streak(cash, positive=True)
+    negative_streak = _max_streak(cash, positive=False)
 
     best_index = max(range(len(items)), key=lambda i: cash[i])
     worst_index = min(range(len(items)), key=lambda i: cash[i])
@@ -99,6 +118,8 @@ def summarize_forward_shadow_windows(
         "schema_version": "DAXLAB_FORWARD_SHADOW_ROLLING_SUMMARY_V1",
         "report_sha256_order": [item.report_sha256 for item in items],
         "window_id_order": window_ids,
+        "max_consecutive_positive_windows": positive_streak,
+        "max_consecutive_negative_windows": negative_streak,
     }
     digest = hashlib.sha256(
         json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -110,6 +131,8 @@ def summarize_forward_shadow_windows(
         negative_cash_windows=negative,
         flat_cash_windows=flat,
         no_signal_windows=no_signal,
+        max_consecutive_positive_windows=positive_streak,
+        max_consecutive_negative_windows=negative_streak,
         total_generated_signals=generated,
         total_allowed_shadow_trades=allowed,
         total_blocked_signals=blocked,
