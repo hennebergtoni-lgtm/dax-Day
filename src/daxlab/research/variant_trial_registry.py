@@ -13,6 +13,32 @@ PREDECLARED = "PREDECLARED"
 RETROACTIVE = "RETROACTIVE_RECONSTRUCTED"
 _ALLOWED_MODES = {PREDECLARED, RETROACTIVE}
 _GIT_SHA_RE = re.compile(r"^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$")
+_TOP_LEVEL_FIELDS = {
+    "schema_version",
+    "append_only",
+    "hash_chain",
+    "head_hash",
+    "trial_count",
+    "chronology_verification_state",
+    "claimed_predeclared_trial_ids",
+    "verified_predeclared_trial_ids",
+    "declarations",
+}
+_DECLARATION_FIELDS = {
+    "trial_id",
+    "experiment_id",
+    "hypothesis_trial_id",
+    "family_id",
+    "variant_key",
+    "parameters",
+    "declared_at_utc",
+    "declaration_mode",
+    "source_commit",
+    "previous_hash",
+    "record_hash",
+    "claimed_predeclared",
+    "repo_chronology_verified",
+}
 
 
 @dataclass(frozen=True)
@@ -206,3 +232,58 @@ def registry_payload(rows: Iterable[TrialDeclaration]) -> dict[str, Any]:
         "verified_predeclared_trial_ids": [],
         "declarations": [row.to_payload() for row in declarations],
     }
+
+
+def parse_registry_payload(payload: Mapping[str, Any]) -> tuple[TrialDeclaration, ...]:
+    """Strictly parse persisted registry JSON and verify all derived metadata."""
+    if not isinstance(payload, Mapping):
+        raise ValueError("registry payload must be an object")
+    if set(payload) != _TOP_LEVEL_FIELDS:
+        raise ValueError("registry payload fields mismatch")
+    if payload["schema_version"] != SCHEMA_VERSION:
+        raise ValueError("registry schema mismatch")
+    if payload["append_only"] is not True:
+        raise ValueError("registry must be append_only")
+    if payload["hash_chain"] != "SHA256_PREVIOUS_HASH":
+        raise ValueError("registry hash_chain mismatch")
+    if payload["chronology_verification_state"] != "REPO_CHRONOLOGY_REQUIRED":
+        raise ValueError("registry chronology state mismatch")
+    if payload["verified_predeclared_trial_ids"] != []:
+        raise ValueError("persisted registry cannot self-assert chronology verification")
+
+    raw_rows = payload["declarations"]
+    if not isinstance(raw_rows, list):
+        raise ValueError("declarations must be a list")
+    declarations: list[TrialDeclaration] = []
+    for raw in raw_rows:
+        if not isinstance(raw, Mapping) or set(raw) != _DECLARATION_FIELDS:
+            raise ValueError("declaration fields mismatch")
+        row = TrialDeclaration(
+            trial_id=str(raw["trial_id"]),
+            experiment_id=str(raw["experiment_id"]),
+            hypothesis_trial_id=str(raw["hypothesis_trial_id"]),
+            family_id=str(raw["family_id"]),
+            variant_key=str(raw["variant_key"]),
+            parameters=raw["parameters"],
+            declared_at_utc=str(raw["declared_at_utc"]),
+            declaration_mode=str(raw["declaration_mode"]),
+            source_commit=str(raw["source_commit"]),
+            previous_hash=str(raw["previous_hash"]),
+            record_hash=str(raw["record_hash"]),
+        )
+        if raw["claimed_predeclared"] is not row.claimed_predeclared:
+            raise ValueError("claimed_predeclared derived field mismatch")
+        if raw["repo_chronology_verified"] is not False:
+            raise ValueError("declaration cannot self-assert repo chronology verification")
+        declarations.append(row)
+
+    expected = registry_payload(declarations)
+    for field in (
+        "head_hash",
+        "trial_count",
+        "claimed_predeclared_trial_ids",
+        "verified_predeclared_trial_ids",
+    ):
+        if payload[field] != expected[field]:
+            raise ValueError(f"registry derived field mismatch: {field}")
+    return tuple(declarations)
