@@ -41,7 +41,7 @@ def test_diagnostic_matches_arch_per_model_stationary_estimates() -> None:
         result.model_stationary_block_lengths,
         np.asarray(expected["stationary"], dtype=float),
     )
-    assert result.model_executable_block_candidates == tuple(
+    assert result.model_practical_integer_candidates == tuple(
         max(1, math.ceil(float(value))) for value in expected["stationary"]
     )
     assert result.selected_block_size is None
