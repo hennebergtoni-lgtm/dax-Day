@@ -2,6 +2,7 @@
 
 This module reuses the existing forward summary and backtest-forward degradation layers.
 It is descriptive only: no thresholds, no composite score, no promotion, no execution.
+Rolling points may overlap and therefore are never claimed to be statistically independent.
 """
 
 from __future__ import annotations
@@ -63,6 +64,9 @@ class RollingBacktestForwardDegradationSeries:
     source_window_id_order: tuple[str, ...]
     points: tuple[RollingDegradationPoint, ...]
     series_sha256: str
+    points_overlap: bool
+    monitoring_only: bool = True
+    independence_claimed: bool = False
     descriptive_only: bool = True
     composite_score: None = None
     automatic_promotion: bool = False
@@ -78,6 +82,9 @@ class RollingBacktestForwardDegradationSeries:
             "source_window_id_order": list(self.source_window_id_order),
             "points": [point.to_payload() for point in self.points],
             "series_sha256": self.series_sha256,
+            "points_overlap": self.points_overlap,
+            "monitoring_only": self.monitoring_only,
+            "independence_claimed": self.independence_claimed,
             "descriptive_only": self.descriptive_only,
             "composite_score": self.composite_score,
             "automatic_promotion": self.automatic_promotion,
@@ -95,7 +102,9 @@ def build_rolling_backtest_forward_degradation_series(
     """Build a fixed-width rolling descriptive series from ordered SHADOW windows.
 
     The caller owns chronological ordering. We preserve and hash that order explicitly so
-    evidence cannot be silently re-ordered without changing the series identity.
+    evidence cannot be silently re-ordered without changing the series identity. Consecutive
+    points overlap whenever rolling_width > 1 and more than one point exists; this series is
+    monitoring evidence only and makes no statistical-independence claim.
     """
     historical.validate()
     items = tuple(reports)
@@ -143,6 +152,7 @@ def build_rolling_backtest_forward_degradation_series(
             )
         )
 
+    points_overlap = rolling_width > 1 and len(points) > 1
     series_identity = {
         "schema_version": "DAXLAB_ROLLING_BACKTEST_FORWARD_DEGRADATION_SERIES_V1",
         "historical_reference_id": historical.reference_id,
@@ -162,4 +172,5 @@ def build_rolling_backtest_forward_degradation_series(
         source_window_id_order=window_ids,
         points=tuple(points),
         series_sha256=series_sha,
+        points_overlap=points_overlap,
     )
