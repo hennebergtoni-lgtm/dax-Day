@@ -152,8 +152,16 @@ def parse_mt5_shadow_resume_payload(payload: Mapping[str, Any]) -> Mt5ShadowResu
     checkpoint_raw = payload.get("checkpoint")
     if not isinstance(checkpoint_raw, Mapping):
         raise ValueError("MT5 SHADOW resume checkpoint missing")
+    checkpoint_values = dict(checkpoint_raw)
+    for field in ("seen_decision_ids", "seen_bar_fingerprints"):
+        values = checkpoint_values.get(field)
+        if not isinstance(values, (list, tuple)) or not all(
+            isinstance(item, str) for item in values
+        ):
+            raise ValueError("MT5 SHADOW resume checkpoint invalid")
+        checkpoint_values[field] = tuple(values)
     try:
-        checkpoint = ShadowSoakCheckpoint(**dict(checkpoint_raw))
+        checkpoint = ShadowSoakCheckpoint(**checkpoint_values)
     except TypeError as exc:
         raise ValueError("MT5 SHADOW resume checkpoint invalid") from exc
     state = Mt5ShadowResumeState(
