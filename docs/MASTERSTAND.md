@@ -116,3 +116,23 @@ For active V11.2 facts, prefer in this order:
 5. older legacy prose/documents only for provenance
 
 If older prose conflicts with the canonical active-reference artifact, do not rewrite scientific history to make the documents look consistent: preserve the legacy record and use the active reference for current work.
+
+## 11. Recurring 500-step full-project audit — BINDING
+In addition to normal per-change tests and intermediate checks, a full-project hygiene and integrity audit must be performed at least once every 500 numbered project steps, and may be triggered earlier after major architecture, data, database, recovery or research changes.
+
+The audit is a stop/go governance gate, not a cosmetic review. If a material contradiction, stale truth source, ambiguous entity, broken provenance chain or unsafe runtime/data path is found, the relevant issue must be corrected and re-verified before the next major development block continues.
+
+The recurring audit must cover:
+- **Identity / entities:** modules, tests, research artifacts, datasets, evidence objects and runtime components have unambiguous names and ownership; parallel objects with effectively identical meaning are detected.
+- **Searchability:** canonical project objects must be reliably discoverable using expected repository search terms, filenames, registries and ledgers; search/index limitations must not be mistaken for missing implementation.
+- **Code ↔ test ↔ registry mapping:** relevant implementations are mapped to their tests and registry/ledger entries; stale tests or fixtures expecting historical values are identified explicitly.
+- **Reference integrity:** frozen V11.2 values, engine/data fingerprints and other VERIFIED constants are reconciled against tests, fixtures, manifests and documentation without rewriting legacy scientific history.
+- **Data/database integrity:** migrations, schemas, keys, provenance, fingerprints, import/restore paths, evidence rows and backup/recovery assumptions are checked for consistency and recoverability.
+- **Duplication / stale / dead paths:** overlapping implementations, superseded scripts, stale configs, duplicate truth stores and dead code are reviewed using compatibility-first migration; nothing is deleted solely because it appears unused.
+- **Runtime / recovery / safety:** fail-closed behavior, checkpoints, restart/resume, reconciliation, stale-data handling, write boundaries and `execution_capability=NONE` / `order_execution_enabled=false` invariants are checked.
+- **Performance / simplification:** redundant work, repeated expensive checks, avoidable long-running paths and unnecessary complexity are identified, while safety/provenance checks are not removed merely for speed.
+- **Public-project comparison:** selected mature open-source systems may be reviewed for proven architecture, recovery, data-integrity and testing patterns, but external designs do not override project evidence or create new work without a defined need.
+
+Each full audit must end with an explicit classification of material findings using `VERIFIED`, `FIX REQUIRED`, `STALE`, `DUPLICATE`, or `UNVERIFIED`, plus a short remediation decision where applicable. The audit result itself becomes durable project evidence.
+
+The existing architecture-hygiene safety principle remains binding: consolidation is compatibility-first, not deletion-first, and one canonical truth source may be protected by multiple boundary-specific assertions.
