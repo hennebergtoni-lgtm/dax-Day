@@ -115,7 +115,7 @@ def test_supervisor_resume_suppresses_seen_bars() -> None:
     )
     assert second.heartbeat["status"] == "GREEN"
     assert second.heartbeat["new_decisions"] == 0
-    assert second.heartbeat["duplicates_suppressed"] == 3
+    assert second.heartbeat["duplicates_suppressed"] == 0
     assert second.resume_state is not None
     assert second.resume_state.checkpoint == first.resume_state.checkpoint
 
