@@ -1,7 +1,7 @@
 """Bounded atomic heartbeat history for MT5 read-only SHADOW."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -45,7 +45,7 @@ def load_heartbeat_history(history_dir: Path) -> tuple[dict[str, Any], ...]:
 
 def _filename(heartbeat: Mapping[str, Any]) -> str:
     observed = _observed_at(heartbeat)
-    stamp = observed.strftime("%Y%m%dT%H%M%S%f%z")
+    stamp = observed.strftime("%Y%m%dT%H%M%S%fZ")
     canonical = json.dumps(heartbeat, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     digest = sha256(canonical.encode("utf-8")).hexdigest()[:16]
     return f"heartbeat_{stamp}_{digest}.json"
@@ -61,6 +61,8 @@ def _observed_at(heartbeat: Mapping[str, Any]) -> datetime:
         raise ValueError("heartbeat observed_at_utc invalid") from exc
     if parsed.tzinfo is None:
         raise ValueError("heartbeat observed_at_utc must be timezone-aware")
+    if parsed.utcoffset() != timedelta(0):
+        raise ValueError("heartbeat observed_at_utc must be UTC")
     return parsed
 
 
