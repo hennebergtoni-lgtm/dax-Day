@@ -31,6 +31,14 @@ def test_fresh_start_returns_all_bars() -> None:
     assert bars_after_resume_anchor(bars, result=result) == bars
 
 
+def test_empty_fresh_start_is_safe() -> None:
+    result = reconcile_shadow_resume_anchor((), checkpoint=None)
+    assert result.fresh_start is True
+    assert result.feed_bar_count == 0
+    assert result.catchup_bar_count == 0
+    assert bars_after_resume_anchor((), result=result) == ()
+
+
 def test_unique_anchor_mid_feed_returns_only_following_bars() -> None:
     prior = (_bar(0), _bar(5))
     checkpoint = run_shadow_soak(prior).checkpoint
@@ -60,7 +68,7 @@ def test_missing_anchor_fails_closed() -> None:
 def test_duplicate_anchor_fails_closed() -> None:
     anchor_bar = _bar(5)
     checkpoint = run_shadow_soak((_bar(0), anchor_bar)).checkpoint
-    with pytest.raises(RuntimeError, match="ambiguous"):
+    with pytest.raises(RuntimeError, match="strictly chronological"):
         reconcile_shadow_resume_anchor((anchor_bar, anchor_bar, _bar(10)), checkpoint=checkpoint)
 
 
@@ -71,6 +79,25 @@ def test_feed_change_after_reconcile_fails_closed() -> None:
     changed = (_bar(0), _bar(5), _bar(10, close=999.0))
     with pytest.raises(RuntimeError, match="feed changed"):
         bars_after_resume_anchor(changed, result=result)
+
+
+def test_unsorted_feed_fails_closed() -> None:
+    checkpoint = run_shadow_soak((_bar(0), _bar(5))).checkpoint
+    with pytest.raises(RuntimeError, match="strictly chronological"):
+        reconcile_shadow_resume_anchor((_bar(5), _bar(0), _bar(10)), checkpoint=checkpoint)
+
+
+def test_naive_bar_time_fails_closed() -> None:
+    aware = _bar(0)
+    naive = Mt5Bar(
+        open_time=datetime(2026, 9, 10, 9, 5),
+        open=105.0,
+        high=107.0,
+        low=103.0,
+        close=106.0,
+    )
+    with pytest.raises(RuntimeError, match="timezone-aware"):
+        reconcile_shadow_resume_anchor((aware, naive), checkpoint=None)
 
 
 def test_report_is_deterministic() -> None:
