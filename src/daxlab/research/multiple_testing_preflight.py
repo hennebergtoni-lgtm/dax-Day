@@ -65,7 +65,7 @@ def preflight_multiple_testing_evidence(
     rows: Iterable[TrialPeriodReturn | Mapping[str, object]],
     *,
     expected_trial_count: int,
-    declared_trial_ids: Sequence[str] | None = None,
+    declared_trial_ids: Sequence[str] | None,
 ) -> MultipleTestingPreflightResult:
     """Check evidence completeness before DSR/PBO or related statistics are allowed."""
     if expected_trial_count < 2:
@@ -100,8 +100,13 @@ def preflight_multiple_testing_evidence(
     if len(trial_ids) != expected_trial_count:
         blockers.add("TRIAL_COUNT_MISMATCH")
 
-    if declared_trial_ids is not None:
+    declared: list[str] = []
+    if declared_trial_ids is None:
+        blockers.add("DECLARED_TRIAL_SET_REQUIRED")
+    else:
         declared = [trial_id.strip() for trial_id in declared_trial_ids]
+        if any(not trial_id for trial_id in declared):
+            blockers.add("EMPTY_DECLARED_TRIAL_ID")
         if len(declared) != len(set(declared)):
             blockers.add("DUPLICATE_DECLARED_TRIAL_ID")
         if len(declared) != expected_trial_count:
@@ -120,7 +125,7 @@ def preflight_multiple_testing_evidence(
     if len(cells) != expected_cells:
         blockers.add("MATRIX_CELL_COUNT_MISMATCH")
 
-    canonical = [
+    canonical_rows = [
         {
             "trial_id": row.trial_id,
             "period_id": row.period_id,
@@ -129,8 +134,13 @@ def preflight_multiple_testing_evidence(
         }
         for row in sorted(cells.values(), key=lambda x: (x.trial_id, x.period_id))
     ]
+    contract = {
+        "expected_trial_count": expected_trial_count,
+        "declared_trial_ids": sorted(declared),
+        "rows": canonical_rows,
+    }
     evidence_sha256 = hashlib.sha256(
-        json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        json.dumps(contract, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
 
     ordered_blockers = tuple(sorted(blockers))
