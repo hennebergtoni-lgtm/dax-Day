@@ -107,8 +107,8 @@ def classical_probability_of_backtest_overfitting(
         raise ValueError("n_periods must be >= n_splits")
 
     blocks = _contiguous_blocks(n_periods, n_splits)
-    if any(len(block) < 2 for block in blocks):
-        raise ValueError("each contiguous block must contain at least 2 periods")
+    if any(len(block) == 0 for block in blocks):
+        raise ValueError("each contiguous block must be non-empty")
 
     all_block_ids = tuple(range(n_splits))
     logits: list[float] = []
@@ -117,6 +117,8 @@ def classical_probability_of_backtest_overfitting(
         oos_block_ids = tuple(idx for idx in all_block_ids if idx not in is_set)
         is_idx = np.concatenate([blocks[idx] for idx in is_block_ids])
         oos_idx = np.concatenate([blocks[idx] for idx in oos_block_ids])
+        if is_idx.size < 2 or oos_idx.size < 2:
+            raise ValueError("each CSCV half must contain at least 2 periods")
 
         is_scores = np.asarray([_sample_sharpe(matrix[row, is_idx]) for row in range(n_trials)])
         oos_scores = np.asarray([_sample_sharpe(matrix[row, oos_idx]) for row in range(n_trials)])
