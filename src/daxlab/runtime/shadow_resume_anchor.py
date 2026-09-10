@@ -25,6 +25,16 @@ class ShadowResumeAnchorResult:
     order_execution_enabled: bool = False
 
 
+def _validate_chronology(bars: tuple[Mt5Bar, ...]) -> None:
+    previous = None
+    for bar in bars:
+        if bar.open_time.tzinfo is None or bar.open_time.utcoffset() is None:
+            raise RuntimeError("resume feed bar time must be timezone-aware")
+        if previous is not None and bar.open_time <= previous:
+            raise RuntimeError("resume feed bars must be strictly chronological")
+        previous = bar.open_time
+
+
 def reconcile_shadow_resume_anchor(
     bars: Iterable[Mt5Bar],
     *,
@@ -37,6 +47,7 @@ def reconcile_shadow_resume_anchor(
     authorizes orders.
     """
     ordered = tuple(bars)
+    _validate_chronology(ordered)
     fingerprints = tuple(bar_fingerprint(bar) for bar in ordered)
     ordered_feed_sha256 = _hash({"ordered_bar_fingerprints": list(fingerprints)})
 
@@ -118,6 +129,7 @@ def bars_after_resume_anchor(
     if result.execution_capability != "NONE" or result.order_execution_enabled:
         raise RuntimeError("resume anchor result unexpectedly gained execution capability")
     ordered = tuple(bars)
+    _validate_chronology(ordered)
     if result.feed_bar_count != len(ordered):
         raise RuntimeError("resume anchor feed length changed after reconciliation")
     observed_sha = _hash(
