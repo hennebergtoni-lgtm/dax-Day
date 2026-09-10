@@ -8,6 +8,7 @@ import subprocess
 from typing import Sequence
 
 from daxlab.research.variant_trial_chronology import TrialChronologyEvidence
+from daxlab.research.variant_trial_registry import parse_registry_payload
 
 _GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
@@ -98,14 +99,15 @@ def collect_trial_chronology_evidence(
             payload = json.loads(registry_text)
         except json.JSONDecodeError as exc:
             raise ValueError("registry JSON at declaration commit is invalid") from exc
-        declarations = payload.get("declarations") if isinstance(payload, dict) else None
-        if not isinstance(declarations, list):
-            raise ValueError("registry at declaration commit has invalid declarations")
+        if not isinstance(payload, dict):
+            raise ValueError("registry JSON at declaration commit must be an object")
+        try:
+            declarations = parse_registry_payload(payload)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("registry at declaration commit failed integrity validation") from exc
         declaration_present = any(
-            isinstance(item, dict)
-            and item.get("trial_id") == clean_trial_id
-            and item.get("record_hash") == record_hash
-            for item in declarations
+            row.trial_id == clean_trial_id and row.record_hash == record_hash
+            for row in declarations
         )
 
     ancestor = _is_ancestor(root, declaration_commit, result_commit)
