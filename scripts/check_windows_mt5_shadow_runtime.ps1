@@ -10,15 +10,91 @@ Set-StrictMode -Version Latest
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
-foreach ($name in @($Mt5TaskName, $ShadowTaskName)) {
-    $task = Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
-    if (-not $task) {
-        Write-Host "TASK MISSING: $name"
-        continue
+function Convert-TaskDurationToTimeSpan {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Value,
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    if ($Value -is [TimeSpan]) {
+        return $Value
     }
-    $info = Get-ScheduledTaskInfo -TaskName $name
-    Write-Host "TASK $name | State=$($task.State) | LastResult=$($info.LastTaskResult) | LastRun=$($info.LastRunTime)"
+
+    try {
+        return [System.Xml.XmlConvert]::ToTimeSpan([string]$Value)
+    }
+    catch {
+        throw "Could not parse $Label as a task duration: $Value"
+    }
 }
+
+function Assert-TaskRuntimePolicy {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Task,
+        [Parameter(Mandatory = $true)]
+        [string]$TaskName,
+        [Parameter(Mandatory = $true)]
+        [int]$ExpectedRestartCount,
+        [Parameter(Mandatory = $true)]
+        [int]$ExpectedRestartMinutes
+    )
+
+    $settings = $Task.Settings
+    if (-not $settings) {
+        throw "Scheduled task has no settings: $TaskName"
+    }
+
+    if ([int]$settings.RestartCount -ne $ExpectedRestartCount) {
+        throw "Task restart count drift: $TaskName | expected=$ExpectedRestartCount | actual=$($settings.RestartCount)"
+    }
+
+    $restartInterval = Convert-TaskDurationToTimeSpan `
+        -Value $settings.RestartInterval `
+        -Label "$TaskName RestartInterval"
+    if ([double]$restartInterval.TotalMinutes -ne [double]$ExpectedRestartMinutes) {
+        throw "Task restart interval drift: $TaskName | expected=${ExpectedRestartMinutes}m | actual=$($settings.RestartInterval)"
+    }
+
+    if ([string]$settings.MultipleInstances -ne 'IgnoreNew') {
+        throw "Task multiple-instance policy drift: $TaskName | expected=IgnoreNew | actual=$($settings.MultipleInstances)"
+    }
+
+    $executionLimit = Convert-TaskDurationToTimeSpan `
+        -Value $settings.ExecutionTimeLimit `
+        -Label "$TaskName ExecutionTimeLimit"
+    if ($executionLimit -ne [TimeSpan]::Zero) {
+        throw "Task execution-time-limit drift: $TaskName | expected=0 | actual=$($settings.ExecutionTimeLimit)"
+    }
+
+    Write-Host "TASK POLICY $TaskName | Restart=$ExpectedRestartCount x ${ExpectedRestartMinutes}m | MultipleInstances=IgnoreNew | ExecutionTimeLimit=0"
+}
+
+$mt5Task = Get-ScheduledTask -TaskName $Mt5TaskName -ErrorAction SilentlyContinue
+if (-not $mt5Task) {
+    throw "Scheduled task missing: $Mt5TaskName"
+}
+$mt5Info = Get-ScheduledTaskInfo -TaskName $Mt5TaskName
+Write-Host "TASK $Mt5TaskName | State=$($mt5Task.State) | LastResult=$($mt5Info.LastTaskResult) | LastRun=$($mt5Info.LastRunTime)"
+Assert-TaskRuntimePolicy `
+    -Task $mt5Task `
+    -TaskName $Mt5TaskName `
+    -ExpectedRestartCount 5 `
+    -ExpectedRestartMinutes 2
+
+$shadowTask = Get-ScheduledTask -TaskName $ShadowTaskName -ErrorAction SilentlyContinue
+if (-not $shadowTask) {
+    throw "Scheduled task missing: $ShadowTaskName"
+}
+$shadowInfo = Get-ScheduledTaskInfo -TaskName $ShadowTaskName
+Write-Host "TASK $ShadowTaskName | State=$($shadowTask.State) | LastResult=$($shadowInfo.LastTaskResult) | LastRun=$($shadowInfo.LastRunTime)"
+Assert-TaskRuntimePolicy `
+    -Task $shadowTask `
+    -TaskName $ShadowTaskName `
+    -ExpectedRestartCount 3 `
+    -ExpectedRestartMinutes 5
 
 $heartbeatPath = Join-Path (Join-Path $repoRoot $StateDir) 'heartbeat.json'
 if (-not (Test-Path -LiteralPath $heartbeatPath -PathType Leaf)) {
