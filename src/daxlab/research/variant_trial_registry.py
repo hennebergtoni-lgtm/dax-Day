@@ -30,13 +30,14 @@ class TrialDeclaration:
     record_hash: str
 
     @property
-    def independently_predeclared(self) -> bool:
+    def claimed_predeclared(self) -> bool:
         return self.declaration_mode == PREDECLARED
 
     def to_payload(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["parameters"] = dict(self.parameters)
-        payload["independently_predeclared"] = self.independently_predeclared
+        payload["claimed_predeclared"] = self.claimed_predeclared
+        payload["repo_chronology_verified"] = False
         return payload
 
 
@@ -198,8 +199,10 @@ def registry_payload(rows: Iterable[TrialDeclaration]) -> dict[str, Any]:
         "hash_chain": "SHA256_PREVIOUS_HASH",
         "head_hash": head_hash,
         "trial_count": len(declarations),
-        "predeclared_trial_ids": [
-            row.trial_id for row in declarations if row.independently_predeclared
+        "chronology_verification_state": "REPO_CHRONOLOGY_REQUIRED",
+        "claimed_predeclared_trial_ids": [
+            row.trial_id for row in declarations if row.claimed_predeclared
         ],
+        "verified_predeclared_trial_ids": [],
         "declarations": [row.to_payload() for row in declarations],
     }
