@@ -36,12 +36,29 @@ def test_task_spec_is_logon_bound_and_no_order(tmp_path: Path):
     assert payload["trigger"] == "AT_LOGON"
     assert payload["run_only_when_user_logged_on"] is True
     assert payload["multiple_instances"] == "IGNORE_NEW"
-    assert payload["restart_interval_minutes"] == 5
-    assert payload["restart_count"] == 3
+    assert payload["start_when_available"] is True
+    assert payload["allow_start_if_on_batteries"] is True
+    assert payload["dont_stop_if_going_on_batteries"] is True
+    assert payload["execution_time_limit_seconds"] == 0
+    assert payload["restart_interval_minutes"] == 1
+    assert payload["restart_count"] == 999
     assert payload["startup_delay_seconds"] == 60
     assert payload["execution_capability"] == "NONE"
     assert payload["order_execution_enabled"] is False
     assert payload["state_directory"].endswith(str(Path(".runtime") / "mt5_shadow"))
+
+
+def test_task_spec_matches_installer_core_settings():
+    installer = Path("scripts/install_windows_mt5_shadow_task.ps1").read_text(
+        encoding="utf-8"
+    )
+    assert "-StartWhenAvailable" in installer
+    assert "-AllowStartIfOnBatteries" in installer
+    assert "-DontStopIfGoingOnBatteries" in installer
+    assert "-MultipleInstances IgnoreNew" in installer
+    assert "-RestartCount 999" in installer
+    assert "-RestartInterval (New-TimeSpan -Minutes 1)" in installer
+    assert "-ExecutionTimeLimit ([TimeSpan]::Zero)" in installer
 
 
 def test_task_spec_requires_explicit_broker_timezone(tmp_path: Path):
