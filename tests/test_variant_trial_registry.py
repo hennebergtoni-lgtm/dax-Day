@@ -1,4 +1,6 @@
 from dataclasses import replace
+import json
+from pathlib import Path
 
 import pytest
 
@@ -7,6 +9,7 @@ from daxlab.research.variant_trial_registry import (
     PREDECLARED,
     RETROACTIVE,
     declare_trial,
+    parse_registry_payload,
     registry_payload,
     verify_trial_chain,
 )
@@ -65,16 +68,11 @@ def test_duplicate_trial_id_rejected():
 def test_non_utc_declaration_rejected():
     with pytest.raises(ValueError, match="UTC"):
         declare_trial(
-            [],
-            trial_id="VT001",
-            experiment_id="EXP001",
-            hypothesis_trial_id="T012",
-            family_id="ADX001",
-            variant_key="ADX001:VT001",
-            parameters={"period": 14},
+            [], trial_id="VT001", experiment_id="EXP001",
+            hypothesis_trial_id="T012", family_id="ADX001",
+            variant_key="ADX001:VT001", parameters={"period": 14},
             declared_at_utc="2026-09-10T05:40:00+02:00",
-            declaration_mode=PREDECLARED,
-            source_commit="a" * 40,
+            declaration_mode=PREDECLARED, source_commit="a" * 40,
         )
 
 
@@ -86,16 +84,11 @@ def test_non_finite_parameter_rejected():
 def test_invalid_source_commit_rejected():
     with pytest.raises(ValueError, match="Git SHA"):
         declare_trial(
-            [],
-            trial_id="VT001",
-            experiment_id="EXP001",
-            hypothesis_trial_id="T012",
-            family_id="ADX001",
-            variant_key="ADX001:VT001",
-            parameters={"period": 14},
+            [], trial_id="VT001", experiment_id="EXP001",
+            hypothesis_trial_id="T012", family_id="ADX001",
+            variant_key="ADX001:VT001", parameters={"period": 14},
             declared_at_utc="2026-09-10T03:40:00Z",
-            declaration_mode=PREDECLARED,
-            source_commit="not-a-git-sha",
+            declaration_mode=PREDECLARED, source_commit="not-a-git-sha",
         )
 
 
@@ -112,20 +105,60 @@ def test_retroactive_trial_is_never_claimed_predeclared():
     assert row.claimed_predeclared is False
     assert payload["claimed_predeclared_trial_ids"] == []
     assert payload["verified_predeclared_trial_ids"] == []
-    assert payload["trial_count"] == 1
 
 
 def test_registry_requires_repo_chronology_before_verified_predeclaration():
     first = _declare([], "VT001", PREDECLARED)
     second = _declare([first], "VT002", RETROACTIVE)
     payload = registry_payload([first, second])
-    assert payload["append_only"] is True
-    assert payload["hash_chain"] == "SHA256_PREVIOUS_HASH"
-    assert payload["head_hash"] == second.record_hash
     assert payload["chronology_verification_state"] == "REPO_CHRONOLOGY_REQUIRED"
     assert payload["claimed_predeclared_trial_ids"] == ["VT001"]
     assert payload["verified_predeclared_trial_ids"] == []
     assert payload["declarations"][0]["repo_chronology_verified"] is False
+
+
+def test_persisted_roundtrip_verifies_chain_and_derived_fields():
+    first = _declare([], "VT001")
+    second = _declare([first], "VT002", RETROACTIVE)
+    parsed = parse_registry_payload(registry_payload([first, second]))
+    assert parsed == (first, second)
+
+
+def test_genesis_registry_file_is_strict_and_empty():
+    payload = json.loads(
+        Path("research/VARIANT_TRIAL_REGISTRY_V1.json").read_text(encoding="utf-8")
+    )
+    assert parse_registry_payload(payload) == ()
+    assert payload["head_hash"] == GENESIS_HASH
+    assert payload["trial_count"] == 0
+
+
+def test_unknown_top_level_field_rejected():
+    payload = registry_payload([])
+    payload["surprise"] = True
+    with pytest.raises(ValueError, match="fields mismatch"):
+        parse_registry_payload(payload)
+
+
+def test_tampered_head_hash_rejected():
+    payload = registry_payload([])
+    payload["head_hash"] = "f" * 64
+    with pytest.raises(ValueError, match="head_hash"):
+        parse_registry_payload(payload)
+
+
+def test_persisted_registry_cannot_self_assert_chronology():
+    payload = registry_payload([_declare([])])
+    payload["verified_predeclared_trial_ids"] = ["VT001"]
+    with pytest.raises(ValueError, match="cannot self-assert"):
+        parse_registry_payload(payload)
+
+
+def test_declaration_cannot_self_assert_chronology():
+    payload = registry_payload([_declare([])])
+    payload["declarations"][0]["repo_chronology_verified"] = True
+    with pytest.raises(ValueError, match="cannot self-assert"):
+        parse_registry_payload(payload)
 
 
 def test_unsupported_declaration_mode_rejected():
