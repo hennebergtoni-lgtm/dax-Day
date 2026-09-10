@@ -26,6 +26,10 @@ from daxlab.runtime.shadow_observation import (
     recovery_payload,
     verify_recovery_payload,
 )
+from daxlab.runtime.shadow_resume_anchor import (
+    bars_after_resume_anchor,
+    reconcile_shadow_resume_anchor,
+)
 from daxlab.runtime.shadow_soak import (
     MT5_READONLY_EVIDENCE_STATE,
     SoakCheckpoint as ShadowSoakCheckpoint,
@@ -237,12 +241,15 @@ def evaluate_shadow_soak_from_bundle(
         return gate, None, status
 
     checkpoint: ShadowSoakCheckpoint | None = None
+    bars = bundle.feed.bars
     if resume_state is not None:
         verify_mt5_shadow_resume_state(resume_state, expected_symbol=status.symbol)
         checkpoint = resume_state.checkpoint
+        anchor = reconcile_shadow_resume_anchor(bars, checkpoint=checkpoint)
+        bars = bars_after_resume_anchor(bars, result=anchor)
 
     result = run_shadow_soak(
-        bundle.feed.bars,
+        bars,
         symbol=status.symbol,
         checkpoint=checkpoint,
         evidence_state=MT5_READONLY_EVIDENCE_STATE,
