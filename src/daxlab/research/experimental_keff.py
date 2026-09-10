@@ -7,11 +7,7 @@ import math
 
 import numpy as np
 
-from daxlab.research.keff_readiness import (
-    BLOCKED,
-    READY,
-    KEffReadinessResult,
-)
+from daxlab.research.keff_readiness import BLOCKED, KEffReadinessResult
 
 
 @dataclass(frozen=True)
