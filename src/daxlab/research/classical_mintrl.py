@@ -85,12 +85,13 @@ def classical_minimum_track_record_length_from_statistics(
 
     z_required = _NORMAL.inv_cdf(conf)
     min_length = 1.0 + denominator_sq * (z_required / delta) ** 2
-    if not math.isfinite(min_length) or min_length < 2.0:
+    if not math.isfinite(min_length) or min_length <= 1.0:
         raise ValueError("computed MinTRL is invalid")
+    required_observations = max(2, math.ceil(min_length))
     return ClassicalMinTRLResult(
         status="FINITE_REQUIREMENT",
         min_track_record_length=min_length,
-        required_observations=float(math.ceil(min_length)),
+        required_observations=float(required_observations),
         observed_sr=observed,
         benchmark_sr=benchmark,
         skewness=skew,
