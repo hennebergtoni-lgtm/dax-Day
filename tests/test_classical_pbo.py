@@ -34,7 +34,7 @@ def test_consistent_leader_has_low_pbo():
     assert 0.0 <= result.pbo <= 0.5
 
 
-def test_regime_flipping_leaders_show_overfitting_signal():
+def test_regime_flipping_reference_matrix_has_one_third_pbo():
     returns = np.array(
         [
             [0.05, 0.04, 0.05, 0.04, -0.03, -0.04, -0.03, -0.04],
@@ -43,7 +43,17 @@ def test_regime_flipping_leaders_show_overfitting_signal():
         ]
     )
     result = classical_probability_of_backtest_overfitting(returns, n_splits=4)
-    assert result.pbo >= 0.5
+    assert result.pbo == pytest.approx(1.0 / 3.0)
+    assert result.logits == pytest.approx(
+        (
+            -math.log(3.0),
+            math.log(3.0),
+            math.log(3.0),
+            math.log(3.0),
+            math.log(3.0),
+            -math.log(3.0),
+        )
+    )
 
 
 def test_tied_oos_scores_use_finite_average_rank_logit():
