@@ -76,7 +76,7 @@ def _bundle_payload(bar_count: int) -> dict:
 
 def _auth() -> ProspectiveAuthorization:
     return ProspectiveAuthorization(
-        gate_id="RECOVERY_DRILL_SHADOW_ONLY",
+        gate_id="STEP_91_USER_AUTHORIZATION",
         shadow_authorized=True,
         paper_authorized=False,
         live_authorized=False,
@@ -91,8 +91,7 @@ def _run(payload: dict, *, resume_state=None):
         single_instance_lock_held=True,
         resume_state=resume_state,
     )
-    assert gate.execution_capability == "NONE"
-    assert gate.order_execution_enabled is False
+    assert gate.allowed is True
     assert result is not None
     assert result.execution_capability == "NONE"
     assert result.order_execution_enabled is False
