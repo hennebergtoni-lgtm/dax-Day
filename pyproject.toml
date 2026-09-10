@@ -20,6 +20,9 @@ dev = [
   "hypothesis>=6",
   "ruff==0.16.2",
 ]
+statistics = [
+  "arch>=8.0,<9",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
