@@ -31,11 +31,17 @@ Paper may be considered only after Shadow acceptance plus:
 - no unexplained deterministic decision drift;
 - execution adapter contract verified in isolation;
 - paper fill model versioned and fingerprinted;
+- broker order lifecycle evidence complete;
+- one broker execution checkpoint/restart evidence path verified so lifecycle state and telemetry idempotency state cannot advance from different persistence boundaries;
+- broker reconciliation evidence complete;
+- execution-protection gates verified;
 - order lifecycle telemetry complete;
 - reconnect/restart/idempotency tests green;
 - explicit max spread / stale feed / duplicate order / contradictory state blockers green;
 - Paper readiness gate allowed;
 - user STOP-GATE review completed before start.
+
+Repository-only fixtures and CI prove software behavior but do not by themselves satisfy broker-facing lifecycle, checkpoint, reconciliation, protection or telemetry readiness booleans.
 
 ## Execution boundary
 The strategy/Decision Core must not know broker-specific APIs.
