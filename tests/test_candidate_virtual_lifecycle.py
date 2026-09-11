@@ -177,7 +177,7 @@ def test_duplicate_bar_is_idempotent_and_out_of_order_bar_fails_closed() -> None
 
     assert advance_cand001_virtual_lifecycle(opened, first) == opened
 
-    older = _bar(event_time=DECISION_TIME + timedelta(minutes=1))
+    older = _bar(event_time=DECISION_TIME - timedelta(minutes=1))
     with pytest.raises(ValueError, match="out of order"):
         advance_cand001_virtual_lifecycle(opened, older)
 
