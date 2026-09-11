@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2098**
-- Active whole-number step: **2099**
-- Next step after successful completion: **2100**
+- Last completed whole-number step: **2099**
+- Active whole-number step: **2100**
+- Next step after successful completion: **2101**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -38,6 +38,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2096 | Add an explicit broker-order-telemetry PAPER readiness gate; PAPER now fails closed on incomplete lifecycle telemetry even when lifecycle/reconciliation/protection are otherwise green, while fixture/clean replay and the independent user STOP-gate remain separate. | `6b84738c…`, `7ad7c7bd…`, matrix wording fix `d933e575…` (exact-head CI: `dax-bot-1x-ci` #179 GREEN, `research-lab-ci` #963 GREEN) |
 | 2097 | Implement and regression-test restart-safe append-only broker execution telemetry identity persistence/idempotency using the existing atomic JSON/publication-state patterns; duplicates remain suppressed after restart and tamper/safety drift fail closed. | `6d719a51…`, `cc0c4271…` (exact-head CI: `dax-bot-1x-ci` #182 GREEN, `research-lab-ci` #966 GREEN); matrix refresh `302cfef8…` |
 | 2098 | Add strict tamper-evident BrokerOrderLifecycle serialization/restoration and prove REQUESTED/ACK/PARTIAL restart continuity plus PARTIAL→FILLED parity with uninterrupted execution; identity/state/safety drift fail closed. | `fe0f4816…`, `4cbc0089…`, strengthened tests `cb037f11…` (exact-head CI: `dax-bot-1x-ci` #187 GREEN, `research-lab-ci` #971 GREEN); matrix refresh `cdd3ccb5…` |
+| 2099 | Implement and regression-test one tamper-evident broker execution checkpoint binding optional lifecycle restore state and telemetry journal into one atomic persistence envelope; prove PARTIAL→FILLED restart parity and nested/outer tamper/safety fail-closed behavior. | implementation `4c54a928…`; tests `d0b2910a…`, assertion fix `96d4fc6d…` (exact-head CI: `dax-bot-1x-ci` #192 GREEN, `research-lab-ci` #976 GREEN); matrix refresh `f6fef62f…` |
 
 ## Numbering rules
 
@@ -52,4 +53,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2099:** implement and regression-test one tamper-evident broker execution checkpoint that atomically binds the existing optional `BrokerOrderLifecycle` restore payload and the existing `BrokerExecutionTelemetryJournal` payload. The checkpoint owns no lifecycle/telemetry rules, supports no broker API, stays `NONE/false`, rejects nested or outer tamper/safety drift, and proves a PARTIAL lifecycle plus journal can be saved/restored together and continue deterministically after restart.
+**Step 2100:** add and regression-test an explicit fail-closed PAPER readiness gate for qualifying broker execution checkpoint/restart evidence. Repository implementation/tests alone must not satisfy broker-facing evidence; default remains false, blocker is explicit, existing fixture/clean-replay behavior remains unchanged, and the independent user PAPER authorization STOP-gate remains required.
