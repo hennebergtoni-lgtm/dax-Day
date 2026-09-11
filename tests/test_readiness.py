@@ -17,6 +17,7 @@ def ready_snapshot(**overrides: object) -> ReadinessSnapshot:
         "full_reference_replay_verified": True,
         "execution_boundary_verified": True,
         "broker_order_lifecycle_verified": True,
+        "broker_execution_checkpoint_verified": True,
         "broker_reconciliation_verified": True,
         "execution_protection_gates_verified": True,
         "broker_order_telemetry_verified": True,
@@ -42,6 +43,7 @@ def test_fixture_smoke_does_not_require_clean_reference_identity() -> None:
             dataset_identity=RecoveryIdentity.STRUCTURAL_MATCH,
             execution_boundary_verified=False,
             broker_order_lifecycle_verified=False,
+            broker_execution_checkpoint_verified=False,
             broker_reconciliation_verified=False,
             execution_protection_gates_verified=False,
             broker_order_telemetry_verified=False,
@@ -115,6 +117,7 @@ def test_paper_user_authorization_default_is_fail_closed() -> None:
         full_reference_replay_verified=True,
         execution_boundary_verified=True,
         broker_order_lifecycle_verified=True,
+        broker_execution_checkpoint_verified=True,
         broker_reconciliation_verified=True,
         execution_protection_gates_verified=True,
         broker_order_telemetry_verified=True,
@@ -163,6 +166,7 @@ def test_legacy_execution_boundary_true_is_not_sufficient_for_paper() -> None:
         ready_snapshot(
             execution_boundary_verified=True,
             broker_order_lifecycle_verified=False,
+            broker_execution_checkpoint_verified=False,
             broker_reconciliation_verified=False,
             execution_protection_gates_verified=False,
             broker_order_telemetry_verified=False,
@@ -171,6 +175,7 @@ def test_legacy_execution_boundary_true_is_not_sufficient_for_paper() -> None:
     assert not result.allowed
     assert result.blockers == (
         "BROKER_ORDER_LIFECYCLE_UNVERIFIED",
+        "BROKER_EXECUTION_CHECKPOINT_UNVERIFIED",
         "BROKER_RECONCILIATION_UNVERIFIED",
         "EXECUTION_PROTECTION_GATES_UNVERIFIED",
         "BROKER_ORDER_TELEMETRY_UNVERIFIED",
@@ -184,6 +189,42 @@ def test_paper_requires_verified_broker_order_lifecycle() -> None:
     )
     assert not result.allowed
     assert result.blockers == ("BROKER_ORDER_LIFECYCLE_UNVERIFIED",)
+
+
+def test_paper_requires_verified_broker_execution_checkpoint() -> None:
+    result = evaluate_run_readiness(
+        RunKind.PAPER,
+        ready_snapshot(broker_execution_checkpoint_verified=False),
+    )
+    assert not result.allowed
+    assert result.blockers == ("BROKER_EXECUTION_CHECKPOINT_UNVERIFIED",)
+
+
+def test_broker_execution_checkpoint_default_is_fail_closed_for_paper() -> None:
+    snapshot = ReadinessSnapshot(
+        ci_green=True,
+        dataset_verified=True,
+        engine_verified=True,
+        database_verified=True,
+        technical_replay_verified=True,
+        audited_bundle_available=True,
+        full_reference_replay_verified=True,
+        execution_boundary_verified=True,
+        broker_order_lifecycle_verified=True,
+        broker_reconciliation_verified=True,
+        execution_protection_gates_verified=True,
+        broker_order_telemetry_verified=True,
+        mt5_readonly_health_verified=True,
+        dataset_identity=RecoveryIdentity.HASH_VERIFIED,
+        broker_economics_verified=True,
+        broker_risk_sizing_verified=True,
+        risk_profile_policy_verified=True,
+        loss_cap_policy_verified=True,
+        paper_user_authorized=True,
+    )
+    result = evaluate_run_readiness(RunKind.PAPER, snapshot)
+    assert not result.allowed
+    assert result.blockers == ("BROKER_EXECUTION_CHECKPOINT_UNVERIFIED",)
 
 
 def test_paper_requires_verified_broker_reconciliation() -> None:
@@ -264,6 +305,7 @@ def test_clean_reference_replay_does_not_depend_on_paper_execution_risk_or_user_
         ready_snapshot(
             execution_boundary_verified=False,
             broker_order_lifecycle_verified=False,
+            broker_execution_checkpoint_verified=False,
             broker_reconciliation_verified=False,
             execution_protection_gates_verified=False,
             broker_order_telemetry_verified=False,
