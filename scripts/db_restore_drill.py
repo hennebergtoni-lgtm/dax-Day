@@ -19,6 +19,9 @@ EXPECTED_TABLES = {
     "source_artifacts",
     "detail_import_registry",
     "detail_evidence_rows",
+    "mt5_shadow_heartbeats",
+    "mt5_shadow_bars",
+    "mt5_shadow_decisions",
 }
 EXPECTED_VERSIONS = {
     "0001_research_core",
@@ -27,6 +30,7 @@ EXPECTED_VERSIONS = {
     "0004_detail_evidence_registry",
     "0005_reproduced_detail_sources",
     "0006_detail_evidence_rows",
+    "0007_mt5_shadow_telemetry",
 }
 EXPECTED_DETAIL_SOURCES = {
     "WF_METRICS": "v112_reproduced_wf_metrics_20260908",
@@ -94,11 +98,22 @@ def main() -> None:
             if evidence_rows != 0:
                 raise RuntimeError("restore drill must start with zero imported detail evidence rows")
 
+            telemetry_counts = {
+                table: conn.execute(sql.SQL("select count(*) from {}").format(sql.Identifier(table))).fetchone()[0]
+                for table in (
+                    "mt5_shadow_heartbeats",
+                    "mt5_shadow_bars",
+                    "mt5_shadow_decisions",
+                )
+            }
+            if any(telemetry_counts.values()):
+                raise RuntimeError("restore drill telemetry tables must start empty")
+
             print(
                 "Database restore drill OK | "
                 f"schema={schema} | migrations={len(versions)} | tables={len(tables)} | "
                 "active_reference=VERIFIED | detail_sources=3 VERIFIED | "
-                "detail_rows=0 | detail=NOT_IMPORTED"
+                "detail_rows=0 | telemetry_rows=0 | detail=NOT_IMPORTED"
             )
         finally:
             conn.execute("set search_path to public")
