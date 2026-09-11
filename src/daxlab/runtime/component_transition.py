@@ -5,11 +5,11 @@ provide safety, readiness, broker or execution authorization.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
+
+from daxlab.runtime.decision import stable_fingerprint
 
 
 class TransitionMode(str, Enum):
@@ -72,18 +72,18 @@ class ComponentRoute:
         return self.bot_1x_provider_id
 
     def fingerprint(self) -> str:
-        payload = {
-            "active_config_fingerprint": self.active_config_fingerprint,
-            "authoritative_slot": self.authoritative_slot.value,
-            "bot_1x_provider_id": self.bot_1x_provider_id,
-            "comparison_policy_version": self.comparison_policy_version,
-            "component_id": self.component_id,
-            "contract_version": self.contract_version,
-            "legacy_provider_id": self.legacy_provider_id,
-            "mode": self.mode.value,
-        }
-        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        return hashlib.sha256(encoded).hexdigest()
+        return stable_fingerprint(
+            {
+                "active_config_fingerprint": self.active_config_fingerprint,
+                "authoritative_slot": self.authoritative_slot.value,
+                "bot_1x_provider_id": self.bot_1x_provider_id,
+                "comparison_policy_version": self.comparison_policy_version,
+                "component_id": self.component_id,
+                "contract_version": self.contract_version,
+                "legacy_provider_id": self.legacy_provider_id,
+                "mode": self.mode.value,
+            }
+        )
 
 
 class ComponentTransitionRegistry:
