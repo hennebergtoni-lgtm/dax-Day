@@ -19,6 +19,7 @@ def ready_snapshot(**overrides: object) -> ReadinessSnapshot:
         "broker_order_lifecycle_verified": True,
         "broker_reconciliation_verified": True,
         "execution_protection_gates_verified": True,
+        "broker_order_telemetry_verified": True,
         "mt5_readonly_health_verified": True,
         "dataset_identity": RecoveryIdentity.HASH_VERIFIED,
         "broker_economics_verified": True,
@@ -43,6 +44,7 @@ def test_fixture_smoke_does_not_require_clean_reference_identity() -> None:
             broker_order_lifecycle_verified=False,
             broker_reconciliation_verified=False,
             execution_protection_gates_verified=False,
+            broker_order_telemetry_verified=False,
             broker_economics_verified=False,
             broker_risk_sizing_verified=False,
             risk_profile_policy_verified=False,
@@ -115,6 +117,7 @@ def test_paper_user_authorization_default_is_fail_closed() -> None:
         broker_order_lifecycle_verified=True,
         broker_reconciliation_verified=True,
         execution_protection_gates_verified=True,
+        broker_order_telemetry_verified=True,
         mt5_readonly_health_verified=True,
         dataset_identity=RecoveryIdentity.HASH_VERIFIED,
         broker_economics_verified=True,
@@ -162,6 +165,7 @@ def test_legacy_execution_boundary_true_is_not_sufficient_for_paper() -> None:
             broker_order_lifecycle_verified=False,
             broker_reconciliation_verified=False,
             execution_protection_gates_verified=False,
+            broker_order_telemetry_verified=False,
         ),
     )
     assert not result.allowed
@@ -169,6 +173,7 @@ def test_legacy_execution_boundary_true_is_not_sufficient_for_paper() -> None:
         "BROKER_ORDER_LIFECYCLE_UNVERIFIED",
         "BROKER_RECONCILIATION_UNVERIFIED",
         "EXECUTION_PROTECTION_GATES_UNVERIFIED",
+        "BROKER_ORDER_TELEMETRY_UNVERIFIED",
     )
 
 
@@ -197,6 +202,15 @@ def test_paper_requires_verified_execution_protection_gates() -> None:
     )
     assert not result.allowed
     assert result.blockers == ("EXECUTION_PROTECTION_GATES_UNVERIFIED",)
+
+
+def test_paper_requires_verified_broker_order_telemetry() -> None:
+    result = evaluate_run_readiness(
+        RunKind.PAPER,
+        ready_snapshot(broker_order_telemetry_verified=False),
+    )
+    assert not result.allowed
+    assert result.blockers == ("BROKER_ORDER_TELEMETRY_UNVERIFIED",)
 
 
 def test_paper_requires_verified_mt5_readonly_health() -> None:
@@ -252,6 +266,7 @@ def test_clean_reference_replay_does_not_depend_on_paper_execution_risk_or_user_
             broker_order_lifecycle_verified=False,
             broker_reconciliation_verified=False,
             execution_protection_gates_verified=False,
+            broker_order_telemetry_verified=False,
             broker_economics_verified=False,
             broker_risk_sizing_verified=False,
             risk_profile_policy_verified=False,
