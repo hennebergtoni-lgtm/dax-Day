@@ -9,6 +9,13 @@ def _read(name: str) -> str:
     return (DOCS / name).read_text(encoding="utf-8")
 
 
+def _problem_solution_entries(registry: str) -> list[str]:
+    return [
+        "## PSR-" + chunk
+        for chunk in registry.split("## PSR-")[1:]
+    ]
+
+
 def test_canonical_engineering_memory_documents_exist() -> None:
     assert (DOCS / "PROJECT_KNOWLEDGE_INDEX.md").is_file()
     assert (DOCS / "PROBLEM_SOLUTION_REGISTRY.md").is_file()
@@ -50,3 +57,41 @@ def test_problem_solution_registry_preserves_reusable_reasoning_shape() -> None:
         "PSR-008",
     ):
         assert required in registry
+
+
+def test_every_problem_solution_entry_is_reusable_engineering_memory() -> None:
+    registry = _read("PROBLEM_SOLUTION_REGISTRY.md")
+    entries = _problem_solution_entries(registry)
+    assert entries, "problem/solution registry must contain durable entries"
+
+    for entry in entries:
+        heading = entry.splitlines()[0]
+        for required in (
+            "**Status:**",
+            "**Component:**",
+            "**Problem:**",
+            "**Root cause:**",
+            "**Proof/evidence:**",
+            "**Reuse rule:**",
+        ):
+            assert required in entry, f"{heading} missing {required}"
+
+        assert (
+            "**Accepted solution:**" in entry
+            or "**Current decision:**" in entry
+        ), f"{heading} must preserve the accepted solution or current decision"
+
+
+def test_known_fixed_defects_keep_regression_test_evidence() -> None:
+    registry = _read("PROBLEM_SOLUTION_REGISTRY.md")
+    entries = {
+        entry.split(" — ", 1)[0].removeprefix("## "): entry
+        for entry in _problem_solution_entries(registry)
+    }
+
+    for psr_id in ("PSR-003", "PSR-005", "PSR-007", "PSR-010"):
+        entry = entries[psr_id]
+        assert "test" in entry.lower(), (
+            f"{psr_id} must retain regression-test evidence so the solved defect "
+            "is not rediscovered without its proof"
+        )
