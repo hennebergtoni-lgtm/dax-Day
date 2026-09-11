@@ -3,12 +3,13 @@
 Status: REPOSITORY-INTEGRATED SHADOW RUNTIME VERIFIED / REAL WINDOWS HOST EVIDENCE WAITING_EXTERNAL / NO PAPER OR LIVE AUTHORIZATION
 Updated: 2026-09-11
 Repository branch: `nextgen-bot-line-v1`
-Verified runtime-code head: `a5b8429545d03bba1e1aade2bbd1e4ebc06560fe`
-Governance head before this status update: `ad4cd86007b12338c42ef7fb21a310af93fe4cb4`
+Last fully verified integrated-runtime head: `a5b8429545d03bba1e1aade2bbd1e4ebc06560fe`
 
-CI at the verified runtime-code head:
+CI at that integrated-runtime head:
 - `dax-bot-1x-ci` #85: GREEN
 - `research-lab-ci` #869: GREEN
+
+Newer Candidate-telemetry/static-web separation changes are IMPLEMENTED on the branch and remain subject to exact-head CI verification before being labelled VERIFIED.
 
 This file maps the current implementation against `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_GATE.md`. It is a controllability/readiness checklist, not a profitability claim and not execution authorization.
 
@@ -104,7 +105,7 @@ Real-host evidence still required after deployment of the current branch:
 
 Status for that dependency lane: `WAITING_EXTERNAL`, not a global project stop.
 
-## G. Observability — REPOSITORY RUNTIME ASSEMBLY VERIFIED / FRESH WEB PUBLICATION STILL OPEN
+## G. Observability — FRESH RUNTIME SOURCE IMPLEMENTED / BROWSER DELIVERY OPEN
 
 Implemented/tested operator surface:
 - product/candidate/config identity;
@@ -119,19 +120,29 @@ Implemented/tested operator surface:
 - explicit safety flags;
 - recovery/reconciliation fields.
 
-Integrated runtime assembly now exists:
+Integrated runtime assembly:
 - `candidate_mt5_feed.py` converts validated CLOSED-M5 feed bars into canonical Candidate candles;
 - `candidate_shadow_orchestrator.py` coordinates decision -> intent -> lifecycle -> outcome -> publication -> operator snapshot;
 - `candidate_shadow_feed_runtime.py` handles sliding-feed overlap/resume;
 - `candidate_mt5_shadow_runtime.py` binds Candidate processing behind the existing MT5 safety gate;
 - `candidate_shadow_checkpoint.py` persists the complete Candidate SHADOW state atomically;
 - `candidate_shadow_host_cycle.py` provides a stable forward-stream RunManifest and one persistent host-cycle boundary;
-- `scripts/mt5_shadow_supervisor.py` now stages Candidate Intent/Outcome evidence before advancing Candidate checkpoint/operator snapshot, while preserving the existing supervisor/lock/probe owner.
+- `scripts/mt5_shadow_supervisor.py` stages Candidate Intent/Outcome evidence before advancing Candidate checkpoint/operator snapshot, while preserving the existing supervisor/lock/probe owner.
+
+Fresh runtime source now IMPLEMENTED on the branch:
+- supervisor atomically writes `candidate_operator_snapshot.json` from canonical `OperatorSnapshot.as_dict()`;
+- `candidate_operator_telemetry.py` validates credential-free/read-only safety semantics;
+- `export_mt5_shadow_telemetry.py` can append Candidate snapshots to Neon without changing its legacy export contract;
+- migration `0008` adds append-only `cand001_operator_snapshots` with deterministic `snapshot_fingerprint` idempotency and DB-level `NONE/false` checks;
+- migration `0009` adds read-only latest view `cand001_operator_current`;
+- `web/status.json` is being converted to an explicit static-evidence-only schema and must not represent current host health.
 
 Remaining independent observability gap:
-- fresh current Candidate runtime data still needs a dedicated read-only web/operator publication source separate from stale/versioned `web/status.json`.
+- an authenticated/safe backend/browser delivery endpoint for `cand001_operator_current` is not yet implemented;
+- Neon credentials must never be exposed directly to the browser;
+- Web V1 remains read-only; planned V2 controls remain disabled/research-only until their backend owners are separately verified.
 
-## H. Existing-capability non-regression — VERIFIED AT RUNTIME-CODE HEAD
+## H. Existing-capability non-regression — VERIFIED AT LAST FULLY GREEN RUNTIME HEAD
 
 At `a5b8429545d03bba1e1aade2bbd1e4ebc06560fe`:
 - `dax-bot-1x-ci` #85 GREEN;
@@ -141,9 +152,11 @@ At `a5b8429545d03bba1e1aade2bbd1e4ebc06560fe`:
 - existing MT5 SHADOW read-only architecture remains independently operable and order-disabled;
 - repository-only implementation/testing required no Windows user action.
 
+Newer telemetry/web changes require their own exact-head CI result before this section advances.
+
 ## Current promotion decision
 
-`DAX-BOT 1.0-alpha` is now **VERIFIED for the repository-integrated, restart-safe, read-only CAND-001 SHADOW runtime architecture**.
+`DAX-BOT 1.0-alpha` is **VERIFIED for the repository-integrated, restart-safe, read-only CAND-001 SHADOW runtime architecture** at the last fully green runtime head.
 
 It is **NOT YET VERIFIED on the user's real Windows/MT5 host with the current branch**, because that evidence requires external host execution. That lane is `WAITING_EXTERNAL`.
 
@@ -152,9 +165,9 @@ Do not promote to PAPER/demo broker-order execution merely because repository in
 ## Immediate ordered work lanes
 
 1. `WAITING_EXTERNAL`: deploy/current-branch verification on the real Windows/MT5 host using `docs/CAND001_WINDOWS_SHADOW_DEPLOYMENT_RUNBOOK_V1.md`.
-2. Continue independently: implement fresh read-only Candidate operator/runtime publication separate from static `web/status.json`.
-3. Continue independently: close/update stale web-runtime assertions so static evidence cannot masquerade as current runtime state.
-4. Continue independently: refresh PR/milestone documentation to the current integrated-runtime truth.
+2. Continue independently: finish exact-head CI for Candidate operator telemetry and static/runtime web separation.
+3. Continue independently: implement a safe backend/browser read endpoint over the fresh Candidate runtime source; never expose Neon credentials in the browser.
+4. Continue independently: refresh PR/milestone documentation to current integrated-runtime truth.
 5. Continue research independently: M1/FAST candidate, operator risk/exposure profiles and news/event awareness remain preregistered research only and cannot silently mutate CAND-001.
 
 Performance/profitability research remains a separate gate. Demo/PAPER and LIVE authorization remain separate decisions after controllability, broker economics and execution/reconciliation safety are evidence-backed.
