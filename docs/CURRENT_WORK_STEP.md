@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2090**
-- Active whole-number step: **2091**
-- Next step after successful completion: **2092**
+- Last completed whole-number step: **2091**
+- Active whole-number step: **2092**
+- Next step after successful completion: **2093**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -30,6 +30,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2088 | Add the explicit user STOP-gate to PAPER readiness and prove PAPER cannot become ready without user authorization. | `e4de978c…`, `aca473fd…` |
 | 2089 | Split PAPER execution readiness into explicit broker order-lifecycle, broker-reconciliation and execution-protection evidence gates and prove each gate independently. | `80119bed…`, `199e6bf0…` |
 | 2090 | Add the canonical whole-number work-step ledger, make it mandatory in resume/navigation, and regression-test the pointer/audit sequence. | `72ec9641…`, `7fabecf8…`, `3b1b0bc8…`, `02aa4892…` |
+| 2091 | Produce and index an evidence-grounded PAPER-readiness gap matrix that separates reusable contracts, repository implementation gaps, external broker/host evidence and the user STOP-gate; regression-test the lane separation. | `a45d470e…`, `b4244e4d…`, `743ec5d2…` |
 
 ## Numbering rules
 
@@ -44,4 +45,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2091:** produce an evidence-grounded PAPER-readiness gap matrix that separates reusable existing contracts, repository implementation gaps, real-host/broker `WAITING_EXTERNAL` evidence, and the explicit user STOP-gate. No broker-order capability is introduced in this step.
+**Step 2092:** implement and regression-test a broker-neutral deterministic order-lifecycle evidence owner that reuses existing ExecutionIntent/client identity and lifecycle vocabulary where semantically valid, introduces no broker API, and cannot authorize PAPER/LIVE. Inspect existing paper lifecycle tests/consumers before creating the owner.
