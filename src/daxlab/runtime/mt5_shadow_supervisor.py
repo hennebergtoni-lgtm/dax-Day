@@ -2,7 +2,8 @@
 
 This module has no MetaTrader5 dependency and no process-management capability.
 It consumes credential-free Windows MT5 bundle payloads, evaluates the existing
-validated SHADOW path, and returns heartbeat/resume state. It cannot place orders.
+validated SHADOW path, and returns heartbeat/resume state plus newly produced
+NO_ORDER decisions for durable observation. It cannot place orders.
 """
 from __future__ import annotations
 
@@ -20,6 +21,7 @@ from daxlab.runtime.mt5_shadow_integration import (
 )
 from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
 from daxlab.runtime.prospective_gate import ProspectiveAuthorization
+from daxlab.runtime.shadow_observation import ShadowDecision
 
 _HEARTBEAT_SCHEMA = "DAXLAB_MT5_SHADOW_HEARTBEAT_V1"
 _FORBIDDEN_KEYS = frozenset(
@@ -31,6 +33,7 @@ _FORBIDDEN_KEYS = frozenset(
 class SupervisorCycleResult:
     heartbeat: dict[str, Any]
     resume_state: Mt5ShadowResumeState | None
+    decisions: tuple[ShadowDecision, ...] = ()
 
 
 def with_history_archive_status(
@@ -70,7 +73,7 @@ def process_mt5_shadow_cycle(
     observed_at: datetime | None = None,
     previous_bundle_payload: Mapping[str, Any] | None = None,
 ) -> SupervisorCycleResult:
-    """Validate one broker bundle and produce a credential-free NO_ORDER heartbeat."""
+    """Validate one broker bundle and produce credential-free NO_ORDER evidence."""
     now = observed_at or datetime.now(timezone.utc)
     if now.tzinfo is None:
         raise ValueError("supervisor observed_at must be timezone-aware")
@@ -124,9 +127,13 @@ def process_mt5_shadow_cycle(
     )
 
     new_resume: Mt5ShadowResumeState | None = None
+    decisions: tuple[ShadowDecision, ...] = ()
     if gate.allowed:
         if result is None or status.symbol is None:
             raise RuntimeError("allowed MT5 SHADOW gate produced no result")
+        decisions = result.decisions
+        if any(item.action != "NO_ORDER" for item in decisions):
+            raise RuntimeError("MT5 SHADOW supervisor received non-NO_ORDER decision")
         new_resume = build_mt5_shadow_resume_state(
             symbol=status.symbol,
             checkpoint=result.checkpoint,
@@ -143,7 +150,7 @@ def process_mt5_shadow_cycle(
         "latest_closed_bar_age_seconds": status.latest_closed_bar_age_seconds,
         "single_instance_lock_held": single_instance_lock_held,
         "processed_total": result.processed if result is not None else None,
-        "new_decisions": len(result.decisions) if result is not None else 0,
+        "new_decisions": len(decisions),
         "duplicates_suppressed": result.duplicates_suppressed if result is not None else 0,
         "evidence_state": result.evidence_state if result is not None else None,
         "cross_cycle_status": cross_cycle_status,
@@ -156,7 +163,11 @@ def process_mt5_shadow_cycle(
     _assert_credential_free(heartbeat)
     if new_resume is not None:
         _assert_credential_free(mt5_shadow_resume_payload(new_resume))
-    return SupervisorCycleResult(heartbeat=heartbeat, resume_state=new_resume)
+    return SupervisorCycleResult(
+        heartbeat=heartbeat,
+        resume_state=new_resume,
+        decisions=decisions,
+    )
 
 
 def load_mt5_resume_payload(payload: Mapping[str, Any]) -> Mt5ShadowResumeState:
