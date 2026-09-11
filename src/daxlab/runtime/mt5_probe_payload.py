@@ -1,7 +1,7 @@
-"""Parse serialized observations from a future Windows MT5 read-only probe.
+"""Parse serialized observations from a Windows MT5 read-only probe.
 
-The parser is intentionally dependency-free and has no order/trade API. It is
-safe to develop and test before any terminal is connected.
+The parser is dependency-free and has no order/trade API. Broker-economics fields
+are observation-only evidence; presence here never authorizes sizing or execution.
 """
 
 from __future__ import annotations
@@ -24,6 +24,21 @@ _REQUIRED = {
 }
 _OPTIONAL = {"broker_timezone"}
 _SYMBOL_REQUIRED = {"name", "digits", "point", "trade_mode"}
+_SYMBOL_OPTIONAL = {
+    "contract_size",
+    "volume_min",
+    "volume_step",
+    "volume_max",
+    "volume_limit",
+    "tick_size",
+    "tick_value",
+    "tick_value_profit",
+    "tick_value_loss",
+    "currency_profit",
+    "currency_margin",
+    "margin_initial",
+    "margin_maintenance",
+}
 
 
 def parse_mt5_probe_payload(payload: Mapping[str, Any]) -> Mt5HostObservation:
@@ -82,7 +97,7 @@ def _symbol(value: Any) -> BrokerSymbol:
     if not isinstance(value, Mapping):
         raise ValueError("each symbol must be an object")
     missing = _SYMBOL_REQUIRED - value.keys()
-    allowed = _SYMBOL_REQUIRED | {"contract_size", "volume_min", "volume_step"}
+    allowed = _SYMBOL_REQUIRED | _SYMBOL_OPTIONAL
     unknown = value.keys() - allowed
     if missing:
         raise ValueError(f"missing symbol fields: {sorted(missing)}")
@@ -108,6 +123,22 @@ def _symbol(value: Any) -> BrokerSymbol:
         contract_size=_optional_positive(value.get("contract_size"), "contract_size"),
         volume_min=_optional_positive(value.get("volume_min"), "volume_min"),
         volume_step=_optional_positive(value.get("volume_step"), "volume_step"),
+        volume_max=_optional_positive(value.get("volume_max"), "volume_max"),
+        volume_limit=_optional_nonnegative(value.get("volume_limit"), "volume_limit"),
+        tick_size=_optional_positive(value.get("tick_size"), "tick_size"),
+        tick_value=_optional_nonnegative(value.get("tick_value"), "tick_value"),
+        tick_value_profit=_optional_nonnegative(
+            value.get("tick_value_profit"), "tick_value_profit"
+        ),
+        tick_value_loss=_optional_nonnegative(
+            value.get("tick_value_loss"), "tick_value_loss"
+        ),
+        currency_profit=_optional_text(value.get("currency_profit"), "currency_profit"),
+        currency_margin=_optional_text(value.get("currency_margin"), "currency_margin"),
+        margin_initial=_optional_nonnegative(value.get("margin_initial"), "margin_initial"),
+        margin_maintenance=_optional_nonnegative(
+            value.get("margin_maintenance"), "margin_maintenance"
+        ),
     )
 
 
@@ -117,3 +148,19 @@ def _optional_positive(value: Any, field: str) -> float | None:
     if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
         raise ValueError(f"symbol {field} must be positive when supplied")
     return float(value)
+
+
+def _optional_nonnegative(value: Any, field: str) -> float | None:
+    if value is None:
+        return None
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
+        raise ValueError(f"symbol {field} must be non-negative when supplied")
+    return float(value)
+
+
+def _optional_text(value: Any, field: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"symbol {field} must be non-empty when supplied")
+    return value
