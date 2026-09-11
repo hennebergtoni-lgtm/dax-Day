@@ -3,13 +3,22 @@ from zoneinfo import ZoneInfo
 
 from daxlab.runtime.bar_identity import closed_bar_identity
 from daxlab.runtime.candidate_pipeline import Cand001PipelineState, process_cand001_candle
-from daxlab.runtime.contracts import Candle
+from daxlab.runtime.contracts import Candle, DataQualityState
 
 
 BERLIN = ZoneInfo("Europe/Berlin")
 
 
-def _bar(hour: int, minute: int, *, open_: float, high: float, low: float, close: float) -> Candle:
+def _bar(
+    hour: int,
+    minute: int,
+    *,
+    open_: float,
+    high: float,
+    low: float,
+    close: float,
+    quality: DataQualityState = DataQualityState.OK,
+) -> Candle:
     event = datetime(2026, 9, 11, hour, minute, tzinfo=BERLIN)
     return Candle(
         symbol="DE40",
@@ -24,6 +33,7 @@ def _bar(hour: int, minute: int, *, open_: float, high: float, low: float, close
         source="TEST",
         received_at=event + timedelta(minutes=5, seconds=1),
         is_closed=True,
+        quality_state=quality,
     )
 
 
@@ -60,6 +70,9 @@ def test_operator_snapshot_exposes_strategy_context_last_bar_and_freshness() -> 
     )
     assert payload["runtime"]["last_bar_close_time"] == breakout.close_time.isoformat()
     assert payload["runtime"]["freshness_seconds"] == 2.0
+    assert payload["runtime"]["health_state"] == "GREEN"
+    assert payload["runtime"]["health_source"] == "CANDIDATE_INPUT"
+    assert payload["runtime"]["events"] == []
 
 
 def test_same_closed_bar_and_observation_time_keep_runtime_identity_deterministic() -> None:
@@ -76,3 +89,45 @@ def test_same_closed_bar_and_observation_time_keep_runtime_identity_deterministi
     assert left == right
     assert left.snapshot_fingerprint == right.snapshot_fingerprint
     assert left.freshness_seconds == 3.0
+
+
+def test_duplicate_bar_is_visible_as_yellow_runtime_event() -> None:
+    candle = _bar(9, 0, open_=100, high=102, low=99, close=101)
+    first = _step(Cand001PipelineState(), candle)
+    duplicate = _step(first.state, candle)
+    runtime = duplicate.operator_snapshot.as_dict()["runtime"]
+
+    assert duplicate.signal.reason.value == "DUPLICATE_BAR"
+    assert runtime["health_state"] == "YELLOW"
+    assert runtime["health_source"] == "CANDIDATE_INPUT"
+    assert runtime["events"] == ["DUPLICATE_BAR"]
+
+
+def test_unsafe_bar_is_visible_as_red_runtime_event() -> None:
+    unsafe = _bar(
+        9,
+        0,
+        open_=100,
+        high=102,
+        low=99,
+        close=101,
+        quality=DataQualityState.GAP,
+    )
+    result = _step(Cand001PipelineState(), unsafe)
+    runtime = result.operator_snapshot.as_dict()["runtime"]
+
+    assert result.signal.reason.value == "DATA_UNSAFE"
+    assert runtime["health_state"] == "RED"
+    assert runtime["events"] == ["DATA_UNSAFE"]
+
+
+def test_out_of_order_bar_is_visible_as_red_runtime_event() -> None:
+    later = _bar(9, 5, open_=101, high=103, low=98, close=102)
+    first = _step(Cand001PipelineState(), later)
+    earlier = _bar(9, 0, open_=100, high=102, low=99, close=101)
+    result = _step(first.state, earlier)
+    runtime = result.operator_snapshot.as_dict()["runtime"]
+
+    assert result.signal.reason.value == "OUT_OF_ORDER_BAR"
+    assert runtime["health_state"] == "RED"
+    assert runtime["events"] == ["OUT_OF_ORDER_BAR"]
