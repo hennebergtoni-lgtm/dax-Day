@@ -22,9 +22,9 @@ After context loss, compaction, long interruption, or uncertainty about prior wo
 | Topic | Authoritative/current source(s) | Status / usage | Historical / secondary sources |
 |---|---|---|---|
 | Overall project state | `docs/MASTERSTAND.md` | Primary durable handover/source-of-truth below exact repo/code/evidence | Older milestone files are provenance only |
-| Context recovery | `docs/CONTEXT_RESUME_RECOVERY_POLICY.md` | Binding resume/reconciliation rules | None should override it |
+| Context recovery / continuous work | `docs/CONTEXT_RESUME_RECOVERY_POLICY.md`, `docs/WORK_CONTINUITY_PROTOCOL.md` | Binding resume/reconciliation and minimal-stop rules | None should override them |
 | Previously solved problems | `docs/PROBLEM_SOLUTION_REGISTRY.md` | Mandatory pre-design lookup for recurring technical problems | Local issue-specific docs remain evidence |
-| Step-2000 migration backlog | `docs/DAX_BOT_1X_MIGRATION_BACKLOG_STEP_2000.md` | Canonical migration/cleanup backlog until superseded by a later full audit | Older milestone plans are historical |
+| Step-2000 migration backlog | `docs/DAX_BOT_1X_MIGRATION_BACKLOG_STEP_2000.md` | Canonical migration/cleanup backlog until superseded by a later full audit; also records required Bot-1.0 closeout report and planned risk-profile control | Older milestone plans are historical |
 | DAX-BOT 1.x migration safety | `docs/DAX_BOT_1X_MIGRATION_SAFETY_GATE.md` | Binding migration constraints | Older V10/V11 reviews are context only |
 | DAX-BOT 1.x alpha acceptance | `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_GATE.md` | Current alpha acceptance/gate definition | Candidate tests/code remain executable proof |
 | Versioning / identity | `docs/NEXTGEN_BOT_VERSIONING_V1.md` | Current product/candidate/versioning contract | Legacy V-number plans are provenance only |
@@ -35,9 +35,12 @@ After context loss, compaction, long interruption, or uncertainty about prior wo
 | MT5 read-only adapter | `docs/MT5_ADAPTER_CONTRACT_V1.md`, `src/daxlab/runtime/mt5_readonly.py`, `scripts/mt5_windows_probe.py` | Current read-only host/feed boundary | Host runbooks are operational supplements |
 | Broker time/session | `docs/MT5_BROKER_SESSION_CONTRACT_V1.md` | Current broker-time interpretation contract | Diagnostic scripts/evidence provide observations |
 | Real forward SHADOW evidence | `docs/evidence/2026-09-11_forward_shadow_real_data_milestone.md` + machine-readable companion | Verified milestone only; re-read live telemetry for current state | Older heartbeats are point-in-time evidence |
-| Paper preparation/contracts | `src/daxlab/runtime/paper_contracts.py`, `docs/PAPER_PREPARATION_V10.md`, relevant `tests/test_paper_*` | Simulation contracts only; PAPER remains unauthorized | No broker adapter/live execution module is allowed by current design |
-| Paper/SHADOW promotion | `docs/SHADOW_PAPER_ACCEPTANCE_V1.md`, readiness code/tests | Gate definition; not authorization | Historical readiness docs are context only |
+| Paper preparation/contracts | `src/daxlab/runtime/paper_contracts.py`, `docs/PAPER_PREPARATION_V10.md`, relevant `tests/test_paper_*` | Simulation contracts only; broker execution is not implied | No broker adapter/live execution module is allowed by current design |
+| CAND-001 virtual lifecycle | `src/daxlab/runtime/candidate_virtual_lifecycle.py`, `tests/test_candidate_virtual_lifecycle.py`, `PSR-011` | SHADOW-only stateful Intent→later-bar→STOP/TARGET owner; reuses canonical same-bar/gap/bar-identity contracts | Paper lifecycle vocabulary alone is not an engine |
+| CAND-001 virtual outcome/costs | `src/daxlab/runtime/candidate_virtual_outcome.py`, `tests/test_candidate_virtual_outcome.py`, `PSR-012` | NEW_1X costed gross/net R bridge into existing `DatedShadowOutcome`; not claimed as V11.2 cost parity | Broker-demo evidence may later calibrate assumptions |
+| Paper/SHADOW promotion | `docs/SHADOW_PAPER_ACCEPTANCE_V1.md`, readiness code/tests | Gate definition; authorization remains separate from software existence | Historical readiness docs are context only |
 | R/cash research ledger | `src/daxlab/research/shadow_cash_ledger.py`, `tests/test_shadow_cash_ledger.py` | Simulated R→EUR research translation; not broker balance | Risk observation remains descriptive only |
+| Forward performance | `src/daxlab/research/forward_shadow_performance.py`, relevant tests | Aggregate signal/trade/R/cash evidence; remains simulation/research evidence | Weekly/rolling attribution views are downstream |
 | Web/operator surface | `docs/WEB_INTERFACE_CONTRACT_V1.md`, `src/daxlab/runtime/operator_view.py` | Preserve UI shell; runtime status must be fresh/read-only | `web/status.json` is stale for current runtime truth |
 | Architecture hygiene / LEAN | `docs/LEAN_500_STEP_AUDIT_POLICY.md`, latest full audit backlog | Mandatory every 500 steps | Older architecture audits are provenance |
 
