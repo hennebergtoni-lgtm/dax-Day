@@ -32,7 +32,7 @@ Tool/search/context failures are normally severity 1–2 unless evidence shows o
 
 A tool failure, context compaction/loss, stale resource pointer, search miss, intermediate summary or reconstructed status is NEVER by itself a valid stop condition. After recovery/reconstruction, concrete work must resume automatically unless one of the explicit stop conditions in section 4 actually applies.
 
-## 3. Automatic recovery after context/tool disruption
+## 3. Automatic recovery after context/tool/client disruption
 
 When context or a tool view is lost:
 
@@ -43,6 +43,12 @@ When context or a tool view is lost:
 5. Continue from that exact step without asking the user to repeat known information.
 
 Repository truth outranks chat recollection.
+
+Client visibility is not a permission gate. If the user backgrounds the ChatGPT app while the current turn remains active, continue the current work sequence without waiting for foreground interaction.
+
+If iOS, network loss, the app, or the platform actually suspends/terminates the active turn, no claim may be made that work continued invisibly while execution was unavailable. At the first later turn where execution is available again, automatically reconstruct repo/branch/head/CI/last VERIFIED step and resume concrete work immediately without asking for re-approval or repetition of known context.
+
+A temporary client disconnect is therefore a resume/recovery event, not a project stop condition.
 
 ## 4. The only valid stop conditions
 
@@ -66,7 +72,8 @@ Do not ask for approval merely because:
 - a harmless warning appeared;
 - the next step was already defined;
 - the work is long;
-- a different read-only tool path is needed.
+- a different read-only tool path is needed;
+- the client was temporarily backgrounded or disconnected and execution has since resumed.
 
 Intermediate reports are for operator visibility, not permission.
 
@@ -133,4 +140,4 @@ This continuity rule never overrides execution authorization or scientific gover
 
 This protocol is being followed only when progress reports are followed by continued concrete work unless a valid stop condition is explicitly identified. A status-only termination without a valid stop condition is a process defect and must not be repeated.
 
-A response that ends merely because the assistant summarized recovered context, reported a tool error, restated the next step, or reached an intermediate finding fails this acceptance criterion unless section 4 provides a real stop reason.
+A response that ends merely because the assistant summarized recovered context, reported a tool error, restated the next step, reached an intermediate finding, or resumed after a temporary client interruption fails this acceptance criterion unless section 4 provides a real stop reason.
