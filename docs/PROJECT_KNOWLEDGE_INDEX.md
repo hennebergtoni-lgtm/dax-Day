@@ -7,21 +7,23 @@ Purpose: make important project knowledge discoverable by topic so context loss 
 
 ## Mandatory resume order
 
-After context loss, compaction, long interruption, or uncertainty about prior work:
+After context loss, compaction, long interruption, uncertainty about prior work, or any explicit `weiter` / `fortsetzen` instruction:
 
-1. Pin repository, branch and exact commit SHA.
-2. Read `docs/MASTERSTAND.md` for current project truth and safety boundaries.
-3. Read this `docs/PROJECT_KNOWLEDGE_INDEX.md` to locate authoritative topic sources.
-4. Read `docs/PROBLEM_SOLUTION_REGISTRY.md` for previously solved engineering problems before designing a new fix.
-5. Read only the topic-specific authoritative files and relevant tests/consumers listed below.
-6. Re-read fresh runtime telemetry before making any current-runtime claim.
-7. Continue from the last VERIFIED step; do not redesign from chat memory.
+1. Read `docs/SESSION_EXECUTION_REFRESHER.md` first. Confirm integer-only step numbering and the no-artificial-stop rule before doing or reporting project work.
+2. Pin repository, branch and exact commit SHA.
+3. Read `docs/MASTERSTAND.md` for current project truth and safety boundaries.
+4. Read this `docs/PROJECT_KNOWLEDGE_INDEX.md` to locate authoritative topic sources.
+5. Read `docs/PROBLEM_SOLUTION_REGISTRY.md` for previously solved engineering problems before designing a new fix.
+6. Read only the topic-specific authoritative files and relevant tests/consumers listed below.
+7. Re-read fresh runtime telemetry before making any current-runtime claim.
+8. Continue from the last VERIFIED whole-number step; do not redesign from chat memory and do not introduce decimal/letter substeps.
 
 ## Knowledge map
 
 | Topic | Authoritative/current source(s) | Status / usage | Historical / secondary sources |
 |---|---|---|---|
 | Overall project state | `docs/MASTERSTAND.md` | Primary durable handover/source-of-truth below exact repo/code/evidence | Older milestone files are provenance only |
+| Session execution refresher | `docs/SESSION_EXECUTION_REFRESHER.md` | Mandatory first read on resume/continue; compact enforcement reminder for integer-only steps and no artificial stops | Detailed rules remain in `WORK_CONTINUITY_PROTOCOL.md` |
 | Context recovery / continuous work | `docs/CONTEXT_RESUME_RECOVERY_POLICY.md`, `docs/WORK_CONTINUITY_PROTOCOL.md` | Binding resume/reconciliation and minimal-stop rules | None should override them |
 | Previously solved problems | `docs/PROBLEM_SOLUTION_REGISTRY.md` | Mandatory pre-design lookup for recurring technical problems | Local issue-specific docs remain evidence |
 | Step-2000 migration backlog | `docs/DAX_BOT_1X_MIGRATION_BACKLOG_STEP_2000.md` | Canonical migration/cleanup backlog until superseded by a later full audit; also records required Bot-1.0 closeout report and planned risk-profile control | Older milestone plans are historical |
