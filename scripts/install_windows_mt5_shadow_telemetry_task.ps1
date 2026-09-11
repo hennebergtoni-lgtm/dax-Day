@@ -30,7 +30,7 @@ $principal = New-ScheduledTaskPrincipal `
 
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
     -RepetitionInterval (New-TimeSpan -Minutes $IntervalMinutes) `
-    -RepetitionDuration ([TimeSpan]::MaxValue)
+    -RepetitionDuration (New-TimeSpan -Days 3650)
 
 $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$wrapper`" -StateDir `"$StateDir`""
 $action = New-ScheduledTaskAction `
