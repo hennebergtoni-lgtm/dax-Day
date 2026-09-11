@@ -23,11 +23,36 @@ It is NOT evidence that V11.2 is a good or profitable bot and it is not the arch
 
 ## 2. New product lineage
 
-The actual bot product is versioned independently:
+The actual bot product is versioned independently.
 
+The first generation begins with:
 - `DAX-BOT 1.0-alpha` — first intentional next-generation bot core under construction;
-- `DAX-BOT 1.0-beta` — only after deterministic historical/replay parity and controlled forward PAPER_SIM evidence;
-- `DAX-BOT 1.0` — only after explicitly defined validation gates are passed.
+- `DAX-BOT 1.0-beta` — only after deterministic replay/parity and controlled forward PAPER_SIM evidence;
+- `DAX-BOT 1.0` — first stable, explicitly validated generation-1 release.
+
+After `1.0`, improvements continue inside the same generation as `1.1`, `1.2`, `1.3`, `1.4`, `1.5`, and so on. Versions do not have to be numerically consecutive if an intermediate planned release is abandoned or never promoted.
+
+A minor `1.x` release is appropriate when the bot remains recognizably the same generation and core architecture while gaining validated improvements such as:
+- a promoted strategy/filter candidate;
+- improved decision explanations or parameter visibility;
+- stronger observability;
+- safer recovery/reconciliation;
+- better PAPER_SIM behavior;
+- performance/runtime improvements;
+- improved configuration or experiment controls;
+- carefully tested changes to entry/exit/risk logic.
+
+`DAX-BOT 2.0` is reserved for a genuine second generation. It requires an explicit major-version decision based on accumulated evidence from the 1.x line, for example a materially different strategy architecture, state model, data/event model, execution model, or other change that would make silent in-place compatibility unsafe or misleading.
+
+A major version is never triggered merely by elapsed time, number of commits, or marketing preference.
+
+Every release must retain a reproducible link to:
+- parent bot version;
+- strategy candidate/configuration;
+- config fingerprint;
+- code commit SHA;
+- data/evidence version where relevant;
+- validation status and known limitations.
 
 A version label never overrides status classification. PLANNED / IMPLEMENTED / VERIFIED remain separate evidence states.
 
@@ -84,7 +109,8 @@ Reuse proven project components where semantics match:
 - SHADOW observability and Neon telemetry patterns;
 - existing paper execution-intent / outcome / ledger contracts;
 - restart/recovery and reconciliation principles;
-- historical/OOS evidence and multiple-testing governance.
+- historical/OOS evidence and multiple-testing governance;
+- existing operator/Web observability surfaces where they can be safely extended.
 
 Do not preserve complexity merely because it already exists. Every reused component must justify its place in the DAX-BOT 1.0-alpha hot path.
 
@@ -149,3 +175,17 @@ Build the smallest end-to-end DAX-BOT 1.0-alpha vertical slice:
 8. keep broker execution impossible by construction.
 
 Only after this vertical slice is stable do we expand strategy sophistication or optimize performance.
+
+## 11. Compatibility before migration
+
+The next-generation line must not destroy working project capabilities merely to obtain a cleaner version number.
+
+Before any existing component is replaced or removed, it must be classified through the migration safety gate as one of:
+- PRESERVE — existing component remains authoritative;
+- REUSE — used directly by DAX-BOT;
+- ADAPT — retained behind a thin compatibility adapter;
+- RESEARCH_ONLY — retained outside the bot hot path;
+- REPLACE_AFTER_PARITY — replacement permitted only after evidence-equivalent tests pass;
+- RETIRE_AFTER_AUDIT — removable only after consumers/tests/CI/runtime contract prove it is obsolete.
+
+No Windows/MT5 host change is required merely because the product version changes. Host migration occurs only after repository tests, replay tests and PAPER_SIM gates prove the new path and an explicit host-change step is authorized.
