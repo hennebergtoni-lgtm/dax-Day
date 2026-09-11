@@ -40,6 +40,8 @@ class RiskProfileBudgetSpec:
             raise ValueError("risk profile sizing research version mismatch")
         if not isinstance(self.currency, str) or not self.currency.strip():
             raise ValueError("currency must be non-empty")
+        if self.currency != self.currency.strip():
+            raise ValueError("currency cannot contain outer whitespace")
         values = (
             self.base_cash_risk,
             self.boost_cash_risk,
@@ -72,6 +74,7 @@ class RiskProfileBudgetSpec:
 class RiskProfileSizingResearchResult:
     profile: RiskProfile
     policy_version: str
+    risk_currency: str
     requested_cash_risk: float
     hard_cap_cash_risk: float
     estimate: BrokerRiskSizingEstimate
@@ -87,8 +90,8 @@ class RiskProfileSizingResearchResult:
             raise ValueError("requested cash risk exceeds hard cap")
         if self.estimate.risk_budget_cash != self.requested_cash_risk:
             raise ValueError("sizing estimate is not bound to requested cash risk")
-        if self.estimate.risk_currency != self.estimate.risk_currency.strip():
-            raise ValueError("sizing estimate currency cannot contain outer whitespace")
+        if self.estimate.risk_currency != self.risk_currency:
+            raise ValueError("sizing estimate currency is not bound to profile currency")
 
 
 def estimate_profile_volume(
@@ -109,6 +112,7 @@ def estimate_profile_volume(
     return RiskProfileSizingResearchResult(
         profile=profile,
         policy_version=RISK_PROFILE_SIZING_RESEARCH_VERSION,
+        risk_currency=spec.currency,
         requested_cash_risk=requested,
         hard_cap_cash_risk=spec.hard_cap_cash_risk,
         estimate=estimate,
