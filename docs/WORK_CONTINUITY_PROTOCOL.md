@@ -52,7 +52,7 @@ A temporary client disconnect is therefore a resume/recovery event, not a projec
 
 ## 4. The only valid stop conditions
 
-A work sequence may stop only for one of these reasons:
+A dependency lane may stop only for one of these reasons:
 
 1. A real milestone has been completed and the next phase requires a genuine project decision.
 2. A concrete user action is technically necessary and cannot be performed through the available tools.
@@ -60,7 +60,25 @@ A work sequence may stop only for one of these reasons:
 4. A safety/security/execution-authorization boundary requires a stop.
 5. Continuing would violate a binding project rule or corrupt VERIFIED evidence.
 
-If none of these conditions is true, continue working.
+### 4A. Lane blocker versus global project stop
+
+A stop condition applies first to the dependency lane that actually needs it. It is NOT automatically a global project stop.
+
+Examples of lane-local blockers:
+- a real Windows/MT5 host test is required;
+- the user must perform a physical/local action unavailable to tools;
+- a future market session or external event must occur before evidence can exist;
+- one unavailable credential/provider blocks one optional integration.
+
+When a lane is blocked:
+1. mark that exact step/dependency `WAITING_EXTERNAL`, `BLOCKED`, or the project's appropriate status;
+2. preserve what evidence/user action will unblock it;
+3. immediately inspect the backlog/gates for the next independent safe work unit;
+4. continue with the next whole-number step without asking for permission.
+
+A global work sequence may stop only when a valid stop condition exists AND no useful independent safe work unit remains, or when a project-wide safety/governance boundary itself forbids further work.
+
+If independent safe work remains, finalizing because one lane is waiting is a process defect.
 
 ## 5. No artificial approval gates
 
@@ -73,7 +91,8 @@ Do not ask for approval merely because:
 - the next step was already defined;
 - the work is long;
 - a different read-only tool path is needed;
-- the client was temporarily backgrounded or disconnected and execution has since resumed.
+- the client was temporarily backgrounded or disconnected and execution has since resumed;
+- one host/user/external dependency lane is waiting while independent work remains.
 
 Intermediate reports are for operator visibility, not permission.
 
@@ -93,7 +112,7 @@ Avoid re-solving known problems. Avoid unnecessary stop/start cycles. Avoid aski
 
 ## 8. Visibility rule
 
-For long work blocks, keep the user informed with concise numbered updates, but continue execution after each update unless section 4 applies.
+For long work blocks, keep the user informed with concise numbered updates, but continue execution after each update unless section 4 applies globally under section 4A.
 
 Preferred visible form:
 
@@ -138,6 +157,6 @@ This continuity rule never overrides execution authorization or scientific gover
 
 ## 11. Operational acceptance criterion
 
-This protocol is being followed only when progress reports are followed by continued concrete work unless a valid stop condition is explicitly identified. A status-only termination without a valid stop condition is a process defect and must not be repeated.
+This protocol is being followed only when progress reports are followed by continued concrete work unless a valid global stop condition is explicitly identified. A status-only termination without a valid global stop condition is a process defect and must not be repeated.
 
-A response that ends merely because the assistant summarized recovered context, reported a tool error, restated the next step, reached an intermediate finding, or resumed after a temporary client interruption fails this acceptance criterion unless section 4 provides a real stop reason.
+A response that ends merely because the assistant summarized recovered context, reported a tool error, restated the next step, reached an intermediate finding, resumed after a temporary client interruption, or encountered one externally blocked lane fails this acceptance criterion unless section 4A shows that no independent safe work remains.
