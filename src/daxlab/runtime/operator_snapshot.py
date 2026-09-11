@@ -27,6 +27,9 @@ class OperatorSnapshot:
     core_version: str
     candidate_id: str
     config_fingerprint: str
+    regime: str
+    structure: str
+    setup: str
     signal_direction: str
     signal_reason: str
     admission_status: str
@@ -38,6 +41,9 @@ class OperatorSnapshot:
     proposed_stop: float | None
     proposed_target: float | None
     proposed_reward_risk: float | None
+    last_bar_id: str | None
+    last_bar_close_time: datetime | None
+    freshness_seconds: float | None
     virtual_lifecycle_id: str | None
     virtual_status: str | None
     virtual_side: str | None
@@ -59,9 +65,32 @@ class OperatorSnapshot:
             raise ValueError("operator snapshot schema mismatch")
         if self.generated_at.tzinfo is None:
             raise ValueError("generated_at must be timezone-aware")
-        for value in (self.virtual_filled_at, self.virtual_closed_at):
+        for value in (
+            self.last_bar_close_time,
+            self.virtual_filled_at,
+            self.virtual_closed_at,
+        ):
             if value is not None and value.tzinfo is None:
-                raise ValueError("virtual lifecycle timestamps must be timezone-aware")
+                raise ValueError("operator snapshot timestamps must be timezone-aware")
+        runtime_values = (
+            self.last_bar_id,
+            self.last_bar_close_time,
+            self.freshness_seconds,
+        )
+        if any(value is not None for value in runtime_values) and any(
+            value is None for value in runtime_values
+        ):
+            raise ValueError("operator runtime bar context must be complete")
+        if self.last_bar_id is not None:
+            if len(self.last_bar_id) != 64:
+                raise ValueError("last_bar_id must be sha256 hex")
+            int(self.last_bar_id, 16)
+            assert self.last_bar_close_time is not None
+            assert self.freshness_seconds is not None
+            if self.freshness_seconds < 0:
+                raise ValueError("freshness_seconds cannot be negative")
+            if self.generated_at < self.last_bar_close_time:
+                raise ValueError("operator snapshot cannot precede last closed bar")
         if self.execution_capability != "NONE":
             raise ValueError("operator snapshot cannot carry execution capability")
         if self.order_execution_enabled is not False:
@@ -89,6 +118,11 @@ class OperatorSnapshot:
             "core_version": self.core_version,
             "candidate_id": self.candidate_id,
             "config_fingerprint": self.config_fingerprint,
+            "strategy": {
+                "regime": self.regime,
+                "structure": self.structure,
+                "setup": self.setup,
+            },
             "signal": {
                 "direction": self.signal_direction,
                 "reason": self.signal_reason,
@@ -105,6 +139,15 @@ class OperatorSnapshot:
                 "stop": self.proposed_stop,
                 "target": self.proposed_target,
                 "reward_risk": self.proposed_reward_risk,
+            },
+            "runtime": {
+                "last_bar_id": self.last_bar_id,
+                "last_bar_close_time": (
+                    self.last_bar_close_time.isoformat()
+                    if self.last_bar_close_time is not None
+                    else None
+                ),
+                "freshness_seconds": self.freshness_seconds,
             },
             "virtual_position": {
                 "lifecycle_id": self.virtual_lifecycle_id,
@@ -146,6 +189,9 @@ def build_operator_snapshot(
     proposed_trade_plan: Cand001TradePlan | None,
     admission: Cand001AdmissionResult,
     decision: DecisionRecord,
+    last_bar_id: str | None = None,
+    last_bar_close_time: datetime | None = None,
+    freshness_seconds: float | None = None,
     lifecycle: Cand001VirtualLifecycleState | None = None,
     outcome: Cand001VirtualOutcomeEvidence | None = None,
 ) -> OperatorSnapshot:
@@ -172,6 +218,12 @@ def build_operator_snapshot(
     else:
         entry = stop = target = reward_risk = None
 
+    runtime_fields = _runtime_fields(
+        generated_at=generated_at,
+        last_bar_id=last_bar_id,
+        last_bar_close_time=last_bar_close_time,
+        freshness_seconds=freshness_seconds,
+    )
     lifecycle_fields = _lifecycle_fields(
         generated_at=generated_at,
         decision=decision,
@@ -190,6 +242,9 @@ def build_operator_snapshot(
         "core_version": identity.core_version,
         "candidate_id": identity.candidate_id,
         "config_fingerprint": identity.config_fingerprint,
+        "regime": decision.regime,
+        "structure": decision.structure,
+        "setup": decision.setup,
         "signal_direction": signal.direction.value,
         "signal_reason": signal.reason.value,
         "admission_status": admission.status.value,
@@ -201,6 +256,7 @@ def build_operator_snapshot(
         "proposed_stop": stop,
         "proposed_target": target,
         "proposed_reward_risk": reward_risk,
+        **runtime_fields,
         **lifecycle_fields,
         **outcome_fields,
         "execution_capability": "NONE",
@@ -210,6 +266,41 @@ def build_operator_snapshot(
         **payload,
         snapshot_fingerprint=stable_fingerprint(payload),
     )
+
+
+def _runtime_fields(
+    *,
+    generated_at: datetime,
+    last_bar_id: str | None,
+    last_bar_close_time: datetime | None,
+    freshness_seconds: float | None,
+) -> dict[str, object]:
+    values = (last_bar_id, last_bar_close_time, freshness_seconds)
+    if all(value is None for value in values):
+        return {
+            "last_bar_id": None,
+            "last_bar_close_time": None,
+            "freshness_seconds": None,
+        }
+    if any(value is None for value in values):
+        raise ValueError("operator runtime bar context must be complete")
+    assert last_bar_id is not None
+    assert last_bar_close_time is not None
+    assert freshness_seconds is not None
+    if len(last_bar_id) != 64:
+        raise ValueError("last_bar_id must be sha256 hex")
+    int(last_bar_id, 16)
+    if last_bar_close_time.tzinfo is None:
+        raise ValueError("last_bar_close_time must be timezone-aware")
+    if freshness_seconds < 0:
+        raise ValueError("freshness_seconds cannot be negative")
+    if generated_at < last_bar_close_time:
+        raise ValueError("operator snapshot cannot precede last closed bar")
+    return {
+        "last_bar_id": last_bar_id,
+        "last_bar_close_time": last_bar_close_time,
+        "freshness_seconds": float(freshness_seconds),
+    }
 
 
 def _lifecycle_fields(
