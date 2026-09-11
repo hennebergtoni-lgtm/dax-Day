@@ -131,30 +131,20 @@ Each durable entry contains:
 
 ---
 
-## PSR-007 — ExecutionIntent quantity has identity semantics but no verified broker-lot semantics yet
+## PSR-007 — ExecutionIntent quantity needed explicit simulation semantics
 
-**Status:** OPEN / PARTIALLY VERIFIED — CURRENT STEP 2021
-**Component:** paper contracts / sizing / symbol economics
+**Status:** VERIFIED / RESOLVED FOR SIMULATION
+**Component:** paper contracts / CAND-001 sizing
 
-**Problem:** `ExecutionIntent` requires positive `quantity`, and tests often instantiate `quantity=1.0`, which could be mistakenly treated as a verified DE40 lot/contract sizing rule.
+**Problem:** `ExecutionIntent` requires positive `quantity`, and tests often instantiated `quantity=1.0`, which could be mistakenly treated as a verified DE40 lot/contract sizing rule.
 
-**Root cause:** The paper contract defines deterministic intent identity and validation but does not define the economic unit of `quantity`. Existing R/cash simulation operates separately from intent quantity.
+**Root cause:** The existing Paper contract defined deterministic intent identity and validation but did not define the economic unit of `quantity`. Existing R/cash simulation operated separately from intent quantity.
 
-**Known verified facts:**
-- `quantity` is required and positive;
-- quantity is bound into deterministic `client_order_id` identity;
-- changing 1.0 -> 2.0 changes intent identity;
-- `RunManifest` fingerprint is also bound into intent identity;
-- paper contracts are `SIMULATION_ONLY` and PAPER remains unauthorized;
-- the shadow cash ledger translates R outcomes to simulated EUR using `fixed_risk_eur`; it does not consume `ExecutionIntent.quantity`;
-- verified DE40 host facts include digits=2, point=0.01, contract_size=1 and profit currency EUR;
-- MT5 schema/probe can capture `volume_min` and `volume_step`, but current canonical masterstand does not establish those values as verified broker sizing inputs.
+**Accepted solution:** Introduce `Cand001SimulationSizingPolicy` with exactly `quantity=1.0` and semantic `NORMALIZED_SIMULATION_UNIT`. The policy explicitly sets `broker_volume_semantics=False` and `account_risk_semantics=False`. The value 1.0 is therefore a newly defined normalized simulation unit, not an inferred broker lot or risk amount. The policy has its own deterministic fingerprint and is bound into the `RunManifest` config used by the CAND-001 intent adapter.
 
-**Current decision:** Do not assume `quantity=1.0` means one broker lot/contract. Do not create broker-like sizing until min/step semantics and the intended simulation unit are explicit. The next valid design target is a minimal simulation-only sizing policy with its unit named explicitly, followed by a narrow DecisionRecord/TradePlan -> existing ExecutionIntent bridge.
+**Proof/evidence:** `src/daxlab/runtime/candidate_sizing.py`; `tests/test_candidate_sizing.py`; `src/daxlab/runtime/paper_contracts.py`; `tests/test_paper_quantity_identity.py`; product CI on PR #109 after the sizing implementation.
 
-**Proof/evidence:** `src/daxlab/runtime/paper_contracts.py`; `tests/test_paper_contracts.py`; `tests/test_paper_quantity_identity.py`; `tests/test_paper_contract_validation.py`; `tests/test_paper_run_identity_binding.py`; `tests/test_shadow_cash_ledger.py`; `src/daxlab/runtime/mt5_readonly.py`; `scripts/mt5_windows_probe.py`; `MASTERSTAND.md`.
-
-**Reuse rule:** Example values in tests are not economic policy. Never infer broker sizing semantics from fixtures alone.
+**Reuse rule:** Example values in tests are not economic policy. Any quantity used in an execution/simulation contract must have an explicit unit/semantic and provenance. Do not reinterpret `NORMALIZED_SIMULATION_UNIT` as broker volume.
 
 ---
 
@@ -172,6 +162,40 @@ Each durable entry contains:
 **Proof/evidence:** `docs/PUBLIC_DONOR_MAP_V4.md`; `docs/PUBLIC_DONOR_RESCAN_V5.md`; `docs/OPEN_SOURCE_AUDIT.md`; `docs/PROJECT_KNOWLEDGE_INDEX.md`.
 
 **Reuse rule:** Before scanning a donor again, review what we already learned and identify the genuinely new question. Do not repeatedly rediscover the same architecture lesson.
+
+---
+
+## PSR-009 — Broker sizing remains a separate evidence-gated problem
+
+**Status:** OPEN / NOT REQUIRED FOR CURRENT SHADOW SIMULATION
+**Component:** broker economics / future Paper-Live sizing
+
+**Problem:** A normalized simulation unit cannot safely be converted into a broker order quantity without explicit broker volume constraints and an approved economic/risk policy.
+
+**Root cause:** Current verified DE40 evidence establishes digits=2, point=0.01, contract_size=1 and profit currency EUR, while the current canonical project state does not establish `volume_min` and `volume_step` as verified sizing inputs. There is also no authorized account-risk sizing rule for PAPER/LIVE.
+
+**Current decision:** Keep broker sizing completely outside the current SHADOW-only intent adapter. Before any future broker-like sizing, verify symbol volume constraints from the read-only MT5 probe, define the unit conversion, define approved risk/capital semantics, and bind all of those assumptions into versioned config/evidence. PAPER and LIVE remain unauthorized.
+
+**Proof/evidence:** `src/daxlab/runtime/mt5_readonly.py`; `scripts/mt5_windows_probe.py`; `docs/MASTERSTAND.md`; `src/daxlab/runtime/candidate_sizing.py`.
+
+**Reuse rule:** Never derive broker lots/contracts from simulation quantity by convention. Broker sizing requires its own explicit evidence and authorization gate.
+
+---
+
+## PSR-010 — Candidate strategy core and simulation intent boundary must stay separate
+
+**Status:** VERIFIED / ARCHITECTURE DECISION
+**Component:** DAX-BOT 1.x runtime boundaries
+
+**Problem:** Mapping an admitted CAND-001 decision into the existing `ExecutionIntent` contract could accidentally pull Paper dependencies into the pure candidate hot path or appear to authorize PAPER.
+
+**Root cause:** Strategy and simulation/execution contracts are adjacent in the event chain but have different dependency and authorization boundaries.
+
+**Accepted solution:** Keep `candidate_config/signal/trade_plan/admission/decision/sizing/pipeline` pure and Paper-free. Place the mapping in the outer `candidate_execution_intent.py` adapter. The current adapter accepts only `RuntimeMode.SHADOW`, requires `FinalAction.TRADE`, verifies plan/decision provenance, and requires a RunManifest whose config fingerprint binds both Candidate config and sizing policy. It creates the existing `ExecutionIntent` only; it creates no broker adapter/order capability.
+
+**Proof/evidence:** `src/daxlab/runtime/candidate_execution_intent.py`; `tests/test_candidate_execution_intent.py`; `tests/test_candidate_hot_path_boundary.py`; current `dax-bot-1x-ci`.
+
+**Reuse rule:** Future PAPER authorization must change the outer boundary explicitly; never loosen the pure candidate core or infer authorization from the existence of an ExecutionIntent.
 
 ---
 
