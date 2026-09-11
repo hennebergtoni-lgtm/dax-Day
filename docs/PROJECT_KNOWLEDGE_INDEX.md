@@ -13,7 +13,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 2. Pin repository, branch and exact commit SHA.
 3. Read `docs/MASTERSTAND.md` for current project truth and safety boundaries.
 4. Read this `docs/PROJECT_KNOWLEDGE_INDEX.md` to locate authoritative topic sources.
-5. Read `docs/PROBLEM_SOLUTION_REGISTRY.md` for previously solved engineering problems before designing a new fix.
+5. Read `docs/PROBLEM_SOLUTION_REGISTRY.md` and `docs/PROBLEM_SOLUTION_REGISTRY_ADDENDUM_V1.md` for previously solved engineering problems before designing a new fix.
 6. Read only the topic-specific authoritative files and relevant tests/consumers listed below.
 7. Re-read fresh runtime telemetry before making any current-runtime claim.
 8. Continue from the last VERIFIED whole-number step; do not redesign from chat memory and do not introduce decimal/letter substeps.
@@ -25,7 +25,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 | Overall project state | `docs/MASTERSTAND.md` | Primary durable handover/source-of-truth below exact repo/code/evidence | Older milestone files are provenance only |
 | Session execution refresher | `docs/SESSION_EXECUTION_REFRESHER.md` | Mandatory first read on resume/continue; compact enforcement reminder for integer-only steps and no artificial stops | Detailed rules remain in `WORK_CONTINUITY_PROTOCOL.md` |
 | Context recovery / continuous work | `docs/CONTEXT_RESUME_RECOVERY_POLICY.md`, `docs/WORK_CONTINUITY_PROTOCOL.md` | Binding resume/reconciliation and minimal-stop rules, including lane-blocker vs global-stop handling | None should override them |
-| Previously solved problems | `docs/PROBLEM_SOLUTION_REGISTRY.md` | Mandatory pre-design lookup for recurring technical problems | Local issue-specific docs remain evidence |
+| Previously solved problems | `docs/PROBLEM_SOLUTION_REGISTRY.md`, `docs/PROBLEM_SOLUTION_REGISTRY_ADDENDUM_V1.md` | Mandatory pre-design lookup; addendum continues PSR numbering and includes timeframe/causal-identity/lane-stop fixes | Local issue-specific docs remain evidence |
 | Step-2000 migration backlog | `docs/DAX_BOT_1X_MIGRATION_BACKLOG_STEP_2000.md` | Canonical migration/cleanup backlog until superseded by a later full audit; also records required Bot-1.0 closeout report and planned risk-profile control | Older milestone plans are historical |
 | DAX-BOT 1.x migration safety | `docs/DAX_BOT_1X_MIGRATION_SAFETY_GATE.md` | Binding migration constraints | Older V10/V11 reviews are context only |
 | DAX-BOT 1.x alpha acceptance | `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_GATE.md`, `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_STATUS.md` | Current gate plus current evidence/status; real Windows-host Candidate verification is a WAITING_EXTERNAL lane | Candidate tests/code remain executable proof |
@@ -40,7 +40,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 | Recovery architecture | `docs/RECOVERY_CANONICALIZATION_AUDIT_V1.md`, `src/daxlab/runtime/recovery_bundle.py` | `recovery_bundle.py` is canonical material-run recovery; `recovery.py` is legacy/retire candidate | Separate runtime/replay restart state remains distinct |
 | MT5 read-only adapter | `docs/MT5_ADAPTER_CONTRACT_V1.md`, `src/daxlab/runtime/mt5_readonly.py`, `scripts/mt5_windows_probe.py` | Current read-only host/feed boundary | Host runbooks are operational supplements |
 | CAND-001 Windows SHADOW host verification | `docs/CAND001_WINDOWS_SHADOW_DEPLOYMENT_RUNBOOK_V1.md`, `scripts/mt5_shadow_supervisor.py`, `src/daxlab/runtime/candidate_shadow_host_cycle.py` | IMPLEMENTED + CI-verified repository integration; real Windows/MT5 host verification is `WAITING_EXTERNAL` | Existing Windows preflight/runtime scripts remain host owners |
-| CAND-001 operator telemetry | `docs/CAND001_OPERATOR_TELEMETRY_V1.md`, `src/daxlab/runtime/operator_snapshot.py`, `src/daxlab/runtime/candidate_operator_telemetry.py`, `scripts/export_mt5_shadow_telemetry.py`, migrations `0008`/`0009` | Fresh read-only Candidate runtime source: local snapshot -> validated append-only Neon telemetry -> `cand001_operator_current` view; no browser credentials/control path | Static `web/status.json` remains stable evidence, not current runtime truth |
+| CAND-001 operator telemetry | `docs/CAND001_OPERATOR_TELEMETRY_V1.md`, `src/daxlab/runtime/operator_snapshot.py`, `src/daxlab/runtime/candidate_operator_telemetry.py`, `scripts/export_mt5_shadow_telemetry.py`, migrations `0008`/`0009` | Fresh read-only Candidate runtime source: local snapshot -> validated append-only Neon telemetry -> `cand001_operator_current` view; no browser credentials/control path | Static `web/status.json` is versioned evidence only, never current runtime truth |
 | Broker time/session | `docs/MT5_BROKER_SESSION_CONTRACT_V1.md` | Current broker-time interpretation contract | Diagnostic scripts/evidence provide observations |
 | Real forward SHADOW evidence | `docs/evidence/2026-09-11_forward_shadow_real_data_milestone.md` + machine-readable companion | Verified milestone only; re-read live telemetry for current state | Older heartbeats are point-in-time evidence |
 | Paper preparation/contracts | `src/daxlab/runtime/paper_contracts.py`, `docs/PAPER_PREPARATION_V10.md`, relevant `tests/test_paper_*` | Simulation contracts only; broker execution is not implied | No broker adapter/live execution module is allowed by current design |
@@ -49,7 +49,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 | Paper/SHADOW promotion | `docs/SHADOW_PAPER_ACCEPTANCE_V1.md`, readiness code/tests | Gate definition; authorization remains separate from software existence | Historical readiness docs are context only |
 | R/cash research ledger | `src/daxlab/research/shadow_cash_ledger.py`, `tests/test_shadow_cash_ledger.py` | Simulated R→EUR research translation; not broker balance | Risk observation remains descriptive only |
 | Forward performance | `src/daxlab/research/forward_shadow_performance.py`, relevant tests | Aggregate signal/trade/R/cash evidence; remains simulation/research evidence | Weekly/rolling attribution views are downstream |
-| Web/operator surface | `docs/WEB_INTERFACE_CONTRACT_V1.md`, `src/daxlab/runtime/operator_snapshot.py`, `docs/CAND001_OPERATOR_TELEMETRY_V1.md` | Preserve read-only UI shell; fresh runtime source is separate Candidate telemetry, not static GitHub status | `web/status.json` remains stale/static for current runtime truth |
+| Web/operator surface | `docs/WEB_INTERFACE_CONTRACT_V1.md`, `src/daxlab/runtime/operator_snapshot.py`, `docs/CAND001_OPERATOR_TELEMETRY_V1.md`, `web/status.json` | Static dashboard explicitly uses `DAXLAB_WEB_STATIC_STATUS_V2`; current runtime source is separate Candidate telemetry and browser endpoint remains a later safe-backend task | Static V1 runtime/pre-host assertions are superseded |
 | Architecture hygiene / LEAN | `docs/LEAN_500_STEP_AUDIT_POLICY.md`, latest full audit backlog | Mandatory every 500 steps | Older architecture audits are provenance |
 
 ## Public donor precedence
@@ -69,7 +69,7 @@ A public donor never changes VERIFIED DAX evidence. It may contribute architectu
 Before creating a new implementation or saying a capability/test is missing:
 1. locate the authoritative component file at the pinned SHA;
 2. enumerate its existing tests and consumers from authoritative repository contents;
-3. check `PROBLEM_SOLUTION_REGISTRY.md` for an earlier failure/fix in that component;
+3. check `PROBLEM_SOLUTION_REGISTRY.md` and its binding addendum for an earlier failure/fix in that component;
 4. only then design a new test, adapter or module.
 
 Zero code-search hits are never absence proof.
