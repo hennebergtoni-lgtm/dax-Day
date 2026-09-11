@@ -55,3 +55,11 @@ def test_telemetry_task_supports_explicit_python_and_persisted_user_secret() -> 
     assert '-PythonExecutable `"$PythonExecutable`"' in installer
     assert "GetEnvironmentVariable('NEON_DATABASE_URL', 'User')" in installer
     assert "GetEnvironmentVariable('NEON_DATABASE_URL', 'User')" in wrapper
+
+
+def test_telemetry_wrapper_pins_imports_to_current_repo_src() -> None:
+    wrapper = _read("windows_mt5_shadow_telemetry_export.ps1")
+    assert "$repoSrc = Join-Path $repoRoot 'src'" in wrapper
+    assert '$env:PYTHONPATH = "$repoSrc;$env:PYTHONPATH"' in wrapper
+    assert "$env:PYTHONPATH = $repoSrc" in wrapper
+    assert 'Write-Host "RepoSrc: $repoSrc"' in wrapper
