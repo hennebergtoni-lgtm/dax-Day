@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,9 +17,16 @@ def _problem_solution_entries(registry: str) -> list[str]:
     ]
 
 
+def _step_value(text: str, label: str) -> int:
+    match = re.search(rf"^- {re.escape(label)}: \*\*(\d+)\*\*$", text, re.MULTILINE)
+    assert match, f"missing integer work-step pointer: {label}"
+    return int(match.group(1))
+
+
 def test_canonical_engineering_memory_documents_exist() -> None:
     assert (DOCS / "PROJECT_KNOWLEDGE_INDEX.md").is_file()
     assert (DOCS / "PROBLEM_SOLUTION_REGISTRY.md").is_file()
+    assert (DOCS / "CURRENT_WORK_STEP.md").is_file()
 
 
 def test_resume_policy_requires_engineering_memory_lookup() -> None:
@@ -27,6 +35,30 @@ def test_resume_policy_requires_engineering_memory_lookup() -> None:
     assert "docs/PROBLEM_SOLUTION_REGISTRY.md" in policy
     assert "severity 1–2/5" in policy
     assert "recover internally and continue" in policy
+
+
+def test_resume_navigation_requires_canonical_step_pointer() -> None:
+    refresher = _read("SESSION_EXECUTION_REFRESHER.md")
+    index = _read("PROJECT_KNOWLEDGE_INDEX.md")
+    for text in (refresher, index):
+        assert "docs/CURRENT_WORK_STEP.md" in text
+    assert "chat memory or raw commit count" in refresher
+    assert "Current work-step numbering" in index
+
+
+def test_current_step_pointer_is_integer_sequential_and_keeps_500_audit() -> None:
+    ledger = _read("CURRENT_WORK_STEP.md")
+    last_completed = _step_value(ledger, "Last completed whole-number step")
+    active = _step_value(ledger, "Active whole-number step")
+    next_step = _step_value(ledger, "Next step after successful completion")
+    audit = _step_value(ledger, "Next mandatory 500-step full audit")
+
+    assert active == last_completed + 1
+    assert next_step == active + 1
+    assert audit == 2500
+    assert "Decimal or letter step IDs: **PROHIBITED**" in ledger
+    assert "2081" in ledger and "2089" in ledger
+    assert "reconstruction anchor `199e6bf073da1a717839b37e70a314f203e9ffa4`" in ledger
 
 
 def test_knowledge_index_maps_core_reuse_topics() -> None:
