@@ -102,11 +102,21 @@ Official project work uses one continuous integer sequence only:
 
 Do not introduce official decimal, letter or nested step numbers such as `2024.1`, `2024.3p`, `2024a` or similar. Such subdivisions distort the 500-step audit cadence and make milestone accounting ambiguous.
 
-If a step contains several technical checks, they may be described as internal checklist items, bullets or checks A/B/C inside that one numbered step, but they do not consume or create additional official step numbers.
+A step represents one independent concrete work unit or one tightly coupled verification unit. When that unit is finished, the next independent implementation, documentation change, adapter, test package, audit action or repository modification consumes the next integer step.
+
+Several inseparable checks may stay inside the same step only when they verify the same concrete change and would be misleading as separate project work units. Do not use one step as a container for many distinct deliverables merely to avoid nested numbering.
+
+Examples:
+- implement one lifecycle module + its immediate direct regression check: may remain one tightly coupled step;
+- then update the durable problem registry: next integer step;
+- then add a separate forward-performance adapter: next integer step;
+- then build a distinct end-to-end integration test package: next integer step.
+
+The objective is a meaningful, approximately uniform work counter. Both excessive subdivision and excessive bundling are defects because either one distorts the 500-step audit cadence.
 
 The 500-step audit cadence is measured only by the integer sequence. Therefore, after the completed STEP 2000 audit, the next full audit remains STEP 2500.
 
-If an assistant previously introduced decimal/letter substeps, normalize the continuation to the next unused integer step rather than preserving the accidental subdivision scheme.
+If an assistant previously introduced decimal/letter substeps or over-bundled several independent work units into one integer, do not rewrite historical repository evidence or renumber committed history. Correct prospectively by continuing with the next unused integer and applying this granularity rule consistently.
 
 ## 10. Project safety remains unchanged
 
