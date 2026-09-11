@@ -19,11 +19,13 @@ from daxlab.runtime.candidate_decision import build_cand001_decision
 from daxlab.runtime.candidate_signal import (
     Cand001Signal,
     Cand001SignalState,
+    SignalReason,
     transition_cand001,
 )
 from daxlab.runtime.candidate_trade_plan import Cand001TradePlan, build_cand001_trade_plan
 from daxlab.runtime.contracts import Candle
 from daxlab.runtime.decision import DecisionRecord
+from daxlab.runtime.health import HealthState
 from daxlab.runtime.operator_snapshot import OperatorSnapshot, build_operator_snapshot
 
 
@@ -71,6 +73,7 @@ def process_cand001_candle(
         timeframe=candle.timeframe,
         close_time=candle.close_time,
     )
+    health_state, runtime_events = _candidate_runtime_health(transition.signal.reason)
     snapshot = build_operator_snapshot(
         generated_at=observed_at,
         config=cfg,
@@ -81,6 +84,9 @@ def process_cand001_candle(
         last_bar_id=last_bar_id,
         last_bar_close_time=candle.close_time,
         freshness_seconds=(observed_at - candle.close_time).total_seconds(),
+        health_state=health_state.value,
+        health_source="CANDIDATE_INPUT",
+        runtime_events=runtime_events,
     )
     return Cand001PipelineResult(
         state=Cand001PipelineState(
@@ -93,3 +99,13 @@ def process_cand001_candle(
         decision=decision,
         operator_snapshot=snapshot,
     )
+
+
+def _candidate_runtime_health(reason: SignalReason) -> tuple[HealthState, tuple[str, ...]]:
+    if reason is SignalReason.DATA_UNSAFE:
+        return HealthState.RED, (SignalReason.DATA_UNSAFE.value,)
+    if reason is SignalReason.OUT_OF_ORDER_BAR:
+        return HealthState.RED, (SignalReason.OUT_OF_ORDER_BAR.value,)
+    if reason is SignalReason.DUPLICATE_BAR:
+        return HealthState.YELLOW, (SignalReason.DUPLICATE_BAR.value,)
+    return HealthState.GREEN, ()
