@@ -135,12 +135,26 @@ def test_unsafe_candle_does_not_mutate_strategy_state():
 
 def test_duplicate_and_out_of_order_bars_are_side_effect_free():
     state, _ = build_or()
-    first_bar = bar(9, 15, close_price=102, high_price=103, low_price=101)
+    first_bar = bar(
+        9,
+        15,
+        open_price=102,
+        close_price=102,
+        high_price=103,
+        low_price=101,
+    )
     first = transition_cand001(state, first_bar)
     duplicate = transition_cand001(first.state, first_bar)
     older = transition_cand001(
         first.state,
-        bar(9, 10, close_price=102, high_price=103, low_price=101),
+        bar(
+            9,
+            10,
+            open_price=102,
+            close_price=102,
+            high_price=103,
+            low_price=101,
+        ),
     )
 
     assert duplicate.state == first.state
@@ -176,7 +190,14 @@ def test_new_berlin_session_resets_opening_range_state():
 
 def test_transition_is_deterministic_from_same_state_and_same_bar():
     state, _ = build_or()
-    candle = bar(9, 15, high_price=105, low_price=101, close_price=104)
+    candle = bar(
+        9,
+        15,
+        open_price=102,
+        high_price=105,
+        low_price=101,
+        close_price=104,
+    )
 
     left = transition_cand001(state, candle)
     right = transition_cand001(state, candle)
@@ -236,7 +257,14 @@ def test_no_paper_or_execution_authority_is_required_by_signal_transition():
     state, _ = build_or()
     transition = transition_cand001(
         state,
-        bar(9, 15, high_price=105, low_price=101, close_price=104),
+        bar(
+            9,
+            15,
+            open_price=102,
+            high_price=105,
+            low_price=101,
+            close_price=104,
+        ),
         config=config,
     )
 
