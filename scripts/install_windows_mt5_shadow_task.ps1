@@ -9,7 +9,9 @@ param(
     [string]$Symbol = 'DE40',
     [int]$Bars = 40,
     [double]$MaxAgeSeconds = 600.0,
-    [double]$IntervalSeconds = 60.0
+    [double]$IntervalSeconds = 60.0,
+    [string]$StateDir = '.runtime\mt5_shadow',
+    [string]$PythonExecutable = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,6 +25,9 @@ if (-not (Test-Path -LiteralPath $startScript -PathType Leaf)) {
 }
 if (-not (Get-Command Register-ScheduledTask -ErrorAction SilentlyContinue)) {
     throw 'Windows ScheduledTasks module is not available.'
+}
+if ($PythonExecutable -and -not (Test-Path -LiteralPath $PythonExecutable -PathType Leaf)) {
+    throw "MT5 Python executable not found: $PythonExecutable"
 }
 if ($Bars -lt 2) {
     throw 'Bars must be >= 2.'
@@ -80,7 +85,10 @@ $mt5Task = New-ScheduledTask `
     -Description 'MetaTrader 5 terminal host for DAXLAB read-only SHADOW. No credentials are stored by DAXLAB.'
 Register-ScheduledTask -TaskName $Mt5TaskName -InputObject $mt5Task -Force | Out-Null
 
-$shadowArguments = "-NoProfile -ExecutionPolicy Bypass -File `"$startScript`" -BrokerTimezone `"$BrokerTimezone`" -Symbol `"$Symbol`" -Bars $Bars -MaxAgeSeconds $MaxAgeSeconds -IntervalSeconds $IntervalSeconds"
+$shadowArguments = "-NoProfile -ExecutionPolicy Bypass -File `"$startScript`" -BrokerTimezone `"$BrokerTimezone`" -Symbol `"$Symbol`" -Bars $Bars -MaxAgeSeconds $MaxAgeSeconds -IntervalSeconds $IntervalSeconds -StateDir `"$StateDir`""
+if ($PythonExecutable) {
+    $shadowArguments += " -PythonExecutable `"$PythonExecutable`""
+}
 $shadowAction = New-ScheduledTaskAction `
     -Execute 'powershell.exe' `
     -Argument $shadowArguments `
@@ -112,6 +120,10 @@ Write-Host "Installed task: $Mt5TaskName"
 Write-Host "MT5 executable: $mt5Path"
 Write-Host "Installed task: $ShadowTaskName"
 Write-Host "Repo: $repoRoot"
+Write-Host "StateDir: $StateDir"
+if ($PythonExecutable) {
+    Write-Host "Python: $PythonExecutable"
+}
 Write-Host "Symbol: $Symbol"
 Write-Host "Broker timezone: $BrokerTimezone"
 Write-Host 'Mode: SHADOW / execution_capability=NONE / order_execution_enabled=false'
