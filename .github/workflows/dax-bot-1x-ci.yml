@@ -6,16 +6,20 @@ on:
     paths:
       - 'src/daxlab/runtime/candidate_*.py'
       - 'src/daxlab/runtime/operator_snapshot.py'
+      - 'src/daxlab/runtime/operator_runtime_bridge.py'
       - 'tests/test_candidate*.py'
-      - 'tests/test_operator_snapshot.py'
+      - 'tests/test_operator_snapshot*.py'
+      - 'tests/test_operator_runtime_bridge.py'
       - 'scripts/benchmark_cand001_pipeline.py'
       - '.github/workflows/dax-bot-1x-ci.yml'
   pull_request:
     paths:
       - 'src/daxlab/runtime/candidate_*.py'
       - 'src/daxlab/runtime/operator_snapshot.py'
+      - 'src/daxlab/runtime/operator_runtime_bridge.py'
       - 'tests/test_candidate*.py'
-      - 'tests/test_operator_snapshot.py'
+      - 'tests/test_operator_snapshot*.py'
+      - 'tests/test_operator_runtime_bridge.py'
       - 'scripts/benchmark_cand001_pipeline.py'
       - '.github/workflows/dax-bot-1x-ci.yml'
 
@@ -37,11 +41,17 @@ jobs:
           ruff check
           src/daxlab/runtime/candidate_*.py
           src/daxlab/runtime/operator_snapshot.py
+          src/daxlab/runtime/operator_runtime_bridge.py
           tests/test_candidate*.py
-          tests/test_operator_snapshot.py
+          tests/test_operator_snapshot*.py
+          tests/test_operator_runtime_bridge.py
           scripts/benchmark_cand001_pipeline.py
       - name: Candidate correctness and restart tests
-        run: pytest -q tests/test_candidate*.py tests/test_operator_snapshot.py
+        run: >-
+          pytest -q
+          tests/test_candidate*.py
+          tests/test_operator_snapshot*.py
+          tests/test_operator_runtime_bridge.py
       - name: Candidate performance observation
         run: |
           python scripts/benchmark_cand001_pipeline.py --sessions 50 --repeats 3 > candidate-benchmark.json
