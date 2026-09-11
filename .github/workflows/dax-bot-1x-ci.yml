@@ -35,17 +35,7 @@ jobs:
       - name: Candidate Ruff
         run: >-
           ruff check
-          src/daxlab/runtime/candidate_config.py
-          src/daxlab/runtime/candidate_signal.py
-          src/daxlab/runtime/candidate_trade_plan.py
-          src/daxlab/runtime/candidate_admission.py
-          src/daxlab/runtime/candidate_decision.py
-          src/daxlab/runtime/candidate_sizing.py
-          src/daxlab/runtime/candidate_execution_intent.py
-          src/daxlab/runtime/candidate_virtual_lifecycle.py
-          src/daxlab/runtime/candidate_pipeline.py
-          src/daxlab/runtime/candidate_state.py
-          src/daxlab/runtime/candidate_dual_compare.py
+          src/daxlab/runtime/candidate_*.py
           src/daxlab/runtime/operator_snapshot.py
           tests/test_candidate*.py
           tests/test_operator_snapshot.py
