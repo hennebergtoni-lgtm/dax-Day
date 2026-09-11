@@ -1,0 +1,117 @@
+{
+  "schema": "DAXLAB_FORWARD_SHADOW_REAL_DATA_MILESTONE_V1",
+  "captured_as_of_utc": "2026-09-11T07:15:42.139224Z",
+  "status": "VERIFIED",
+  "scope": "READ_ONLY_FORWARD_SHADOW",
+  "profitability_proven": false,
+  "paper_trading_authorized": false,
+  "live_trading_authorized": false,
+  "execution_capability": "NONE",
+  "order_execution_enabled": false,
+  "repository": {
+    "name": "hennebergtoni-lgtm/dax-Day",
+    "base_branch": "main",
+    "base_commit": "2b3461c0b88d2b0dcd853695c7be773eeee5de8a"
+  },
+  "neon": {
+    "project_name": "dax-research-lab",
+    "project_id": "polished-recipe-10961470",
+    "region": "aws-eu-central-1"
+  },
+  "latest_heartbeat": {
+    "observed_at_utc": "2026-09-11T07:15:42.139224Z",
+    "status": "GREEN",
+    "symbol": "DE40",
+    "closed_m5_bars": 40,
+    "latest_closed_bar_age_seconds": 42.026386,
+    "single_instance_lock_held": true,
+    "processed_total": 342,
+    "new_decisions": 1,
+    "duplicates_suppressed": 0,
+    "cross_cycle_status": "GREEN",
+    "cross_cycle_overlapping_bars": 39,
+    "cross_cycle_identical_overlaps": 39,
+    "cross_cycle_mutated_overlaps": 0,
+    "blockers": [],
+    "history_archive_status": "OK",
+    "execution_capability": "NONE",
+    "order_execution_enabled": false,
+    "payload_sha256": "1ad5a674e5e8e38a8d133037bdabf4d533ca89e9f1b22b680e4bd0a9ddad7320"
+  },
+  "session_integrity": {
+    "session_start_utc": "2026-09-11T07:00:00Z",
+    "session_start_berlin": "2026-09-11T09:00:00+02:00",
+    "bars_observed": 3,
+    "first_session_bar_utc": "2026-09-11T07:00:00Z",
+    "latest_session_bar_utc": "2026-09-11T07:10:00Z",
+    "duplicate_open_times": 0,
+    "ohlc_violations": 0,
+    "non_5m_gaps": 0,
+    "safety_violations": 0,
+    "distinct_fingerprints": 3,
+    "total_fingerprints": 3
+  },
+  "reference_decisions": {
+    "count_checked": 4,
+    "reference_experiment_id": "V112_REFERENCE_V1",
+    "reference_engine_sha256": "b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888",
+    "all_actions": "NO_ORDER",
+    "all_execution_capability": "NONE",
+    "all_order_execution_enabled": false,
+    "all_bar_fingerprint_matches": true,
+    "broker_timezone": "Europe/Helsinki",
+    "timestamp_interpretation": "EXPLICIT_BROKER_WALL_CLOCK",
+    "pairs": [
+      {
+        "bar_open_time_utc": "2026-09-11T06:55:00Z",
+        "decision_observed_at_utc": "2026-09-11T07:00:01Z",
+        "decision_id": "19e9c7b207139ac8d8fffbeba19301594b86e057d64e2434fa6115c7e4bebabf"
+      },
+      {
+        "bar_open_time_utc": "2026-09-11T07:00:00Z",
+        "decision_observed_at_utc": "2026-09-11T07:05:01Z",
+        "decision_id": "06cdb5b3100ef17af0321489d2cf070e6f6015be3ce8b7e8d00b7d240e55f971"
+      },
+      {
+        "bar_open_time_utc": "2026-09-11T07:05:00Z",
+        "decision_observed_at_utc": "2026-09-11T07:10:01Z",
+        "decision_id": "20c372aa2ac24e95e6ee95686d69c4179322d3ca7d21363d062d452065b90692"
+      },
+      {
+        "bar_open_time_utc": "2026-09-11T07:10:00Z",
+        "decision_observed_at_utc": "2026-09-11T07:15:01Z",
+        "decision_id": "356e87b0e4c62959cb3f5acadb972f4d0cff317a9a8ebd0587c64b18f1f3d6ba"
+      }
+    ]
+  },
+  "mini_test": {
+    "status": "RESEARCH",
+    "label": "first_15_minutes_simple_range_probe",
+    "strategy_test": false,
+    "bars_used": 3,
+    "window_start_utc": "2026-09-11T07:00:00Z",
+    "window_last_bar_utc": "2026-09-11T07:10:00Z",
+    "high": 25497.6,
+    "low": 25437.1,
+    "range_points": 60.5,
+    "first_open": 25461.1,
+    "last_close": 25453.1,
+    "net_move_points": -8.0,
+    "first_bar_high": 25497.6,
+    "first_bar_low": 25451.1,
+    "next_two_broke_first_high": false,
+    "next_two_broke_first_low": true,
+    "bullish_bars": 2,
+    "bearish_bars": 1
+  },
+  "interpretation": {
+    "verified_claim": "Real closed DE40 broker M5 bars are reaching the SHADOW telemetry path and are deterministically linked by fingerprint to V112_REFERENCE_V1 NO_ORDER decisions while execution remains disabled.",
+    "not_claimed": [
+      "strategy profitability",
+      "paper-trading readiness",
+      "live-trading readiness",
+      "OR5 or OR15 strategy semantics",
+      "signal quality"
+    ]
+  }
+}
