@@ -4,7 +4,7 @@ param(
     [string]$BrokerTimezone,
 
     [string]$Symbol = 'DE40',
-    [int]$Bars = 20,
+    [int]$Bars = 40,
     [double]$MaxAgeSeconds = 600.0,
     [double]$IntervalSeconds = 60.0,
     [string]$StateDir = '.runtime\mt5_shadow'
