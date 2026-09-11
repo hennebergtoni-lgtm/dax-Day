@@ -67,6 +67,12 @@ def test_preflight_is_read_only_and_requires_green_heartbeat() -> None:
     assert "heartbeat.status -ne 'GREEN'" in text
     assert "Register-ScheduledTask" in text
     assert "Get-Command $command" in text
+    assert "[string]$PythonExecutable = ''" in text
+    assert "if ($PythonExecutable)" in text
+    assert "$repoSrc = Join-Path $repoRoot 'src'" in text
+    assert '$env:PYTHONPATH = "$repoSrc;$env:PYTHONPATH"' in text
+    assert "$env:PYTHONPATH = $repoSrc" in text
+    assert 'Write-Host "PRECHECK | RepoSrc: $repoSrc"' in text
     assert "register-scheduledtask -taskname" not in lower
     for forbidden in ("order_send", "order_check", "--login", "--password"):
         assert forbidden not in lower
