@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+import json
 from pathlib import Path
 
 import pytest
@@ -58,6 +60,18 @@ def _partial():
         cumulative_filled_quantity=0.4,
         last_fill_price=23000.5,
     )[0]
+
+
+def _payload_fingerprint(payload: dict[str, object]) -> str:
+    unhashed = dict(payload)
+    unhashed.pop("payload_fingerprint", None)
+    canonical = json.dumps(
+        unhashed,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+    return sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _roundtrip(lifecycle):
@@ -154,9 +168,9 @@ def test_lifecycle_fingerprint_drift_fails_closed_even_with_rehashed_payload() -
     payload = broker_order_lifecycle_state_payload(_partial())
     tampered = deepcopy(payload)
     tampered["lifecycle_fingerprint"] = "0" * 64
+    tampered["payload_fingerprint"] = _payload_fingerprint(tampered)
 
-    # First prove the outer envelope cannot simply be changed without detection.
-    with pytest.raises(ValueError, match="payload fingerprint mismatch"):
+    with pytest.raises(ValueError, match="lifecycle fingerprint mismatch"):
         parse_broker_order_lifecycle_state_payload(tampered)
 
 
@@ -169,10 +183,21 @@ def test_execution_escalation_fails_closed() -> None:
         parse_broker_order_lifecycle_state_payload(tampered)
 
 
-def test_unknown_state_and_unknown_fields_fail_closed() -> None:
+def test_unknown_state_fails_closed_even_with_valid_outer_fingerprint() -> None:
+    payload = broker_order_lifecycle_state_payload(_requested())
+    tampered = deepcopy(payload)
+    tampered["state"] = "UNKNOWN"
+    tampered["payload_fingerprint"] = _payload_fingerprint(tampered)
+
+    with pytest.raises(ValueError, match="state value invalid"):
+        parse_broker_order_lifecycle_state_payload(tampered)
+
+
+def test_unknown_persisted_fields_fail_closed() -> None:
     payload = broker_order_lifecycle_state_payload(_requested())
     unknown = deepcopy(payload)
     unknown["password"] = "must-not-cross-boundary"
+
     with pytest.raises(ValueError, match="unknown broker lifecycle state fields"):
         parse_broker_order_lifecycle_state_payload(unknown)
 
