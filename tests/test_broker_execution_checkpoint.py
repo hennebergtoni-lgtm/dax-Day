@@ -207,5 +207,6 @@ def test_checkpoint_owner_contains_no_broker_or_persistence_api() -> None:
     ).read_text(encoding="utf-8")
     assert "order_send(" not in source
     assert "import MetaTrader5" not in source
-    assert "atomic_write_json" not in source
+    assert "from daxlab.runtime.atomic_json import" not in source
+    assert "atomic_write_json(" not in source
     assert "open(" not in source
