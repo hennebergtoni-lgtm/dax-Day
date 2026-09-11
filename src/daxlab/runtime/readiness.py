@@ -26,6 +26,10 @@ class ReadinessSnapshot:
     execution_boundary_verified: bool = False
     mt5_readonly_health_verified: bool = False
     dataset_identity: RecoveryIdentity | None = None
+    broker_economics_verified: bool = False
+    broker_risk_sizing_verified: bool = False
+    risk_profile_policy_verified: bool = False
+    loss_cap_policy_verified: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,5 +74,19 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
     # symbol/data/clock/loop health under the fail-closed MT5 bridge.
     if kind is RunKind.PAPER and not snapshot.mt5_readonly_health_verified:
         blockers.append("MT5_READONLY_HEALTH_UNVERIFIED")
+
+    # Broker-aware risk evidence is a separate prerequisite from host health and
+    # from user authorization. Repository-only research code cannot satisfy these
+    # booleans; they require separately verified broker/policy evidence.
+    paper_risk_gates = (
+        (snapshot.broker_economics_verified, "BROKER_ECONOMICS_UNVERIFIED"),
+        (snapshot.broker_risk_sizing_verified, "BROKER_RISK_SIZING_UNVERIFIED"),
+        (snapshot.risk_profile_policy_verified, "RISK_PROFILE_POLICY_UNVERIFIED"),
+        (snapshot.loss_cap_policy_verified, "LOSS_CAP_POLICY_UNVERIFIED"),
+    )
+    if kind is RunKind.PAPER:
+        for passed, blocker in paper_risk_gates:
+            if not passed:
+                blockers.append(blocker)
 
     return RunReadiness(kind=kind, allowed=not blockers, blockers=tuple(blockers))
