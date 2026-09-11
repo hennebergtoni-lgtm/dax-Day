@@ -30,6 +30,8 @@ Use the project's 1–5 severity scale.
 
 Tool/search/context failures are normally severity 1–2 unless evidence shows otherwise. Examples: stale response pointer, GitHub code-search miss, truncated search result, temporary context loss. These must trigger fallback/re-fetch/re-pin behavior, not a conversational stop.
 
+A tool failure, context compaction/loss, stale resource pointer, search miss, intermediate summary or reconstructed status is NEVER by itself a valid stop condition. After recovery/reconstruction, concrete work must resume automatically unless one of the explicit stop conditions in section 4 actually applies.
+
 ## 3. Automatic recovery after context/tool disruption
 
 When context or a tool view is lost:
@@ -92,7 +94,21 @@ Preferred visible form:
 
 The phrase `nächster Schritt` means the next step is actually executed in the same ongoing work sequence, not merely announced.
 
-## 9. Project safety remains unchanged
+## 9. Official step-numbering rule
+
+Official project work uses one continuous integer sequence only:
+
+`... -> STEP 2024 -> STEP 2025 -> STEP 2026 -> ...`
+
+Do not introduce official decimal, letter or nested step numbers such as `2024.1`, `2024.3p`, `2024a` or similar. Such subdivisions distort the 500-step audit cadence and make milestone accounting ambiguous.
+
+If a step contains several technical checks, they may be described as internal checklist items, bullets or checks A/B/C inside that one numbered step, but they do not consume or create additional official step numbers.
+
+The 500-step audit cadence is measured only by the integer sequence. Therefore, after the completed STEP 2000 audit, the next full audit remains STEP 2500.
+
+If an assistant previously introduced decimal/letter substeps, normalize the continuation to the next unused integer step rather than preserving the accidental subdivision scheme.
+
+## 10. Project safety remains unchanged
 
 This continuity rule never overrides execution authorization or scientific governance.
 
@@ -103,6 +119,8 @@ This continuity rule never overrides execution authorization or scientific gover
 - `order_execution_enabled=false` remains binding where currently specified.
 - VERIFIED baselines/evidence are never silently rewritten.
 
-## 10. Operational acceptance criterion
+## 11. Operational acceptance criterion
 
 This protocol is being followed only when progress reports are followed by continued concrete work unless a valid stop condition is explicitly identified. A status-only termination without a valid stop condition is a process defect and must not be repeated.
+
+A response that ends merely because the assistant summarized recovered context, reported a tool error, restated the next step, or reached an intermediate finding fails this acceptance criterion unless section 4 provides a real stop reason.
