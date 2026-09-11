@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '*/5 * * * *'
+  push:
+    paths:
+      - '.github/workflows/runtime-status-snapshot.yml'
+      - 'scripts/build_runtime_status_snapshot.py'
 
 permissions:
   contents: write
