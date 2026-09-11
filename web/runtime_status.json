@@ -1,0 +1,46 @@
+{
+  "bars": {
+    "latest": {
+      "bar_fingerprint": "1db264c0ae728a68b397ae47b74f9ad9e23a6ad62a449c1d733beb9abf4f5188",
+      "broker_timezone": "Europe/Helsinki",
+      "close": 25394.4,
+      "high": 25394.9,
+      "low": 25378.4,
+      "open": 25381.4,
+      "open_time": "2026-09-11T05:10:00+00:00",
+      "symbol": "DE40",
+      "timestamp_interpretation": "EXPLICIT_BROKER_WALL_CLOCK"
+    },
+    "stored_bars": 47
+  },
+  "decisions_stream_state": "NOT_PERSISTED_YET",
+  "execution_capability": "NONE",
+  "generated_at_utc": "2026-09-11T05:20:02.350939+00:00",
+  "heartbeat": {
+    "blockers": [],
+    "closed_m5_bars": 40,
+    "cross_cycle_identical_overlaps": 40,
+    "cross_cycle_mutated_overlaps": 0,
+    "cross_cycle_overlapping_bars": 40,
+    "cross_cycle_status": "GREEN",
+    "duplicates_suppressed": 0,
+    "evidence_state": "MT5_READONLY_BROKER_EVIDENCE",
+    "execution_capability": "NONE",
+    "history_archive_status": "OK",
+    "latest_closed_bar_age_seconds": 198.39744,
+    "new_decisions": 0,
+    "observed_at_utc": "2026-09-11T05:18:18.510592+00:00",
+    "order_execution_enabled": false,
+    "payload_sha256": "f5e1dab495052f62a241e5d0a356bde469d59469dc4bfb213f109dd98b50dc7f",
+    "processed_total": 318,
+    "status": "GREEN",
+    "symbol": "DE40"
+  },
+  "heartbeat_present": true,
+  "mode": "SHADOW",
+  "monitoring_only": true,
+  "order_execution_enabled": false,
+  "read_only": true,
+  "schema_version": "DAXLAB_MT5_SHADOW_RUNTIME_STATUS_V1",
+  "source": "NEON_MT5_SHADOW_TELEMETRY"
+}
