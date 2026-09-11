@@ -23,6 +23,8 @@ class ReadinessSnapshot:
     technical_replay_verified: bool
     audited_bundle_available: bool
     full_reference_replay_verified: bool
+    # Legacy coarse execution-boundary evidence. Retained for compatibility, but
+    # it is deliberately insufficient to unlock PAPER by itself.
     execution_boundary_verified: bool = False
     mt5_readonly_health_verified: bool = False
     dataset_identity: RecoveryIdentity | None = None
@@ -30,6 +32,11 @@ class ReadinessSnapshot:
     broker_risk_sizing_verified: bool = False
     risk_profile_policy_verified: bool = False
     loss_cap_policy_verified: bool = False
+    # Explicit broker-facing PAPER evidence. Contracts/vocabulary or SHADOW-only
+    # simulation do not satisfy these booleans.
+    broker_order_lifecycle_verified: bool = False
+    broker_reconciliation_verified: bool = False
+    execution_protection_gates_verified: bool = False
     # Explicit operator STOP-GATE. Technical evidence alone must never unlock
     # broker-facing demo/PAPER execution.
     paper_user_authorized: bool = False
@@ -69,8 +76,30 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
     if kind is RunKind.PAPER and not snapshot.full_reference_replay_verified:
         blockers.append("FULL_REFERENCE_REPLAY_UNVERIFIED")
 
+    # Keep the historical coarse gate for compatibility/provenance, but make it
+    # impossible for one boolean to stand in for the broker lifecycle, reconnect
+    # reconciliation and execution-protection evidence required for PAPER.
     if kind is RunKind.PAPER and not snapshot.execution_boundary_verified:
         blockers.append("EXECUTION_BOUNDARY_UNVERIFIED")
+
+    if kind is RunKind.PAPER:
+        paper_execution_gates = (
+            (
+                snapshot.broker_order_lifecycle_verified,
+                "BROKER_ORDER_LIFECYCLE_UNVERIFIED",
+            ),
+            (
+                snapshot.broker_reconciliation_verified,
+                "BROKER_RECONCILIATION_UNVERIFIED",
+            ),
+            (
+                snapshot.execution_protection_gates_verified,
+                "EXECUTION_PROTECTION_GATES_UNVERIFIED",
+            ),
+        )
+        for passed, blocker in paper_execution_gates:
+            if not passed:
+                blockers.append(blocker)
 
     # Paper must not be unlocked merely because execution code exists. The actual
     # broker-facing read-only observation path must first prove terminal/account/
