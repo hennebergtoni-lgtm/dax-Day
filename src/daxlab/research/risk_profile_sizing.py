@@ -14,6 +14,7 @@ from daxlab.research.broker_risk_sizing import (
     BrokerRiskSizingEstimate,
     estimate_volume_for_cash_risk,
 )
+from daxlab.runtime.decision import stable_fingerprint
 from daxlab.runtime.mt5_readonly import BrokerSymbol
 
 
@@ -69,11 +70,25 @@ class RiskProfileBudgetSpec:
             RiskProfile.HIGH: self.high_cash_risk,
         }[profile]
 
+    @property
+    def fingerprint(self) -> str:
+        return stable_fingerprint(
+            {
+                "policy_version": self.policy_version,
+                "currency": self.currency,
+                "base_cash_risk": self.base_cash_risk,
+                "boost_cash_risk": self.boost_cash_risk,
+                "high_cash_risk": self.high_cash_risk,
+                "hard_cap_cash_risk": self.hard_cap_cash_risk,
+            }
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class RiskProfileSizingResearchResult:
     profile: RiskProfile
     policy_version: str
+    profile_spec_fingerprint: str
     risk_currency: str
     requested_cash_risk: float
     hard_cap_cash_risk: float
@@ -86,12 +101,34 @@ class RiskProfileSizingResearchResult:
             raise ValueError("risk profile sizing result version mismatch")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("risk profile sizing research cannot authorize execution")
+        if len(self.profile_spec_fingerprint) != 64:
+            raise ValueError("profile_spec_fingerprint must be sha256 hex")
+        try:
+            int(self.profile_spec_fingerprint, 16)
+        except ValueError as exc:
+            raise ValueError("profile_spec_fingerprint must be sha256 hex") from exc
         if self.requested_cash_risk > self.hard_cap_cash_risk:
             raise ValueError("requested cash risk exceeds hard cap")
         if self.estimate.risk_budget_cash != self.requested_cash_risk:
             raise ValueError("sizing estimate is not bound to requested cash risk")
         if self.estimate.risk_currency != self.risk_currency:
             raise ValueError("sizing estimate currency is not bound to profile currency")
+
+    @property
+    def fingerprint(self) -> str:
+        return stable_fingerprint(
+            {
+                "profile": self.profile.value,
+                "policy_version": self.policy_version,
+                "profile_spec_fingerprint": self.profile_spec_fingerprint,
+                "risk_currency": self.risk_currency,
+                "requested_cash_risk": self.requested_cash_risk,
+                "hard_cap_cash_risk": self.hard_cap_cash_risk,
+                "estimate_fingerprint": self.estimate.fingerprint,
+                "execution_capability": self.execution_capability,
+                "order_execution_enabled": self.order_execution_enabled,
+            }
+        )
 
 
 def estimate_profile_volume(
@@ -112,6 +149,7 @@ def estimate_profile_volume(
     return RiskProfileSizingResearchResult(
         profile=profile,
         policy_version=RISK_PROFILE_SIZING_RESEARCH_VERSION,
+        profile_spec_fingerprint=spec.fingerprint,
         risk_currency=spec.currency,
         requested_cash_risk=requested,
         hard_cap_cash_risk=spec.hard_cap_cash_risk,
