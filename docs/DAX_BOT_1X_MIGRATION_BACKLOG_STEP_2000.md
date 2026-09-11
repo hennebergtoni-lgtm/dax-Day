@@ -377,3 +377,39 @@ The audit is considered complete when:
 - execution safety remains unchanged
 
 After this document is committed and CI returns GREEN, work may proceed to step 2001: define the minimal Transition/Component Registry contract and tests, then build the first DAX-BOT 1.0-alpha vertical slice incrementally.
+
+## 13. DAX-BOT 1.0 closeout report — required deliverable
+
+When DAX-BOT 1.0 reaches its defined completion gate, produce one evidence-linked closeout report before any stronger execution-readiness claim.
+
+The report must state separately:
+- architectural advantages versus the legacy/reference line
+- concrete defects, false assumptions and knowledge gaps discovered during migration
+- which fixes are VERIFIED versus merely IMPLEMENTED or PLANNED
+- measured performance/runtime improvements, including benchmark before/after values where comparable evidence exists
+- remaining bottlenecks and unresolved risks
+- SHADOW readiness
+- broker-demo/PAPER readiness and the explicit authorization state
+- real-money/LIVE readiness and every remaining gate before it can be considered
+- which public-project patterns were adopted and why
+- which legacy components were preserved, retired or replaced
+
+The report must not equate software correctness with trading profitability.
+
+## 14. Planned operator risk profile / aggressiveness control
+
+Classification: `PLANNED / POST-CORE-RISK-CONTROL`.
+
+Desired operator concept: a clear selectable risk profile such as `DEFENSIVE`, `BALANCED`, and `AGGRESSIVE` so the operator can intentionally choose lower-risk continuity or higher-risk/high-return-seeking behavior without editing strategy code.
+
+Design constraints:
+- risk profile must never silently change strategy signal semantics
+- profile changes must be explicit, versioned and fingerprinted
+- the active profile must be visible in telemetry/operator state
+- profile should govern risk-budget dimensions such as simulation/account sizing, exposure caps, daily/session loss limits, trade admission/risk limits and other validated risk controls
+- broker-specific quantity/contract conversion must remain separate from normalized simulation sizing until the broker economics are explicitly verified
+- changing the profile must not bypass safety/readiness/execution-authorization gates
+- `AGGRESSIVE` means a controlled higher risk budget, not disabled limits or unconstrained leverage
+- every profile requires backtest/OOS/forward evidence before stronger readiness claims
+
+Do not implement this operator control prematurely inside CAND-001 signal logic. First finish the deterministic 1.0 core, outcome/ledger path, persistence/restart safety and forward/demo readiness gates.
