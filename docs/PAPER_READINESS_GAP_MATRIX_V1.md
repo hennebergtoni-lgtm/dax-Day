@@ -34,7 +34,8 @@ Purpose: turn the coarse goal "get to real demo/PAPER quickly" into explicit evi
 | Loss-cap policy | `loss_cap_gate.py` | research gate IMPLEMENTED | promote validated thresholds and prove interaction with sizing/admission | PARTIAL |
 | Broker order lifecycle owner | `broker_order_lifecycle.py`, `tests/test_broker_order_lifecycle.py` | OWNER IMPLEMENTED / REPOSITORY-CI VERIFIED; PAPER evidence still unverified | feed real demo venue observations through the same contract before setting the PAPER readiness boolean | PARTIAL / WAITING_EXTERNAL |
 | Broker order lifecycle restart state | `broker_order_lifecycle_state_payload` / `parse_broker_order_lifecycle_state_payload`, `tests/test_broker_order_lifecycle_state.py` | IMPLEMENTED / REPOSITORY-CI VERIFIED | bind to the future authorized demo runtime and reconnect evidence; repository fixtures are not broker evidence | REUSE / WAITING_EXTERNAL FOR BROKER EVIDENCE |
-| Broker execution atomic checkpoint | `broker_execution_checkpoint.py`, `tests/test_broker_execution_checkpoint.py` | OWNER IMPLEMENTED / REPOSITORY-CI VERIFIED; PARTIAL→FILLED restart parity proven | add an explicit fail-closed PAPER readiness gate, then require qualifying demo-runtime checkpoint/restart evidence before setting it true | PARTIAL / WAITING_EXTERNAL FOR BROKER EVIDENCE |
+| Broker execution atomic checkpoint | `broker_execution_checkpoint.py`, `tests/test_broker_execution_checkpoint.py` | OWNER IMPLEMENTED / REPOSITORY-CI VERIFIED; PARTIAL→FILLED restart parity proven | qualifying demo-runtime checkpoint/restart evidence before setting PAPER checkpoint readiness true | PARTIAL / WAITING_EXTERNAL FOR BROKER EVIDENCE |
+| PAPER checkpoint readiness gate | `ReadinessSnapshot.broker_execution_checkpoint_verified` / `BROKER_EXECUTION_CHECKPOINT_UNVERIFIED` | IMPLEMENTED / FAIL-CLOSED | set true only from qualifying broker checkpoint/restart evidence; repository CI alone cannot satisfy it | WAITING_EXTERNAL FOR BROKER EVIDENCE |
 | Broker reconciliation owner | `broker_reconciliation.py`, `tests/test_broker_reconciliation.py` | OWNER IMPLEMENTED / REPOSITORY-CI VERIFIED; PAPER evidence still unverified | reconcile real demo local-vs-venue truth including reconnect/restart cases before setting the PAPER readiness boolean | PARTIAL / WAITING_EXTERNAL |
 | Execution protection gates / owner | `broker_execution_protection.py`, `tests/test_broker_execution_protection.py` | OWNER IMPLEMENTED / REPOSITORY-CI VERIFIED; non-executable ALLOW_EVIDENCE only | bind to real host/spread/reconciliation/sizing/session evidence and prove fail-closed behavior on the demo venue before setting the PAPER readiness boolean | PARTIAL / WAITING_EXTERNAL |
 | Order lifecycle telemetry owner | `broker_execution_telemetry.py`, `tests/test_broker_execution_telemetry.py` | APPEND-ONLY RECORD CONTRACT IMPLEMENTED / REPOSITORY-CI VERIFIED; PAPER telemetry evidence still unverified | capture real demo request/ACK/reject/partial/fill/cancel/reconcile/protection records | PARTIAL / WAITING_EXTERNAL |
@@ -46,20 +47,20 @@ Purpose: turn the coarse goal "get to real demo/PAPER quickly" into explicit evi
 
 ## Key conclusion
 
-The core **broker-neutral execution evidence owners now exist**: lifecycle, lifecycle restore, reconciliation, protection, deterministic telemetry records, restart-safe telemetry identity persistence and one atomic broker execution checkpoint binding lifecycle + telemetry journal. This materially reduces the amount of software that must be invented when demo/PAPER becomes authorized.
+The core **broker-neutral execution evidence owners and readiness gates now exist** for lifecycle, lifecycle restore/checkpoint, reconciliation, protection and deterministic telemetry. Repository CI proves those software contracts and their fail-closed behavior, but it does not convert them into broker-facing evidence.
 
-Their existence does **not** make PAPER ready. Repository CI and synthetic fixtures prove software behavior; broker-facing PAPER readiness still requires real Windows/demo-venue evidence, verified DE40 economics/risk policy, reconnect/reconciliation/telemetry/checkpoint evidence and the independent user STOP-gate.
+Their existence does **not** make PAPER ready. Broker-facing PAPER readiness still requires real Windows/demo-venue evidence, verified DE40 economics/risk policy, reconnect/reconciliation/telemetry/checkpoint evidence and the independent user STOP-gate.
 
 The next safe repository work is therefore:
 
-1. add an explicit fail-closed PAPER readiness boolean/blocker for qualifying broker execution checkpoint evidence;
+1. reassess whether any additional broker-neutral software evidence owner is genuinely missing before authorization;
 2. keep real host/economics/reconciliation/telemetry/checkpoint evidence as parallel `WAITING_EXTERNAL` lanes;
-3. after that gate exists, reassess whether any additional broker-neutral software is genuinely missing before authorization;
+3. prefer thin read-only evidence adapters/tests over inventing a broker submission stack prematurely;
 4. do not create a broker submission adapter until the authorization-gated boundary is explicitly crossed.
 
 ## What does not count as broker evidence
 
-The following must never set `broker_order_lifecycle_verified`, `broker_reconciliation_verified`, `execution_protection_gates_verified`, `broker_order_telemetry_verified` or the future broker-execution-checkpoint readiness gate to true by themselves:
+The following must never set `broker_order_lifecycle_verified`, `broker_execution_checkpoint_verified`, `broker_reconciliation_verified`, `execution_protection_gates_verified` or `broker_order_telemetry_verified` to true by themselves:
 
 - the existence of enum names or dataclasses;
 - successful SHADOW virtual fills;
