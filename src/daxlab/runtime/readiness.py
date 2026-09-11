@@ -37,6 +37,7 @@ class ReadinessSnapshot:
     broker_order_lifecycle_verified: bool = False
     broker_reconciliation_verified: bool = False
     execution_protection_gates_verified: bool = False
+    broker_order_telemetry_verified: bool = False
     # Explicit operator STOP-GATE. Technical evidence alone must never unlock
     # broker-facing demo/PAPER execution.
     paper_user_authorized: bool = False
@@ -78,7 +79,7 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
 
     # Keep the historical coarse gate for compatibility/provenance, but make it
     # impossible for one boolean to stand in for the broker lifecycle, reconnect
-    # reconciliation and execution-protection evidence required for PAPER.
+    # reconciliation, execution-protection and telemetry evidence required for PAPER.
     if kind is RunKind.PAPER and not snapshot.execution_boundary_verified:
         blockers.append("EXECUTION_BOUNDARY_UNVERIFIED")
 
@@ -95,6 +96,10 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
             (
                 snapshot.execution_protection_gates_verified,
                 "EXECUTION_PROTECTION_GATES_UNVERIFIED",
+            ),
+            (
+                snapshot.broker_order_telemetry_verified,
+                "BROKER_ORDER_TELEMETRY_UNVERIFIED",
             ),
         )
         for passed, blocker in paper_execution_gates:
