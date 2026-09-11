@@ -1,5 +1,6 @@
 from dataclasses import replace
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -139,7 +140,12 @@ def test_dual_compare_rejects_candidate_safety_escalation():
     candidate = _candidate_result()
     bar_fingerprint = "e" * 64
     legacy = _legacy_decision(candidate, bar_fingerprint)
-    unsafe_snapshot = replace(candidate.operator_snapshot, execution_capability="PAPER")
+    unsafe_snapshot = SimpleNamespace(
+        execution_capability="PAPER",
+        order_execution_enabled=False,
+        decision_id=candidate.operator_snapshot.decision_id,
+        snapshot_fingerprint=candidate.operator_snapshot.snapshot_fingerprint,
+    )
     unsafe_candidate = replace(candidate, operator_snapshot=unsafe_snapshot)
 
     with pytest.raises(ValueError, match="cannot carry execution capability"):
