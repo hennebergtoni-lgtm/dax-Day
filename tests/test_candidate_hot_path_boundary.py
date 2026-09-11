@@ -8,6 +8,7 @@ HOT_PATH_MODULES = (
     "candidate_trade_plan.py",
     "candidate_admission.py",
     "candidate_decision.py",
+    "candidate_sizing.py",
     "candidate_pipeline.py",
     "operator_snapshot.py",
 )
