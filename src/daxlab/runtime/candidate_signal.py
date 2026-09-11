@@ -48,6 +48,10 @@ class Cand001SignalState:
     last_close_time: datetime | None = None
 
     def __post_init__(self) -> None:
+        if self.or_high is not None:
+            object.__setattr__(self, "or_high", float(self.or_high))
+        if self.or_low is not None:
+            object.__setattr__(self, "or_low", float(self.or_low))
         if (self.or_high is None) != (self.or_low is None):
             raise ValueError("or_high and or_low must both be set or both be absent")
         if self.or_high is not None and self.or_low is not None and self.or_high < self.or_low:
