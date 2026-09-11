@@ -49,7 +49,7 @@ jobs:
           PY
       - name: Commit snapshot when changed
         run: |
-          if git diff --quiet -- web/runtime_status.json; then
+          if [ -z "$(git status --porcelain -- web/runtime_status.json)" ]; then
             echo 'Runtime snapshot unchanged; nothing to commit.'
             exit 0
           fi
