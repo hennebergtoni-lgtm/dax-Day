@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -47,6 +48,21 @@ def _heartbeat() -> dict[str, object]:
     }
 
 
+def _decision() -> dict[str, object]:
+    return {
+        "decision_id": "b" * 64,
+        "observed_at": "2026-09-11T08:05:00+00:00",
+        "symbol": "DE40",
+        "closed_bar_fingerprint": "c" * 64,
+        "action": "NO_ORDER",
+        "reason_codes": ["OBSERVATION_ONLY_NO_ORDER"],
+        "reference_experiment_id": "V112_REFERENCE_V1",
+        "reference_engine_sha256": "d" * 64,
+        "execution_capability": "NONE",
+        "order_execution_enabled": False,
+    }
+
+
 def test_heartbeat_contract_accepts_no_order_payload() -> None:
     telemetry._validate_heartbeat(_heartbeat())
 
@@ -65,6 +81,43 @@ def test_heartbeat_contract_rejects_credentials_recursively() -> None:
         telemetry._validate_heartbeat(payload)
 
 
+def test_decision_contract_accepts_no_order_payload() -> None:
+    telemetry._validate_decision(_decision())
+
+
+def test_decision_contract_rejects_execution_enablement() -> None:
+    payload = _decision()
+    payload["order_execution_enabled"] = True
+    with pytest.raises(ValueError, match="order execution"):
+        telemetry._validate_decision(payload)
+
+
+def test_decision_contract_rejects_credentials_recursively() -> None:
+    payload = _decision()
+    payload["metadata"] = {"api_key": "forbidden"}
+    with pytest.raises(ValueError, match="forbidden telemetry field"):
+        telemetry._validate_decision(payload)
+
+
+def test_decision_outbox_filename_must_match_id(tmp_path: Path) -> None:
+    outbox = tmp_path / "decision_outbox"
+    outbox.mkdir()
+    payload = _decision()
+    (outbox / ("e" * 64 + ".json")).write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="filename does not match"):
+        telemetry._load_decision_outbox(tmp_path)
+
+
+def test_decision_outbox_loads_valid_payload(tmp_path: Path) -> None:
+    outbox = tmp_path / "decision_outbox"
+    outbox.mkdir()
+    payload = _decision()
+    path = outbox / f"{payload['decision_id']}.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    items = telemetry._load_decision_outbox(tmp_path)
+    assert items == [(path, payload)]
+
+
 def test_bar_fingerprint_is_deterministic_sha256() -> None:
     first = telemetry._bar_fingerprint(_Bar())
     second = telemetry._bar_fingerprint(_Bar())
@@ -73,7 +126,17 @@ def test_bar_fingerprint_is_deterministic_sha256() -> None:
     int(first, 16)
 
 
-def test_exporter_has_no_metatrader5_import() -> None:
+def test_exporter_unlinks_decisions_only_after_transaction_block() -> None:
+    source = Path(telemetry.__file__).read_text(encoding="utf-8")
+    transaction_index = source.index("with conn.transaction():")
+    unlink_index = source.index("path.unlink()")
+    assert transaction_index < unlink_index
+    assert "on conflict (decision_id) do nothing" in source
+
+
+def test_exporter_has_no_metatrader5_import_and_idempotent_decision_sql() -> None:
     source = Path(telemetry.__file__).read_text(encoding="utf-8")
     assert "import MetaTrader5" not in source
     assert "from MetaTrader5" not in source
+    assert "on conflict (decision_id) do nothing" in source
+    assert "path.unlink()" in source

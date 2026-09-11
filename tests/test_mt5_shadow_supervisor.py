@@ -98,6 +98,9 @@ def test_supervisor_green_cycle_is_no_order_and_builds_resume() -> None:
     assert result.heartbeat["status"] == "GREEN"
     assert result.heartbeat["processed_total"] == 3
     assert result.heartbeat["new_decisions"] == 3
+    assert len(result.decisions) == 3
+    assert all(item.action == "NO_ORDER" for item in result.decisions)
+    assert result.heartbeat["new_decisions"] == len(result.decisions)
     assert result.heartbeat["evidence_state"] == MT5_READONLY_EVIDENCE_STATE
     assert result.heartbeat["execution_capability"] == "NONE"
     assert result.heartbeat["order_execution_enabled"] is False
@@ -115,6 +118,7 @@ def test_supervisor_resume_suppresses_seen_bars() -> None:
     )
     assert second.heartbeat["status"] == "GREEN"
     assert second.heartbeat["new_decisions"] == 0
+    assert second.decisions == ()
     assert second.heartbeat["duplicates_suppressed"] == 0
     assert second.resume_state is not None
     assert second.resume_state.checkpoint == first.resume_state.checkpoint
@@ -135,6 +139,7 @@ def test_cross_cycle_identical_snapshot_stays_green() -> None:
     assert second.heartbeat["cross_cycle_identical_overlaps"] == 3
     assert second.heartbeat["cross_cycle_mutated_overlaps"] == 0
     assert second.heartbeat["new_decisions"] == 0
+    assert second.decisions == ()
     assert second.resume_state is not None
 
 
@@ -152,6 +157,7 @@ def test_cross_cycle_mutation_blocks_before_resume_advance() -> None:
     assert blocked.heartbeat["cross_cycle_status"] == "BLOCKED"
     assert blocked.heartbeat["cross_cycle_mutated_overlaps"] == 1
     assert blocked.heartbeat["new_decisions"] == 0
+    assert blocked.decisions == ()
     assert blocked.resume_state is None
     assert blocked.heartbeat["execution_capability"] == "NONE"
     assert blocked.heartbeat["order_execution_enabled"] is False
@@ -181,6 +187,7 @@ def test_supervisor_lost_lock_blocks_and_does_not_advance_resume() -> None:
     assert result.heartbeat["status"] == "BLOCKED"
     assert "SINGLE_INSTANCE_LOCK_NOT_HELD" in result.heartbeat["blockers"]
     assert result.resume_state is None
+    assert result.decisions == ()
     assert result.heartbeat["order_execution_enabled"] is False
 
 
