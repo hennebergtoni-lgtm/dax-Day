@@ -2,16 +2,18 @@
 """Continuous credential-free Windows MT5 read-only SHADOW supervisor.
 
 This script has no order API. It reuses the existing `mt5_windows_probe.collect_probe`
-function, persists a provenance-bound SHADOW resume envelope and heartbeat, and
-relies on Windows Task Scheduler for process restart after exit/crash.
+function, persists provenance-bound SHADOW resume/heartbeat state plus a small
+Decision outbox, and relies on Windows Task Scheduler for process restart after
+exit/crash.
 """
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 from pathlib import Path
 import signal
 import threading
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 from mt5_windows_probe import collect_probe
 
@@ -25,6 +27,7 @@ from daxlab.runtime.mt5_shadow_supervisor import (
     supervisor_stopped_heartbeat,
     with_history_archive_status,
 )
+from daxlab.runtime.shadow_observation import ShadowDecision
 from daxlab.runtime.single_instance import SingleInstanceLock
 
 _IDENTITY = "DAXLAB_MT5_SHADOW_SUPERVISOR_V1"
@@ -40,6 +43,33 @@ def _load_previous_bundle(path: Path):
     if not path.exists():
         return None
     return read_json_object(path)
+
+
+def _decision_payload(decision: ShadowDecision) -> dict[str, Any]:
+    if decision.action != "NO_ORDER":
+        raise ValueError("SHADOW Decision outbox accepts NO_ORDER only")
+    payload = asdict(decision)
+    payload["reason_codes"] = list(decision.reason_codes)
+    payload["execution_capability"] = "NONE"
+    payload["order_execution_enabled"] = False
+    return payload
+
+
+def _persist_decision_outbox(
+    outbox_dir: Path,
+    decisions: Iterable[ShadowDecision],
+) -> int:
+    """Atomically stage deterministic Decisions before resume state can advance."""
+    items = tuple(decisions)
+    if not items:
+        return 0
+    outbox_dir.mkdir(parents=True, exist_ok=True)
+    for decision in items:
+        atomic_write_json(
+            outbox_dir / f"{decision.decision_id}.json",
+            _decision_payload(decision),
+        )
+    return len(items)
 
 
 def _persist_heartbeat(
@@ -87,6 +117,7 @@ def main() -> int:
     state_dir = Path(args.state_dir).resolve()
     heartbeat_path = state_dir / "heartbeat.json"
     heartbeat_history_dir = state_dir / "heartbeat_history"
+    decision_outbox_dir = state_dir / "decision_outbox"
     resume_path = state_dir / "resume.json"
     latest_bundle_path = state_dir / "latest_bundle.json"
     rejected_bundle_path = state_dir / "rejected_bundle.json"
@@ -108,7 +139,7 @@ def main() -> int:
         lock.acquire()
     except Exception:
         # A losing second instance must never overwrite the legitimate owner's
-        # shared heartbeat, history, or resume state.
+        # shared heartbeat, history, resume state, or Decision outbox.
         return 4
 
     try:
@@ -146,6 +177,10 @@ def main() -> int:
                     previous_bundle_payload = bundle_payload
                     if rejected_bundle_path.exists():
                         rejected_bundle_path.unlink()
+
+                # Durably stage Decision evidence before advancing resume. A failed
+                # outbox write therefore cannot make an observation disappear.
+                _persist_decision_outbox(decision_outbox_dir, cycle.decisions)
 
                 if cycle.resume_state is not None:
                     resume_state = cycle.resume_state
