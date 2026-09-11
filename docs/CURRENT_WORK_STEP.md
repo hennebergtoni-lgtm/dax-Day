@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2092**
-- Active whole-number step: **2093**
-- Next step after successful completion: **2094**
+- Last completed whole-number step: **2093**
+- Active whole-number step: **2094**
+- Next step after successful completion: **2095**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -32,6 +32,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2090 | Add the canonical whole-number work-step ledger, make it mandatory in resume/navigation, and regression-test the pointer/audit sequence. | `72ec9641…`, `7fabecf8…`, `3b1b0bc8…`, `02aa4892…` |
 | 2091 | Produce and index an evidence-grounded PAPER-readiness gap matrix that separates reusable contracts, repository implementation gaps, external broker/host evidence and the user STOP-gate; regression-test the lane separation. | `a45d470e…`, `b4244e4d…`, `743ec5d2…` |
 | 2092 | Implement and regression-test the broker-neutral deterministic order-lifecycle evidence owner; reuse existing ExecutionIntent/client identity and paper lifecycle vocabulary; add fast broker-safety CI coverage. | `b9f6d23c…`, `55ca70c4…`, `3d6e33ac…` |
+| 2093 | Implement and regression-test broker-neutral exact reconciliation over local lifecycle evidence and plain venue observations; unknown/missing/contradictory truth fails closed and observation time stays out of venue-truth identity. | `4b2ea685…`, `3af91859…` |
 
 ## Numbering rules
 
@@ -46,4 +47,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2093:** implement and regression-test a broker-neutral reconciliation owner over plain local lifecycle evidence and plain venue-order observations. Exact consistency may be GREEN; missing, unknown or contradictory broker state must fail closed. No broker API, automatic state mutation, PAPER authorization or order submission is allowed.
+**Step 2094:** implement and regression-test one broker-neutral execution-protection verdict that consumes already-owned evidence (reconciliation, feed/health, spread, duplicate identity, sizing/risk and session/admission safety) and fails closed on any unsafe input. An allow verdict is evidence only, not PAPER authorization and not an order-submission capability.
