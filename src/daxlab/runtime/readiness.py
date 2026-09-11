@@ -35,6 +35,7 @@ class ReadinessSnapshot:
     # Explicit broker-facing PAPER evidence. Contracts/vocabulary or SHADOW-only
     # simulation do not satisfy these booleans.
     broker_order_lifecycle_verified: bool = False
+    broker_execution_checkpoint_verified: bool = False
     broker_reconciliation_verified: bool = False
     execution_protection_gates_verified: bool = False
     broker_order_telemetry_verified: bool = False
@@ -78,8 +79,9 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
         blockers.append("FULL_REFERENCE_REPLAY_UNVERIFIED")
 
     # Keep the historical coarse gate for compatibility/provenance, but make it
-    # impossible for one boolean to stand in for the broker lifecycle, reconnect
-    # reconciliation, execution-protection and telemetry evidence required for PAPER.
+    # impossible for one boolean to stand in for the broker lifecycle, restart
+    # checkpoint, reconnect reconciliation, execution-protection and telemetry
+    # evidence required for PAPER.
     if kind is RunKind.PAPER and not snapshot.execution_boundary_verified:
         blockers.append("EXECUTION_BOUNDARY_UNVERIFIED")
 
@@ -88,6 +90,10 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
             (
                 snapshot.broker_order_lifecycle_verified,
                 "BROKER_ORDER_LIFECYCLE_UNVERIFIED",
+            ),
+            (
+                snapshot.broker_execution_checkpoint_verified,
+                "BROKER_EXECUTION_CHECKPOINT_UNVERIFIED",
             ),
             (
                 snapshot.broker_reconciliation_verified,
