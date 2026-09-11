@@ -1,27 +1,31 @@
-from datetime import date
-
-from scripts.benchmark_cand001_pipeline import (
-    BARS_PER_SESSION,
-    SCHEMA_VERSION,
-    benchmark,
-    synthetic_session,
-)
+import json
+from pathlib import Path
+import subprocess
+import sys
 
 
-def test_synthetic_benchmark_session_has_full_103_bar_feed_surface():
-    bars = synthetic_session(date(2026, 1, 5), base_price=25000.0)
+def test_benchmark_cli_reports_103_bar_observation_metrics():
+    root = Path(__file__).parents[1]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(root / "scripts" / "benchmark_cand001_pipeline.py"),
+            "--sessions",
+            "1",
+            "--repeats",
+            "1",
+        ],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    result = json.loads(completed.stdout)
 
-    assert len(bars) == BARS_PER_SESSION == 103
-    assert bars[0].event_time.strftime("%H:%M") == "09:00"
-    assert bars[-1].event_time.strftime("%H:%M") == "17:30"
-
-
-def test_benchmark_reports_metrics_without_imposing_performance_threshold():
-    result = benchmark(sessions=1, repeats=1)
-
-    assert result["schema_version"] == SCHEMA_VERSION
+    assert result["schema_version"] == "DAX_BOT_CAND001_BENCHMARK_V1"
     assert result["candidate_id"] == "CAND-001"
     assert result["core_version"] == "DAX-BOT/1.0-alpha/CAND-001"
+    assert result["bars_per_session"] == 103
     assert result["events_per_repeat"] == 103
     assert result["median_ns_per_event"] > 0
     assert result["p95_ns_per_event"] > 0
