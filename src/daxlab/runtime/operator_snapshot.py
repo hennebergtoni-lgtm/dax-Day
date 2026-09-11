@@ -1,4 +1,9 @@
-"""Credential-free read-only operator snapshot for DAX-BOT 1.x."""
+"""Credential-free read-only operator snapshot for DAX-BOT 1.x.
+
+The snapshot separates the current strategy decision from any still-open or just-
+closed virtual position. A position may originate from an earlier TRADE decision
+while the current bar legitimately produces a later NO_TRADE decision.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,7 +22,7 @@ from daxlab.runtime.candidate_virtual_outcome import Cand001VirtualOutcomeEviden
 from daxlab.runtime.decision import DecisionRecord, FinalAction, stable_fingerprint
 
 
-SCHEMA_VERSION = "DAX_BOT_OPERATOR_SNAPSHOT_V2"
+SCHEMA_VERSION = "DAX_BOT_OPERATOR_SNAPSHOT_V3"
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +55,7 @@ class OperatorSnapshot:
     recovery_state: str | None
     reconciliation_state: str | None
     virtual_lifecycle_id: str | None
+    virtual_decision_id: str | None
     virtual_status: str | None
     virtual_side: str | None
     virtual_filled_at: datetime | None
@@ -77,6 +83,7 @@ class OperatorSnapshot:
         ):
             if value is not None and value.tzinfo is None:
                 raise ValueError("operator snapshot timestamps must be timezone-aware")
+
         runtime_values = (
             self.last_bar_id,
             self.last_bar_close_time,
@@ -87,15 +94,14 @@ class OperatorSnapshot:
         ):
             raise ValueError("operator runtime bar context must be complete")
         if self.last_bar_id is not None:
-            if len(self.last_bar_id) != 64:
-                raise ValueError("last_bar_id must be sha256 hex")
-            int(self.last_bar_id, 16)
+            _sha(self.last_bar_id, "last_bar_id")
             assert self.last_bar_close_time is not None
             assert self.freshness_seconds is not None
             if self.freshness_seconds < 0:
                 raise ValueError("freshness_seconds cannot be negative")
             if self.generated_at < self.last_bar_close_time:
                 raise ValueError("operator snapshot cannot precede last closed bar")
+
         if (self.health_state is None) != (self.health_source is None):
             raise ValueError("health_state and health_source must be supplied together")
         if self.health_state is not None and not self.health_state.strip():
@@ -106,25 +112,23 @@ class OperatorSnapshot:
             raise ValueError("runtime_events must be non-empty strings")
         if len(set(self.runtime_events)) != len(self.runtime_events):
             raise ValueError("runtime_events must be unique")
+
         if self.execution_capability != "NONE":
             raise ValueError("operator snapshot cannot carry execution capability")
         if self.order_execution_enabled is not False:
             raise ValueError("operator snapshot cannot enable order execution")
-        if len(self.config_fingerprint) != 64 or len(self.decision_id) != 64:
-            raise ValueError("operator snapshot identity fingerprints must be sha256 hex")
-        int(self.config_fingerprint, 16)
-        int(self.decision_id, 16)
+
+        _sha(self.config_fingerprint, "config_fingerprint")
+        _sha(self.decision_id, "decision_id")
         if self.virtual_lifecycle_id is not None:
-            if len(self.virtual_lifecycle_id) != 64:
-                raise ValueError("virtual_lifecycle_id must be sha256 hex")
-            int(self.virtual_lifecycle_id, 16)
+            _sha(self.virtual_lifecycle_id, "virtual_lifecycle_id")
+        if self.virtual_decision_id is not None:
+            _sha(self.virtual_decision_id, "virtual_decision_id")
+        if (self.virtual_lifecycle_id is None) != (self.virtual_decision_id is None):
+            raise ValueError("virtual lifecycle and origin decision identity must be paired")
         if self.outcome_id is not None:
-            if len(self.outcome_id) != 64:
-                raise ValueError("outcome_id must be sha256 hex")
-            int(self.outcome_id, 16)
-        if len(self.snapshot_fingerprint) != 64:
-            raise ValueError("snapshot_fingerprint must be sha256 hex")
-        int(self.snapshot_fingerprint, 16)
+            _sha(self.outcome_id, "outcome_id")
+        _sha(self.snapshot_fingerprint, "snapshot_fingerprint")
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -171,6 +175,7 @@ class OperatorSnapshot:
             },
             "virtual_position": {
                 "lifecycle_id": self.virtual_lifecycle_id,
+                "origin_decision_id": self.virtual_decision_id,
                 "status": self.virtual_status,
                 "side": self.virtual_side,
                 "filled_at": (
@@ -220,19 +225,22 @@ def build_operator_snapshot(
     lifecycle: Cand001VirtualLifecycleState | None = None,
     outcome: Cand001VirtualOutcomeEvidence | None = None,
 ) -> OperatorSnapshot:
-    """Build a read-only consistency-checked view for operators and the web layer."""
+    """Build a read-only current-decision view plus independent position context."""
     if generated_at.tzinfo is None:
         raise ValueError("generated_at must be timezone-aware")
     identity = config.product_identity()
+
     if decision.event_time != signal.close_time:
         raise ValueError("decision time must match closed signal time")
     if decision.data_fingerprint != signal.data_fingerprint:
         raise ValueError("decision provenance must match signal data fingerprint")
+
     if admission.status is AdmissionStatus.ALLOWED:
         if admission.admitted_plan is None or decision.final_action is not FinalAction.TRADE:
             raise ValueError("ALLOWED admission must map to TRADE decision")
     elif decision.final_action is FinalAction.TRADE:
         raise ValueError("non-ALLOWED admission cannot map to TRADE decision")
+
     if proposed_trade_plan is not None:
         if proposed_trade_plan.signal_data_fingerprint != signal.data_fingerprint:
             raise ValueError("proposed trade-plan provenance mismatch")
@@ -256,12 +264,10 @@ def build_operator_snapshot(
     )
     lifecycle_fields = _lifecycle_fields(
         generated_at=generated_at,
-        decision=decision,
         lifecycle=lifecycle,
     )
     outcome_fields = _outcome_fields(
         generated_at=generated_at,
-        decision=decision,
         lifecycle=lifecycle,
         outcome=outcome,
     )
@@ -323,9 +329,7 @@ def _runtime_fields(
         assert last_bar_id is not None
         assert last_bar_close_time is not None
         assert freshness_seconds is not None
-        if len(last_bar_id) != 64:
-            raise ValueError("last_bar_id must be sha256 hex")
-        int(last_bar_id, 16)
+        _sha(last_bar_id, "last_bar_id")
         if last_bar_close_time.tzinfo is None:
             raise ValueError("last_bar_close_time must be timezone-aware")
         if freshness_seconds < 0:
@@ -344,6 +348,7 @@ def _runtime_fields(
         raise ValueError("health_state must be non-empty")
     if health_source is not None and not health_source.strip():
         raise ValueError("health_source must be non-empty")
+
     events = tuple(dict.fromkeys(runtime_events))
     if any(not isinstance(event, str) or not event.strip() for event in events):
         raise ValueError("runtime_events must be non-empty strings")
@@ -353,6 +358,7 @@ def _runtime_fields(
     ):
         if value is not None and (not isinstance(value, str) or not value.strip()):
             raise ValueError(f"{field} must be non-empty string or null")
+
     return {
         **bar_fields,
         "health_state": health_state,
@@ -366,12 +372,12 @@ def _runtime_fields(
 def _lifecycle_fields(
     *,
     generated_at: datetime,
-    decision: DecisionRecord,
     lifecycle: Cand001VirtualLifecycleState | None,
 ) -> dict[str, object]:
     if lifecycle is None:
         return {
             "virtual_lifecycle_id": None,
+            "virtual_decision_id": None,
             "virtual_status": None,
             "virtual_side": None,
             "virtual_filled_at": None,
@@ -380,18 +386,17 @@ def _lifecycle_fields(
             "virtual_exit_price": None,
             "virtual_exit_reason": None,
         }
-    if decision.final_action is not FinalAction.TRADE:
-        raise ValueError("virtual lifecycle requires TRADE decision")
-    if lifecycle.decision_id != decision.decision_id:
-        raise ValueError("virtual lifecycle decision identity drift")
-    if lifecycle.requested_at != decision.event_time:
-        raise ValueError("virtual lifecycle request time must match decision time")
+
+    if generated_at < lifecycle.requested_at:
+        raise ValueError("operator snapshot cannot observe a future virtual request")
     if lifecycle.filled_at is not None and generated_at < lifecycle.filled_at:
         raise ValueError("operator snapshot cannot observe a future virtual fill")
     if lifecycle.closed_at is not None and generated_at < lifecycle.closed_at:
         raise ValueError("operator snapshot cannot observe a future virtual close")
+
     return {
         "virtual_lifecycle_id": lifecycle.lifecycle_id,
+        "virtual_decision_id": lifecycle.decision_id,
         "virtual_status": lifecycle.status.value,
         "virtual_side": lifecycle.side.value,
         "virtual_filled_at": lifecycle.filled_at,
@@ -409,7 +414,6 @@ def _lifecycle_fields(
 def _outcome_fields(
     *,
     generated_at: datetime,
-    decision: DecisionRecord,
     lifecycle: Cand001VirtualLifecycleState | None,
     outcome: Cand001VirtualOutcomeEvidence | None,
 ) -> dict[str, object]:
@@ -422,8 +426,8 @@ def _outcome_fields(
         }
     if lifecycle is None or lifecycle.status is not VirtualPositionStatus.CLOSED:
         raise ValueError("virtual outcome requires CLOSED lifecycle in operator snapshot")
-    if outcome.decision_id != decision.decision_id:
-        raise ValueError("virtual outcome decision identity drift")
+    if outcome.decision_id != lifecycle.decision_id:
+        raise ValueError("virtual outcome origin decision identity drift")
     if outcome.lifecycle_id != lifecycle.lifecycle_id:
         raise ValueError("virtual outcome lifecycle identity drift")
     if generated_at < outcome.closed_at:
@@ -434,3 +438,9 @@ def _outcome_fields(
         "outcome_cost_r": outcome.cost_r,
         "outcome_net_r": outcome.net_r,
     }
+
+
+def _sha(value: str, field: str) -> None:
+    if len(value) != 64:
+        raise ValueError(f"{field} must be sha256 hex")
+    int(value, 16)
