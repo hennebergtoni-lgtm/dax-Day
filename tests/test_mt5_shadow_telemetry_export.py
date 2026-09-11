@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import importlib.util
 from pathlib import Path
 
 import pytest
 
-from scripts import export_mt5_shadow_telemetry as telemetry
+_EXPORTER_PATH = Path(__file__).resolve().parents[1] / "scripts" / "export_mt5_shadow_telemetry.py"
+_SPEC = importlib.util.spec_from_file_location("export_mt5_shadow_telemetry", _EXPORTER_PATH)
+if _SPEC is None or _SPEC.loader is None:
+    raise RuntimeError("failed to load MT5 SHADOW telemetry exporter for tests")
+telemetry = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(telemetry)
 
 
 class _Bar:
