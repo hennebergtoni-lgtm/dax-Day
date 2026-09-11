@@ -16,6 +16,7 @@ Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
+$repoSrc = Join-Path $repoRoot 'src'
 
 if ($PythonExecutable) {
     $python = $PythonExecutable
@@ -24,6 +25,9 @@ if ($PythonExecutable) {
 }
 $supervisor = Join-Path $repoRoot 'scripts\mt5_shadow_supervisor.py'
 
+if (-not (Test-Path -LiteralPath $repoSrc -PathType Container)) {
+    throw "DAXLAB source directory not found: $repoSrc"
+}
 if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
     throw "MT5 Python environment not found: $python"
 }
@@ -40,8 +44,15 @@ if ($IntervalSeconds -lt 1) {
     throw 'IntervalSeconds must be >= 1.'
 }
 
+if ($env:PYTHONPATH) {
+    $env:PYTHONPATH = "$repoSrc;$env:PYTHONPATH"
+} else {
+    $env:PYTHONPATH = $repoSrc
+}
+
 Write-Host 'DAXLAB MT5 SHADOW start'
 Write-Host "Repo: $repoRoot"
+Write-Host "RepoSrc: $repoSrc"
 Write-Host "StateDir: $StateDir"
 Write-Host "Python: $python"
 Write-Host "Symbol: $Symbol"

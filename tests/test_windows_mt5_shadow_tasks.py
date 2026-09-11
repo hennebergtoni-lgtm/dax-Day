@@ -9,6 +9,7 @@ import pytest
 
 SCRIPTS = (
     Path("scripts/windows_mt5_shadow_start.ps1"),
+    Path("scripts/windows_mt5_shadow_telemetry_export.ps1"),
     Path("scripts/preflight_windows_mt5_shadow_autostart.ps1"),
     Path("scripts/install_windows_mt5_shadow_task.ps1"),
     Path("scripts/check_windows_mt5_shadow_runtime.ps1"),
@@ -45,6 +46,10 @@ def test_start_wrapper_is_shadow_only() -> None:
     assert "[string]$PythonExecutable = ''" in text
     assert "if ($PythonExecutable)" in text
     assert ".venv-mt5\\Scripts\\python.exe" in text
+    assert "$repoSrc = Join-Path $repoRoot 'src'" in text
+    assert '$env:PYTHONPATH = "$repoSrc;$env:PYTHONPATH"' in text
+    assert "$env:PYTHONPATH = $repoSrc" in text
+    assert 'Write-Host "RepoSrc: $repoSrc"' in text
     assert 'Write-Host "StateDir: $StateDir"' in text
     assert 'Write-Host "Python: $python"' in text
     for forbidden in ("order_send", "order_check", "live_authorized", "paper_authorized"):
@@ -62,6 +67,12 @@ def test_preflight_is_read_only_and_requires_green_heartbeat() -> None:
     assert "heartbeat.status -ne 'GREEN'" in text
     assert "Register-ScheduledTask" in text
     assert "Get-Command $command" in text
+    assert "[string]$PythonExecutable = ''" in text
+    assert "if ($PythonExecutable)" in text
+    assert "$repoSrc = Join-Path $repoRoot 'src'" in text
+    assert '$env:PYTHONPATH = "$repoSrc;$env:PYTHONPATH"' in text
+    assert "$env:PYTHONPATH = $repoSrc" in text
+    assert 'Write-Host "PRECHECK | RepoSrc: $repoSrc"' in text
     assert "register-scheduledtask -taskname" not in lower
     for forbidden in ("order_send", "order_check", "--login", "--password"):
         assert forbidden not in lower
