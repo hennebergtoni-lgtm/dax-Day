@@ -8,6 +8,7 @@ Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
+$repoSrc = Join-Path $repoRoot 'src'
 
 if ($PythonExecutable) {
     $python = $PythonExecutable
@@ -16,6 +17,9 @@ if ($PythonExecutable) {
 }
 $exporter = Join-Path $repoRoot 'scripts\export_mt5_shadow_telemetry.py'
 
+if (-not (Test-Path -LiteralPath $repoSrc -PathType Container)) {
+    throw "DAXLAB source directory not found: $repoSrc"
+}
 if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
     throw "MT5 Python environment not found: $python"
 }
@@ -29,8 +33,15 @@ if (-not $env:NEON_DATABASE_URL) {
     throw 'NEON_DATABASE_URL is not configured for this Windows user.'
 }
 
+if ($env:PYTHONPATH) {
+    $env:PYTHONPATH = "$repoSrc;$env:PYTHONPATH"
+} else {
+    $env:PYTHONPATH = $repoSrc
+}
+
 Write-Host 'DAXLAB MT5 SHADOW telemetry export'
 Write-Host "Repo: $repoRoot"
+Write-Host "RepoSrc: $repoSrc"
 Write-Host "StateDir: $StateDir"
 Write-Host "Python: $python"
 Write-Host 'Direction: local SHADOW artifacts -> Neon only'
