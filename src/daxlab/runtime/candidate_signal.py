@@ -105,7 +105,11 @@ def transition_cand001(
         raise ValueError("CAND-001 requires exact five-minute candles")
 
     fingerprint = stable_fingerprint(
-        {"state_before": state, "candle": candle, "config": cfg}
+        {
+            "state_before": state,
+            "candle": _causal_candle_identity(candle),
+            "config": cfg,
+        }
     )
 
     if state.last_close_time is not None:
@@ -208,6 +212,24 @@ def transition_cand001(
         state=next_state,
         signal=_signal(candle, next_state, SignalDirection.NONE, SignalReason.NO_BREAKOUT, fingerprint),
     )
+
+
+def _causal_candle_identity(candle: Candle) -> dict[str, object]:
+    """Return strategy-relevant closed-bar identity without transport observation time."""
+    return {
+        "symbol": candle.symbol,
+        "timeframe": candle.timeframe,
+        "event_time": candle.event_time,
+        "close_time": candle.close_time,
+        "open": float(candle.open),
+        "high": float(candle.high),
+        "low": float(candle.low),
+        "close": float(candle.close),
+        "volume": None if candle.volume is None else float(candle.volume),
+        "source": candle.source,
+        "is_closed": candle.is_closed,
+        "quality_state": candle.quality_state.value,
+    }
 
 
 def _clock(value: str) -> time:
