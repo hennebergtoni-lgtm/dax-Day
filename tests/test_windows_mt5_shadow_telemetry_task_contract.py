@@ -39,3 +39,19 @@ def test_telemetry_task_does_not_start_or_stop_shadow_task() -> None:
     assert "Start-ScheduledTask" not in source
     assert "Stop-ScheduledTask" not in source
     assert "Unregister-ScheduledTask" not in source
+
+
+def test_telemetry_task_uses_bounded_repetition_duration() -> None:
+    source = _read("install_windows_mt5_shadow_telemetry_task.ps1")
+    assert "[TimeSpan]::MaxValue" not in source
+    assert "-RepetitionDuration (New-TimeSpan -Days 3650)" in source
+
+
+def test_telemetry_task_supports_explicit_python_and_persisted_user_secret() -> None:
+    installer = _read("install_windows_mt5_shadow_telemetry_task.ps1")
+    wrapper = _read("windows_mt5_shadow_telemetry_export.ps1")
+    assert "[string]$PythonExecutable" in installer
+    assert "[string]$PythonExecutable" in wrapper
+    assert '-PythonExecutable `"$PythonExecutable`"' in installer
+    assert "GetEnvironmentVariable('NEON_DATABASE_URL', 'User')" in installer
+    assert "GetEnvironmentVariable('NEON_DATABASE_URL', 'User')" in wrapper
