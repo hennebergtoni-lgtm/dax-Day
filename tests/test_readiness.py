@@ -22,6 +22,7 @@ def ready_snapshot(**overrides: object) -> ReadinessSnapshot:
         "broker_risk_sizing_verified": True,
         "risk_profile_policy_verified": True,
         "loss_cap_policy_verified": True,
+        "paper_user_authorized": True,
     }
     values.update(overrides)
     return ReadinessSnapshot(**values)  # type: ignore[arg-type]
@@ -39,6 +40,7 @@ def test_fixture_smoke_does_not_require_clean_reference_identity() -> None:
             broker_risk_sizing_verified=False,
             risk_profile_policy_verified=False,
             loss_cap_policy_verified=False,
+            paper_user_authorized=False,
         ),
     )
     assert result.allowed
@@ -78,10 +80,41 @@ def test_hash_verified_recovered_source_allows_clean_replay_without_original_zip
     assert "AUDITED_BUNDLE_UNAVAILABLE" not in result.blockers
 
 
-def test_paper_allows_only_when_all_readiness_evidence_is_verified() -> None:
+def test_paper_allows_only_when_all_readiness_evidence_and_user_gate_are_verified() -> None:
     result = evaluate_run_readiness(RunKind.PAPER, ready_snapshot())
     assert result.allowed
     assert result.blockers == ()
+
+
+def test_paper_requires_explicit_user_stop_gate_even_when_all_technical_gates_pass() -> None:
+    result = evaluate_run_readiness(
+        RunKind.PAPER,
+        ready_snapshot(paper_user_authorized=False),
+    )
+    assert not result.allowed
+    assert result.blockers == ("PAPER_USER_AUTHORIZATION_REQUIRED",)
+
+
+def test_paper_user_authorization_default_is_fail_closed() -> None:
+    snapshot = ReadinessSnapshot(
+        ci_green=True,
+        dataset_verified=True,
+        engine_verified=True,
+        database_verified=True,
+        technical_replay_verified=True,
+        audited_bundle_available=True,
+        full_reference_replay_verified=True,
+        execution_boundary_verified=True,
+        mt5_readonly_health_verified=True,
+        dataset_identity=RecoveryIdentity.HASH_VERIFIED,
+        broker_economics_verified=True,
+        broker_risk_sizing_verified=True,
+        risk_profile_policy_verified=True,
+        loss_cap_policy_verified=True,
+    )
+    result = evaluate_run_readiness(RunKind.PAPER, snapshot)
+    assert not result.allowed
+    assert "PAPER_USER_AUTHORIZATION_REQUIRED" in result.blockers
 
 
 def test_paper_still_requires_original_audited_bundle_provenance() -> None:
@@ -156,7 +189,7 @@ def test_paper_requires_verified_loss_cap_policy() -> None:
     assert "LOSS_CAP_POLICY_UNVERIFIED" in result.blockers
 
 
-def test_clean_reference_replay_does_not_depend_on_paper_risk_evidence() -> None:
+def test_clean_reference_replay_does_not_depend_on_paper_risk_or_user_evidence() -> None:
     result = evaluate_run_readiness(
         RunKind.CLEAN_REFERENCE_REPLAY,
         ready_snapshot(
@@ -164,6 +197,7 @@ def test_clean_reference_replay_does_not_depend_on_paper_risk_evidence() -> None
             broker_risk_sizing_verified=False,
             risk_profile_policy_verified=False,
             loss_cap_policy_verified=False,
+            paper_user_authorized=False,
         ),
     )
     assert result.allowed
