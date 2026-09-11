@@ -199,6 +199,40 @@ Each durable entry contains:
 
 ---
 
+## PSR-011 — Paper contracts were not a virtual lifecycle engine
+
+**Status:** VERIFIED / FIXED FOR CAND-001 SHADOW
+**Component:** CAND-001 virtual execution lifecycle
+
+**Problem:** The repository already had `ExecutionIntent`, lifecycle vocabulary, fill/gap/same-bar/partial-fill policies and simulation telemetry. That surface could be mistaken for an already implemented stateful virtual position engine even though no component actually carried a position from intent through later bars to stop/target closure.
+
+**Root cause:** `paper_contracts.py` was deliberately a preparation/contract boundary. Concrete same-bar stop/target resolution existed separately in `core/execution.py`, while outcome/ledger/reporting existed downstream in research. The stateful middle owner was genuinely absent.
+
+**Accepted solution:** Add only the missing thin `candidate_virtual_lifecycle.py` layer. It reuses the existing `ExecutionIntent`, `PaperFillModelConfig`, closed-bar identity and `core.resolve_bracket_bar`; fills no earlier than the next causal safe M5 bar; uses first-available-open gap semantics; remains SHADOW-only with `execution_capability=NONE` and `order_execution_enabled=false`; and creates no broker/PAPER adapter.
+
+**Proof/evidence:** `src/daxlab/runtime/candidate_virtual_lifecycle.py`; `tests/test_candidate_virtual_lifecycle.py`; product CI `dax-bot-1x-ci` run #29 GREEN at head `c7a01d962ff8fc2f546f6deb1fcb61cf25ccbb0b`.
+
+**Reuse rule:** Contracts/enums are not proof of an executing state owner. Before adding a simulator, map the chain `Intent -> stateful lifecycle -> outcome -> ledger`; fill only the missing responsibility and reuse existing owners around it.
+
+---
+
+## PSR-012 — Recorded cost assumptions must be applied explicitly to outcomes
+
+**Status:** VERIFIED / FIXED FOR CAND-001 SHADOW
+**Component:** virtual outcome / cost semantics
+
+**Problem:** `PaperFillModelConfig` recorded spread, slippage and commission and bound them into a deterministic fingerprint, but the first CAND-001 lifecycle implementation only resolved the causal price path. Without an explicit outcome layer, a virtual result could silently omit configured costs and look too optimistic.
+
+**Root cause:** The historical Paper-preparation work intentionally recorded assumptions without implementing a full lifecycle/outcome engine. Price progression and economic result therefore needed an explicit boundary rather than hidden arithmetic inside the signal or lifecycle code.
+
+**Accepted solution:** Keep lifecycle price progression separate and add `candidate_virtual_outcome.py`. `DAXLAB_CAND001_COST_APPLICATION_V1` defines NEW_1X cost semantics: spread + slippage + commission are additive adverse configured points once per completed virtual trade; achieved R uses the original planned risk distance `abs(requested_price - stop_price)`; actual causal fill/exit prices determine gross points; configured costs reduce net R; the existing `DatedShadowOutcome` stores the resulting net R. This is explicitly not claimed as V11.2 cost-formula parity and is intended for later broker-demo calibration.
+
+**Proof/evidence:** `src/daxlab/runtime/candidate_virtual_outcome.py`; `tests/test_candidate_virtual_outcome.py`; product CI `dax-bot-1x-ci` run #29 GREEN at head `c7a01d962ff8fc2f546f6deb1fcb61cf25ccbb0b`.
+
+**Reuse rule:** A versioned cost configuration is incomplete until its application point and R normalization are explicit. Never assume that recorded costs are already reflected in outcome metrics; never describe NEW_1X cost semantics as legacy parity without separate evidence.
+
+---
+
 ## Maintenance rule
 
 At each mandatory 500-step audit:
