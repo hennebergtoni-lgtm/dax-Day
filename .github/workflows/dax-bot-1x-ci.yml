@@ -42,6 +42,7 @@ jobs:
           src/daxlab/runtime/candidate_decision.py
           src/daxlab/runtime/candidate_pipeline.py
           src/daxlab/runtime/candidate_state.py
+          src/daxlab/runtime/candidate_dual_compare.py
           src/daxlab/runtime/operator_snapshot.py
           tests/test_candidate*.py
           tests/test_operator_snapshot.py
