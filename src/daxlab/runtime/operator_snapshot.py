@@ -44,6 +44,11 @@ class OperatorSnapshot:
     last_bar_id: str | None
     last_bar_close_time: datetime | None
     freshness_seconds: float | None
+    health_state: str | None
+    health_source: str | None
+    runtime_events: tuple[str, ...]
+    recovery_state: str | None
+    reconciliation_state: str | None
     virtual_lifecycle_id: str | None
     virtual_status: str | None
     virtual_side: str | None
@@ -91,6 +96,16 @@ class OperatorSnapshot:
                 raise ValueError("freshness_seconds cannot be negative")
             if self.generated_at < self.last_bar_close_time:
                 raise ValueError("operator snapshot cannot precede last closed bar")
+        if (self.health_state is None) != (self.health_source is None):
+            raise ValueError("health_state and health_source must be supplied together")
+        if self.health_state is not None and not self.health_state.strip():
+            raise ValueError("health_state must be non-empty")
+        if self.health_source is not None and not self.health_source.strip():
+            raise ValueError("health_source must be non-empty")
+        if any(not event.strip() for event in self.runtime_events):
+            raise ValueError("runtime_events must be non-empty strings")
+        if len(set(self.runtime_events)) != len(self.runtime_events):
+            raise ValueError("runtime_events must be unique")
         if self.execution_capability != "NONE":
             raise ValueError("operator snapshot cannot carry execution capability")
         if self.order_execution_enabled is not False:
@@ -148,6 +163,11 @@ class OperatorSnapshot:
                     else None
                 ),
                 "freshness_seconds": self.freshness_seconds,
+                "health_state": self.health_state,
+                "health_source": self.health_source,
+                "events": list(self.runtime_events),
+                "recovery_state": self.recovery_state,
+                "reconciliation_state": self.reconciliation_state,
             },
             "virtual_position": {
                 "lifecycle_id": self.virtual_lifecycle_id,
@@ -192,6 +212,11 @@ def build_operator_snapshot(
     last_bar_id: str | None = None,
     last_bar_close_time: datetime | None = None,
     freshness_seconds: float | None = None,
+    health_state: str | None = None,
+    health_source: str | None = None,
+    runtime_events: tuple[str, ...] = (),
+    recovery_state: str | None = None,
+    reconciliation_state: str | None = None,
     lifecycle: Cand001VirtualLifecycleState | None = None,
     outcome: Cand001VirtualOutcomeEvidence | None = None,
 ) -> OperatorSnapshot:
@@ -223,6 +248,11 @@ def build_operator_snapshot(
         last_bar_id=last_bar_id,
         last_bar_close_time=last_bar_close_time,
         freshness_seconds=freshness_seconds,
+        health_state=health_state,
+        health_source=health_source,
+        runtime_events=runtime_events,
+        recovery_state=recovery_state,
+        reconciliation_state=reconciliation_state,
     )
     lifecycle_fields = _lifecycle_fields(
         generated_at=generated_at,
@@ -274,32 +304,62 @@ def _runtime_fields(
     last_bar_id: str | None,
     last_bar_close_time: datetime | None,
     freshness_seconds: float | None,
+    health_state: str | None,
+    health_source: str | None,
+    runtime_events: tuple[str, ...],
+    recovery_state: str | None,
+    reconciliation_state: str | None,
 ) -> dict[str, object]:
     values = (last_bar_id, last_bar_close_time, freshness_seconds)
     if all(value is None for value in values):
-        return {
+        bar_fields: dict[str, object] = {
             "last_bar_id": None,
             "last_bar_close_time": None,
             "freshness_seconds": None,
         }
-    if any(value is None for value in values):
-        raise ValueError("operator runtime bar context must be complete")
-    assert last_bar_id is not None
-    assert last_bar_close_time is not None
-    assert freshness_seconds is not None
-    if len(last_bar_id) != 64:
-        raise ValueError("last_bar_id must be sha256 hex")
-    int(last_bar_id, 16)
-    if last_bar_close_time.tzinfo is None:
-        raise ValueError("last_bar_close_time must be timezone-aware")
-    if freshness_seconds < 0:
-        raise ValueError("freshness_seconds cannot be negative")
-    if generated_at < last_bar_close_time:
-        raise ValueError("operator snapshot cannot precede last closed bar")
+    else:
+        if any(value is None for value in values):
+            raise ValueError("operator runtime bar context must be complete")
+        assert last_bar_id is not None
+        assert last_bar_close_time is not None
+        assert freshness_seconds is not None
+        if len(last_bar_id) != 64:
+            raise ValueError("last_bar_id must be sha256 hex")
+        int(last_bar_id, 16)
+        if last_bar_close_time.tzinfo is None:
+            raise ValueError("last_bar_close_time must be timezone-aware")
+        if freshness_seconds < 0:
+            raise ValueError("freshness_seconds cannot be negative")
+        if generated_at < last_bar_close_time:
+            raise ValueError("operator snapshot cannot precede last closed bar")
+        bar_fields = {
+            "last_bar_id": last_bar_id,
+            "last_bar_close_time": last_bar_close_time,
+            "freshness_seconds": float(freshness_seconds),
+        }
+
+    if (health_state is None) != (health_source is None):
+        raise ValueError("health_state and health_source must be supplied together")
+    if health_state is not None and not health_state.strip():
+        raise ValueError("health_state must be non-empty")
+    if health_source is not None and not health_source.strip():
+        raise ValueError("health_source must be non-empty")
+    events = tuple(dict.fromkeys(runtime_events))
+    if any(not isinstance(event, str) or not event.strip() for event in events):
+        raise ValueError("runtime_events must be non-empty strings")
+    for value, field in (
+        (recovery_state, "recovery_state"),
+        (reconciliation_state, "reconciliation_state"),
+    ):
+        if value is not None and (not isinstance(value, str) or not value.strip()):
+            raise ValueError(f"{field} must be non-empty string or null")
     return {
-        "last_bar_id": last_bar_id,
-        "last_bar_close_time": last_bar_close_time,
-        "freshness_seconds": float(freshness_seconds),
+        **bar_fields,
+        "health_state": health_state,
+        "health_source": health_source,
+        "runtime_events": events,
+        "recovery_state": recovery_state,
+        "reconciliation_state": reconciliation_state,
     }
 
 
