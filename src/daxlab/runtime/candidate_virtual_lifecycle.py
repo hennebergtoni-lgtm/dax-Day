@@ -24,6 +24,8 @@ from daxlab.runtime.paper_contracts import (
 )
 
 _SCHEMA_VERSION = "DAXLAB_CAND001_VIRTUAL_LIFECYCLE_V1"
+_CANONICAL_TIMEFRAME = "5m"
+_LEGACY_TEST_TIMEFRAME_ALIAS = "M5"
 
 
 class VirtualPositionStatus(StrEnum):
@@ -127,15 +129,15 @@ def advance_cand001_virtual_lifecycle(
     *,
     fill_model: PaperFillModelConfig | None = None,
 ) -> Cand001VirtualLifecycleState:
-    """Advance one virtual position using one closed, safe, chronological M5 candle."""
+    """Advance one virtual position using one closed, safe, chronological 5m candle."""
     model = fill_model or PaperFillModelConfig()
     _require_supported_model(model)
     if model.fingerprint != state.fill_model_fingerprint:
         raise ValueError("fill-model fingerprint drift")
     if candle.symbol != state.symbol:
         raise ValueError("candle symbol does not match virtual lifecycle")
-    if candle.timeframe != "M5":
-        raise ValueError("CAND-001 virtual lifecycle requires M5 candles")
+    if candle.timeframe not in {_CANONICAL_TIMEFRAME, _LEGACY_TEST_TIMEFRAME_ALIAS}:
+        raise ValueError("CAND-001 virtual lifecycle requires five-minute candles")
     if state.status is VirtualPositionStatus.CLOSED:
         return state
     if not candle.safe_for_decision:
@@ -152,7 +154,7 @@ def advance_cand001_virtual_lifecycle(
         raise ValueError("virtual lifecycle candle is duplicate or out of order")
 
     # Never let the decision candle itself create a trade effect. The earliest
-    # eligible virtual fill is the first safe M5 bar starting at/after requested_at.
+    # eligible virtual fill is the first safe 5m bar starting at/after requested_at.
     if state.status is VirtualPositionStatus.PENDING_ENTRY:
         if candle.close_time <= state.requested_at or candle.event_time < state.requested_at:
             return state
