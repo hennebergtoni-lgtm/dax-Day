@@ -6,16 +6,19 @@ This document is the durable project handover/source-of-truth. New work must pre
 
 ## 0. Current active development line — BINDING
 
-The project now has two deliberately separate identities:
+The project has two deliberately separate identities:
 
 - `REF-V11.2` = immutable legacy/reference baseline. It is a negative comparison and scientific provenance anchor, not the current product bot and not a profitability claim.
 - `DAX-BOT 1.0-alpha` = the new product line under controlled construction. Incremental generations may become 1.1, 1.2, 1.3, 1.5, etc.; `2.0` is reserved for a genuinely new generation rather than routine iteration.
 - Strategy ideas/candidates use candidate IDs such as `CAND-001`; candidate IDs are not bot version numbers.
 
 Current development PR: `#109`, branch `nextgen-bot-line-v1`, base `main`.
-Last fully CI-verified 1.x implementation head before this masterstand refresh: `8abf6340ada284f116f410c5a1875f6f35e28876` (research-lab-ci run #774 GREEN).
+Last fully CI-verified 1.x implementation head before this documentation refresh: `61dc2e3d50debb5dfd86eb2005f067829879dd7c`.
+Verified CI at that implementation head:
+- `dax-bot-1x-ci` run #1: GREEN.
+- `research-lab-ci` run #785: GREEN.
 
-DAX-BOT 1.x success is not defined first by profitability. The first alpha must be deterministic, causal, observable, restart-safe, duplicate-safe, parameter-identifiable, modular, testable and operationally understandable. Profitability remains unproven.
+DAX-BOT 1.x success is not defined first by profitability. The alpha must be deterministic, causal, observable, restart-safe, duplicate-safe, parameter-identifiable, modular, testable and operationally understandable. Profitability remains unproven.
 
 ## 1. Repository and recovery anchors
 - Repository: `hennebergtoni-lgtm/dax-Day`, default branch `main`.
@@ -116,9 +119,11 @@ Recovery canonicalization from the Step-2000 audit:
 - `src/daxlab/runtime/recovery.py` = legacy / retirement candidate; do not use for new production paths.
 - active SHADOW/replay state remains an operational restart/reconcile concern and is not silently collapsed into the material-run bundle.
 
+DAX-BOT 1.x now reuses the existing atomic JSON persistence primitive for candidate state rather than adding a new writer/recovery subsystem.
+
 Research execution should avoid blind 12–14-hour grids. Prefer FAST screening, targeted stages, checkpoints/resume and efficient/vectorized evaluation where scientifically appropriate.
 
-## 8. DAX-BOT 1.x modular transition — IMPLEMENTED / VERIFIED through CI where noted
+## 8. DAX-BOT 1.x modular transition — IMPLEMENTED / VERIFIED
 The migration is compatibility-first, not rewrite-first. Existing useful infrastructure is preserved and components migrate individually.
 
 Implemented component routing:
@@ -146,7 +151,7 @@ Its current rules are explicit `NEW_1X_SELECTION`, not a profitability claim and
 - fixed 1.5R target for the alpha candidate;
 - max one admitted trade per session.
 
-Implemented 1.x path currently separates:
+Implemented 1.x path:
 `canonical Candle -> pure signal state transition -> proposed trade geometry -> per-session admission -> canonical DecisionRecord -> read-only OperatorSnapshot`.
 
 Key behavior:
@@ -158,9 +163,26 @@ Key behavior:
 - no MT5, DB, pandas, Paper or broker dependency is allowed inside the candidate hot path by architecture test;
 - no broker order API is introduced.
 
-CI #774 at implementation head `8abf6340ada284f116f410c5a1875f6f35e28876` passed Ruff, the full test suite and existing recovery/reference/SHADOW smokes. Neon-dependent CI steps remain environment/secret dependent and being skipped is not treated as equivalent to a DB verification.
+Pure one-bar orchestration is implemented so one closed Candle produces signal → proposed plan → admission → DecisionRecord → OperatorSnapshot without DB/MT5/Paper side effects.
 
-## 9. Performance doctrine for DAX-BOT 1.x — BINDING
+Candidate state persistence is restart-safe and fail-closed:
+- schema/candidate/core/config identity is checked;
+- state payload is hashed;
+- safety fields cannot escalate execution capability;
+- continuous processing and save→load→resume produce identical downstream signal/plan/decision/snapshot identities in the verified restart-parity tests;
+- the per-session admitted-trade limit survives restart.
+
+CI evidence at implementation head `61dc2e3d50debb5dfd86eb2005f067829879dd7c`:
+- `dax-bot-1x-ci` run #1: GREEN.
+- Candidate Ruff: GREEN.
+- Candidate correctness/restart tests: GREEN.
+- Candidate performance observation: GREEN.
+- Benchmark artifact upload: GREEN.
+- `research-lab-ci` run #785: GREEN across full tests plus existing recovery/reference/SHADOW smokes.
+
+Neon-dependent main-push CI steps remain environment/secret dependent; a skipped DB step is not treated as equivalent to DB verification.
+
+## 9. Performance doctrine for DAX-BOT 1.x — BINDING / BASELINE VERIFIED
 Runtime performance is measured before optimization.
 
 Current hot-path rules:
@@ -172,7 +194,23 @@ Current hot-path rules:
 - research may remain vectorized/Pandas-oriented outside the runtime hot path;
 - correctness, causality, provenance and safety are never removed merely for speed.
 
-A dedicated benchmark/profiling surface must establish empirical baselines before hard runtime budgets are introduced.
+First reproducible product benchmark at CI run #1:
+- 50 synthetic sessions;
+- 103 bars/session;
+- 3 repeats;
+- 5,150 events/repeat;
+- median `309375.4221359223 ns/event` (~309 µs/event);
+- p95 `313607.3145631068 ns/event` (~314 µs/event);
+- median `3232.318821889658 events/s`;
+- Python 3.11.16 on GitHub-hosted Linux runner;
+- `performance_gate=OBSERVATION_ONLY`.
+
+Benchmark artifact:
+- artifact ID `10264245107`;
+- artifact SHA256 `a6b0614bc2db8b8fdf4b96f7c214174fa9d906705066fdd483badca90287037c`;
+- 30-day retention from the verified run.
+
+No hard runtime threshold is inferred from a single CI baseline. Future budgets should be based on repeated comparable evidence and should preferably detect regressions rather than encode an arbitrary absolute number.
 
 ## 10. Web / observability architecture — PRESERVE + MODERNIZE
 The existing `web/index.html` is preserved as a useful small read-only UI shell.
@@ -197,6 +235,7 @@ Current adopted engineering principles include:
 - NautilusTrader: deterministic/event-driven state, persistence/reconciliation and mode consistency where useful.
 - Freqtrade: explicit dry/forward discipline, closed-candle/no-lookahead testing and small health/operator surfaces.
 - vectorbt: powerful vectorized research, but event-driven/causal execution semantics remain the reference for runtime behavior.
+- GitHub Actions: new DAX-BOT 1.x product workflow uses current v7 action lines rather than intentionally inheriting the older Node-runtime warnings of the legacy workflow.
 
 External frameworks, generic multi-asset abstractions, venue complexity and large portfolio layers are not imported merely because they exist.
 
@@ -247,13 +286,13 @@ There is no invisible background work. If work stops, the stop and its exact rea
 
 After context/tool-view loss, resume deterministically: pin repository SHA/branch, reconcile open PR/current CI, refresh runtime telemetry when making current-runtime claims, reload the necessary small repository subtrees/files, reconstruct the last VERIFIED numbered step and only then continue.
 
-## 16. Immediate next milestones after this masterstand refresh
-- finish CI verification of admission-aware DecisionRecord and OperatorSnapshot changes on PR #109;
-- create one pure candidate pipeline state/orchestrator so one closed Candle produces signal → plan → admission → decision → operator snapshot without DB/MT5/Paper side effects;
-- add deterministic restart/state persistence using existing atomic/checkpoint patterns rather than another recovery architecture;
-- benchmark the pure 1.x pipeline before setting performance budgets;
-- bind the existing `ExecutionIntent` only after an explicit simulation-only sizing policy exists;
-- keep PAPER blocked until its acceptance gate and explicit authorization are satisfied;
-- modernize the web data contract after the operator snapshot/pipeline is stable, preserving the existing UI shell;
-- continue regular public-project delta scans and capture only project-relevant changes;
-- use `LEGACY / DUAL_COMPARE / BOT_1X` for incremental component migration rather than a big-bang cutover.
+## 16. Immediate next milestones after Step 2019 refresh
+- bind the implemented CAND-001 pure pipeline into `DUAL_COMPARE` without creating a second strategy architecture and without changing the authoritative provider prematurely;
+- define an explicit simulation-only sizing/risk policy before mapping a candidate trade to the existing `ExecutionIntent` contract;
+- reuse the existing Paper/virtual lifecycle only after its contracts are inspected and acceptance tests preserve `execution_capability=NONE` / `order_execution_enabled=false`;
+- connect CAND-001 read-only to real closed MT5 SHADOW bars only after DUAL_COMPARE/replay parity is proven;
+- modernize the web data contract so the existing UI shell consumes stable evidence plus a fresh read-only OperatorSnapshot source without browser credentials or GitHub-as-runtime-relay;
+- continue benchmark evidence across materially changed 1.x generations and introduce a regression budget only after comparable repeated observations exist;
+- continue regular public-project delta scans focused on performance, state/recovery, reconciliation, event-driven design, operator surfaces and version/migration governance;
+- use `LEGACY / DUAL_COMPARE / BOT_1X` for incremental component migration rather than a big-bang cutover;
+- keep PAPER and LIVE blocked until explicit later acceptance gates and user authorization.
