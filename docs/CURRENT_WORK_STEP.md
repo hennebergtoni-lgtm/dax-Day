@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2100**
-- Active whole-number step: **2101**
-- Next step after successful completion: **2102**
+- Last completed whole-number step: **2101**
+- Active whole-number step: **2102**
+- Next step after successful completion: **2103**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -40,6 +40,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2098 | Add strict tamper-evident BrokerOrderLifecycle serialization/restoration and prove REQUESTED/ACK/PARTIAL restart continuity plus PARTIAL→FILLED parity with uninterrupted execution; identity/state/safety drift fail closed. | `fe0f4816…`, `4cbc0089…`, strengthened tests `cb037f11…` (exact-head CI: `dax-bot-1x-ci` #187 GREEN, `research-lab-ci` #971 GREEN); matrix refresh `cdd3ccb5…` |
 | 2099 | Implement and regression-test one tamper-evident broker execution checkpoint binding optional lifecycle restore state and telemetry journal into one atomic persistence envelope; prove PARTIAL→FILLED restart parity and nested/outer tamper/safety fail-closed behavior. | implementation `4c54a928…`; tests `d0b2910a…`, assertion fix `96d4fc6d…` (exact-head CI: `dax-bot-1x-ci` #192 GREEN, `research-lab-ci` #976 GREEN); matrix refresh `f6fef62f…` |
 | 2100 | Add and regression-test an explicit fail-closed PAPER gate for qualifying broker execution checkpoint/restart evidence; repository fixtures/CI alone cannot satisfy broker-facing evidence and the independent user STOP-gate remains required. | readiness `60689803…`, tests `ab26bf02…`, matrix `8fd42c1b…`, matrix tests `9de8897b…`, acceptance contract `de1d06a0…` (exact-head CI: `dax-bot-1x-ci` #199 GREEN, `research-lab-ci` #983 GREEN) |
+| 2101 | Perform a LEAN ownership audit of remaining broker-neutral PAPER software; freeze the no-overbuild boundary because lifecycle, checkpoint, reconciliation, protection, telemetry and readiness already have owners, and enforce that all `broker_*.py` pre-authorization owners remain submission-free. | audit `b239985a…`, boundary test `9670c1a5…` (exact-head CI: `dax-bot-1x-ci` #202 GREEN, `research-lab-ci` #986 GREEN) |
 
 ## Numbering rules
 
@@ -54,4 +55,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2101:** perform a LEAN ownership audit of the remaining broker-neutral PAPER software after lifecycle, checkpoint, reconciliation, protection, telemetry and readiness gates. Do not invent a broker execution orchestrator merely for architectural symmetry. Prove whether any additional pre-authorization software owner is genuinely required; if not, record the no-overbuild decision and move to the next independent evidence lane.
+**Step 2102:** audit the repository for CAND-001-specific historical/OOS/walk-forward economic evidence. Keep CAND-001 results strictly separate from frozen REF-V11.2 performance. Determine whether CAND-001 currently has only technical/runtime correctness evidence or already has reproducible profitability/robustness evidence; identify the minimum next research harness needed to measure CAND-001 without mutating runtime semantics or claiming edge prematurely.
