@@ -153,3 +153,28 @@ def test_invalid_risk_inputs_fail_before_any_estimate() -> None:
             risk_budget_cash=0.0,
             risk_currency="EUR",
         )
+
+
+def test_fingerprint_is_deterministic_and_changes_with_risk_inputs() -> None:
+    first = estimate_volume_for_cash_risk(
+        symbol=_symbol(),
+        stop_distance_price=10.0,
+        risk_budget_cash=100.0,
+        risk_currency="EUR",
+    )
+    repeated = estimate_volume_for_cash_risk(
+        symbol=_symbol(),
+        stop_distance_price=10.0,
+        risk_budget_cash=100.0,
+        risk_currency="EUR",
+    )
+    changed_stop = estimate_volume_for_cash_risk(
+        symbol=_symbol(),
+        stop_distance_price=12.0,
+        risk_budget_cash=100.0,
+        risk_currency="EUR",
+    )
+
+    assert len(first.fingerprint) == 64
+    assert first.fingerprint == repeated.fingerprint
+    assert first.fingerprint != changed_stop.fingerprint
