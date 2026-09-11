@@ -1,21 +1,21 @@
 {
   "bars": {
     "latest": {
-      "bar_fingerprint": "1db264c0ae728a68b397ae47b74f9ad9e23a6ad62a449c1d733beb9abf4f5188",
+      "bar_fingerprint": "06c805cea46097ebd1ba0cc145bfb5161b628756a51f83261c707d8faa1640a8",
       "broker_timezone": "Europe/Helsinki",
-      "close": 25394.4,
-      "high": 25394.9,
-      "low": 25378.4,
-      "open": 25381.4,
-      "open_time": "2026-09-11T05:10:00+00:00",
+      "close": 25387.4,
+      "high": 25398.9,
+      "low": 25384.4,
+      "open": 25394.9,
+      "open_time": "2026-09-11T05:15:00+00:00",
       "symbol": "DE40",
       "timestamp_interpretation": "EXPLICIT_BROKER_WALL_CLOCK"
     },
-    "stored_bars": 47
+    "stored_bars": 48
   },
   "decisions_stream_state": "NOT_PERSISTED_YET",
   "execution_capability": "NONE",
-  "generated_at_utc": "2026-09-11T05:20:02.350939+00:00",
+  "generated_at_utc": "2026-09-11T05:22:25.139302+00:00",
   "heartbeat": {
     "blockers": [],
     "closed_m5_bars": 40,
@@ -27,12 +27,12 @@
     "evidence_state": "MT5_READONLY_BROKER_EVIDENCE",
     "execution_capability": "NONE",
     "history_archive_status": "OK",
-    "latest_closed_bar_age_seconds": 198.39744,
+    "latest_closed_bar_age_seconds": 78.792924,
     "new_decisions": 0,
-    "observed_at_utc": "2026-09-11T05:18:18.510592+00:00",
+    "observed_at_utc": "2026-09-11T05:21:18.910646+00:00",
     "order_execution_enabled": false,
-    "payload_sha256": "f5e1dab495052f62a241e5d0a356bde469d59469dc4bfb213f109dd98b50dc7f",
-    "processed_total": 318,
+    "payload_sha256": "8ad9fbfcdd7599f59e2559484eae844b09229aad83887d1d654c0c89d1227c1f",
+    "processed_total": 319,
     "status": "GREEN",
     "symbol": "DE40"
   },
