@@ -7,7 +7,8 @@ param(
     [int]$Bars = 40,
     [double]$MaxAgeSeconds = 600.0,
     [double]$IntervalSeconds = 60.0,
-    [string]$StateDir = '.runtime\mt5_shadow'
+    [string]$StateDir = '.runtime\mt5_shadow',
+    [string]$PythonExecutable = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,7 +17,11 @@ Set-StrictMode -Version Latest
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
-$python = Join-Path $repoRoot '.venv-mt5\Scripts\python.exe'
+if ($PythonExecutable) {
+    $python = $PythonExecutable
+} else {
+    $python = Join-Path $repoRoot '.venv-mt5\Scripts\python.exe'
+}
 $supervisor = Join-Path $repoRoot 'scripts\mt5_shadow_supervisor.py'
 
 if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
@@ -37,6 +42,8 @@ if ($IntervalSeconds -lt 1) {
 
 Write-Host 'DAXLAB MT5 SHADOW start'
 Write-Host "Repo: $repoRoot"
+Write-Host "StateDir: $StateDir"
+Write-Host "Python: $python"
 Write-Host "Symbol: $Symbol"
 Write-Host "Broker timezone: $BrokerTimezone"
 Write-Host 'Execution: NONE / NO_ORDER'
