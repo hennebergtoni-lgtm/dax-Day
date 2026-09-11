@@ -2,8 +2,8 @@
 
 CAND-001 is intentionally small and observable. It is not a profitability claim.
 The confirmed-breakout close semantic is adapted from causal research evidence;
-the concrete candidate selections (OR15, OR-opposite stop, 1.5R, one trade per
-session) are explicit NEW_1X_SELECTION choices rather than inherited V11.2
+the concrete candidate selections (DE40, OR15, OR-opposite stop, 1.5R, one trade
+per session) are explicit NEW_1X_SELECTION choices rather than inherited V11.2
 behavior.
 """
 from __future__ import annotations
@@ -51,6 +51,7 @@ class Cand001Config:
 
     candidate_id: str = CANDIDATE_ID
     ruleset_version: str = RULESET_VERSION
+    symbol: str = "DE40"
     bar_timeframe: str = "5m"
     session_timezone: str = "Europe/Berlin"
     session_start: str = "09:00"
@@ -69,6 +70,7 @@ class Cand001Config:
         fixed_values = {
             "candidate_id": (self.candidate_id, CANDIDATE_ID),
             "ruleset_version": (self.ruleset_version, RULESET_VERSION),
+            "symbol": (self.symbol, "DE40"),
             "bar_timeframe": (self.bar_timeframe, "5m"),
             "session_timezone": (self.session_timezone, "Europe/Berlin"),
             "session_start": (self.session_start, "09:00"),

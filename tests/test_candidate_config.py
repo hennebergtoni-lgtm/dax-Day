@@ -24,6 +24,7 @@ def test_cand001_defaults_are_the_frozen_alpha_rule_snapshot():
 
     assert config.candidate_id == "CAND-001"
     assert config.ruleset_version == "CAND_001_RULESET_V1"
+    assert config.symbol == "DE40"
     assert config.bar_timeframe == "5m"
     assert config.session_timezone == "Europe/Berlin"
     assert config.session_start == "09:00"
@@ -61,6 +62,7 @@ def test_cand001_config_is_immutable():
     [
         ("candidate_id", "CAND-999"),
         ("ruleset_version", "OTHER"),
+        ("symbol", "GER40"),
         ("bar_timeframe", "1m"),
         ("session_timezone", "UTC"),
         ("session_start", "08:00"),
