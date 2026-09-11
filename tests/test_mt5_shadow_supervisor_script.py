@@ -25,6 +25,7 @@ def test_supervisor_script_has_no_order_api() -> None:
     assert 'resume_path = state_dir / "resume.json"' in text
     assert 'heartbeat_path = state_dir / "heartbeat.json"' in text
     assert 'heartbeat_history_dir = state_dir / "heartbeat_history"' in text
+    assert 'decision_outbox_dir = state_dir / "decision_outbox"' in text
     assert 'latest_bundle_path = state_dir / "latest_bundle.json"' in text
     assert 'rejected_bundle_path = state_dir / "rejected_bundle.json"' in text
     assert "single_instance_lock_held=lock.held" in text
@@ -38,6 +39,19 @@ def test_compare_happens_before_latest_bundle_replace() -> None:
     assert process_index < accepted_write_index
     assert 'cycle.heartbeat.get("cross_cycle_status") == "BLOCKED"' in text
     assert "atomic_write_json(rejected_bundle_path, bundle_payload)" in text
+
+
+def test_decision_outbox_is_persisted_before_resume_advance() -> None:
+    text = Path("scripts/mt5_shadow_supervisor.py").read_text(encoding="utf-8")
+    outbox_index = text.index(
+        "_persist_decision_outbox(decision_outbox_dir, cycle.decisions)"
+    )
+    resume_index = text.index(
+        "atomic_write_json(resume_path, mt5_shadow_resume_payload(resume_state))"
+    )
+    assert outbox_index < resume_index
+    assert 'payload["execution_capability"] = "NONE"' in text
+    assert 'payload["order_execution_enabled"] = False' in text
 
 
 def test_history_failure_is_visible_in_current_heartbeat() -> None:
