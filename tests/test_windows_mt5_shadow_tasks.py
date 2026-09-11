@@ -42,6 +42,11 @@ def test_start_wrapper_is_shadow_only() -> None:
     assert "mt5_shadow_supervisor.py" in text
     assert "--broker-timezone" in text
     assert "--state-dir" in text
+    assert "[string]$PythonExecutable = ''" in text
+    assert "if ($PythonExecutable)" in text
+    assert ".venv-mt5\\Scripts\\python.exe" in text
+    assert 'Write-Host "StateDir: $StateDir"' in text
+    assert 'Write-Host "Python: $python"' in text
     for forbidden in ("order_send", "order_check", "live_authorized", "paper_authorized"):
         assert forbidden not in lower
 
@@ -72,6 +77,11 @@ def test_installer_registers_mt5_and_shadow_without_credentials() -> None:
     assert "-MultipleInstances IgnoreNew" in text
     assert "-RestartCount" in text
     assert "order_execution_enabled=false" in text
+    assert "[string]$StateDir = '.runtime\\mt5_shadow'" in text
+    assert "[string]$PythonExecutable = ''" in text
+    assert "MT5 Python executable not found" in text
+    assert '-StateDir `"$StateDir`"' in text
+    assert '-PythonExecutable `"$PythonExecutable`"' in text
     for forbidden in ("password", "--login", "--password", "order_send", "order_check"):
         assert forbidden not in lower
 
