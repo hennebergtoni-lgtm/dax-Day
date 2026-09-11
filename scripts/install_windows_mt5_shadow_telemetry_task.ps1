@@ -1,7 +1,8 @@
 param(
     [string]$TaskName = 'DAXLAB MT5 SHADOW TELEMETRY',
     [int]$IntervalMinutes = 1,
-    [string]$StateDir = '.runtime\mt5_shadow'
+    [string]$StateDir = '.runtime\mt5_shadow',
+    [string]$PythonExecutable = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -13,6 +14,10 @@ if ($IntervalMinutes -lt 1) {
 if (-not (Get-Command Register-ScheduledTask -ErrorAction SilentlyContinue)) {
     throw 'Windows ScheduledTasks module is not available.'
 }
+
+if (-not $env:NEON_DATABASE_URL) {
+    $env:NEON_DATABASE_URL = [Environment]::GetEnvironmentVariable('NEON_DATABASE_URL', 'User')
+}
 if (-not $env:NEON_DATABASE_URL) {
     throw 'NEON_DATABASE_URL is not configured for this Windows user.'
 }
@@ -21,6 +26,12 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $wrapper = Join-Path $repoRoot 'scripts\windows_mt5_shadow_telemetry_export.ps1'
 if (-not (Test-Path -LiteralPath $wrapper -PathType Leaf)) {
     throw "Telemetry wrapper not found: $wrapper"
+}
+
+if ($PythonExecutable) {
+    if (-not (Test-Path -LiteralPath $PythonExecutable -PathType Leaf)) {
+        throw "Telemetry Python executable not found: $PythonExecutable"
+    }
 }
 
 $principal = New-ScheduledTaskPrincipal `
@@ -33,6 +44,9 @@ $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
     -RepetitionDuration (New-TimeSpan -Days 3650)
 
 $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$wrapper`" -StateDir `"$StateDir`""
+if ($PythonExecutable) {
+    $arguments += " -PythonExecutable `"$PythonExecutable`""
+}
 $action = New-ScheduledTaskAction `
     -Execute 'powershell.exe' `
     -Argument $arguments `
@@ -62,5 +76,8 @@ Write-Host "Installed task: $TaskName"
 Write-Host "Interval: $IntervalMinutes minute(s)"
 Write-Host "Repo: $repoRoot"
 Write-Host "StateDir: $StateDir"
+if ($PythonExecutable) {
+    Write-Host "Python: $PythonExecutable"
+}
 Write-Host 'Direction: local SHADOW artifacts -> Neon only'
 Write-Host 'Mode: SHADOW telemetry / execution_capability=NONE / order_execution_enabled=false'
