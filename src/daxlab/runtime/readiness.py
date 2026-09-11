@@ -30,6 +30,9 @@ class ReadinessSnapshot:
     broker_risk_sizing_verified: bool = False
     risk_profile_policy_verified: bool = False
     loss_cap_policy_verified: bool = False
+    # Explicit operator STOP-GATE. Technical evidence alone must never unlock
+    # broker-facing demo/PAPER execution.
+    paper_user_authorized: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,5 +91,11 @@ def evaluate_run_readiness(kind: RunKind, snapshot: ReadinessSnapshot) -> RunRea
         for passed, blocker in paper_risk_gates:
             if not passed:
                 blockers.append(blocker)
+
+        # The project contract requires a user STOP-GATE review before broker-facing
+        # demo/PAPER execution starts. Keep this independent from all technical gates
+        # so a future software change cannot infer authorization from readiness.
+        if not snapshot.paper_user_authorized:
+            blockers.append("PAPER_USER_AUTHORIZATION_REQUIRED")
 
     return RunReadiness(kind=kind, allowed=not blockers, blockers=tuple(blockers))
