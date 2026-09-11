@@ -13,12 +13,16 @@ EXPECTED_MIGRATIONS = {
     "0005_reproduced_detail_sources",
     "0006_detail_evidence_rows",
     "0007_mt5_shadow_telemetry",
+    "0008_cand001_operator_telemetry",
+    "0009_cand001_operator_current_view",
 }
 EXPECTED_TELEMETRY_TABLES = {
     "mt5_shadow_heartbeats",
     "mt5_shadow_bars",
     "mt5_shadow_decisions",
+    "cand001_operator_snapshots",
 }
+EXPECTED_TELEMETRY_VIEWS = {"cand001_operator_current"}
 EXPECTED_ENGINE_SHA = "9561b9089c57c543798dc587ce240a729b7995230dd5d665a1bdd029f3990887"
 EXPECTED_DATASET_SHA = "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
 EXPECTED_CANDIDATE_ENGINE_SHA = (
@@ -56,6 +60,15 @@ def main() -> None:
         if missing_telemetry:
             raise SystemExit(
                 f"database integrity failed: missing telemetry tables {sorted(missing_telemetry)}"
+            )
+        cursor.execute(
+            "select table_name from information_schema.views where table_schema = current_schema()"
+        )
+        views = {row[0] for row in cursor.fetchall()}
+        missing_views = EXPECTED_TELEMETRY_VIEWS - views
+        if missing_views:
+            raise SystemExit(
+                f"database integrity failed: missing telemetry views {sorted(missing_views)}"
             )
 
         cursor.execute("select sha256, frozen from engine_references where name = %s", ("V11.2 Exact Reference Engine",))
@@ -130,12 +143,20 @@ def main() -> None:
             cursor.execute(f"select count(*) from {table}")
             telemetry_counts[table] = cursor.fetchone()[0]
 
+        cursor.execute(
+            "select count(*) from cand001_operator_current where "
+            "execution_capability = 'NONE' and order_execution_enabled = false"
+        )
+        current_candidate_rows = cursor.fetchone()[0]
+        if current_candidate_rows not in {0, 1}:
+            raise SystemExit("database integrity failed: Candidate current view cardinality drift")
+
     print(
         "Database integrity OK | "
         f"migrations={len(migrations)} | active_reference=VERIFIED | detail_sources=VERIFIED | "
         f"detail_registry=NOT_IMPORTED | evidence_rows={evidence_rows} | "
         f"wf_rows={wf_rows} | trades={trade_rows} | telemetry={telemetry_counts} | "
-        "detailed_rows=NOT_IMPORTED"
+        f"candidate_current_rows={current_candidate_rows} | detailed_rows=NOT_IMPORTED"
     )
 
 
