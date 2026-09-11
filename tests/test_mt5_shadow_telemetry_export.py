@@ -126,6 +126,14 @@ def test_bar_fingerprint_is_deterministic_sha256() -> None:
     int(first, 16)
 
 
+def test_exporter_unlinks_decisions_only_after_transaction_block() -> None:
+    source = Path(telemetry.__file__).read_text(encoding="utf-8")
+    transaction_index = source.index("with conn.transaction():")
+    unlink_index = source.index("path.unlink()")
+    assert transaction_index < unlink_index
+    assert "on conflict (decision_id) do nothing" in source
+
+
 def test_exporter_has_no_metatrader5_import_and_idempotent_decision_sql() -> None:
     source = Path(telemetry.__file__).read_text(encoding="utf-8")
     assert "import MetaTrader5" not in source
