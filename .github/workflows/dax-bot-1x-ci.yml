@@ -1,0 +1,60 @@
+name: dax-bot-1x-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/daxlab/runtime/candidate_*.py'
+      - 'src/daxlab/runtime/operator_snapshot.py'
+      - 'tests/test_candidate*.py'
+      - 'tests/test_operator_snapshot.py'
+      - 'scripts/benchmark_cand001_pipeline.py'
+      - '.github/workflows/dax-bot-1x-ci.yml'
+  pull_request:
+    paths:
+      - 'src/daxlab/runtime/candidate_*.py'
+      - 'src/daxlab/runtime/operator_snapshot.py'
+      - 'tests/test_candidate*.py'
+      - 'tests/test_operator_snapshot.py'
+      - 'scripts/benchmark_cand001_pipeline.py'
+      - '.github/workflows/dax-bot-1x-ci.yml'
+
+jobs:
+  candidate-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install lean candidate test surface
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . --no-deps
+          python -m pip install pytest ruff==0.16.2
+      - name: Candidate Ruff
+        run: >-
+          ruff check
+          src/daxlab/runtime/candidate_config.py
+          src/daxlab/runtime/candidate_signal.py
+          src/daxlab/runtime/candidate_trade_plan.py
+          src/daxlab/runtime/candidate_admission.py
+          src/daxlab/runtime/candidate_decision.py
+          src/daxlab/runtime/candidate_pipeline.py
+          src/daxlab/runtime/candidate_state.py
+          src/daxlab/runtime/operator_snapshot.py
+          tests/test_candidate*.py
+          tests/test_operator_snapshot.py
+          scripts/benchmark_cand001_pipeline.py
+      - name: Candidate correctness and restart tests
+        run: pytest -q tests/test_candidate*.py tests/test_operator_snapshot.py
+      - name: Candidate performance observation
+        run: |
+          python scripts/benchmark_cand001_pipeline.py --sessions 50 --repeats 3 > candidate-benchmark.json
+          cat candidate-benchmark.json
+      - name: Upload candidate benchmark evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: dax-bot-cand001-benchmark-${{ github.sha }}
+          path: candidate-benchmark.json
+          retention-days: 30
