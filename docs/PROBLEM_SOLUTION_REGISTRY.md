@@ -233,6 +233,23 @@ Each durable entry contains:
 
 ---
 
+## PSR-013 — In-memory deduplication does not survive restart publication
+
+**Status:** VERIFIED / FIXED FOR CAND-001 SHADOW
+**Component:** outer SHADOW publication idempotency
+
+**Problem:** `ExecutionIntent.client_order_id` and CAND-001 `outcome_id` were deterministic, and `IntentDeduplicator` rejected duplicate intents inside one Python process. After a process restart, however, that in-memory set was empty again, so deterministic identity alone did not prove that the same outer SHADOW intent/outcome evidence could not be published twice.
+
+**Root cause:** Identity and durable publication history are separate responsibilities. The project had durable atomic JSON persistence and deterministic IDs, but no persisted CAND-001 publication-admission state for these two evidence namespaces.
+
+**Accepted solution:** Add the narrow `candidate_publication_state.py` contract. It stores sorted unique published Intent IDs and Outcome IDs in separate namespaces, uses the existing `stable_fingerprint` for tamper evidence, keeps `execution_capability=NONE` / `order_execution_enabled=false`, and delegates disk durability to the existing `atomic_json` owner. Replayed IDs are rejected both before and after save/load/restart; no Paper, broker, venue or generic outbox subsystem is introduced.
+
+**Proof/evidence:** `src/daxlab/runtime/candidate_publication_state.py`; `tests/test_candidate_publication_state.py`; `dax-bot-1x-ci` run #50 GREEN and `research-lab-ci` run #834 GREEN at head `d689f49d3c7d3ddee97b2489960c1f1b2e694346`.
+
+**Reuse rule:** Deterministic IDs prevent identity drift but do not by themselves prevent duplicate external publication after restart. Any restartable side-effect/evidence boundary must pair deterministic identity with durable admission/idempotency state or an equivalent database uniqueness guarantee. Do not solve this by adding a second execution/order contract.
+
+---
+
 ## Maintenance rule
 
 At each mandatory 500-step audit:
