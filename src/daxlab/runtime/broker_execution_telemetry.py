@@ -12,16 +12,18 @@ from datetime import datetime
 from enum import StrEnum
 from hashlib import sha256
 import json
+import re
 from typing import Any
 
 from daxlab.runtime.broker_execution_protection import (
     BrokerExecutionProtectionVerdict,
 )
-from daxlab.runtime.broker_order_lifecycle import BrokerOrderEvent, BrokerOrderState
+from daxlab.runtime.broker_order_lifecycle import BrokerOrderEvent
 from daxlab.runtime.broker_reconciliation import BrokerReconciliationVerdict
 
 
 BROKER_EXECUTION_TELEMETRY_SCHEMA = "DAXLAB_BROKER_EXECUTION_TELEMETRY_V1"
+_SAFE_CODE = re.compile(r"^[A-Z0-9][A-Z0-9_.:-]{0,127}$")
 
 
 class BrokerExecutionTelemetryKind(StrEnum):
@@ -43,6 +45,7 @@ class BrokerExecutionTelemetryRecord:
     reconciliation_status: str | None
     protection_status: str | None
     blockers: tuple[str, ...]
+    reason_code: str | None = None
     venue_order_id: str | None = None
     cumulative_filled_quantity: float | None = None
     last_fill_quantity: float | None = None
@@ -84,6 +87,16 @@ class BrokerExecutionTelemetryRecord:
                 raise ValueError(f"{field} must be non-negative")
         if self.last_fill_price is not None and self.last_fill_price <= 0:
             raise ValueError("last_fill_price must be positive when supplied")
+        for code, field in (
+            (self.lifecycle_state, "lifecycle_state"),
+            (self.reconciliation_status, "reconciliation_status"),
+            (self.protection_status, "protection_status"),
+            (self.reason_code, "reason_code"),
+        ):
+            if code is not None:
+                _safe_code(code, field)
+        for blocker in self.blockers:
+            _safe_code(blocker, "blocker")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("broker execution telemetry cannot authorize execution")
         self._validate_kind_shape()
@@ -105,6 +118,8 @@ class BrokerExecutionTelemetryRecord:
                 raise ValueError("reconciliation telemetry requires reconciliation status")
             if self.lifecycle_state is not None or self.protection_status is not None:
                 raise ValueError("reconciliation telemetry cannot carry other verdict states")
+            if self.reason_code is not None:
+                raise ValueError("reconciliation telemetry cannot carry order reason code")
             if any(
                 value is not None
                 for value in (
@@ -127,6 +142,8 @@ class BrokerExecutionTelemetryRecord:
             raise ValueError("protection telemetry requires status and client order identity")
         if self.lifecycle_state is not None or self.reconciliation_status is not None:
             raise ValueError("protection telemetry cannot carry other verdict states")
+        if self.reason_code is not None:
+            raise ValueError("protection telemetry cannot carry order reason code")
         if any(
             value is not None
             for value in (
@@ -158,6 +175,7 @@ class BrokerExecutionTelemetryRecord:
             "reconciliation_status": self.reconciliation_status,
             "protection_status": self.protection_status,
             "blockers": list(self.blockers),
+            "reason_code": self.reason_code,
             "venue_order_id": self.venue_order_id,
             "cumulative_filled_quantity": self.cumulative_filled_quantity,
             "last_fill_quantity": self.last_fill_quantity,
@@ -178,6 +196,8 @@ class BrokerExecutionTelemetryRecord:
 
 def telemetry_from_order_event(event: BrokerOrderEvent) -> BrokerExecutionTelemetryRecord:
     """Project one canonical order event into append-only telemetry evidence."""
+    if event.reason is not None:
+        _safe_code(event.reason, "order event reason")
     payload = _record_payload(
         kind=BrokerExecutionTelemetryKind.ORDER_EVENT,
         event_time=event.venue_event_time,
@@ -188,7 +208,8 @@ def telemetry_from_order_event(event: BrokerOrderEvent) -> BrokerExecutionTeleme
         source_sequence=event.sequence,
         reconciliation_status=None,
         protection_status=None,
-        blockers=(() if event.reason is None else (event.reason,)),
+        blockers=(),
+        reason_code=event.reason,
         venue_order_id=event.venue_order_id,
         cumulative_filled_quantity=event.cumulative_filled_quantity,
         last_fill_quantity=event.last_fill_quantity,
@@ -206,7 +227,7 @@ def telemetry_from_reconciliation(
     *,
     observed_at: datetime,
 ) -> BrokerExecutionTelemetryRecord:
-    """Record one reconciliation verdict; observed_at is transport/event metadata."""
+    """Record one reconciliation verdict; observed_at is event metadata."""
     if observed_at.tzinfo is None:
         raise ValueError("observed_at must be timezone-aware")
     payload = _record_payload(
@@ -220,6 +241,7 @@ def telemetry_from_reconciliation(
         reconciliation_status=verdict.status.value,
         protection_status=None,
         blockers=verdict.blockers,
+        reason_code=None,
         venue_order_id=None,
         cumulative_filled_quantity=None,
         last_fill_quantity=None,
@@ -251,6 +273,7 @@ def telemetry_from_protection(
         reconciliation_status=None,
         protection_status=verdict.status.value,
         blockers=verdict.blockers,
+        reason_code=None,
         venue_order_id=None,
         cumulative_filled_quantity=None,
         last_fill_quantity=None,
@@ -275,6 +298,7 @@ def _record_payload(
     reconciliation_status: str | None,
     protection_status: str | None,
     blockers: tuple[str, ...],
+    reason_code: str | None,
     venue_order_id: str | None,
     cumulative_filled_quantity: float | None,
     last_fill_quantity: float | None,
@@ -296,6 +320,7 @@ def _record_payload(
         "reconciliation_status": reconciliation_status,
         "protection_status": protection_status,
         "blockers": list(blockers),
+        "reason_code": reason_code,
         "venue_order_id": venue_order_id,
         "cumulative_filled_quantity": cumulative_filled_quantity,
         "last_fill_quantity": last_fill_quantity,
@@ -310,12 +335,10 @@ def _record_payload(
 
 
 def _record(payload: dict[str, Any]) -> BrokerExecutionTelemetryRecord:
-    kind = BrokerExecutionTelemetryKind(payload["kind"])
-    event_time = datetime.fromisoformat(payload["event_time"])
     return BrokerExecutionTelemetryRecord(
         schema_version=payload["schema_version"],
-        kind=kind,
-        event_time=event_time,
+        kind=BrokerExecutionTelemetryKind(payload["kind"]),
+        event_time=datetime.fromisoformat(payload["event_time"]),
         client_order_id=payload["client_order_id"],
         source_fingerprint=payload["source_fingerprint"],
         intent_fingerprint=payload["intent_fingerprint"],
@@ -324,6 +347,7 @@ def _record(payload: dict[str, Any]) -> BrokerExecutionTelemetryRecord:
         reconciliation_status=payload["reconciliation_status"],
         protection_status=payload["protection_status"],
         blockers=tuple(payload["blockers"]),
+        reason_code=payload["reason_code"],
         venue_order_id=payload["venue_order_id"],
         cumulative_filled_quantity=payload["cumulative_filled_quantity"],
         last_fill_quantity=payload["last_fill_quantity"],
@@ -334,6 +358,11 @@ def _record(payload: dict[str, Any]) -> BrokerExecutionTelemetryRecord:
         risk_policy_fingerprint=payload["risk_policy_fingerprint"],
         telemetry_fingerprint=_fingerprint(payload),
     )
+
+
+def _safe_code(value: str, field: str) -> None:
+    if not isinstance(value, str) or _SAFE_CODE.fullmatch(value) is None:
+        raise ValueError(f"{field} must be a normalized credential-free code")
 
 
 def _sha(value: str, field: str) -> None:
