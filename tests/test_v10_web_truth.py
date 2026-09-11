@@ -2,14 +2,14 @@ import json
 from pathlib import Path
 
 
-def test_v10_web_status_never_claims_real_host_paper_or_live() -> None:
+def test_static_v2_web_never_claims_current_host_paper_or_live_truth() -> None:
     root = Path(__file__).resolve().parents[1]
     web = json.loads((root / "web/status.json").read_text())
-    assert web["host_readiness"]["state"] == "AWAITING_REAL_WINDOWS_HOST"
-    assert web["host_readiness"]["real_host_evidence_present"] is False
-    assert web["synthetic_shadow_soak"]["evidence_state"] == (
-        "SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE"
-    )
+
+    assert web["schema_version"] == "DAXLAB_WEB_STATIC_STATUS_V2"
+    assert web["runtime_truth_included"] is False
+    assert "host_readiness" not in web
+    assert "synthetic_shadow_soak" not in web
     assert web["paper_preparation"]["paper_started"] is False
     assert web["paper_preparation"]["broker_adapter_present"] is False
     assert web["readiness"]["paper"] == "BLOCKED"
