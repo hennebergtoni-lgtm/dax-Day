@@ -3,8 +3,8 @@
 
 This exporter is observation-only. It never imports MetaTrader5, never calls an
 order API, and has no control path back to the Windows SHADOW supervisor. It
-reads already-persisted local heartbeat/bundle artifacts and appends deduplicated
-health and closed-M5 evidence to PostgreSQL.
+reads already-persisted local heartbeat/bundle/Decision artifacts and appends
+deduplicated telemetry to PostgreSQL.
 """
 from __future__ import annotations
 
@@ -44,6 +44,15 @@ def _payload_sha256(value: Any) -> str:
     return sha256(_canonical(value).encode("utf-8")).hexdigest()
 
 
+def _assert_sha256(value: Any, *, field: str) -> None:
+    if not isinstance(value, str) or len(value) != 64:
+        raise ValueError(f"{field} must be sha256 hex")
+    try:
+        int(value, 16)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be sha256 hex") from exc
+
+
 def _assert_credential_free(value: Any) -> None:
     if isinstance(value, Mapping):
         for key, item in value.items():
@@ -68,6 +77,30 @@ def _validate_heartbeat(payload: Mapping[str, Any]) -> None:
     blockers = payload.get("blockers")
     if not isinstance(blockers, list) or not all(isinstance(item, str) for item in blockers):
         raise ValueError("telemetry heartbeat blockers must be a list of strings")
+
+
+def _validate_decision(payload: Mapping[str, Any]) -> None:
+    _assert_credential_free(payload)
+    _assert_sha256(payload.get("decision_id"), field="decision_id")
+    _assert_sha256(payload.get("closed_bar_fingerprint"), field="closed_bar_fingerprint")
+    _assert_sha256(payload.get("reference_engine_sha256"), field="reference_engine_sha256")
+    if payload.get("action") != "NO_ORDER":
+        raise ValueError("telemetry Decision action must be NO_ORDER")
+    if payload.get("execution_capability") != "NONE":
+        raise ValueError("telemetry Decision execution capability must be NONE")
+    if payload.get("order_execution_enabled") is not False:
+        raise ValueError("telemetry Decision order execution must be disabled")
+    if not isinstance(payload.get("observed_at"), str) or not payload["observed_at"]:
+        raise ValueError("telemetry Decision observed_at must be non-empty")
+    if not isinstance(payload.get("symbol"), str) or not payload["symbol"].strip():
+        raise ValueError("telemetry Decision symbol must be non-empty")
+    if not isinstance(payload.get("reference_experiment_id"), str) or not payload[
+        "reference_experiment_id"
+    ].strip():
+        raise ValueError("telemetry Decision reference experiment must be non-empty")
+    reasons = payload.get("reason_codes")
+    if not isinstance(reasons, list) or not reasons or not all(isinstance(item, str) for item in reasons):
+        raise ValueError("telemetry Decision reason_codes must be a non-empty list of strings")
 
 
 def _bar_fingerprint(bar: Any) -> str:
@@ -175,7 +208,57 @@ def _insert_bars(conn: psycopg.Connection, bundle_payload: Mapping[str, Any]) ->
     return inserted
 
 
-def export_once(*, state_dir: Path, database_url: str) -> tuple[int, int]:
+def _load_decision_outbox(state_dir: Path) -> list[tuple[Path, dict[str, Any]]]:
+    outbox_dir = state_dir / "decision_outbox"
+    if not outbox_dir.exists():
+        return []
+    items: list[tuple[Path, dict[str, Any]]] = []
+    for path in sorted(outbox_dir.glob("*.json")):
+        payload = read_json_object(path)
+        _validate_decision(payload)
+        if path.stem != payload["decision_id"]:
+            raise ValueError("Decision outbox filename does not match decision_id")
+        items.append((path, payload))
+    return items
+
+
+def _insert_decision(conn: psycopg.Connection, payload: Mapping[str, Any]) -> int:
+    _validate_decision(payload)
+    payload_hash = _payload_sha256(payload)
+    result = conn.execute(
+        """
+        insert into mt5_shadow_decisions (
+            decision_id, observed_at, symbol, closed_bar_fingerprint,
+            action, reason_codes, reference_experiment_id,
+            reference_engine_sha256, execution_capability,
+            order_execution_enabled, payload_sha256, payload
+        ) values (
+            %s, %s, %s, %s,
+            %s, %s::jsonb, %s,
+            %s, %s, %s, %s, %s::jsonb
+        )
+        on conflict (decision_id) do nothing
+        returning id
+        """,
+        (
+            payload["decision_id"],
+            payload["observed_at"],
+            payload["symbol"],
+            payload["closed_bar_fingerprint"],
+            payload["action"],
+            json.dumps(payload["reason_codes"], separators=(",", ":")),
+            payload["reference_experiment_id"],
+            payload["reference_engine_sha256"],
+            payload["execution_capability"],
+            payload["order_execution_enabled"],
+            payload_hash,
+            _canonical(payload),
+        ),
+    ).fetchone()
+    return 1 if result is not None else 0
+
+
+def export_once(*, state_dir: Path, database_url: str) -> tuple[int, int, int]:
     heartbeat_path = state_dir / "heartbeat.json"
     bundle_path = state_dir / "latest_bundle.json"
     if not heartbeat_path.exists():
@@ -185,12 +268,23 @@ def export_once(*, state_dir: Path, database_url: str) -> tuple[int, int]:
 
     heartbeat = read_json_object(heartbeat_path)
     bundle_payload = read_json_object(bundle_path)
+    decision_items = _load_decision_outbox(state_dir)
 
     with psycopg.connect(database_url, connect_timeout=15) as conn:
         with conn.transaction():
             heartbeats_inserted = _insert_heartbeat(conn, heartbeat)
             bars_inserted = _insert_bars(conn, bundle_payload)
-    return heartbeats_inserted, bars_inserted
+            decisions_inserted = sum(
+                _insert_decision(conn, payload) for _, payload in decision_items
+            )
+
+        # The transaction has committed. Removing a staged file is now only an
+        # acknowledgement. A crash before unlink is harmless: the next export
+        # retries and UNIQUE(decision_id) makes the database write idempotent.
+        for path, _ in decision_items:
+            path.unlink()
+
+    return heartbeats_inserted, bars_inserted, decisions_inserted
 
 
 def main() -> None:
@@ -202,13 +296,14 @@ def main() -> None:
     if not database_url:
         raise SystemExit("NEON_DATABASE_URL is not configured")
 
-    heartbeats, bars = export_once(
+    heartbeats, bars, decisions = export_once(
         state_dir=Path(args.state_dir).resolve(),
         database_url=database_url,
     )
     print(
         "MT5 SHADOW telemetry export OK | "
         f"heartbeats_inserted={heartbeats} | bars_inserted={bars} | "
+        f"decisions_inserted={decisions} | "
         "execution_capability=NONE | order_execution_enabled=false"
     )
 
