@@ -1,14 +1,14 @@
 # DAX-BOT 1.x Alpha Acceptance Status
 
-Status: COMPONENT CONTROLLABILITY VERIFIED / REAL CANDIDATE SHADOW ORCHESTRATION STILL REQUIRED / NO PAPER OR LIVE AUTHORIZATION
+Status: REPOSITORY-INTEGRATED SHADOW RUNTIME VERIFIED / REAL WINDOWS HOST EVIDENCE WAITING_EXTERNAL / NO PAPER OR LIVE AUTHORIZATION
 Updated: 2026-09-11
 Repository branch: `nextgen-bot-line-v1`
-Verified runtime-code head: `d689f49d3c7d3ddee97b2489960c1f1b2e694346`
-Governance head before this status update: `aa46ebdb24c2d74c171a3ebfc6a069a67d25f93e`
+Verified runtime-code head: `a5b8429545d03bba1e1aade2bbd1e4ebc06560fe`
+Governance head before this status update: `ad4cd86007b12338c42ef7fb21a310af93fe4cb4`
 
 CI at the verified runtime-code head:
-- `dax-bot-1x-ci` #50: GREEN
-- `research-lab-ci` #834: GREEN
+- `dax-bot-1x-ci` #85: GREEN
+- `research-lab-ci` #869: GREEN
 
 This file maps the current implementation against `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_GATE.md`. It is a controllability/readiness checklist, not a profitability claim and not execution authorization.
 
@@ -18,11 +18,12 @@ Evidence:
 - explicit `DAX-BOT/1.0-alpha/CAND-001` identity;
 - deterministic config fingerprint;
 - deterministic same-code/config/bar replay;
-- strategy-relevant config changes alter identity.
+- strategy-relevant config changes alter identity;
+- forward-stream RunManifest binds broker symbol, canonical symbol/timeframe, broker-time contract, candidate config, sizing, ruleset/core and fill-model semantics.
 
 ## B. Decision-order visibility — VERIFIED
 
-The existing `OperatorSnapshot` now exposes the existing owners rather than inventing a second explanation model:
+The existing `OperatorSnapshot` exposes the existing owners rather than inventing a second explanation model:
 - REGIME;
 - STRUCTURE;
 - SETUP;
@@ -30,9 +31,10 @@ The existing `OperatorSnapshot` now exposes the existing owners rather than inve
 - admission result;
 - final `TRADE` / `NO_TRADE`;
 - blockers/risk result;
-- proposed entry/stop/target/RR.
+- proposed entry/stop/target/RR;
+- origin decision identity for an active multi-bar virtual position.
 
-## C. Historical/replay determinism — VERIFIED FOR CURRENT CAND-001 SHADOW COMPONENTS
+## C. Historical/replay determinism — VERIFIED FOR CURRENT CAND-001 SHADOW RUNTIME
 
 Evidence:
 - repeated closed-bar sequence yields identical candidate outputs;
@@ -41,14 +43,12 @@ Evidence:
 - virtual lifecycle OPEN save/load/resume matches uninterrupted lifecycle;
 - duplicate lifecycle bar after restart is idempotent;
 - restored CLOSED lifecycle rebuilds identical costed outcome;
-- deterministic Intent and Outcome identities now pass a durable publication-admission journal;
-- after atomic save/load/restart the same Intent or Outcome is rejected from duplicate publication;
-- tampered publication state fails closed.
-
-Primary new evidence:
-- `src/daxlab/runtime/candidate_publication_state.py`;
-- `tests/test_candidate_publication_state.py`;
-- PSR-013.
+- deterministic Intent and Outcome identities pass a durable publication-admission journal;
+- atomic save/load/restart rejects duplicate Intent/Outcome publication;
+- complete candidate SHADOW state is bound into one tamper-evident checkpoint envelope;
+- sliding MT5-feed overlap is filtered against persisted candidate close-time;
+- transport-only `received_at` no longer changes causal strategy identity;
+- same market bar fetched at a later observation time retains the same signal/decision identity.
 
 ## D. Causality — VERIFIED FOR CURRENT CAND-001 SCOPE
 
@@ -57,15 +57,17 @@ Evidence:
 - breakout requires confirmed close outside completed OR15;
 - decision time is closed-bar time;
 - virtual trade effect cannot occur on the decision bar;
-- first eligible virtual fill is on a causal later M5 bar;
+- first eligible virtual fill is on a causal later bar;
+- an existing position is advanced on the current closed bar before the current bar's new strategy decision is evaluated;
 - same-bar stop/target ambiguity reuses the frozen conservative stop-first resolver;
-- gap-through handling is explicit and versioned.
+- gap-through handling is explicit and versioned;
+- `received_at` is transport/observability metadata, not strategy identity input.
 
 Research-definition parity remains required when a future runtime feature is adapted from a research/DataFrame definition.
 
-## E. Virtual lifecycle / outcome integration — VERIFIED FOR SHADOW SIMULATION COMPONENT CHAIN
+## E. Virtual lifecycle / outcome integration — VERIFIED FOR SHADOW SIMULATION CHAIN
 
-Verified component chain:
+Verified chain:
 - admitted TRADE -> existing `ExecutionIntent`;
 - deterministic client identity;
 - normalized simulation sizing with explicit non-broker semantics;
@@ -76,24 +78,35 @@ Verified component chain:
 - costed R outcome -> existing `DatedShadowOutcome`;
 - forward observation -> existing Forward SHADOW performance -> existing cash ledger;
 - virtual lifecycle persistence/restart parity;
-- restart-safe publication admission for Intent and Outcome.
+- restart-safe publication admission for Intent and Outcome;
+- multi-bar orchestrator keeps current decision and origin trade decision separate.
 
 Boundary remains unchanged:
 - PAPER not authorized;
 - LIVE not authorized;
 - no broker order adapter/path introduced.
 
-## F. Broker safety — VERIFIED
+## F. Broker safety — VERIFIED IN REPOSITORY / REAL HOST RECHECK WAITING_EXTERNAL
 
-Current safety remains:
+Repository-side safety:
 - `execution_capability=NONE` on host-facing and CAND-001 SHADOW surfaces;
 - `order_execution_enabled=false`;
 - no DAX-BOT alpha order submission path;
+- CAND-001 runs only after the existing MT5 SHADOW gate allows the feed;
+- missing/invalid single-instance host safety blocks Candidate processing;
 - REF-V11.2 remains unchanged frozen reference evidence.
 
-## G. Observability — COMPONENTS VERIFIED / REAL RUNTIME ASSEMBLY FIX REQUIRED
+Real-host evidence still required after deployment of the current branch:
+- run the prepared Windows/MT5 deployment verification on the real host;
+- prove heartbeat GREEN with current code;
+- prove Candidate checkpoint/operator snapshot files advance on real CLOSED-M5 data;
+- prove no broker order path/capability is enabled.
 
-Implemented and tested in the existing operator surface:
+Status for that dependency lane: `WAITING_EXTERNAL`, not a global project stop.
+
+## G. Observability — REPOSITORY RUNTIME ASSEMBLY VERIFIED / FRESH WEB PUBLICATION STILL OPEN
+
+Implemented/tested operator surface:
 - product/candidate/config identity;
 - REGIME / STRUCTURE / SETUP;
 - signal/admission/decision and blockers;
@@ -101,44 +114,47 @@ Implemented and tested in the existing operator surface:
 - last closed-bar identity/time and freshness;
 - candidate input health and duplicate/data-unsafe/out-of-order events;
 - virtual lifecycle status/fill/exit;
+- origin trade decision identity across later bars;
 - gross-R/cost-R/net-R outcome;
 - explicit safety flags;
-- generic recovery/reconciliation fields.
+- recovery/reconciliation fields.
 
-Implemented host bridge:
-- `operator_runtime_bridge.py` translates existing `HostShadowStatus`, resume telemetry and `RestartReconcileResult` into generic operator health/recovery/reconciliation context;
-- it remains MT5-read-only and cannot authorize execution.
+Integrated runtime assembly now exists:
+- `candidate_mt5_feed.py` converts validated CLOSED-M5 feed bars into canonical Candidate candles;
+- `candidate_shadow_orchestrator.py` coordinates decision -> intent -> lifecycle -> outcome -> publication -> operator snapshot;
+- `candidate_shadow_feed_runtime.py` handles sliding-feed overlap/resume;
+- `candidate_mt5_shadow_runtime.py` binds Candidate processing behind the existing MT5 safety gate;
+- `candidate_shadow_checkpoint.py` persists the complete Candidate SHADOW state atomically;
+- `candidate_shadow_host_cycle.py` provides a stable forward-stream RunManifest and one persistent host-cycle boundary;
+- `scripts/mt5_shadow_supervisor.py` now stages Candidate Intent/Outcome evidence before advancing Candidate checkpoint/operator snapshot, while preserving the existing supervisor/lock/probe owner.
 
-Remaining real gap:
-- the exact runtime tree contains no dedicated CAND-001 forward/SHADOW orchestrator that combines these components on the real MT5 CLOSED-M5 feed across cycles;
-- current real MT5 SHADOW integration remains the legacy NO_ORDER observation/soak owner;
-- therefore CAND-001 has verified components but has not yet been proven as one restart-safe real-feed SHADOW runtime;
-- fresh runtime web/operator publication remains separate from stale static `web/status.json` and must not be faked by versioned GitHub state.
+Remaining independent observability gap:
+- fresh current Candidate runtime data still needs a dedicated read-only web/operator publication source separate from stale/versioned `web/status.json`.
 
 ## H. Existing-capability non-regression — VERIFIED AT RUNTIME-CODE HEAD
 
-At `d689f49d3c7d3ddee97b2489960c1f1b2e694346`:
-- `dax-bot-1x-ci` #50 GREEN;
-- `research-lab-ci` #834 GREEN;
+At `a5b8429545d03bba1e1aade2bbd1e4ebc06560fe`:
+- `dax-bot-1x-ci` #85 GREEN;
+- `research-lab-ci` #869 GREEN;
 - REF-V11.2 evidence remains frozen;
 - research/evidence remains present;
 - existing MT5 SHADOW read-only architecture remains independently operable and order-disabled;
-- no Windows user action was required for repository-only implementation/testing.
-
-The later `aa46ebdb...` change only updated the durable Problem/Solution Registry and did not modify runtime code.
+- repository-only implementation/testing required no Windows user action.
 
 ## Current promotion decision
 
-`DAX-BOT 1.0-alpha` is now **VERIFIED at the component-controllability level**, but **NOT YET VERIFIED as a real-feed integrated CAND-001 SHADOW runtime**.
+`DAX-BOT 1.0-alpha` is now **VERIFIED for the repository-integrated, restart-safe, read-only CAND-001 SHADOW runtime architecture**.
 
-Do not promote to PAPER/demo execution merely because the component gate is green.
+It is **NOT YET VERIFIED on the user's real Windows/MT5 host with the current branch**, because that evidence requires external host execution. That lane is `WAITING_EXTERNAL`.
 
-## Immediate ordered gaps
+Do not promote to PAPER/demo broker-order execution merely because repository integration is green. Broker sizing/economics, demo execution/reconciliation and explicit PAPER authorization remain separate gates.
 
-1. Reuse the existing validated MT5 `ClosedM5Feed`/`Mt5Bar` owner and define one explicit conversion into the canonical runtime `Candle` contract, preserving broker timestamp semantics and closed-bar causality.
-2. Build one thin CAND-001 SHADOW orchestrator over existing owners: candidate state -> decision -> optional Intent -> virtual lifecycle -> outcome -> publication state -> operator snapshot. Do not create a second host, broker or recovery platform.
-3. Bind the orchestrator to the existing MT5 SHADOW gate/resume/single-instance evidence in observation-only mode and prove continuous-vs-restart identity on real-feed-shaped fixtures.
-4. Produce a fresh operator-runtime payload/source separately from stable static web evidence.
-5. Re-evaluate this gate. Only after the integrated real-feed CAND-001 SHADOW path is GREEN should PAPER/demo broker-order preparation become the next authorization discussion.
+## Immediate ordered work lanes
 
-Performance/profitability research remains a separate gate. Demo/PAPER and LIVE authorization remain separate decisions after controllability, broker economics and broker execution/reconciliation safety are evidence-backed.
+1. `WAITING_EXTERNAL`: deploy/current-branch verification on the real Windows/MT5 host using `docs/CAND001_WINDOWS_SHADOW_DEPLOYMENT_RUNBOOK_V1.md`.
+2. Continue independently: implement fresh read-only Candidate operator/runtime publication separate from static `web/status.json`.
+3. Continue independently: close/update stale web-runtime assertions so static evidence cannot masquerade as current runtime state.
+4. Continue independently: refresh PR/milestone documentation to the current integrated-runtime truth.
+5. Continue research independently: M1/FAST candidate, operator risk/exposure profiles and news/event awareness remain preregistered research only and cannot silently mutate CAND-001.
+
+Performance/profitability research remains a separate gate. Demo/PAPER and LIVE authorization remain separate decisions after controllability, broker economics and execution/reconciliation safety are evidence-backed.
