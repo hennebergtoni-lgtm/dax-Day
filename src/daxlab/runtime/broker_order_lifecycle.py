@@ -12,13 +12,32 @@ from datetime import datetime
 from enum import StrEnum
 from hashlib import sha256
 import json
-from typing import Any
+from typing import Any, Mapping
 
 from daxlab.runtime.paper_contracts import ExecutionIntent, PaperLifecycleState
 
 
 BROKER_ORDER_LIFECYCLE_SCHEMA = "DAXLAB_BROKER_ORDER_LIFECYCLE_V1"
 BROKER_ORDER_EVENT_SCHEMA = "DAXLAB_BROKER_ORDER_EVENT_V1"
+BROKER_ORDER_LIFECYCLE_STATE_SCHEMA = "DAXLAB_BROKER_ORDER_LIFECYCLE_STATE_V1"
+_LIFECYCLE_STATE_FIELDS = {
+    "state_schema_version",
+    "lifecycle_schema_version",
+    "client_order_id",
+    "intent_fingerprint",
+    "requested_quantity",
+    "state",
+    "cumulative_filled_quantity",
+    "average_fill_price",
+    "venue_order_id",
+    "last_event_time",
+    "last_event_fingerprint",
+    "event_count",
+    "execution_capability",
+    "order_execution_enabled",
+    "lifecycle_fingerprint",
+    "payload_fingerprint",
+}
 
 
 class BrokerOrderState(StrEnum):
@@ -63,12 +82,22 @@ _ALLOWED_NEXT = {
 }
 
 
-def _canonical(value: dict[str, Any]) -> str:
+def _canonical(value: Mapping[str, Any]) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
 
-def _fingerprint(value: dict[str, Any]) -> str:
+def _fingerprint(value: Mapping[str, Any]) -> str:
     return sha256(_canonical(value).encode("utf-8")).hexdigest()
+
+
+def _sha(value: Any, field: str) -> str:
+    if not isinstance(value, str) or len(value) != 64:
+        raise ValueError(f"{field} must be sha256 hex")
+    try:
+        int(value, 16)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be sha256 hex") from exc
+    return value
 
 
 def _intent_fingerprint(intent: ExecutionIntent) -> str:
@@ -110,6 +139,9 @@ class BrokerOrderEvent:
     def __post_init__(self) -> None:
         if self.schema_version != BROKER_ORDER_EVENT_SCHEMA:
             raise ValueError("broker order event schema mismatch")
+        _sha(self.client_order_id, "client_order_id")
+        _sha(self.intent_fingerprint, "intent_fingerprint")
+        _sha(self.event_fingerprint, "event_fingerprint")
         if self.venue_event_time.tzinfo is None:
             raise ValueError("venue_event_time must be timezone-aware")
         if self.sequence < 0:
@@ -166,6 +198,11 @@ class BrokerOrderLifecycle:
     def __post_init__(self) -> None:
         if self.schema_version != BROKER_ORDER_LIFECYCLE_SCHEMA:
             raise ValueError("broker order lifecycle schema mismatch")
+        _sha(self.client_order_id, "client_order_id")
+        _sha(self.intent_fingerprint, "intent_fingerprint")
+        _sha(self.last_event_fingerprint, "last_event_fingerprint")
+        if not isinstance(self.state, BrokerOrderState):
+            raise TypeError("state must be BrokerOrderState")
         if self.requested_quantity <= 0:
             raise ValueError("requested_quantity must be positive")
         if self.cumulative_filled_quantity < 0:
@@ -180,7 +217,10 @@ class BrokerOrderLifecycle:
             raise ValueError("event_count must be positive")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("broker order lifecycle cannot authorize execution")
-        if self.state is BrokerOrderState.FILLED and self.cumulative_filled_quantity != self.requested_quantity:
+        if (
+            self.state is BrokerOrderState.FILLED
+            and self.cumulative_filled_quantity != self.requested_quantity
+        ):
             raise ValueError("FILLED requires cumulative quantity to equal requested quantity")
         if self.state is BrokerOrderState.PARTIAL and not (
             0 < self.cumulative_filled_quantity < self.requested_quantity
@@ -214,6 +254,128 @@ class BrokerOrderLifecycle:
                 "order_execution_enabled": self.order_execution_enabled,
             }
         )
+
+
+def broker_order_lifecycle_state_payload(
+    lifecycle: BrokerOrderLifecycle,
+) -> dict[str, Any]:
+    """Serialize one lifecycle into a strict tamper-evident restart envelope."""
+    payload: dict[str, Any] = {
+        "state_schema_version": BROKER_ORDER_LIFECYCLE_STATE_SCHEMA,
+        "lifecycle_schema_version": lifecycle.schema_version,
+        "client_order_id": lifecycle.client_order_id,
+        "intent_fingerprint": lifecycle.intent_fingerprint,
+        "requested_quantity": float(lifecycle.requested_quantity),
+        "state": lifecycle.state.value,
+        "cumulative_filled_quantity": float(lifecycle.cumulative_filled_quantity),
+        "average_fill_price": (
+            None
+            if lifecycle.average_fill_price is None
+            else float(lifecycle.average_fill_price)
+        ),
+        "venue_order_id": lifecycle.venue_order_id,
+        "last_event_time": lifecycle.last_event_time.isoformat(),
+        "last_event_fingerprint": lifecycle.last_event_fingerprint,
+        "event_count": lifecycle.event_count,
+        "execution_capability": lifecycle.execution_capability,
+        "order_execution_enabled": lifecycle.order_execution_enabled,
+        "lifecycle_fingerprint": lifecycle.fingerprint,
+    }
+    payload["payload_fingerprint"] = _fingerprint(payload)
+    return payload
+
+
+def parse_broker_order_lifecycle_state_payload(
+    payload: Mapping[str, Any],
+) -> BrokerOrderLifecycle:
+    """Restore lifecycle evidence and fail closed on any persisted drift."""
+    unknown = payload.keys() - _LIFECYCLE_STATE_FIELDS
+    missing = _LIFECYCLE_STATE_FIELDS - payload.keys()
+    if unknown:
+        raise ValueError(f"unknown broker lifecycle state fields: {sorted(unknown)}")
+    if missing:
+        raise ValueError(f"missing broker lifecycle state fields: {sorted(missing)}")
+    if payload.get("state_schema_version") != BROKER_ORDER_LIFECYCLE_STATE_SCHEMA:
+        raise ValueError("broker order lifecycle state schema mismatch")
+    if payload.get("lifecycle_schema_version") != BROKER_ORDER_LIFECYCLE_SCHEMA:
+        raise ValueError("broker order lifecycle schema mismatch")
+    if payload.get("execution_capability") != "NONE":
+        raise ValueError("broker order lifecycle state execution capability invalid")
+    if payload.get("order_execution_enabled") is not False:
+        raise ValueError("broker order lifecycle state cannot enable order execution")
+
+    observed_payload_fingerprint = _sha(
+        payload.get("payload_fingerprint"),
+        "payload_fingerprint",
+    )
+    unhashed = dict(payload)
+    unhashed.pop("payload_fingerprint", None)
+    if _fingerprint(unhashed) != observed_payload_fingerprint:
+        raise ValueError("broker order lifecycle state payload fingerprint mismatch")
+
+    client_order_id = _sha(payload.get("client_order_id"), "client_order_id")
+    intent_fingerprint = _sha(payload.get("intent_fingerprint"), "intent_fingerprint")
+    last_event_fingerprint = _sha(
+        payload.get("last_event_fingerprint"),
+        "last_event_fingerprint",
+    )
+    observed_lifecycle_fingerprint = _sha(
+        payload.get("lifecycle_fingerprint"),
+        "lifecycle_fingerprint",
+    )
+
+    raw_time = payload.get("last_event_time")
+    if not isinstance(raw_time, str):
+        raise ValueError("last_event_time must be ISO-8601 string")
+    try:
+        last_event_time = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("last_event_time must be valid ISO-8601") from exc
+
+    raw_state = payload.get("state")
+    if not isinstance(raw_state, str):
+        raise ValueError("state must be a string")
+    try:
+        state = BrokerOrderState(raw_state)
+    except ValueError as exc:
+        raise ValueError("broker order lifecycle state value invalid") from exc
+
+    requested_quantity = _number(payload.get("requested_quantity"), "requested_quantity")
+    cumulative_filled_quantity = _number(
+        payload.get("cumulative_filled_quantity"),
+        "cumulative_filled_quantity",
+    )
+    raw_average = payload.get("average_fill_price")
+    average_fill_price = (
+        None
+        if raw_average is None
+        else _number(raw_average, "average_fill_price")
+    )
+    venue_order_id = payload.get("venue_order_id")
+    if venue_order_id is not None and (
+        not isinstance(venue_order_id, str) or not venue_order_id.strip()
+    ):
+        raise ValueError("venue_order_id must be non-empty string or null")
+    event_count = payload.get("event_count")
+    if type(event_count) is not int:
+        raise ValueError("event_count must be integer")
+
+    lifecycle = BrokerOrderLifecycle(
+        schema_version=BROKER_ORDER_LIFECYCLE_SCHEMA,
+        client_order_id=client_order_id,
+        intent_fingerprint=intent_fingerprint,
+        requested_quantity=requested_quantity,
+        state=state,
+        cumulative_filled_quantity=cumulative_filled_quantity,
+        average_fill_price=average_fill_price,
+        venue_order_id=venue_order_id,
+        last_event_time=last_event_time,
+        last_event_fingerprint=last_event_fingerprint,
+        event_count=event_count,
+    )
+    if lifecycle.fingerprint != observed_lifecycle_fingerprint:
+        raise ValueError("broker order lifecycle fingerprint mismatch")
+    return lifecycle
 
 
 def begin_order_lifecycle(
@@ -390,3 +552,9 @@ def _build_event(
         reason=reason,
         event_fingerprint=_fingerprint(payload),
     )
+
+
+def _number(value: Any, field: str) -> float:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise ValueError(f"{field} must be numeric")
+    return float(value)
