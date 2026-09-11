@@ -8,15 +8,15 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2089**
-- Active whole-number step: **2090**
-- Next step after successful completion: **2091**
+- Last completed whole-number step: **2090**
+- Active whole-number step: **2091**
+- Next step after successful completion: **2092**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
 ## Reconstruction basis
 
-The last externally visible/trusted work unit before the numbering gap was Step 2081. The sequence below was reconstructed from the exact first-parent commit chain through reconstruction anchor `199e6bf073da1a717839b37e70a314f203e9ffa4`. Tightly coupled implementation + regression tests are one work unit and therefore consume one integer step, not separate numbers.
+The last externally visible/trusted work unit before the numbering gap was Step 2081. Steps 2081–2089 were reconstructed from the exact first-parent commit chain through reconstruction anchor `199e6bf073da1a717839b37e70a314f203e9ffa4`. From Step 2090 onward this file is updated directly as part of the work sequence. Tightly coupled implementation + regression tests are one work unit and therefore consume one integer step, not separate numbers.
 
 | Step | Work unit | Evidence commits |
 | ---: | --- | --- |
@@ -29,6 +29,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2087 | Produce/finalize the evidence-linked DAX-BOT 1.0-alpha closeout, mark repository-side alpha acceptance passed and retire the superseded draft. | `2df6e208…`, `44f54c62…`, `cc68035f…`, `654ee817…` |
 | 2088 | Add the explicit user STOP-gate to PAPER readiness and prove PAPER cannot become ready without user authorization. | `e4de978c…`, `aca473fd…` |
 | 2089 | Split PAPER execution readiness into explicit broker order-lifecycle, broker-reconciliation and execution-protection evidence gates and prove each gate independently. | `80119bed…`, `199e6bf0…` |
+| 2090 | Add the canonical whole-number work-step ledger, make it mandatory in resume/navigation, and regression-test the pointer/audit sequence. | `72ec9641…`, `7fabecf8…`, `3b1b0bc8…`, `02aa4892…` |
 
 ## Numbering rules
 
@@ -43,4 +44,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2090:** make this numbering pointer a mandatory part of resume/navigation and regression-test that the project cannot silently lose the canonical step pointer again.
+**Step 2091:** produce an evidence-grounded PAPER-readiness gap matrix that separates reusable existing contracts, repository implementation gaps, real-host/broker `WAITING_EXTERNAL` evidence, and the explicit user STOP-gate. No broker-order capability is introduced in this step.
