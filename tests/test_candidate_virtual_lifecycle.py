@@ -46,7 +46,7 @@ def _bar(
     low: float = 95.0,
     close: float = 102.0,
     symbol: str = "DE40",
-    timeframe: str = "M5",
+    timeframe: str = "5m",
     quality: DataQualityState = DataQualityState.OK,
 ) -> Candle:
     return Candle(
@@ -205,7 +205,7 @@ def test_wrong_market_identity_and_unsupported_partial_fills_fail_closed() -> No
             state,
             _bar(event_time=DECISION_TIME, symbol="OTHER"),
         )
-    with pytest.raises(ValueError, match="M5"):
+    with pytest.raises(ValueError, match="five-minute"):
         advance_cand001_virtual_lifecycle(
             state,
             _bar(event_time=DECISION_TIME, timeframe="M1"),
