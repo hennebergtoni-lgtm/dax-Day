@@ -1,4 +1,9 @@
-"""Deterministic pre-host V11 safety smoke. No broker connection or order path."""
+"""Deterministic pre-host V11 safety smoke. No broker connection or order path.
+
+Web V2 deliberately excludes current host/runtime truth. This smoke therefore
+checks only durable static safety truth plus duplicate-safe synthetic SHADOW
+recovery; real host readiness is owned by the separate runtime evidence path.
+"""
 from __future__ import annotations
 
 import json
@@ -6,6 +11,14 @@ from pathlib import Path
 
 from daxlab.runtime.shadow_soak import SoakFault, run_shadow_soak
 from daxlab.runtime.shadow_soak_fixture import build_bars
+
+
+_FORBIDDEN_DYNAMIC_WEB_SECTIONS = {
+    "mt5_adapter",
+    "host_readiness",
+    "pre_host_gate",
+    "synthetic_shadow_soak",
+}
 
 
 def main() -> None:
@@ -20,18 +33,34 @@ def main() -> None:
         raise SystemExit("V11 checkpoint V2 missing")
     if resumed.duplicates_suppressed != 1 or resumed.decisions != ():
         raise SystemExit("same closed bar was not suppressed across changed safety state")
-    if web["pre_host_gate"]["external_mt5_milestones_102_110_complete"] is not False:
-        raise SystemExit("external MT5 milestones must remain incomplete")
-    if web["pre_host_gate"]["next_external_milestone"] != 102:
-        raise SystemExit("next external milestone must be 102")
-    if web["pre_host_gate"]["paper_started"] is not False:
-        raise SystemExit("Paper must remain not started")
-    if web["pre_host_gate"]["live_authorized"] is not False:
-        raise SystemExit("LIVE must remain unauthorized")
-    if web["pre_host_gate"]["order_execution_enabled"] is not False:
-        raise SystemExit("order execution must remain disabled")
 
-    print("V11 pre-host smoke OK | checkpoint V2 | duplicate-safe | next external milestone 102 | NO_ORDER")
+    if web.get("schema_version") != "DAXLAB_WEB_STATIC_STATUS_V2":
+        raise SystemExit("static web status must use V2 schema")
+    if web.get("runtime_truth_included") is not False:
+        raise SystemExit("static web status must not claim current runtime truth")
+    leaked = sorted(_FORBIDDEN_DYNAMIC_WEB_SECTIONS.intersection(web))
+    if leaked:
+        raise SystemExit(f"dynamic runtime sections leaked into static web status: {leaked}")
+
+    boundary = web.get("runtime_boundary")
+    if not isinstance(boundary, dict):
+        raise SystemExit("static web status must expose runtime boundary")
+    if boundary.get("browser_runtime_endpoint") != "NOT_IMPLEMENTED":
+        raise SystemExit("static web must not fabricate browser runtime endpoint")
+
+    paper = web.get("paper_preparation")
+    readiness = web.get("readiness")
+    if not isinstance(paper, dict) or not isinstance(readiness, dict):
+        raise SystemExit("static web safety sections missing")
+    if paper.get("paper_started") is not False or paper.get("broker_adapter_present") is not False:
+        raise SystemExit("Paper must remain not started and broker adapter absent")
+    if readiness.get("paper") != "BLOCKED" or readiness.get("live") != "BLOCKED":
+        raise SystemExit("Paper and LIVE must remain blocked")
+
+    print(
+        "V11 pre-host smoke OK | checkpoint V2 | duplicate-safe | "
+        "runtime truth external | Paper/Live BLOCKED | NO_ORDER"
+    )
 
 
 if __name__ == "__main__":
