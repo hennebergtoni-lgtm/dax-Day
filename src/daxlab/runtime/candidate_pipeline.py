@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from daxlab.runtime.bar_identity import closed_bar_identity
 from daxlab.runtime.candidate_admission import (
     Cand001AdmissionResult,
     Cand001AdmissionState,
@@ -65,6 +66,11 @@ def process_cand001_candle(
         config=cfg,
     )
     decision = build_cand001_decision(transition.signal, admission, config=cfg)
+    last_bar_id = closed_bar_identity(
+        canonical_symbol=candle.symbol,
+        timeframe=candle.timeframe,
+        close_time=candle.close_time,
+    )
     snapshot = build_operator_snapshot(
         generated_at=observed_at,
         config=cfg,
@@ -72,6 +78,9 @@ def process_cand001_candle(
         proposed_trade_plan=proposed_plan,
         admission=admission,
         decision=decision,
+        last_bar_id=last_bar_id,
+        last_bar_close_time=candle.close_time,
+        freshness_seconds=(observed_at - candle.close_time).total_seconds(),
     )
     return Cand001PipelineResult(
         state=Cand001PipelineState(
