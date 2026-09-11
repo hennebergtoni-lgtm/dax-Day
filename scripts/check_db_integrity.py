@@ -12,6 +12,12 @@ EXPECTED_MIGRATIONS = {
     "0004_detail_evidence_registry",
     "0005_reproduced_detail_sources",
     "0006_detail_evidence_rows",
+    "0007_mt5_shadow_telemetry",
+}
+EXPECTED_TELEMETRY_TABLES = {
+    "mt5_shadow_heartbeats",
+    "mt5_shadow_bars",
+    "mt5_shadow_decisions",
 }
 EXPECTED_ENGINE_SHA = "9561b9089c57c543798dc587ce240a729b7995230dd5d665a1bdd029f3990887"
 EXPECTED_DATASET_SHA = "e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2"
@@ -41,6 +47,16 @@ def main() -> None:
         missing = EXPECTED_MIGRATIONS - migrations
         if missing:
             raise SystemExit(f"database integrity failed: missing migrations {sorted(missing)}")
+
+        cursor.execute(
+            "select table_name from information_schema.tables where table_schema = current_schema()"
+        )
+        tables = {row[0] for row in cursor.fetchall()}
+        missing_telemetry = EXPECTED_TELEMETRY_TABLES - tables
+        if missing_telemetry:
+            raise SystemExit(
+                f"database integrity failed: missing telemetry tables {sorted(missing_telemetry)}"
+            )
 
         cursor.execute("select sha256, frozen from engine_references where name = %s", ("V11.2 Exact Reference Engine",))
         if cursor.fetchone() != (EXPECTED_ENGINE_SHA, True):
@@ -109,11 +125,17 @@ def main() -> None:
         cursor.execute("select count(*) from trades")
         trade_rows = cursor.fetchone()[0]
 
+        telemetry_counts = {}
+        for table in sorted(EXPECTED_TELEMETRY_TABLES):
+            cursor.execute(f"select count(*) from {table}")
+            telemetry_counts[table] = cursor.fetchone()[0]
+
     print(
         "Database integrity OK | "
         f"migrations={len(migrations)} | active_reference=VERIFIED | detail_sources=VERIFIED | "
         f"detail_registry=NOT_IMPORTED | evidence_rows={evidence_rows} | "
-        f"wf_rows={wf_rows} | trades={trade_rows} | detailed_rows=NOT_IMPORTED"
+        f"wf_rows={wf_rows} | trades={trade_rows} | telemetry={telemetry_counts} | "
+        "detailed_rows=NOT_IMPORTED"
     )
 
 
