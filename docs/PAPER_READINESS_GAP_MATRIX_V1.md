@@ -33,7 +33,8 @@ Purpose: turn the coarse goal "get to real demo/PAPER quickly" into explicit evi
 | BASE/BOOST/HIGH risk profile | `risk_profile_sizing.py` | research policy + lineage IMPLEMENTED | promote explicit validated cash-risk budgets/hard cap; never infer from account-allocation percentages | PARTIAL |
 | Loss-cap policy | `loss_cap_gate.py` | research gate IMPLEMENTED | promote validated thresholds and prove interaction with sizing/admission | PARTIAL |
 | Broker order lifecycle owner | `broker_order_lifecycle.py`, `tests/test_broker_order_lifecycle.py` | OWNER IMPLEMENTED / REPOSITORY-CI VERIFIED; PAPER evidence still unverified | feed real demo venue observations through the same contract before setting the PAPER readiness boolean | PARTIAL / WAITING_EXTERNAL |
-| Broker order lifecycle restart state | no strict serialized BrokerOrderLifecycle restore envelope yet | FIX REQUIRED | add tamper-evident lifecycle payload/parse contract and prove OPEN/ACK/PARTIAL restore continuity without any broker API | IMPLEMENTABLE_BEFORE_PAPER |
+| Broker order lifecycle restart state | `broker_order_lifecycle_state_payload` / `parse_broker_order_lifecycle_state_payload`, `tests/test_broker_order_lifecycle_state.py` | IMPLEMENTED / REPOSITORY-CI VERIFIED | bind to the future authorized demo runtime and reconnect evidence; repository fixtures are not broker evidence | REUSE / WAITING_EXTERNAL FOR BROKER EVIDENCE |
+| Broker execution atomic checkpoint | lifecycle restore state and telemetry journal currently persist as separate owners | FIX REQUIRED | bind active lifecycle state + telemetry journal into one tamper-evident checkpoint so one atomic write advances both together | IMPLEMENTABLE_BEFORE_PAPER |
 | Broker reconciliation owner | `broker_reconciliation.py`, `tests/test_broker_reconciliation.py` | OWNER IMPLEMENTED / REPOSITORY-CI VERIFIED; PAPER evidence still unverified | reconcile real demo local-vs-venue truth including reconnect/restart cases before setting the PAPER readiness boolean | PARTIAL / WAITING_EXTERNAL |
 | Execution protection gates / owner | `broker_execution_protection.py`, `tests/test_broker_execution_protection.py` | OWNER IMPLEMENTED / REPOSITORY-CI VERIFIED; non-executable ALLOW_EVIDENCE only | bind to real host/spread/reconciliation/sizing/session evidence and prove fail-closed behavior on the demo venue before setting the PAPER readiness boolean | PARTIAL / WAITING_EXTERNAL |
 | Order lifecycle telemetry owner | `broker_execution_telemetry.py`, `tests/test_broker_execution_telemetry.py` | APPEND-ONLY RECORD CONTRACT IMPLEMENTED / REPOSITORY-CI VERIFIED; PAPER telemetry evidence still unverified | capture real demo request/ACK/reject/partial/fill/cancel/reconcile/protection records | PARTIAL / WAITING_EXTERNAL |
@@ -45,14 +46,14 @@ Purpose: turn the coarse goal "get to real demo/PAPER quickly" into explicit evi
 
 ## Key conclusion
 
-The core **broker-neutral execution evidence owners now exist**: lifecycle, reconciliation, protection, deterministic telemetry records, a restart-safe telemetry identity journal and an explicit PAPER telemetry readiness gate. This materially reduces the amount of software that must be invented when demo/PAPER becomes authorized.
+The core **broker-neutral execution evidence owners now exist**: lifecycle, lifecycle restore, reconciliation, protection, deterministic telemetry records, a restart-safe telemetry identity journal and an explicit PAPER telemetry readiness gate. This materially reduces the amount of software that must be invented when demo/PAPER becomes authorized.
 
-Their existence does **not** make PAPER ready. Repository CI and synthetic fixtures prove software behavior; broker-facing PAPER readiness still requires real Windows/demo-venue evidence, verified DE40 economics/risk policy, lifecycle restore/reconnect evidence, real reconciliation/telemetry evidence and the independent user STOP-gate.
+Their existence does **not** make PAPER ready. Repository CI and synthetic fixtures prove software behavior; broker-facing PAPER readiness still requires real Windows/demo-venue evidence, verified DE40 economics/risk policy, reconnect/reconciliation/telemetry evidence and the independent user STOP-gate.
 
 The next safe repository work is therefore:
 
-1. add strict restart-safe serialization/restoration for the broker order lifecycle itself;
-2. prove restored ACK/PARTIAL state continues deterministically and preserves identity;
+1. bind restored broker lifecycle state and telemetry journal into one atomic checkpoint envelope;
+2. prove crash/restart parity from an ACK/PARTIAL checkpoint without creating a second recovery architecture;
 3. keep real host/economics/reconciliation/telemetry evidence as parallel `WAITING_EXTERNAL` lanes;
 4. do not create a broker submission adapter until the authorization-gated boundary is explicitly crossed.
 
