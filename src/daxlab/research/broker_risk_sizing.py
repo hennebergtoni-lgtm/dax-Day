@@ -12,6 +12,7 @@ from decimal import Decimal, ROUND_FLOOR
 from enum import StrEnum
 
 from daxlab.runtime.broker_economics_readiness import assess_broker_economics
+from daxlab.runtime.decision import stable_fingerprint
 from daxlab.runtime.mt5_readonly import BrokerSymbol
 
 
@@ -57,7 +58,6 @@ class BrokerRiskSizingEstimate:
                 raise ValueError("available sizing estimate requires positive volume")
             if self.projected_stop_loss_cash is None:
                 raise ValueError("available sizing estimate requires projected stop loss")
-            # Quantization/capping must never raise cash-at-stop risk above budget.
             tolerance = max(1e-9, self.risk_budget_cash * 1e-12)
             if self.projected_stop_loss_cash > self.risk_budget_cash + tolerance:
                 raise ValueError("projected stop loss exceeds explicit risk budget")
@@ -67,6 +67,27 @@ class BrokerRiskSizingEstimate:
     @property
     def available(self) -> bool:
         return self.state is BrokerRiskSizingState.ESTIMATE_AVAILABLE
+
+    @property
+    def fingerprint(self) -> str:
+        return stable_fingerprint(
+            {
+                "state": self.state.value,
+                "policy_version": self.policy_version,
+                "symbol": self.symbol,
+                "risk_currency": self.risk_currency,
+                "risk_budget_cash": self.risk_budget_cash,
+                "stop_distance_price": self.stop_distance_price,
+                "risk_tick_value": self.risk_tick_value,
+                "raw_volume": self.raw_volume,
+                "volume": self.volume,
+                "projected_stop_loss_cash": self.projected_stop_loss_cash,
+                "effective_volume_cap": self.effective_volume_cap,
+                "blockers": list(self.blockers),
+                "execution_capability": self.execution_capability,
+                "order_execution_enabled": self.order_execution_enabled,
+            }
+        )
 
 
 def estimate_volume_for_cash_risk(
@@ -134,7 +155,6 @@ def estimate_volume_for_cash_risk(
     if symbol.volume_limit is not None and symbol.volume_limit > 0:
         effective_cap = min(effective_cap, Decimal(str(symbol.volume_limit)))
     capped_volume = min(stepped_volume, effective_cap)
-    # Re-quantize after a non-step-aligned cap, always downward.
     capped_volume = (capped_volume / step).to_integral_value(rounding=ROUND_FLOOR) * step
 
     if capped_volume < minimum or capped_volume <= 0:
