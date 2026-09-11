@@ -7,7 +7,7 @@ param(
     [string]$Mt5TaskName = 'DAXLAB MT5 Terminal',
     [string]$ShadowTaskName = 'DAXLAB MT5 SHADOW',
     [string]$Symbol = 'DE40',
-    [int]$Bars = 20,
+    [int]$Bars = 40,
     [double]$MaxAgeSeconds = 600.0,
     [double]$IntervalSeconds = 60.0
 )
@@ -80,7 +80,7 @@ $mt5Task = New-ScheduledTask `
     -Description 'MetaTrader 5 terminal host for DAXLAB read-only SHADOW. No credentials are stored by DAXLAB.'
 Register-ScheduledTask -TaskName $Mt5TaskName -InputObject $mt5Task -Force | Out-Null
 
-$shadowArguments = "-NoProfile -File `"$startScript`" -BrokerTimezone `"$BrokerTimezone`" -Symbol `"$Symbol`" -Bars $Bars -MaxAgeSeconds $MaxAgeSeconds -IntervalSeconds $IntervalSeconds"
+$shadowArguments = "-NoProfile -ExecutionPolicy Bypass -File `"$startScript`" -BrokerTimezone `"$BrokerTimezone`" -Symbol `"$Symbol`" -Bars $Bars -MaxAgeSeconds $MaxAgeSeconds -IntervalSeconds $IntervalSeconds"
 $shadowAction = New-ScheduledTaskAction `
     -Execute 'powershell.exe' `
     -Argument $shadowArguments `
