@@ -39,3 +39,9 @@ def test_telemetry_task_does_not_start_or_stop_shadow_task() -> None:
     assert "Start-ScheduledTask" not in source
     assert "Stop-ScheduledTask" not in source
     assert "Unregister-ScheduledTask" not in source
+
+
+def test_telemetry_task_uses_bounded_repetition_duration() -> None:
+    source = _read("install_windows_mt5_shadow_telemetry_task.ps1")
+    assert "[TimeSpan]::MaxValue" not in source
+    assert "-RepetitionDuration (New-TimeSpan -Days 3650)" in source
