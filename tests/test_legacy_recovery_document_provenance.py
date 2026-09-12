@@ -9,11 +9,14 @@ _LEGACY_DOCUMENT_MARKERS = (
     "recovery_bundle_manifest.json",
 )
 _ALLOWED_PROVENANCE_DOCS = {
+    "docs/ARCHITECTURE_HYGIENE_AUDIT_V5.md",
     "docs/CURRENT_WORK_STEP.md",
     "docs/DAX_BOT_1X_MIGRATION_BACKLOG_STEP_2000.md",
     "docs/MASTERSTAND.md",
+    "docs/PROBLEM_SOLUTION_REGISTRY.md",
     "docs/PROJECT_KNOWLEDGE_INDEX.md",
     "docs/RECOVERY_CANONICALIZATION_AUDIT_V1.md",
+    "docs/V8_RECOVERY_HYGIENE_DECISION.md",
 }
 
 
