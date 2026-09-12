@@ -66,7 +66,7 @@ Required properties:
 3. **Step-Close-Gate:** new work starts only after the prior step is formally closed and evidence is synchronized.
 4. **Pointer-before-next-step:** this file must name the next active whole-number step before substantive new work begins.
 5. Decimal/letter step IDs are prohibited.
-6. Visible sequence remains monotonic.
+6. **Visible official step numbering is monotonic.**
 7. `Weiter mit dem DAXBot` resumes from repository truth.
 8. Next Masterstand checkpoint: **2250**; next full/architecture audit: **2500**.
 
