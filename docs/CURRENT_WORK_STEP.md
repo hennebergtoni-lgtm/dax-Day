@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2166**
-- Active whole-number step: **2167**
-- Next step after successful completion: **2168**
-- Active Step 2167 scope: **Harden the typed NextGen execution-protection path against stale or policy-mismatched Loss/Exposure observation state by consuming the Step-2166 restart-safe checkpoint, explicit caller-supplied evaluation time and explicit maximum observation age. Preserve UTC/freshness semantics only; do not invent broker timezone, reset, PnL or observation-production behavior, and add no broker submission/PAPER/LIVE authorization.**
+- Last completed whole-number step: **2167**
+- Active whole-number step: **2168**
+- Next step after successful completion: **2169**
+- Active Step 2168 scope: **Audit the remaining coarse `session_admission_allowed` evidence in the typed NextGen execution-protection path against existing CAND-001 session-admission semantics and all active consumers. Decide with concrete evidence whether a broker-neutral canonical session-admission owner can be adapted without silently promoting CAND-001-specific timezone/session/reset behavior; otherwise DEFER explicitly. Do not change CAND-001 strategy semantics, broker submission, or PAPER/LIVE authorization.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -34,35 +34,33 @@ The exact prior full ledger has been preserved without rewriting at:
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
-| 2160 | Risk-profile / loss-cap product-promotion audit. | **COMPLETED.** Final tested head `fecff1962ce7e3c7c869dc49cd45b3bfbd5a145a`; CI #445/#1229 GREEN. |
 | 2161 | 500-step Architecture & Learning Review governance. | **COMPLETED.** Final tested head `fbc04354ef7e5b209bc3759309561b5d5974d5ed`; CI #449/#1233 GREEN. |
 | 2162 | Canonical single fixed-cash risk policy. | **COMPLETED.** Final tested head `e72a1fc8000f5966048f1cfe3cac654a43368099`; CI #455/#1239 GREEN. |
 | 2163 | Canonical loss/exposure admission policy. | **COMPLETED.** Final tested head `dcf0e1b632373ef6255e54d4c6c8e219c81e4fbb`; CI #461/#1245 GREEN. |
 | 2164 | Admission-bound Risk→ExecutionIntent bridge. | **COMPLETED.** Final tested head `7476959b7c429825fe8770f95ec47962af64621c`; CI #466/#1250 GREEN. |
 | 2165 | Canonical risk/admission evidence in broker execution protection. | **COMPLETED.** Final tested head `38bc6ee83c37a4f8dc891951e4e8b1932baf34e1`; CI #472/#1256 GREEN. |
-| 2166 | Restart-safe canonical Loss/Exposure observation persistence. | **COMPLETED.** Reused `StateStorePort`/`AtomicFileStateStore`; added tamper-evident policy-linked observation checkpoint with explicit UTC-normalized observation time, deterministic bytes and compatibility checks. Final tested head `482635101f87224517fd95f4ad4c0e1e76a8f952`; `dax-bot-1x-ci` #478 GREEN and `research-lab-ci` #1262 GREEN. PnL/reset/timezone-production semantics remain DEFER. |
-| 2167 | Loss/Exposure observation freshness in NextGen protection. | **IN PROGRESS.** Bind checkpoint identity/freshness into typed protection without inventing observation-production semantics. |
+| 2166 | Restart-safe canonical Loss/Exposure observation persistence. | **COMPLETED.** Final tested head `482635101f87224517fd95f4ad4c0e1e76a8f952`; CI #478/#1262 GREEN. |
+| 2167 | Loss/Exposure observation freshness in NextGen protection. | **COMPLETED.** Typed protection now requires the policy-linked restart-safe observation checkpoint, explicit timezone-aware evaluation time and explicit max age; stale evidence blocks, future-dated/mismatched evidence fails closed, and freshness/checkpoint identity is bound into verdict provenance. Final tested head `9989b8235411f8da95cb275ef3c2dad9f61040e5`; `dax-bot-1x-ci` #482 GREEN and `research-lab-ci` #1266 GREEN. Reset/PnL/broker-timezone production semantics remain DEFER. |
+| 2168 | Canonical session-admission promotion audit. | **IN PROGRESS.** Audit the remaining coarse typed-protection boolean against existing consumers and CAND-001 semantics before any product-domain promotion. |
 
-## Step 2166 closeout truth
+## Step 2167 closeout truth
 
-Step 2166 adds only a restart-safe persistence envelope for already-built canonical LossExposureObservation evidence. It links the current LossExposurePolicy fingerprint, exact observation fingerprint and explicit caller-supplied timestamp, normalizes that time to UTC, persists through the existing StateStorePort, and fails closed on tampering or policy mismatch. It does not compute PnL/equity drawdown, infer daily or weekly reset boundaries, resolve broker timezone or create another recovery architecture.
+Step 2167 hardens the existing typed NextGen protection owner without creating a new service. The Step-2166 observation checkpoint must match the supplied LossExposurePolicy and LossExposureObservation, evaluation time must be timezone-aware, maximum age explicit and non-negative, future-dated checkpoints fail closed, and stale checkpoints add `LOSS_EXPOSURE_OBSERVATION_STALE`. Freshness evidence is included in the protection fingerprint. No reset/PnL/broker-timezone production semantics or execution authorization were added.
 
-## Step 2167 active work
+## Step 2168 active work
 
-**Step 2167 — IN PROGRESS:** prevent stale or mismatched persisted Loss/Exposure observation evidence from reaching an ALLOW protection verdict.
+**Step 2168 — IN PROGRESS:** decide whether the remaining session-admission boolean can safely become canonical product evidence.
 
 Required properties:
 
-1. reuse the Step-2165 typed `evaluate_nextgen_execution_protection()` owner; do not create another protection service;
-2. consume the Step-2166 `LossExposureObservationCheckpoint` as the restart/freshness evidence surface;
-3. require checkpoint policy fingerprint and checkpoint observation to match the supplied canonical LossExposurePolicy/Observation exactly;
-4. require explicit timezone-aware evaluation time and explicit non-negative maximum observation age;
-5. future-dated observation timestamps fail closed;
-6. observation age above the configured maximum blocks protection with explicit evidence;
-7. fresh canonical evidence preserves existing protection behavior and binds checkpoint identity/freshness into the verdict fingerprint;
-8. do not infer broker timezone, session-day/week reset, PnL or observation production;
-9. no broker submission, MT5 order API or PAPER/LIVE authorization;
-10. readiness booleans remain separately evidenced and unchanged.
+1. audit every active `session_admission_allowed` consumer before changing the typed protection contract;
+2. inspect current CAND-001 session admission, state, timezone and max-trades semantics as provenance only;
+3. do not silently generalize CAND-001 `Europe/Berlin`, trading-session date or one-trade-per-session behavior into a generic product contract;
+4. identify whether equivalent broker-neutral inputs and deterministic identity can be defined without broker/account access;
+5. classify the result as ADAPT_CANONICALLY or DEFER_WITH_REASON with concrete consumer/provenance evidence;
+6. if adaptation is justified, implementation requires a separate next whole-number step unless it is the direct minimal completion of this audit scope explicitly recorded here;
+7. no broker submission, MT5 order API or PAPER/LIVE authorization;
+8. readiness booleans remain separately evidenced and unchanged.
 
 ## Binding numbering and handoff rules
 
