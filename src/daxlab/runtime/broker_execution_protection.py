@@ -40,9 +40,9 @@ class BrokerExecutionProtectionVerdict:
     reconciliation_fingerprints: tuple[str, ...]
     sizing_evidence_fingerprint: str | None
     risk_policy_fingerprint: str | None
-    loss_admission_evidence_fingerprint: str | None
     feed_age_seconds: float
     observed_spread_points: float | None
+    loss_admission_evidence_fingerprint: str | None = None
     execution_capability: str = "NONE"
     order_execution_enabled: bool = False
 
@@ -187,12 +187,12 @@ def evaluate_execution_protection(
         ),
         sizing_evidence_fingerprint=sizing_evidence_fingerprint,
         risk_policy_fingerprint=risk_policy_fingerprint,
-        loss_admission_evidence_fingerprint=(
-            loss_admission_evidence_fingerprint
-        ),
         feed_age_seconds=float(feed_age_seconds),
         observed_spread_points=(
             None if observed_spread_points is None else float(observed_spread_points)
+        ),
+        loss_admission_evidence_fingerprint=(
+            loss_admission_evidence_fingerprint
         ),
     )
 
