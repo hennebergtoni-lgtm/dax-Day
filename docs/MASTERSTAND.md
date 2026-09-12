@@ -21,6 +21,8 @@ After a new chat, context loss, compaction, tool reconnect, or any explicit `wei
 
 Binding continuity rule: **a Zwischenstand, successful test, warning, found file, recovered context, CI state or completed sub-check is visibility only, not a stop.** Continue to the next concrete work unit unless a real stop condition from `docs/WORK_CONTINUITY_PROTOCOL.md` exists.
 
+Binding visible-work rule: **Step N -> short activity -> visible intermediate report in normal assistant text -> status marker (`✅`, `⚠️`, or `❌`) -> immediate next step.** Interface/tool activity lines alone do not count as the intermediate report. Do not run long chains of tool calls without a normal-text status update between meaningful checks. Each visible report must state what was checked, the current result, and what happens next; then continue immediately when the next safe action is known.
+
 A lane-local blocker such as Windows hardware, market time, broker metadata or a user-only action does not stop unrelated safe work.
 
 Official step numbers are integers only. Decimal/letter pseudo-steps are prohibited.
