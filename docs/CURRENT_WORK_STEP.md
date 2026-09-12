@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2110**
-- Active whole-number step: **2111**
-- Next step after successful completion: **2112**
+- Last completed whole-number step: **2111**
+- Active whole-number step: **2112**
+- Next step after successful completion: **2113**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -50,6 +50,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2108 | Add and regression-test a strict round-trip verifier for exported OOS evidence: require the exact three-file layout, reject unknown/missing fields, reconstruct typed Step-2105/2106 objects, recompute full payload/manifest lineage and reject metric/manifest/safety tampering. | reader `f951b5f1…`; attack/round-trip tests `45f8ba5c…` (exact-head CI: `dax-bot-1x-ci` #237 GREEN, `research-lab-ci` #1021 GREEN) |
 | 2109 | Add and regression-test a deterministic cost-stress evidence-integrity audit: verify path/count/Gross-R invariance, exact `net_r = gross_r - cost_r`, linear cost scaling and monotone adverse cost effects across normal/1.5x/2x; explicitly exclude the cost-dependent trade-record fingerprint from false equality checks. | audit `681f1306…`; regression tests `3fd127e4…` (exact-head CI: `dax-bot-1x-ci` #240 GREEN, `research-lab-ci` #1024 GREEN) |
 | 2110 | Implement and regression-test descriptive temporal OOS stability diagnostics after canonical PASS cost-consistency evidence: per-cost mean/median window net-R, sign/flat rates, zero-trade windows, activity, longest sign streaks, cumulative max drawdown, first-vs-second-half net-R/activity and full source fingerprints; no score/threshold/promotion and PBO/DSR explicitly not applied to this single frozen-candidate/no-new-selection surface. | implementation present before `4b9bb341…`; regression tests `4b9bb341…` (exact-head CI: `dax-bot-1x-ci` #243 GREEN, `research-lab-ci` #1027 GREEN) |
+| 2111 | Add and regression-test a separate deterministic machine-readable OOS diagnostic artifact bound to the canonical measurement/aggregation evidence, unchanged Step-2107 base-manifest fingerprint, PASS Step-2109 cost-consistency audit and Step-2110 temporal-stability diagnostics; enforce immutable standalone write, no score/threshold/promotion and `NONE/false`. | implementation `e80ac46c…`; tests `999d4995…` (exact-head CI: `dax-bot-1x-ci` #246 GREEN, `research-lab-ci` #1030 GREEN) |
 
 ## Numbering rules
 
@@ -64,4 +65,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2111:** add and regression-test a deterministic machine-readable OOS diagnostic evidence artifact that binds the verified Step-2105/2106 source evidence, canonical PASS Step-2109 cost-consistency audit and Step-2110 temporal stability diagnostics without modifying the frozen Step-2107 three-file base export. The diagnostic artifact remains descriptive, threshold-free and non-promotional, carries full source fingerprints plus `NONE/false`, and must fail closed on non-canonical/tampered source evidence.
+**Step 2112:** add and regression-test a strict reader/verifier for the standalone `diagnostics.json` artifact from Step 2111. Require the fixed filename and exact schema/field set, recompute canonical measurement/aggregation/base-manifest/cost-consistency/stability lineage from supplied verified source evidence, reject unknown/missing fields and any metric/fingerprint/safety tampering, and return only fully verified diagnostic evidence. No promotion or execution semantics are introduced.
