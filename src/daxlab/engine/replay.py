@@ -83,7 +83,7 @@ def replay_candles(
     decisions: list[StrategyDecision] = []
     for candle in stream:
         transition = strategy.on_candle(state, candle)
-        _validate_decision(strategy, candle, transition.decision)
+        _validate_decision(manifest, candle, transition.decision)
         state = transition.state
         decisions.append(transition.decision)
 
@@ -143,14 +143,17 @@ def _build_manifest(
     candle_count: int,
     input_fingerprint: str,
 ) -> ReplayRunManifest:
-    _require_token(strategy.strategy_id, "strategy_id")
-    _require_token(strategy.strategy_version, "strategy_version")
-    _require_sha256(strategy.strategy_fingerprint, "strategy_fingerprint")
+    strategy_id = strategy.strategy_id
+    strategy_version = strategy.strategy_version
+    strategy_fingerprint = strategy.strategy_fingerprint
+    _require_token(strategy_id, "strategy_id")
+    _require_token(strategy_version, "strategy_version")
+    _require_sha256(strategy_fingerprint, "strategy_fingerprint")
     identity = {
         "engine_version": ENGINE_VERSION,
-        "strategy_id": strategy.strategy_id,
-        "strategy_version": strategy.strategy_version,
-        "strategy_fingerprint": strategy.strategy_fingerprint,
+        "strategy_id": strategy_id,
+        "strategy_version": strategy_version,
+        "strategy_fingerprint": strategy_fingerprint,
         "instrument_id": instrument_id.value,
         "timeframe": timeframe,
         "candle_count": candle_count,
@@ -158,9 +161,9 @@ def _build_manifest(
     }
     return ReplayRunManifest(
         engine_version=ENGINE_VERSION,
-        strategy_id=strategy.strategy_id,
-        strategy_version=strategy.strategy_version,
-        strategy_fingerprint=strategy.strategy_fingerprint,
+        strategy_id=strategy_id,
+        strategy_version=strategy_version,
+        strategy_fingerprint=strategy_fingerprint,
         instrument_id=instrument_id,
         timeframe=timeframe,
         candle_count=candle_count,
@@ -170,16 +173,16 @@ def _build_manifest(
 
 
 def _validate_decision(
-    strategy: StrategyPlugin[StateT],
+    manifest: ReplayRunManifest,
     candle: Candle,
     decision: StrategyDecision,
 ) -> None:
-    if decision.strategy_id != strategy.strategy_id:
-        raise StrategyContractError("strategy decision id does not match plugin")
-    if decision.strategy_version != strategy.strategy_version:
-        raise StrategyContractError("strategy decision version does not match plugin")
-    if decision.strategy_fingerprint != strategy.strategy_fingerprint:
-        raise StrategyContractError("strategy decision fingerprint does not match plugin")
+    if decision.strategy_id != manifest.strategy_id:
+        raise StrategyContractError("strategy decision id does not match run manifest")
+    if decision.strategy_version != manifest.strategy_version:
+        raise StrategyContractError("strategy decision version does not match run manifest")
+    if decision.strategy_fingerprint != manifest.strategy_fingerprint:
+        raise StrategyContractError("strategy decision fingerprint does not match run manifest")
     if decision.instrument_id != candle.instrument_id:
         raise StrategyContractError("strategy decision instrument does not match candle")
     if decision.event_time != candle.close_time:
