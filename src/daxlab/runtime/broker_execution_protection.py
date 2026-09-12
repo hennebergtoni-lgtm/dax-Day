@@ -24,13 +24,12 @@ from daxlab.domain.risk import RiskDecision, RiskRequest, evaluate_fixed_cash_ri
 from daxlab.domain.risk_policy import FixedCashRiskPolicy
 from daxlab.domain.session_admission import (
     SessionAdmissionDecision,
-    SessionAdmissionObservation,
     SessionAdmissionPolicy,
     evaluate_session_admission,
 )
 from daxlab.runtime.broker_reconciliation import BrokerReconciliationVerdict
 from daxlab.state.loss_exposure import LossExposureObservationCheckpoint
-from daxlab.state.session_admission import SessionAdmissionObservationCheckpoint
+from daxlab.state.session_admission import SessionAdmissionGuardCheckpoint
 
 
 BROKER_EXECUTION_PROTECTION_SCHEMA = "DAXLAB_BROKER_EXECUTION_PROTECTION_V1"
@@ -59,6 +58,7 @@ class BrokerExecutionProtectionVerdict:
     session_observation_fingerprint: str | None = None
     session_admission_evidence_fingerprint: str | None = None
     session_observation_checkpoint_fingerprint: str | None = None
+    session_guard_checkpoint_fingerprint: str | None = None
     session_observation_age_seconds: float | None = None
     execution_capability: str = "NONE"
     order_execution_enabled: bool = False
@@ -93,6 +93,10 @@ class BrokerExecutionProtectionVerdict:
                 self.session_observation_checkpoint_fingerprint,
                 "session_observation_checkpoint_fingerprint",
             ),
+            (
+                self.session_guard_checkpoint_fingerprint,
+                "session_guard_checkpoint_fingerprint",
+            ),
         ):
             if value is not None:
                 _sha(value, field)
@@ -112,12 +116,13 @@ class BrokerExecutionProtectionVerdict:
             self.loss_observation_age_seconds is None
         ):
             raise ValueError("loss observation checkpoint identity and age must appear together")
-        if (self.session_observation_checkpoint_fingerprint is None) != (
-            self.session_observation_age_seconds is None
-        ):
-            raise ValueError(
-                "session observation checkpoint identity and age must appear together"
-            )
+        _validate_session_checkpoint_identity_and_age(
+            observation_checkpoint_fingerprint=(
+                self.session_observation_checkpoint_fingerprint
+            ),
+            guard_checkpoint_fingerprint=self.session_guard_checkpoint_fingerprint,
+            age_seconds=self.session_observation_age_seconds,
+        )
         session_identity = (
             self.session_policy_fingerprint,
             self.session_observation_fingerprint,
@@ -166,6 +171,9 @@ class BrokerExecutionProtectionVerdict:
                 "session_observation_checkpoint_fingerprint": (
                     self.session_observation_checkpoint_fingerprint
                 ),
+                "session_guard_checkpoint_fingerprint": (
+                    self.session_guard_checkpoint_fingerprint
+                ),
                 "session_observation_age_seconds": self.session_observation_age_seconds,
                 "feed_age_seconds": float(self.feed_age_seconds),
                 "observed_spread_points": (
@@ -204,6 +212,7 @@ def evaluate_execution_protection(
     session_observation_fingerprint: str | None = None,
     session_admission_evidence_fingerprint: str | None = None,
     session_observation_checkpoint_fingerprint: str | None = None,
+    session_guard_checkpoint_fingerprint: str | None = None,
     session_observation_age_seconds: float | None = None,
     session_observation_fresh: bool | None = None,
 ) -> BrokerExecutionProtectionVerdict:
@@ -236,6 +245,10 @@ def evaluate_execution_protection(
             session_observation_checkpoint_fingerprint,
             "session_observation_checkpoint_fingerprint",
         ),
+        (
+            session_guard_checkpoint_fingerprint,
+            "session_guard_checkpoint_fingerprint",
+        ),
     ):
         if value is not None:
             _sha(value, field)
@@ -246,8 +259,12 @@ def evaluate_execution_protection(
         fresh=loss_observation_fresh,
         label="loss observation",
     )
+    session_checkpoint_fingerprint = _select_session_checkpoint_fingerprint(
+        observation_checkpoint_fingerprint=session_observation_checkpoint_fingerprint,
+        guard_checkpoint_fingerprint=session_guard_checkpoint_fingerprint,
+    )
     _validate_freshness_bundle(
-        checkpoint_fingerprint=session_observation_checkpoint_fingerprint,
+        checkpoint_fingerprint=session_checkpoint_fingerprint,
         age_seconds=session_observation_age_seconds,
         fresh=session_observation_fresh,
         label="session observation",
@@ -334,6 +351,7 @@ def evaluate_execution_protection(
         session_observation_checkpoint_fingerprint=(
             session_observation_checkpoint_fingerprint
         ),
+        session_guard_checkpoint_fingerprint=session_guard_checkpoint_fingerprint,
         session_observation_age_seconds=(
             None
             if session_observation_age_seconds is None
@@ -364,8 +382,7 @@ def evaluate_nextgen_execution_protection(
     evaluated_at: datetime,
     max_loss_observation_age_seconds: float,
     session_policy: SessionAdmissionPolicy,
-    session_observation: SessionAdmissionObservation,
-    session_observation_checkpoint: SessionAdmissionObservationCheckpoint,
+    session_guard_checkpoint: SessionAdmissionGuardCheckpoint,
     session_admission_decision: SessionAdmissionDecision,
     max_session_observation_age_seconds: float,
 ) -> BrokerExecutionProtectionVerdict:
@@ -419,6 +436,9 @@ def evaluate_nextgen_execution_protection(
         loss_observation_age_seconds <= max_loss_observation_age_seconds
     )
 
+    if session_guard_checkpoint.policy_fingerprint != session_policy.policy_fingerprint:
+        raise ValueError("session guard checkpoint policy mismatch")
+    session_observation = session_guard_checkpoint.observation
     expected_session_admission = evaluate_session_admission(
         policy=session_policy,
         observation=session_observation,
@@ -427,18 +447,14 @@ def evaluate_nextgen_execution_protection(
         raise ValueError(
             "session admission decision does not match canonical session evaluation"
         )
-    if session_observation_checkpoint.policy_fingerprint != session_policy.policy_fingerprint:
-        raise ValueError("session observation checkpoint policy mismatch")
-    if session_observation_checkpoint.observation != session_observation:
-        raise ValueError("session observation checkpoint observation mismatch")
     _validate_max_age(
         max_session_observation_age_seconds,
         "max_session_observation_age_seconds",
     )
     session_observation_age_seconds = _observation_age_seconds(
         evaluated_at=evaluated_at,
-        observed_at=session_observation_checkpoint.observed_at,
-        future_error="session observation checkpoint cannot be future-dated",
+        observed_at=session_guard_checkpoint.observed_at,
+        future_error="session guard checkpoint cannot be future-dated",
     )
     session_observation_fresh = (
         session_observation_age_seconds <= max_session_observation_age_seconds
@@ -475,12 +491,43 @@ def evaluate_nextgen_execution_protection(
         session_admission_evidence_fingerprint=(
             session_admission_decision.decision_fingerprint
         ),
-        session_observation_checkpoint_fingerprint=(
-            session_observation_checkpoint.checkpoint_fingerprint
+        session_guard_checkpoint_fingerprint=(
+            session_guard_checkpoint.checkpoint_fingerprint
         ),
         session_observation_age_seconds=session_observation_age_seconds,
         session_observation_fresh=session_observation_fresh,
     )
+
+
+def _select_session_checkpoint_fingerprint(
+    *,
+    observation_checkpoint_fingerprint: str | None,
+    guard_checkpoint_fingerprint: str | None,
+) -> str | None:
+    if (
+        observation_checkpoint_fingerprint is not None
+        and guard_checkpoint_fingerprint is not None
+    ):
+        raise ValueError("session freshness evidence cannot use two checkpoint identities")
+    return (
+        guard_checkpoint_fingerprint
+        if guard_checkpoint_fingerprint is not None
+        else observation_checkpoint_fingerprint
+    )
+
+
+def _validate_session_checkpoint_identity_and_age(
+    *,
+    observation_checkpoint_fingerprint: str | None,
+    guard_checkpoint_fingerprint: str | None,
+    age_seconds: float | None,
+) -> None:
+    checkpoint_fingerprint = _select_session_checkpoint_fingerprint(
+        observation_checkpoint_fingerprint=observation_checkpoint_fingerprint,
+        guard_checkpoint_fingerprint=guard_checkpoint_fingerprint,
+    )
+    if (checkpoint_fingerprint is None) != (age_seconds is None):
+        raise ValueError("session checkpoint identity and age must appear together")
 
 
 def _validate_freshness_bundle(
