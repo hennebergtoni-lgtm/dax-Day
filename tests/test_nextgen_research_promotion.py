@@ -108,7 +108,7 @@ def test_evaluation_or_promotion_state_changes_only_the_expected_identity_layer(
     assert base.promotion_fingerprint != accepted.promotion_fingerprint
 
 
-def test_promotion_cannot_enable_external_execution() -> None:
+def test_promotion_cannot_enable_external_execution_or_hide_tampering() -> None:
     artifact = ResearchPromotionArtifactV1.build(
         experiment=build_experiment(), promotion_state=PromotionState.PRODUCT_STRATEGY_ACCEPTED
     )
@@ -121,6 +121,10 @@ def test_promotion_cannot_enable_external_execution() -> None:
         replace(artifact, paper_authorized=True)
     with pytest.raises(ValueError, match="cannot authorize"):
         replace(artifact, live_authorized=True)
+    with pytest.raises(ValueError, match="product strategy artifact fingerprint mismatch"):
+        replace(artifact.product_strategy, artifact_fingerprint=h("tampered"))
+    with pytest.raises(ValueError, match="promotion fingerprint mismatch"):
+        replace(artifact, limitations=("Tampered limitation.",))
 
 
 def test_experiment_fails_closed_on_missing_evidence_or_noncanonical_parameters() -> None:
