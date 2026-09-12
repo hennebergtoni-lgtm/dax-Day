@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2154**
-- Active whole-number step: **2155**
-- Next step after successful completion: **2156**
-- Active Step 2155 scope: **Define Canonical Risk Decision V1 between canonical `TradePlan` and `ExecutionIntent`: broker-neutral instrument/sizing inputs, deterministic ALLOW/DENY identity, quantity output only after risk approval, and fail-closed validation. No MT5/order adapter, no broker submission, no PAPER/LIVE authorization, no automatic adoption of legacy BASE/BOOST/HIGH research profiles.**
+- Last completed whole-number step: **2155**
+- Active whole-number step: **2156**
+- Next step after successful completion: **2157**
+- Active Step 2156 scope: **Build Canonical Risk-to-ExecutionIntent Bridge V1: audit current `ExecutionIntent` consumers, then add a deterministic broker-neutral builder that accepts only a matching `ALLOW` `RiskDecision`/`RiskRequest`/`TradePlan`, carries only the risk-approved quantity, maps trade direction to order side, binds strategy/risk provenance, and fails closed on mismatch or DENY. No MT5/order adapter, no `order_send`, no PAPER/LIVE authorization.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -38,27 +38,27 @@ The archive preserves reconstructed Steps 2081–2089, direct numbering from Ste
 | 2151 | Add canonical CAND-001 strategy-state codec and prove real Candidate resume parity. | **COMPLETED.** Candidate restart/resume parity and canonical codec verified; no strategy/order authorization change. |
 | 2152 | Reconcile durable project continuity/navigation with verified NextGen progress. | **COMPLETED.** Knowledge Index and Masterstand reconciled; no runtime/authorization change. |
 | 2153 | Audit and enforce the NextGen legacy-dependency isolation boundary. | **COMPLETED.** `docs/NEXTGEN_DEPENDENCY_ISOLATION_V1.md`, AST import guard and evidence note; exact tested head `1234cf92125b21698dff4d5d0d6ea9be558c4ee3`, `dax-bot-1x-ci` #426 GREEN and `research-lab-ci` #1210 GREEN. Formal pointer head after closeout `0af66af8…` also GREEN (#427/#1211). |
-| 2154 | Audit remaining documented NextGen compatibility/legacy edges for active and forensic consumers before retirement. | **COMPLETED — 7/7 `RETAIN_WITH_REASON`, 0 `RETIRE_CANDIDATE`.** Added `docs/NEXTGEN_COMPATIBILITY_RETIREMENT_AUDIT_V1.md` and `tests/test_nextgen_compatibility_retirement_audit.py`. Exact technical tested head `df29bb44c919c307eb7fe271e80841e677b97455`: `dax-bot-1x-ci` #429 GREEN and `research-lab-ci` #1213 GREEN. No compatibility file deleted; no strategy, MT5, V11.2, risk, execution or authorization behavior changed. |
-| 2155 | Define Canonical Risk Decision V1 between strategy planning and deterministic execution intent. | **IN PROGRESS.** Build broker-neutral, deterministic, fail-closed risk/sizing contracts without adding any broker execution capability or PAPER/LIVE authorization. |
+| 2154 | Audit remaining documented NextGen compatibility/legacy edges for active and forensic consumers before retirement. | **COMPLETED — 7/7 `RETAIN_WITH_REASON`, 0 `RETIRE_CANDIDATE`.** Exact technical tested head `df29bb44c919c307eb7fe271e80841e677b97455`; `dax-bot-1x-ci` #429 GREEN and `research-lab-ci` #1213 GREEN. |
+| 2155 | Define Canonical Risk Decision V1 between strategy planning and deterministic execution intent. | **COMPLETED.** Added `src/daxlab/domain/risk.py`, canonical exports, `docs/NEXTGEN_RISK_DECISION_V1.md` and `tests/test_nextgen_risk_decision.py`. Final tested head `9c65949803e1fdf96fddf0eb7903c3545da35bf6`; `dax-bot-1x-ci` #433 GREEN and `research-lab-ci` #1217 GREEN. Deterministic ALLOW/DENY sizing is broker-neutral and fail-closed; no execution/PAPER/LIVE authorization changed. |
+| 2156 | Build Canonical Risk-to-ExecutionIntent Bridge V1. | **IN PROGRESS.** Audit existing intent consumers first, then add only the broker-neutral approved-risk bridge and tests. |
 
-## Step 2154 closeout truth
+## Step 2155 closeout truth
 
-Step 2154 found no evidence-neutral retirement candidate. The seven audited surfaces remain `RETAIN_WITH_REASON` because each still has an active parity/restart/adapter/research/reference/provenance obligation. Retirement requires a later separate whole-number step with zero active semantic consumers, no unresolved forensic/provenance requirement, evidence-equivalent replacement where applicable, deterministic compatibility/parity proof, and no weakening of Step-2153 dependency isolation.
+Step 2155 established a canonical pre-trade risk boundary. `TradePlan` still contains no quantity. `RiskRequest` binds one strategy decision and plan to canonical instrument economics and a maximum cash-loss budget. `RiskDecision` is deterministic `ALLOW`/`DENY`; quantity exists only on `ALLOW`, is step-floored/capped, and invalid economics or mismatches fail closed. The contract imports no MT5/broker SDK and grants no order capability or PAPER/LIVE authorization.
 
-## Step 2155 active work
+## Step 2156 active work
 
-**Step 2155 — IN PROGRESS:** define the first canonical broker-neutral Risk Decision V1 boundary between `TradePlan` and `ExecutionIntent`.
+**Step 2156 — IN PROGRESS:** build the first canonical bridge from approved risk output into existing `ExecutionIntent` semantics.
 
 Required properties:
 
-1. deterministic request/decision identity;
-2. explicit ALLOW/DENY semantics with machine-readable blockers/reasons;
-3. quantity is produced only by an ALLOW risk decision, never directly by strategy output;
-4. instrument/sizing inputs are canonical data, not direct MT5 SDK objects;
-5. finite/positive/unit-step invariants fail closed;
-6. risk output does not authorize broker submission;
-7. no BASE/BOOST/HIGH legacy research profile becomes product policy automatically;
-8. no PAPER/LIVE authorization change.
+1. inspect existing `ExecutionIntent` consumers before changing or extending its contract;
+2. only a matching `ALLOW` risk decision with a non-null approved quantity may produce intent;
+3. a `DENY`, request/decision mismatch, instrument mismatch or plan mismatch fails closed;
+4. LONG/SHORT direction maps deterministically to BUY/SELL without broker-specific types;
+5. strategy/risk provenance remains deterministic and auditable;
+6. the bridge does not submit an order or implement a broker execution adapter;
+7. no PAPER/LIVE authorization change.
 
 Architecture basis: `docs/NEXTGEN_GREENFIELD_ARCHITECTURE_V1.md` §5.5 Risk, portfolio and execution domain.
 
