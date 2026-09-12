@@ -72,7 +72,7 @@ $fixedRuntimeFiles = @(
 $runtimeTreeText = Invoke-GitLine -Arguments @('ls-tree', '-r', '--name-only', $ExpectedCommit, '--', 'src/daxlab/runtime')
 $dynamicRuntimeFiles = @(
     $runtimeTreeText -split "`r?`n" |
-        Where-Object { $_ -match '^src/daxlab/runtime/(candidate_|mt5_).+\.py$' }
+        Where-Object { $_ -match '^src/daxlab/runtime/(candidate_|mt5_).+\.py$'.Replace('\\', '\') }
 )
 $runtimeFiles = @($fixedRuntimeFiles + $dynamicRuntimeFiles) | Sort-Object -Unique
 
