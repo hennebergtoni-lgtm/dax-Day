@@ -27,6 +27,7 @@ The exact prior full ledger has been preserved without rewriting at:
 - archived blob SHA: `4d96586f85cf32f2e726080cf728837ea6dd20ef`
 - archive state: full historical pointer through Step 2154 while 2154 was still marked `IN PROGRESS`.
 - reconstruction anchor `199e6bf073da1a717839b37e70a314f203e9ffa4` remains the canonical reconstruction anchor; detailed reconstructed history is preserved in the archive.
+- reconstructed Steps **2081** through **2089** remain preserved in that archive and are intentionally not duplicated into the compact active ledger.
 
 ## Recent verified sequence
 
@@ -65,10 +66,11 @@ Required properties:
 4. Decimal suffixes, letter suffixes and nested official step IDs are forbidden.
 5. **Step-Close-Gate:** a new independent official step may not begin until the previous step is `COMPLETED`, `INTERRUPTED`, `WAITING_EXTERNAL` or `BLOCKED` with evidence/pointer synchronized.
 6. **Pointer-before-next-step:** this file must name the new active step before substantive work starts.
-7. `Weiter mit dem DAXBot` triggers repository-backed recovery; `Erstelle einen Masterstand` triggers canonical handover refresh.
-8. Next Masterstand checkpoint: **2250**; next full audit: **2500**.
-9. Visible work remains short: Step N → activity → ✅/⚠️/❌ Zwischenstand → immediate next action.
-10. Never claim work continues after a turn-ending response.
+7. **Visible official step numbering is monotonic.** Once a higher official step has started, unfinished older scope is preserved as provenance and may continue only under the next unused whole-number step.
+8. `Weiter mit dem DAXBot` triggers repository-backed recovery; `Erstelle einen Masterstand` triggers canonical handover refresh.
+9. Next Masterstand checkpoint: **2250**; next full audit: **2500**.
+10. Visible work remains short: Step N → activity → ✅/⚠️/❌ Zwischenstand → immediate next action.
+11. Never claim work continues after a turn-ending response.
 
 ## Safety boundary
 
