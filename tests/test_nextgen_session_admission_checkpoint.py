@@ -127,9 +127,6 @@ def test_execution_safety_drift_fails_closed() -> None:
     _, _, checkpoint = _checkpoint()
     raw = json.loads(session_admission_checkpoint_to_bytes(checkpoint))
     raw["order_execution_enabled"] = True
-    raw_without_fingerprint = dict(raw)
-    raw_without_fingerprint.pop("checkpoint_fingerprint")
-    # Even if a caller changes the safety flag, the original fingerprint is invalid.
     tampered = (json.dumps(raw, sort_keys=True) + "\n").encode("utf-8")
 
     with pytest.raises(ValueError):
