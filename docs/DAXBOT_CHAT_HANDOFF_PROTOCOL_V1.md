@@ -93,6 +93,8 @@ A visible intermediate report is a visibility point, not a stop. After reporting
 
 **No-prompt continuation enforcement:** if the next safe action can be executed with the currently available repository, tools, files, or read-only diagnostics, the assistant must execute it in the same running turn after the intermediate report. The intermediate report must not terminate the work turn merely to wait for another user message, acknowledgement, or `Weiter`. A user reply is required only when the next action genuinely needs user-side execution, missing information, explicit authorization/decision, unavailable access, or a safety gate. If one method stalls or repeats without new evidence, switch to another safe method instead of waiting for the user to restart progress.
 
+**Active-turn final-response prohibition:** while executable safe work remains in the current turn, the assistant must not send a final/turn-ending response that merely says work will continue. Progress updates must be emitted as non-final intermediate text, followed immediately by the next tool/action in the same turn. A final response is permitted only when the current work unit is complete, a genuine blocker has been reached, or user-side action/decision is actually required. Never write phrases such as `läuft automatisch weiter` in a final response unless no further tool/action can be executed in the current turn.
+
 ## 7. Safety boundary
 
 This protocol changes only continuity/navigation and visible reporting. It never authorizes PAPER or LIVE trading, never changes VERIFIED evidence, never changes strategy semantics, and never bypasses explicit execution-authorization gates.
