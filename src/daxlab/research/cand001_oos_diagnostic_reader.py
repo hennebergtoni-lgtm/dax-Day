@@ -3,7 +3,7 @@
 The JSON artifact is never trusted on syntax alone. Verification requires the
 already verified Step-2105/2106 source objects; canonical cost consistency,
 temporal stability and the full Step-2111 diagnostic payload are recomputed and
-must match exactly.
+must match exactly after canonical JSON normalization.
 """
 from __future__ import annotations
 
@@ -67,25 +67,23 @@ def load_cand001_oos_diagnostic_evidence(
     )
     expected_payload = expected.to_payload()
 
-    if raw != expected_payload:
+    # JSON serialization normalizes Python tuples to arrays/lists. Compare the
+    # canonical JSON identity rather than raw Python container types.
+    if stable_fingerprint(raw) != stable_fingerprint(expected_payload):
         raise ValueError("diagnostic JSON does not match recomputed canonical evidence")
 
-    evidence = Cand001OosDiagnosticEvidence(**dict(raw))
-    if evidence != expected:
-        raise ValueError("diagnostic evidence does not round-trip to canonical object")
-
     verification_identity = {
-        "artifact_fingerprint": evidence.artifact_fingerprint,
-        "source_measurement_bundle_fingerprint": evidence.source_measurement_bundle_fingerprint,
-        "source_aggregation_fingerprint": evidence.source_aggregation_fingerprint,
-        "source_base_export_manifest_fingerprint": evidence.source_base_export_manifest_fingerprint,
-        "source_cost_consistency_fingerprint": evidence.source_cost_consistency_fingerprint,
-        "source_stability_fingerprint": evidence.source_stability_fingerprint,
+        "artifact_fingerprint": expected.artifact_fingerprint,
+        "source_measurement_bundle_fingerprint": expected.source_measurement_bundle_fingerprint,
+        "source_aggregation_fingerprint": expected.source_aggregation_fingerprint,
+        "source_base_export_manifest_fingerprint": expected.source_base_export_manifest_fingerprint,
+        "source_cost_consistency_fingerprint": expected.source_cost_consistency_fingerprint,
+        "source_stability_fingerprint": expected.source_stability_fingerprint,
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }
     return VerifiedCand001OosDiagnosticEvidence(
-        evidence=evidence,
+        evidence=expected,
         verification_fingerprint=stable_fingerprint(verification_identity),
     )
 
