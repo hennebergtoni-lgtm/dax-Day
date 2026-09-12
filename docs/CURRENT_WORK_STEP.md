@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2162**
-- Active whole-number step: **2163**
-- Next step after successful completion: **2164**
-- Active Step 2163 scope: **Implement the smallest canonical product loss/exposure admission policy separated from per-trade Risk V1 sizing. Adapt only explicit daily/weekly drawdown caps, consecutive-loss cooldown and maximum-open-position limits from the Step-2160 audit. Promote no research numeric values, calculate no PnL, read no account/broker API, and add no broker submission or PAPER/LIVE authorization.**
+- Last completed whole-number step: **2163**
+- Active whole-number step: **2164**
+- Next step after successful completion: **2165**
+- Active Step 2164 scope: **Harden the canonical Risk-to-ExecutionIntent bridge so product intent requires both the exact canonical Risk V1 ALLOW decision and the exact canonical Loss/Exposure Admission ALLOW decision. Bind admission provenance into intent identity, fail closed on blocked/tampered/mismatched admission evidence, and keep all broker submission and PAPER/LIVE authorization absent.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -34,35 +34,32 @@ The exact prior full ledger has been preserved without rewriting at:
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
-| 2156 | Canonical Risk-to-ExecutionIntent Bridge V1. | **COMPLETED.** Tested head `1f3a5f819ed115501c8c0902c73903b4a2f2e6e2`; CI #435/#1219 GREEN. |
 | 2157 | Broker lifecycle/reconciliation/protection reuse for canonical intent. | **COMPLETED.** Tested head `e65ad2994a6d8e243ef984b75a4724209df1a38a`; CI #437/#1221 GREEN. |
 | 2158 | PAPER pre-authorization composition / LEAN audit. | **COMPLETED.** Tested head `8a0052c71a284ab8b94dc5e7dafebf04d10af77a`; CI #439/#1223 GREEN. No new runtime orchestrator; PAPER/LIVE remain unauthorized. |
 | 2159 | Canonical read-only broker-economics → Risk Inputs adapter. | **COMPLETED.** Final tested head `6f782e3d14754a744232ae1094a9b4534f767fcb`; CI #442/#1226 GREEN. |
 | 2160 | Risk-profile / loss-cap product-promotion audit. | **COMPLETED.** Final tested head `fecff1962ce7e3c7c869dc49cd45b3bfbd5a145a`; CI #445/#1229 GREEN. |
 | 2161 | 500-step Architecture & Learning Review governance. | **COMPLETED.** Final tested head `fbc04354ef7e5b209bc3759309561b5d5974d5ed`; CI #449/#1233 GREEN. |
-| 2162 | Canonical single fixed-cash risk policy. | **COMPLETED.** Added `domain/risk_policy.py`, canonical export, contract and deterministic/fail-closed/Risk-V1 delegation tests. Final tested head `e72a1fc8000f5966048f1cfe3cac654a43368099`; `dax-bot-1x-ci` #455 GREEN and `research-lab-ci` #1239 GREEN. No research profile values, broker/account API or execution authorization added. |
-| 2163 | Canonical loss/exposure admission policy. | **IN PROGRESS.** Adapt explicit cap semantics only; no research numeric-value promotion, PnL calculation or broker/account capability. |
+| 2162 | Canonical single fixed-cash risk policy. | **COMPLETED.** Final tested head `e72a1fc8000f5966048f1cfe3cac654a43368099`; CI #455/#1239 GREEN. |
+| 2163 | Canonical loss/exposure admission policy. | **COMPLETED.** Added canonical `domain/loss_admission.py`, exports, contract and deterministic fail-closed tests. Final tested head `dcf0e1b632373ef6255e54d4c6c8e219c81e4fbb`; `dax-bot-1x-ci` #461 GREEN and `research-lab-ci` #1245 GREEN. No research numeric values, PnL calculation, account/broker access or execution authorization added. |
+| 2164 | Admission-bound Risk→ExecutionIntent bridge. | **IN PROGRESS.** Require exact canonical risk + admission ALLOW evidence before product intent can exist. |
 
-## Step 2162 closeout truth
+## Step 2163 closeout truth
 
-Step 2162 adds one canonical fixed-cash product policy with explicit currency, positive finite per-trade maximum cash loss and deterministic fingerprint. The policy delegates sizing to existing Risk V1 and fails closed on malformed values, tampering and currency mismatch. BASE/BOOST/HIGH, automatic escalation, account/equity percentage sizing and broker/account access remain absent. Readiness verification remains separate from software existence.
+Step 2163 adds a canonical loss/exposure admission owner separate from Risk V1 sizing. Explicit daily/weekly cash drawdown caps, consecutive-loss limit and maximum-open-position limit are configured without research numeric defaults. Explicit observations are consumed without PnL/account calculation. Equality at any cap and currency mismatch block fail-closed. Policy, observation and decision identities are deterministic. Software existence does not set readiness verification true.
 
-## Step 2163 active work
+## Step 2164 active work
 
-**Step 2163 — IN PROGRESS:** adapt the separately audited loss/exposure admission semantics into a canonical product owner.
+**Step 2164 — IN PROGRESS:** bind canonical loss/exposure admission into the existing Risk-to-ExecutionIntent boundary.
 
 Required properties:
 
-1. explicit currency plus positive finite daily and weekly drawdown caps;
-2. explicit integer limits for consecutive losses and open positions;
-3. explicit observation input only; no PnL/account computation inside the policy;
-4. equality at a cap blocks new admission fail-closed;
-5. currency mismatch blocks;
-6. deterministic policy/observation/decision identity;
-7. no research policy version or research numeric default is promoted;
-8. no per-trade quantity sizing duplicated here;
-9. no account/broker API, MT5 SDK/order API, broker submission or PAPER/LIVE authorization;
-10. readiness verification remains independent from implementation.
+1. canonical RiskRequest and RiskDecision are reconstructed/re-evaluated exactly as before;
+2. canonical LossExposurePolicy + LossExposureObservation are re-evaluated and must match the supplied admission decision exactly;
+3. both risk and admission decisions must be ALLOW before an ExecutionIntent can be built;
+4. admission decision fingerprint is included in intent provenance identity;
+5. blocked, stale/tampered or mismatched admission evidence fails closed;
+6. no duplicate sizing/admission algorithms are introduced in the bridge;
+7. no broker adapter/submission, MT5 order API or PAPER/LIVE authorization is added.
 
 ## Binding numbering and handoff rules
 
