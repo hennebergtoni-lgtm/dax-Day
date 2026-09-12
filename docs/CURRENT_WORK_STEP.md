@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2173**
-- Active whole-number step: **2174**
-- Next step after successful completion: **2175**
-- Active Step 2174 scope: **Audit the canonical SessionAdmissionObservation state transition after an admission is actually consumed. Determine whether NextGen needs one deterministic broker-neutral transition owner that advances caller-supplied session evidence only after an explicitly confirmed admission event, with restart-safe persistence compatibility and no implicit date/timezone/session-reset derivation. Audit first; do not mutate CAND-001 defaults, do not count strategy signals as admissions, and do not add broker submission/PAPER/LIVE authorization.**
+- Last completed whole-number step: **2174**
+- Active whole-number step: **2175**
+- Next step after successful completion: **2176**
+- Active Step 2175 scope: **Implement the Step-2174-approved canonical broker-neutral SessionAdmissionConsumptionState and deterministic consume transition. Require explicit caller-supplied session_key and sha256 consumption_id, derive SessionAdmissionObservation from state, allow a new consumption only from an exact canonical ALLOW decision, make replay of the same consumption_id idempotent without increment, fail closed on same ID with conflicting decision provenance or session mismatch, and add no persistence yet. Do not derive dates/timezones/resets, mutate CAND-001 defaults, access brokers or add PAPER/LIVE authorization.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -31,33 +31,33 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
-| 2168 | Canonical session-admission promotion audit. | **COMPLETED.** Final tested head `aea72758412b2c06ae7d211a4cc048b5e92a0eb1`; CI #485/#1269 GREEN. |
 | 2169 | Canonical broker-neutral session-admission owner. | **COMPLETED.** Final tested head `a905c76994f3d23d40227543f6417dc5f9cd14ca`; CI #490/#1274 GREEN. |
 | 2170 | Canonical session evidence in typed NextGen protection. | **COMPLETED.** Final tested head `109d195846c8ef27604093cdf79ff35c3a4168e4`; CI #495/#1279 GREEN. |
 | 2171 | Canonical session observation restart/freshness audit. | **COMPLETED.** Final tested head `3b8731e0a318ed27afd3e961d75bec253c33d072`; CI #499/#1283 GREEN. |
 | 2172 | Restart-safe canonical SessionAdmissionObservation checkpoint. | **COMPLETED.** Final tested head `378a651c463f621944456dc8a49c103dbc1abfca`; CI #508/#1292 GREEN. |
-| 2173 | Session observation freshness in typed NextGen protection. | **COMPLETED.** Typed protection now requires exact policy-linked SessionAdmissionObservation checkpoint evidence, validates policy/observation identity, rejects future-dated evidence, blocks stale evidence with `SESSION_ADMISSION_OBSERVATION_STALE`, and binds checkpoint identity/age into verdict provenance. Final tested head `47c641f99ef948ac9052a40c5db4f504e798577e`; `dax-bot-1x-ci` #512 GREEN and `research-lab-ci` #1296 GREEN. |
-| 2174 | Canonical session-admission consumption transition audit. | **IN PROGRESS.** Audit only: determine the correct post-admission state-transition boundary before implementation. |
+| 2173 | Session observation freshness in typed NextGen protection. | **COMPLETED.** Final tested head `47c641f99ef948ac9052a40c5db4f504e798577e`; CI #512/#1296 GREEN. |
+| 2174 | Canonical session-admission consumption transition audit. | **COMPLETED.** Audit classified `ADAPT_CANONICALLY`: a naive count increment is not restart-idempotent; canonical consumption needs explicit deterministic IDs remembered in state, while CAND-001 session derivation/increment remains Candidate-specific. Final tested head `04197891c069570d277bbb03af611d86f39fd154`; `dax-bot-1x-ci` #515 GREEN and `research-lab-ci` #1299 GREEN. |
+| 2175 | Canonical deterministic session-admission consumption state/transition. | **IN PROGRESS.** Implement domain owner only; persistence is a separate later step. |
 
-## Step 2173 closeout truth
+## Step 2174 closeout truth
 
-Step 2173 hardens the existing typed NextGen protection path against stale or mismatched restored session evidence. The generic compatibility API remains backward compatible. Session-key production, timezone/calendar ownership and reset transitions remain outside the protection owner, and no execution authorization was added.
+Step 2174 established that SessionAdmissionObservation alone cannot guarantee duplicate-safe consumption across retry/restart because it stores only a count. The canonical product boundary therefore needs deterministic consumption identity retained in state. CAND-001's Europe/Berlin-derived session reset and strategy-stage increment remain compatibility behavior and are not promoted.
 
-## Step 2174 active work
+## Step 2175 active work
 
-**Step 2174 — IN PROGRESS:** audit the state transition that advances canonical admitted-trade count after an admission is actually consumed.
+**Step 2175 — IN PROGRESS:** implement the canonical consumption state/transition approved by Step 2174.
 
-Required audit questions:
-1. whether a canonical transition owner already exists;
-2. what exact event qualifies as an admission consumption boundary;
-3. whether transition identity must be deterministic/idempotent across restart;
-4. how transition output composes with the Step-2172 checkpoint without creating a second state store;
-5. how to prevent counting strategy signals, denied plans, duplicate publications or retries;
-6. whether session-key equality must be explicit input rather than inferred;
-7. no date/timezone/calendar/reset derivation;
-8. no CAND-001 default mutation;
-9. no broker/account API or order submission;
-10. PAPER/LIVE remain unauthorized.
+Required properties:
+1. explicit normalized caller-supplied session_key;
+2. deterministic sha256 consumption_id;
+3. state retains exact applied consumption IDs and decision provenance;
+4. observation count derives from unique consumed records;
+5. a new consumption requires the exact canonical current SessionAdmissionDecision and it must be ALLOW;
+6. replaying the same consumption_id with matching provenance is idempotent and does not increment;
+7. same consumption_id with conflicting decision provenance fails closed;
+8. session-key mismatch fails closed and never resets automatically;
+9. no persistence implementation in this step;
+10. no date/timezone/calendar/reset derivation, CAND-001 mutation, broker submission or PAPER/LIVE authorization.
 
 ## Binding numbering and handoff rules
 
