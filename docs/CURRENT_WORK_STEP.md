@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2158**
-- Active whole-number step: **2159**
-- Next step after successful completion: **2160**
-- Active Step 2159 scope: **Audit existing read-only broker-economics owners and add the minimal evidence-neutral adapter needed to translate verified normalized broker symbol economics into canonical NextGen `InstrumentRiskInputs`. Preserve canonical instrument identity separately from broker symbol identity, fail closed on missing/invalid economics, and add no MT5 order/submission capability or PAPER/LIVE authorization.**
+- Last completed whole-number step: **2159**
+- Active whole-number step: **2160**
+- Next step after successful completion: **2161**
+- Active Step 2160 scope: **Audit the existing research-only risk-profile sizing and loss-cap owners against canonical Risk V1 plus the verified broker-economics binding. Classify semantics as REUSE / ADAPT / DEFER and define the minimal product promotion boundary. Do not auto-promote BASE/BOOST/HIGH values, invent broker-verified policy evidence, read account balance, or add MT5/order/PAPER/LIVE capability.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -33,30 +33,30 @@ The exact prior full ledger has been preserved without rewriting at:
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
-| 2154 | Compatibility / retirement audit. | **COMPLETED.** 7/7 `RETAIN_WITH_REASON`; tested head `df29bb44c919c307eb7fe271e80841e677b97455`; CI #429/#1213 GREEN. |
 | 2155 | Canonical Risk Decision V1. | **COMPLETED.** Tested head `9c65949803e1fdf96fddf0eb7903c3545da35bf6`; CI #433/#1217 GREEN. |
 | 2156 | Canonical Risk-to-ExecutionIntent Bridge V1. | **COMPLETED.** Tested head `1f3a5f819ed115501c8c0902c73903b4a2f2e6e2`; CI #435/#1219 GREEN. |
 | 2157 | Broker lifecycle/reconciliation/protection reuse for canonical intent. | **COMPLETED.** Tested head `e65ad2994a6d8e243ef984b75a4724209df1a38a`; CI #437/#1221 GREEN. |
-| 2158 | PAPER pre-authorization composition / LEAN audit. | **COMPLETED.** Added `docs/NEXTGEN_PAPER_PREAUTH_COMPOSITION_V1.md` and `tests/test_nextgen_paper_preauth_conformance.py`; no new runtime orchestrator. Exact tested head `8a0052c71a284ab8b94dc5e7dafebf04d10af77a`; `dax-bot-1x-ci` #439 GREEN and `research-lab-ci` #1223 GREEN. Explicit user authorization remains independent from technical readiness; repository PAPER/LIVE authorization remains false. |
-| 2159 | Canonical read-only broker-economics → Risk Inputs adapter. | **IN PROGRESS.** Audit existing owners first; add only the missing translation boundary. |
+| 2158 | PAPER pre-authorization composition / LEAN audit. | **COMPLETED.** Tested head `8a0052c71a284ab8b94dc5e7dafebf04d10af77a`; CI #439/#1223 GREEN. No new runtime orchestrator; PAPER/LIVE remain unauthorized. |
+| 2159 | Canonical read-only broker-economics → Risk Inputs adapter. | **COMPLETED.** Added `runtime/nextgen_broker_economics.py`, binding contract and parity/fail-closed tests. Technical commit `cd68d6f45bee1bf552c195b5efd75d3582e5a10c`; final tested head `6f782e3d14754a744232ae1094a9b4534f767fcb` after compact-pointer compatibility repair; `dax-bot-1x-ci` #442 GREEN and `research-lab-ci` #1226 GREEN. No observed broker symbol was silently promoted to verified economics. |
+| 2160 | Risk-profile / loss-cap product-promotion audit. | **IN PROGRESS.** Audit existing research semantics first; no automatic promotion of profile values or broker evidence. |
 
-## Step 2158 closeout truth
+## Step 2159 closeout truth
 
-Step 2158 confirmed the binding LEAN decision: no additional broker-neutral pre-submission orchestrator is justified before real demo evidence. Concrete execution-protection evidence and `RunReadiness.PAPER` are independent prerequisites; technical green cannot infer `paper_user_authorized=True`, and user authorization cannot override blocked protection. Test fixtures proving both true do not change repository authorization. No venue SDK, order submission or execution capability was added.
+Step 2159 binds only externally verified, normalized FULL-trading broker economics to canonical `InstrumentRiskInputs`. Canonical instrument identity remains separate from broker symbol identity. Conservative cash-loss economics preserve the existing research equation and canonical Risk V1 sizing parity. Disabled/partial trade modes, missing/non-finite economics and unverified broker evidence fail closed. The observed weekend/demo symbols remain insufficient as bot broker-economics verification and are not promoted.
 
-## Step 2159 active work
+## Step 2160 active work
 
-**Step 2159 — IN PROGRESS:** bridge only verified, read-only broker economics into canonical Risk V1 sizing inputs.
+**Step 2160 — IN PROGRESS:** audit the promotion boundary between existing research risk controls and canonical product risk semantics.
 
 Required properties:
 
-1. inspect existing broker-economics readiness/probe/research sizing owners before adding code;
-2. canonical `InstrumentId` remains product identity; broker symbol is adapter evidence only;
-3. map only normalized, finite, positive quantity min/step/max and cash-value economics into `InstrumentRiskInputs`;
-4. reject unavailable, inconsistent, disabled or unsupported economics fail-closed;
-5. preserve currency identity explicitly;
-6. no MT5 order API, no submission path and no broker execution capability;
-7. PAPER remains not authorized; LIVE remains not authorized.
+1. inspect `research/risk_profile_sizing.py`, `research/loss_cap_gate.py`, canonical `domain/risk.py`, readiness gates and Step-2159 broker-economics binding;
+2. classify each reusable semantic as `REUSE`, `ADAPT` or `DEFER` with evidence;
+3. preserve explicit fixed-cash risk and currency identity; infer neither balance nor account percentage;
+4. do not promote BASE/BOOST/HIGH profile values or research policy versions automatically;
+5. keep per-trade risk sizing separate from daily/weekly/consecutive-loss/open-position admission controls;
+6. distinguish repository-tested software semantics from broker-verified policy evidence required for PAPER;
+7. no MT5 SDK/order API, broker submission or PAPER/LIVE authorization.
 
 ## Binding numbering and handoff rules
 
