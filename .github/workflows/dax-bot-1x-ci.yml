@@ -8,10 +8,12 @@ on:
       - 'src/daxlab/runtime/broker_*.py'
       - 'src/daxlab/runtime/operator_snapshot.py'
       - 'src/daxlab/runtime/operator_runtime_bridge.py'
+      - 'src/daxlab/strategies/cand001/**'
       - 'tests/test_candidate*.py'
       - 'tests/test_broker*.py'
       - 'tests/test_operator_snapshot*.py'
       - 'tests/test_operator_runtime_bridge.py'
+      - 'tests/test_nextgen_cand001_strategy_adapter.py'
       - 'scripts/benchmark_cand001_pipeline.py'
       - '.github/workflows/dax-bot-1x-ci.yml'
   pull_request:
@@ -20,10 +22,12 @@ on:
       - 'src/daxlab/runtime/broker_*.py'
       - 'src/daxlab/runtime/operator_snapshot.py'
       - 'src/daxlab/runtime/operator_runtime_bridge.py'
+      - 'src/daxlab/strategies/cand001/**'
       - 'tests/test_candidate*.py'
       - 'tests/test_broker*.py'
       - 'tests/test_operator_snapshot*.py'
       - 'tests/test_operator_runtime_bridge.py'
+      - 'tests/test_nextgen_cand001_strategy_adapter.py'
       - 'scripts/benchmark_cand001_pipeline.py'
       - '.github/workflows/dax-bot-1x-ci.yml'
 
@@ -47,10 +51,12 @@ jobs:
           src/daxlab/runtime/broker_*.py
           src/daxlab/runtime/operator_snapshot.py
           src/daxlab/runtime/operator_runtime_bridge.py
+          src/daxlab/strategies/cand001/*.py
           tests/test_candidate*.py
           tests/test_broker*.py
           tests/test_operator_snapshot*.py
           tests/test_operator_runtime_bridge.py
+          tests/test_nextgen_cand001_strategy_adapter.py
           scripts/benchmark_cand001_pipeline.py
       - name: Candidate correctness, restart and broker-neutral safety tests
         run: >-
@@ -59,6 +65,7 @@ jobs:
           tests/test_broker*.py
           tests/test_operator_snapshot*.py
           tests/test_operator_runtime_bridge.py
+          tests/test_nextgen_cand001_strategy_adapter.py
       - name: Candidate performance observation
         run: |
           python scripts/benchmark_cand001_pipeline.py --sessions 50 --repeats 3 > candidate-benchmark.json
