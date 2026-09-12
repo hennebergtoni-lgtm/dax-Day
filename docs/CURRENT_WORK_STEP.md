@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2129**
-- Active whole-number step: **2130**
-- Next step after successful completion: **2131**
+- Last completed whole-number step: **2130**
+- Active whole-number step: **2131**
+- Next step after successful completion: **2132**
 - Outstanding lane-local step: **2116 — WAITING_EXTERNAL / historical Drive materialization-execution lane**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Historical interrupted scope: **2123 — INTERRUPTED / carried forward into 2125; never resume visibly under 2123**
@@ -56,7 +56,8 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2127 | Reassess the PAPER-readiness matrix for any genuinely missing broker-neutral software evidence owner before authorization-gated broker submission work. | **COMPLETED.** Owner-by-owner audit recorded in `docs/PAPER_READINESS_GAP_MATRIX_V1.md`: lifecycle, restore/checkpoint, reconciliation, protection, telemetry/idempotency, broker economics, research-only sizing/risk profiles/loss caps and fail-closed PAPER readiness all have explicit owners. No material broker-neutral owner gap remains; real broker/host evidence and explicit authorization are the remaining gates. Commit `d00a9719203edf7a5ffa34b5cff55c24c1526a52`; `dax-bot-1x-ci` #292 GREEN; `research-lab-ci` #1076 GREEN. PAPER/LIVE remain unauthorized. |
 | 2128 | Remove stale global operator wording from the deterministic synthetic offline SHADOW soak without changing its no-order semantics. | **COMPLETED.** `shadow_soak_smoke.py` now labels its evidence `SYNTHETIC_OFFLINE_ONLY`, treats real MT5 evidence as `OUT_OF_SCOPE`, and states PAPER/LIVE `NOT AUTHORIZED`; two stale regression assertions were aligned to that scoped contract. Final head `cc96a3348307becc376ace12dee154e3e5148a38`; `dax-bot-1x-ci` #295 GREEN; `research-lab-ci` #1079 GREEN. |
 | 2129 | Replace the historical V11/pre-host primary-CI smoke identity with a generic static/runtime safety owner while retaining backwards compatibility. | **COMPLETED.** Added canonical `scripts/static_runtime_safety_smoke.py`, retained `scripts/v11_prehost_smoke.py` as a thin compatibility wrapper, and renamed the primary Research-CI step to `Static read-only runtime safety smoke` without weakening checkpoint/duplicate/static-Web/PAPER-LIVE/no-order invariants. Final head `c3fa201ef4eb5135897aa7825914ad5f7afdb385`; `dax-bot-1x-ci` #298 GREEN; `research-lab-ci` #1082 GREEN. |
-| 2130 | Clarify Python distribution/package identity versus DAX-BOT product version, candidate IDs and research/evidence schema versions before changing package metadata. | **IN PROGRESS.** Audit the existing versioning contract against `pyproject.toml`; do not blindly rename the Python distribution or conflate packaging version `0.1.0` with DAX-BOT product readiness/version. |
+| 2130 | Clarify Python distribution/package identity versus DAX-BOT product version, candidate IDs and research/evidence schema versions before changing package metadata. | **COMPLETED.** `docs/NEXTGEN_BOT_VERSIONING_V1.md` now defines Python distribution/package identity as a separate namespace from DAX-BOT product, `CAND-*` strategy identity and research/evidence schemas. `pyproject.toml` keeps distribution name `dax-day-research-lab` and package version `0.1.0` but updates the description to the combined research/reference/runtime scope. Commits `bd8004fa…`, `f1bd2f25…`; `dax-bot-1x-ci` #301 GREEN; `research-lab-ci` #1085 GREEN. No execution/readiness change. |
+| 2131 | Audit all remaining consumers of legacy `src/daxlab/runtime/recovery.py` before any retirement decision. | **IN PROGRESS.** Production `src/` imports are already prohibited by `tests/test_recovery_module_boundary.py`; inspect scripts/tests/docs/artifact filenames/schema vocabulary and decide `RETIRE_NOW` versus `RETAIN_WITH_REASON` without weakening canonical `recovery_bundle.py` or SHADOW restart semantics. |
 
 ## Numbering and handoff rules
 
@@ -76,8 +77,8 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2130 — IN PROGRESS:** audit `docs/NEXTGEN_BOT_VERSIONING_V1.md` against `pyproject.toml` and make the distribution/package identity boundary explicit. Keep the existing Python distribution name unless a compatibility-backed reason requires changing it. Distinguish packaging metadata/version from DAX-BOT product version, `CAND-*` strategy IDs and research/evidence schema versions. Do not infer product readiness from package version numbers and do not change execution capability.
+**Step 2131 — IN PROGRESS:** audit all remaining consumers/references of legacy `src/daxlab/runtime/recovery.py` across production code, scripts, tests, docs, artifact filenames and schema vocabulary. Preserve the canonical material-run owner `runtime/recovery_bundle.py` and keep SHADOW/forward restart state separate. Delete or archive the legacy module only if the full consumer audit proves removal is evidence-neutral; otherwise retain it with the concrete blocker documented.
 
 **Step 2122 — WAITING_EXTERNAL:** resume the real Windows/MT5 CAND-001 SHADOW host verification only in the next open/fresh DE40 market window. First re-pin branch/commit and rerun exact code parity. Then verify the configured broker timezone from a fresh tick/closed-M5 feed; require a GREEN isolated one-shot heartbeat before judging candidate evidence. Only after GREEN: verify candidate manifest/checkpoint/operator evidence, repeat the isolated cycle for overlap/reconciliation, then perform a controlled Scheduled Task reload/restart and runtime-health/reconciliation proof. Do not bypass stale-market/clock blockers.
 
-Historical Step 2123 remains preserved as interrupted provenance only. Do not display it again as the active step. The next unused whole-number step after 2130 is 2131.
+Historical Step 2123 remains preserved as interrupted provenance only. Do not display it again as the active step. The next unused whole-number step after 2131 is 2132.
