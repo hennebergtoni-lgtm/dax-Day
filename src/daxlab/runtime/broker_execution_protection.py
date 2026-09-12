@@ -12,6 +12,14 @@ from hashlib import sha256
 import json
 from typing import Any
 
+from daxlab.domain.loss_admission import (
+    LossExposureAdmissionDecision,
+    LossExposureObservation,
+    LossExposurePolicy,
+    evaluate_loss_exposure_admission,
+)
+from daxlab.domain.risk import RiskDecision, RiskRequest, evaluate_fixed_cash_risk
+from daxlab.domain.risk_policy import FixedCashRiskPolicy
 from daxlab.runtime.broker_reconciliation import BrokerReconciliationVerdict
 
 
@@ -32,6 +40,7 @@ class BrokerExecutionProtectionVerdict:
     reconciliation_fingerprints: tuple[str, ...]
     sizing_evidence_fingerprint: str | None
     risk_policy_fingerprint: str | None
+    loss_admission_evidence_fingerprint: str | None
     feed_age_seconds: float
     observed_spread_points: float | None
     execution_capability: str = "NONE"
@@ -46,6 +55,10 @@ class BrokerExecutionProtectionVerdict:
         for value, field in (
             (self.sizing_evidence_fingerprint, "sizing_evidence_fingerprint"),
             (self.risk_policy_fingerprint, "risk_policy_fingerprint"),
+            (
+                self.loss_admission_evidence_fingerprint,
+                "loss_admission_evidence_fingerprint",
+            ),
         ):
             if value is not None:
                 _sha(value, field)
@@ -75,6 +88,9 @@ class BrokerExecutionProtectionVerdict:
                 "reconciliation_fingerprints": list(self.reconciliation_fingerprints),
                 "sizing_evidence_fingerprint": self.sizing_evidence_fingerprint,
                 "risk_policy_fingerprint": self.risk_policy_fingerprint,
+                "loss_admission_evidence_fingerprint": (
+                    self.loss_admission_evidence_fingerprint
+                ),
                 "feed_age_seconds": float(self.feed_age_seconds),
                 "observed_spread_points": (
                     None
@@ -104,6 +120,7 @@ def evaluate_execution_protection(
     loss_cap_allowed: bool,
     risk_policy_fingerprint: str | None,
     session_admission_allowed: bool,
+    loss_admission_evidence_fingerprint: str | None = None,
 ) -> BrokerExecutionProtectionVerdict:
     """Combine normalized protection evidence; submit and authorize nothing."""
     _sha(client_order_id, "client_order_id")
@@ -113,10 +130,16 @@ def evaluate_execution_protection(
         raise ValueError("max_spread_points must be non-negative")
     if observed_spread_points is not None and observed_spread_points < 0:
         raise ValueError("observed_spread_points must be non-negative")
-    if sizing_evidence_fingerprint is not None:
-        _sha(sizing_evidence_fingerprint, "sizing_evidence_fingerprint")
-    if risk_policy_fingerprint is not None:
-        _sha(risk_policy_fingerprint, "risk_policy_fingerprint")
+    for value, field in (
+        (sizing_evidence_fingerprint, "sizing_evidence_fingerprint"),
+        (risk_policy_fingerprint, "risk_policy_fingerprint"),
+        (
+            loss_admission_evidence_fingerprint,
+            "loss_admission_evidence_fingerprint",
+        ),
+    ):
+        if value is not None:
+            _sha(value, field)
 
     blockers: list[str] = []
     if not host_health_green:
@@ -164,9 +187,85 @@ def evaluate_execution_protection(
         ),
         sizing_evidence_fingerprint=sizing_evidence_fingerprint,
         risk_policy_fingerprint=risk_policy_fingerprint,
+        loss_admission_evidence_fingerprint=(
+            loss_admission_evidence_fingerprint
+        ),
         feed_age_seconds=float(feed_age_seconds),
         observed_spread_points=(
             None if observed_spread_points is None else float(observed_spread_points)
+        ),
+    )
+
+
+def evaluate_nextgen_execution_protection(
+    *,
+    client_order_id: str,
+    host_health_green: bool,
+    broker_account_trade_allowed: bool,
+    feed_age_seconds: float,
+    max_feed_age_seconds: float,
+    observed_spread_points: float | None,
+    max_spread_points: float,
+    reconciliation_inventory_complete: bool,
+    reconciliations: tuple[BrokerReconciliationVerdict, ...],
+    duplicate_client_order_id: bool,
+    risk_policy: FixedCashRiskPolicy,
+    risk_request: RiskRequest,
+    risk_decision: RiskDecision,
+    loss_policy: LossExposurePolicy,
+    loss_observation: LossExposureObservation,
+    loss_admission_decision: LossExposureAdmissionDecision,
+    session_admission_allowed: bool,
+) -> BrokerExecutionProtectionVerdict:
+    """Bind canonical product risk/admission evidence into existing protection."""
+    canonical_request = RiskRequest.build(
+        strategy_decision_id=risk_request.strategy_decision_id,
+        trade_plan=risk_request.trade_plan,
+        max_loss_cash=risk_request.max_loss_cash,
+        loss_currency=risk_request.loss_currency,
+        instrument=risk_request.instrument,
+    )
+    if canonical_request != risk_request:
+        raise ValueError("risk request identity does not match canonical request")
+    if (
+        risk_request.loss_currency != risk_policy.currency
+        or risk_request.max_loss_cash != risk_policy.max_loss_cash
+    ):
+        raise ValueError("risk request does not match fixed-cash risk policy")
+
+    expected_risk_decision = evaluate_fixed_cash_risk(canonical_request)
+    if expected_risk_decision != risk_decision:
+        raise ValueError("risk decision does not match canonical risk evaluation")
+
+    expected_loss_admission = evaluate_loss_exposure_admission(
+        policy=loss_policy,
+        observation=loss_observation,
+    )
+    if expected_loss_admission != loss_admission_decision:
+        raise ValueError(
+            "loss admission decision does not match canonical admission evaluation"
+        )
+    if risk_policy.currency != loss_policy.currency:
+        raise ValueError("risk and loss/admission policy currencies must match")
+
+    return evaluate_execution_protection(
+        client_order_id=client_order_id,
+        host_health_green=host_health_green,
+        broker_account_trade_allowed=broker_account_trade_allowed,
+        feed_age_seconds=feed_age_seconds,
+        max_feed_age_seconds=max_feed_age_seconds,
+        observed_spread_points=observed_spread_points,
+        max_spread_points=max_spread_points,
+        reconciliation_inventory_complete=reconciliation_inventory_complete,
+        reconciliations=reconciliations,
+        duplicate_client_order_id=duplicate_client_order_id,
+        sizing_allowed=risk_decision.allowed,
+        sizing_evidence_fingerprint=risk_decision.decision_id,
+        loss_cap_allowed=loss_admission_decision.allowed,
+        risk_policy_fingerprint=risk_policy.policy_fingerprint,
+        session_admission_allowed=session_admission_allowed,
+        loss_admission_evidence_fingerprint=(
+            loss_admission_decision.decision_fingerprint
         ),
     )
 
