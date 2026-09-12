@@ -189,3 +189,27 @@ Before any existing component is replaced or removed, it must be classified thro
 - RETIRE_AFTER_AUDIT — removable only after consumers/tests/CI/runtime contract prove it is obsolete.
 
 No Windows/MT5 host change is required merely because the product version changes. Host migration occurs only after repository tests, replay tests and PAPER_SIM gates prove the new path and an explicit host-change step is authorized.
+
+## 12. Python distribution/package identity is a separate namespace
+
+The installable Python distribution is packaging infrastructure, not the DAX-BOT product version.
+
+The current `pyproject.toml` values therefore have the following meaning:
+- distribution name `dax-day-research-lab` identifies the installable Python distribution and may remain stable for compatibility even while the repository contains DAX-BOT 1.x runtime components;
+- distribution version `0.1.0` is a Python packaging/release metadata version only;
+- neither value states which DAX-BOT product release is active, which strategy candidate is selected, whether evidence is VERIFIED, or whether PAPER/LIVE is authorized.
+
+Keep these namespaces independent:
+1. **Python distribution/package** — `[project].name` and `[project].version` in `pyproject.toml`;
+2. **DAX-BOT product** — `DAX-BOT 1.0-alpha`, later beta/stable/minor/major lineage under this contract;
+3. **strategy candidate/config** — `CAND-*` plus config fingerprint;
+4. **reference/research/evidence schemas** — `REF-V11.2`, research IDs and named schema/version constants owned by their evidence contracts.
+
+A change in one namespace must not silently bump, promote or authorize another. In particular:
+- do not bump the Python distribution version merely because a DAX-BOT product milestone changes;
+- do not infer DAX-BOT readiness from the Python distribution version;
+- do not rename the Python distribution merely to make the product label look newer;
+- do not encode candidate promotion or broker authorization in package metadata;
+- retain explicit commit/config/evidence lineage for product releases independently of packaging metadata.
+
+Package metadata may describe the repository's combined research/reference/runtime scope more accurately, but compatibility-sensitive distribution-name changes require a separate migration decision and consumer audit.
