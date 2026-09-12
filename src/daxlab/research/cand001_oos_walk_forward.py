@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Sequence
 
-from daxlab.contracts import REFERENCE_COSTS, REFERENCE_WF
+from daxlab.contracts import REFERENCE_COSTS, REFERENCE_WF, WalkForwardSpec
 from daxlab.research.walk_forward import build_walk_forwards
 from daxlab.runtime.candidate_config import Cand001Config
 from daxlab.runtime.decision import stable_fingerprint
@@ -23,6 +23,15 @@ ECONOMIC_CLAIM = "OOS_MEASUREMENT_NOT_PROFITABILITY_PROOF"
 SELECTION_POLICY = "FROZEN_PREDECLARED_CANDIDATE_NO_TUNING"
 TRAIN_ROLE = "CONTEXT_ONLY_NO_SELECTION"
 OOS_ROLE = "MEASUREMENT_ONLY"
+
+
+def _assert_sha256(value: str, *, field: str) -> None:
+    if not isinstance(value, str) or len(value) != 64:
+        raise ValueError(f"{field} must be sha256")
+    try:
+        int(value, 16)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be hexadecimal") from exc
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,12 +56,10 @@ class Cand001OosWalkForwardContract:
     def __post_init__(self) -> None:
         if self.contract_version != CAND001_OOS_WF_CONTRACT_VERSION:
             raise ValueError("unsupported CAND-001 OOS/WF contract version")
-        if len(self.dataset_fingerprint) != 64:
-            raise ValueError("dataset_fingerprint must be sha256")
-        try:
-            int(self.dataset_fingerprint, 16)
-        except ValueError as exc:
-            raise ValueError("dataset_fingerprint must be hexadecimal") from exc
+        _assert_sha256(self.dataset_fingerprint, field="dataset_fingerprint")
+        _assert_sha256(self.config_fingerprint, field="config_fingerprint")
+        if not self.candidate_id or not self.product_core_version:
+            raise ValueError("candidate/product identity must be non-empty")
         if (self.train_days, self.oos_days, self.step_days) != (
             REFERENCE_WF.train_days,
             REFERENCE_WF.oos_days,
@@ -86,6 +93,18 @@ class Cand001OosWindow:
     contract_fingerprint: str
     window_fingerprint: str
 
+    def __post_init__(self) -> None:
+        if self.number <= 0 or self.train_days <= 0 or self.oos_days <= 0:
+            raise ValueError("OOS window number/day counts must be positive")
+        _assert_sha256(self.contract_fingerprint, field="contract_fingerprint")
+        _assert_sha256(self.window_fingerprint, field="window_fingerprint")
+        train_start = date.fromisoformat(self.train_start)
+        train_end = date.fromisoformat(self.train_end)
+        oos_start = date.fromisoformat(self.oos_start)
+        oos_end = date.fromisoformat(self.oos_end)
+        if not (train_start <= train_end < oos_start <= oos_end):
+            raise ValueError("OOS window chronology must be train then OOS without overlap")
+
 
 @dataclass(frozen=True, slots=True)
 class Cand001OosResultIdentity:
@@ -100,13 +119,13 @@ class Cand001OosResultIdentity:
     order_execution_enabled: bool = False
 
     def __post_init__(self) -> None:
-        for field_name, value in (
-            ("window_fingerprint", self.window_fingerprint),
-            ("replay_report_fingerprint", self.replay_report_fingerprint),
-            ("result_fingerprint", self.result_fingerprint),
-        ):
-            if len(value) != 64:
-                raise ValueError(f"{field_name} must be sha256")
+        _assert_sha256(self.window_fingerprint, field="window_fingerprint")
+        _assert_sha256(self.replay_report_fingerprint, field="replay_report_fingerprint")
+        _assert_sha256(self.result_fingerprint, field="result_fingerprint")
+        if not self.cost_model or self.cost_multiplier <= 0:
+            raise ValueError("OOS result cost identity must be positive/non-empty")
+        if self.evidence_class != EVIDENCE_CLASS or self.economic_claim != ECONOMIC_CLAIM:
+            raise ValueError("OOS result evidence classification drift")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("OOS result identity cannot authorize execution")
 
@@ -150,7 +169,8 @@ def build_cand001_oos_windows(
     if tuple(sorted(normalized)) != normalized:
         raise ValueError("walk-forward days must be strictly chronological")
 
-    windows = build_walk_forwards(normalized, REFERENCE_WF)
+    spec = WalkForwardSpec(contract.train_days, contract.oos_days, contract.step_days)
+    windows = build_walk_forwards(normalized, spec)
     contract_fingerprint = contract.fingerprint
     result: list[Cand001OosWindow] = []
     for window in windows:
@@ -194,12 +214,7 @@ def build_cand001_oos_result_identity(
     costs = dict(contract.cost_stresses)
     if cost_model not in costs:
         raise ValueError("cost_model is not declared by OOS/WF contract")
-    if len(replay_report_fingerprint) != 64:
-        raise ValueError("replay_report_fingerprint must be sha256")
-    try:
-        int(replay_report_fingerprint, 16)
-    except ValueError as exc:
-        raise ValueError("replay_report_fingerprint must be hexadecimal") from exc
+    _assert_sha256(replay_report_fingerprint, field="replay_report_fingerprint")
 
     multiplier = costs[cost_model]
     payload = {
