@@ -22,6 +22,12 @@ from daxlab.domain.loss_admission import (
 )
 from daxlab.domain.risk import RiskDecision, RiskRequest, evaluate_fixed_cash_risk
 from daxlab.domain.risk_policy import FixedCashRiskPolicy
+from daxlab.domain.session_admission import (
+    SessionAdmissionDecision,
+    SessionAdmissionObservation,
+    SessionAdmissionPolicy,
+    evaluate_session_admission,
+)
 from daxlab.runtime.broker_reconciliation import BrokerReconciliationVerdict
 from daxlab.state.loss_exposure import LossExposureObservationCheckpoint
 
@@ -48,6 +54,9 @@ class BrokerExecutionProtectionVerdict:
     loss_admission_evidence_fingerprint: str | None = None
     loss_observation_checkpoint_fingerprint: str | None = None
     loss_observation_age_seconds: float | None = None
+    session_policy_fingerprint: str | None = None
+    session_observation_fingerprint: str | None = None
+    session_admission_evidence_fingerprint: str | None = None
     execution_capability: str = "NONE"
     order_execution_enabled: bool = False
 
@@ -68,6 +77,15 @@ class BrokerExecutionProtectionVerdict:
                 self.loss_observation_checkpoint_fingerprint,
                 "loss_observation_checkpoint_fingerprint",
             ),
+            (self.session_policy_fingerprint, "session_policy_fingerprint"),
+            (
+                self.session_observation_fingerprint,
+                "session_observation_fingerprint",
+            ),
+            (
+                self.session_admission_evidence_fingerprint,
+                "session_admission_evidence_fingerprint",
+            ),
         ):
             if value is not None:
                 _sha(value, field)
@@ -84,6 +102,15 @@ class BrokerExecutionProtectionVerdict:
             self.loss_observation_checkpoint_fingerprint is None
         ) != (self.loss_observation_age_seconds is None):
             raise ValueError("loss observation checkpoint identity and age must appear together")
+        session_values = (
+            self.session_policy_fingerprint,
+            self.session_observation_fingerprint,
+            self.session_admission_evidence_fingerprint,
+        )
+        if any(value is not None for value in session_values) and any(
+            value is None for value in session_values
+        ):
+            raise ValueError("session admission identity evidence must be complete")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("execution protection verdict cannot authorize execution")
         if self.status is ExecutionProtectionStatus.ALLOW_EVIDENCE and self.blockers:
@@ -113,6 +140,13 @@ class BrokerExecutionProtectionVerdict:
                     self.loss_observation_checkpoint_fingerprint
                 ),
                 "loss_observation_age_seconds": self.loss_observation_age_seconds,
+                "session_policy_fingerprint": self.session_policy_fingerprint,
+                "session_observation_fingerprint": (
+                    self.session_observation_fingerprint
+                ),
+                "session_admission_evidence_fingerprint": (
+                    self.session_admission_evidence_fingerprint
+                ),
                 "feed_age_seconds": float(self.feed_age_seconds),
                 "observed_spread_points": (
                     None
@@ -146,6 +180,9 @@ def evaluate_execution_protection(
     loss_observation_checkpoint_fingerprint: str | None = None,
     loss_observation_age_seconds: float | None = None,
     loss_observation_fresh: bool | None = None,
+    session_policy_fingerprint: str | None = None,
+    session_observation_fingerprint: str | None = None,
+    session_admission_evidence_fingerprint: str | None = None,
 ) -> BrokerExecutionProtectionVerdict:
     """Combine normalized protection evidence; submit and authorize nothing."""
     _sha(client_order_id, "client_order_id")
@@ -165,6 +202,12 @@ def evaluate_execution_protection(
         (
             loss_observation_checkpoint_fingerprint,
             "loss_observation_checkpoint_fingerprint",
+        ),
+        (session_policy_fingerprint, "session_policy_fingerprint"),
+        (session_observation_fingerprint, "session_observation_fingerprint"),
+        (
+            session_admission_evidence_fingerprint,
+            "session_admission_evidence_fingerprint",
         ),
     ):
         if value is not None:
@@ -187,6 +230,16 @@ def evaluate_execution_protection(
         raise ValueError("loss_observation_age_seconds must be finite and non-negative")
     if loss_observation_fresh is not None and type(loss_observation_fresh) is not bool:
         raise ValueError("loss_observation_fresh must be boolean")
+
+    session_values = (
+        session_policy_fingerprint,
+        session_observation_fingerprint,
+        session_admission_evidence_fingerprint,
+    )
+    if any(value is not None for value in session_values) and any(
+        value is None for value in session_values
+    ):
+        raise ValueError("session admission identity evidence must be complete")
 
     blockers: list[str] = []
     if not host_health_green:
@@ -249,6 +302,11 @@ def evaluate_execution_protection(
             if loss_observation_age_seconds is None
             else float(loss_observation_age_seconds)
         ),
+        session_policy_fingerprint=session_policy_fingerprint,
+        session_observation_fingerprint=session_observation_fingerprint,
+        session_admission_evidence_fingerprint=(
+            session_admission_evidence_fingerprint
+        ),
     )
 
 
@@ -273,7 +331,9 @@ def evaluate_nextgen_execution_protection(
     loss_admission_decision: LossExposureAdmissionDecision,
     evaluated_at: datetime,
     max_loss_observation_age_seconds: float,
-    session_admission_allowed: bool,
+    session_policy: SessionAdmissionPolicy,
+    session_observation: SessionAdmissionObservation,
+    session_admission_decision: SessionAdmissionDecision,
 ) -> BrokerExecutionProtectionVerdict:
     """Bind canonical product risk/admission evidence into existing protection."""
     canonical_request = RiskRequest.build(
@@ -328,6 +388,15 @@ def evaluate_nextgen_execution_protection(
         raise ValueError("loss observation checkpoint cannot be future-dated")
     observation_fresh = observation_age_seconds <= max_loss_observation_age_seconds
 
+    expected_session_admission = evaluate_session_admission(
+        policy=session_policy,
+        observation=session_observation,
+    )
+    if expected_session_admission != session_admission_decision:
+        raise ValueError(
+            "session admission decision does not match canonical session evaluation"
+        )
+
     return evaluate_execution_protection(
         client_order_id=client_order_id,
         host_health_green=host_health_green,
@@ -343,7 +412,7 @@ def evaluate_nextgen_execution_protection(
         sizing_evidence_fingerprint=risk_decision.decision_id,
         loss_cap_allowed=loss_admission_decision.allowed,
         risk_policy_fingerprint=risk_policy.policy_fingerprint,
-        session_admission_allowed=session_admission_allowed,
+        session_admission_allowed=session_admission_decision.allowed,
         loss_admission_evidence_fingerprint=(
             loss_admission_decision.decision_fingerprint
         ),
@@ -352,6 +421,13 @@ def evaluate_nextgen_execution_protection(
         ),
         loss_observation_age_seconds=observation_age_seconds,
         loss_observation_fresh=observation_fresh,
+        session_policy_fingerprint=session_policy.policy_fingerprint,
+        session_observation_fingerprint=(
+            session_observation.observation_fingerprint
+        ),
+        session_admission_evidence_fingerprint=(
+            session_admission_decision.decision_fingerprint
+        ),
     )
 
 
