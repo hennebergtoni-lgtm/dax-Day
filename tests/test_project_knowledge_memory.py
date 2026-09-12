@@ -53,8 +53,20 @@ def test_current_step_pointer_is_integer_sequential_and_keeps_500_audit() -> Non
     next_step = _step_value(ledger, "Next step after successful completion")
     audit = _step_value(ledger, "Next mandatory 500-step full audit")
 
-    assert active == last_completed + 1
+    assert active > last_completed
     assert next_step == active + 1
+
+    for skipped in range(last_completed + 1, active):
+        paused = re.search(
+            rf"^\|\s*{skipped}\s*\|.*\|\s*\*\*(?:INTERRUPTED|WAITING_EXTERNAL|BLOCKED)",
+            ledger,
+            re.MULTILINE,
+        )
+        assert paused, (
+            f"step {skipped} is skipped by the active pointer without an explicit "
+            "INTERRUPTED/WAITING_EXTERNAL/BLOCKED ledger state"
+        )
+
     assert audit == 2500
     assert "Decimal or letter step IDs: **PROHIBITED**" in ledger
     assert "2081" in ledger and "2089" in ledger
