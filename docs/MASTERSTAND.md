@@ -1,298 +1,316 @@
-# MASTERSTAND — DAX Daytrading Bot
+# DAX-BOT MASTERSTAND — NEXT-CHAT HANDOVER
 
-Updated: 2026-09-11
+Status: **BINDING HANDOVER / REPOSITORY TRUTH FIRST**  
+Updated: **2026-09-12**  
+Repository: `hennebergtoni-lgtm/dax-Day`  
+Working branch: `nextgen-bot-line-v1`  
+Pull request: `#109` → `main`
 
-This document is the durable project handover/source-of-truth. New work must preserve verified findings and must keep VERIFIED / IMPLEMENTED / RESEARCH / PLANNED / UNVERIFIED / STALE / DUPLICATE / FIX REQUIRED states separate.
+This file is the canonical next-chat handover. It consolidates the current project state without replacing exact code, hashed evidence, fresh runtime telemetry or CI. If this prose conflicts with exact repository evidence, exact repository evidence wins.
 
-## 0. Current active development line — BINDING
+## 1. Mandatory resume protocol
 
-The project has two deliberately separate identities:
+After a new chat, context loss, compaction, tool reconnect, or any explicit `weiter` / `fortsetzen`:
 
-- `REF-V11.2` = immutable legacy/reference baseline. It is a negative comparison and scientific provenance anchor, not the current product bot and not a profitability claim.
-- `DAX-BOT 1.0-alpha` = the new product line under controlled construction. Incremental generations may become 1.1, 1.2, 1.3, 1.5, etc.; `2.0` is reserved for a genuinely new generation rather than routine iteration.
-- Strategy ideas/candidates use candidate IDs such as `CAND-001`; candidate IDs are not bot version numbers.
+1. read `docs/SESSION_EXECUTION_REFRESHER.md`;
+2. pin repository, branch, PR and **fresh exact head SHA**;
+3. read `docs/CURRENT_WORK_STEP.md` and use its whole-number pointer;
+4. read this `docs/MASTERSTAND.md`;
+5. read `docs/PROJECT_KNOWLEDGE_INDEX.md` and only the topic-specific owners needed for the active step;
+6. continue the active step automatically.
 
-Current development PR: `#109`, branch `nextgen-bot-line-v1`, base `main`.
-Last fully CI-verified 1.x implementation head before this documentation refresh: `61dc2e3d50debb5dfd86eb2005f067829879dd7c`.
-Verified CI at that implementation head:
-- `dax-bot-1x-ci` run #1: GREEN.
-- `research-lab-ci` run #785: GREEN.
+Binding continuity rule: **a Zwischenstand, successful test, warning, found file, recovered context, CI state or completed sub-check is visibility only, not a stop.** Continue to the next concrete work unit unless a real stop condition from `docs/WORK_CONTINUITY_PROTOCOL.md` exists.
 
-DAX-BOT 1.x success is not defined first by profitability. The alpha must be deterministic, causal, observable, restart-safe, duplicate-safe, parameter-identifiable, modular, testable and operationally understandable. Profitability remains unproven.
+A lane-local blocker such as Windows hardware, market time, broker metadata or a user-only action does not stop unrelated safe work.
 
-## 1. Repository and recovery anchors
-- Repository: `hennebergtoni-lgtm/dax-Day`, default branch `main`.
-- Current `main` base for PR #109: `e0784ebfc11bee28475fd9c3385be661af58a738` (context/resume recovery governance merged in PR #108).
-- Earlier historical anchor `ff38849978112ca25cec91aa5246cfa56bbed30c` remains a valid recovery/provenance point, not the current head.
-- Historical anchors remain valid recovery points even after newer `main` commits are created.
-- Repository truth and fresh runtime telemetry outrank chat recollection.
+Official step numbers are integers only. Decimal/letter pseudo-steps are prohibited.
 
-## 2. Immutable V11.2 active reference — VERIFIED
-V11.2 remains unchanged and frozen. New hypotheses, filters, diagnostics, forward evidence or DAX-BOT 1.x code never silently modify it.
+## 2. Repository / PR / CI truth at handover
 
-Canonical active result source:
-`research/V112_REFERENCE_V1/reference_result.json`
+- Base branch: `main`.
+- PR #109 base SHA: `e0784ebfc11bee28475fd9c3385be661af58a738`.
+- Working branch: `nextgen-bot-line-v1`.
+- PR #109 is open, unmerged and mergeable at the handover refresh.
+- Repository-side DAX-BOT 1.0-alpha acceptance was previously recorded at `2df6e20893144f87f04511823bc7b72699ad7cce`; later 1.x work continues on the same branch and does not invalidate that milestone.
+- Last fully CI-verified implementation head before this handover documentation refresh: `f5fcf2ea715897a4b471c9dd1d1495f2dfca9371`.
+- At `f5fcf2ea…`: `dax-bot-1x-ci` #253 = **GREEN** and `research-lab-ci` #1037 = **GREEN**.
+- The subsequent pointer-only handover-start commit is `0b28a5fa4b396b6a2a72e93237d51cf0501569ee`.
+- Because this document itself creates a newer commit, the next chat must pin the fresh branch head rather than treating any SHA written inside this document as self-referential current head truth.
 
-Audited data source:
-`data/manifests/dax_m5_2014_2019_audited.json`
+No merge into `main` is authorized by this handover.
+
+## 3. Safety and authorization — BINDING
+
+- SHADOW: **AUTHORIZED**.
+- PAPER/demo broker execution: **NOT AUTHORIZED**.
+- LIVE: **NOT AUTHORIZED**.
+- `execution_capability=NONE`.
+- `order_execution_enabled=false`.
+- No broker order-submission path is authorized.
+- No `mt5.order_send` path may be introduced by research/evidence work.
+
+No backtest, OOS result, stability metric, CI success, version label, operator setting or readiness object silently grants PAPER/LIVE permission. Explicit later user authorization remains mandatory.
+
+## 4. Frozen reference — REF-V11.2 — VERIFIED / IMMUTABLE
+
+`REF-V11.2` is the scientific legacy/reference anchor, not the current product strategy and not CAND-001 performance evidence.
+
+Canonical active result source: `research/V112_REFERENCE_V1/reference_result.json`.  
+Audited dataset manifest: `data/manifests/dax_m5_2014_2019_audited.json`.
 
 Verified historical surface:
-- Research period: 2014–2019.
-- 1,673 valid Europe/Berlin session days.
-- 481,824 raw M5 rows.
-- 172,319 Berlin-session M5 bars.
-- 103 M5 session bars/day, session 09:00–17:30 Europe/Berlin.
-- 0 invalid OHLC rows; 0 duplicate UTC timestamps.
-- Session OHLC SHA256: `e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`.
-- Audited migration ZIP SHA256: `c46c09a391ee83a19a117fb43628cb75ab0a75703701ed7a84731d2963b24870`.
-- V11.2 exact-candidate engine SHA256: `b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888`.
-- Oracle source SHA256: `62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f`.
-- 144 variants.
-- Walk-forward: 81 windows, Train 45d, OOS 20d, Step 20d.
-- Normal OOS: 856 trades, `-31.309210619787684 R`, 37 positive / 44 negative / 0 flat WFs, median WF PF `0.905769310256018`.
-- Stress 1.5×: 856 trades, `-40.921695023387514 R`.
-- Stress 2×: 856 trades, `-48.424611963007294 R`.
 
-The older values 1,384 trades / -68.10950257808015 R / 36 positive / 45 negative WFs belong to `LEGACY_EVIDENCE_ONLY` (`V4.0-FIX1`). They are retained for provenance and are not the active V11.2 reference.
+- 2014–2019;
+- 1,673 valid Europe/Berlin session days;
+- 481,824 raw M5 rows;
+- 172,319 Berlin-session M5 bars;
+- 103 bars/session;
+- session 09:00–17:30 Europe/Berlin;
+- 0 known invalid OHLC rows;
+- session OHLC SHA256 `e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`;
+- 144 variants;
+- 81 WF windows, Train 45d / OOS 20d / Step 20d;
+- 856 OOS trades;
+- normal OOS total `-31.309210619787684 R`;
+- 37 positive / 44 negative / 0 flat WFs;
+- median WF PF `0.905769310256018`;
+- stress 1.5× `-40.921695023387514 R`;
+- stress 2× `-48.424611963007294 R`.
 
-## 3. Scientific governance — IMPLEMENTED / RESEARCH
-The research layer includes Git-based predeclaration/chronology, multiple-testing preflight, statistics readiness, classical DSR, CSCV/PBO research, K_eff diagnostics, SPA using the established `arch.bootstrap.SPA` implementation, block-length diagnostics, filter efficiency/ablation, filter overlap, backward elimination, Pareto diagnostics and simulated EUR-cash analysis.
+These metrics must never be relabeled as CAND-001 results.
 
-These methods reduce the risk of fooling ourselves with backtests. DSR, PBO, K_eff, SPA or any other robustness statistic is not proof of profitability and does not create edge.
+## 5. DAX-BOT 1.x / CAND-001 product line — IMPLEMENTED / CI-VERIFIED where stated
 
-Current filter doctrine: do not accumulate filters merely because they look plausible. A filter must be shown to activate, remove trades in a meaningful way, improve relevant R/Cash/DD evidence where claimed, and be checked for redundancy/overlap with other filters.
+Product identities are intentionally separate:
 
-Research families and tools — Bollinger, Fibonacci, close gaps, ATR/ATR25, liquidity sweeps, momentum, volatility, TWAP/anchored price, CPR, macro events, session filters, stop/trailing variants and related ideas — remain research unless explicitly promoted through the governed process.
+- `REF-V11.2` = frozen reference;
+- `DAX-BOT 1.x` = active product line;
+- `CAND-001` = current frozen alpha candidate, not a bot-version number.
 
-Decision architecture remains:
+CAND-001 frozen strategy semantics:
+
+- symbol `DE40`;
+- timeframe M5;
+- Europe/Berlin session 09:00–17:30;
+- OR15;
+- confirmed breakout requires a **closed M5 close** beyond the completed opening range; wick/touch is insufficient;
+- BOTH directions, symmetric long/short logic;
+- stop = OR opposite;
+- target = 1.5R;
+- maximum one admitted trade per session.
+
+Causal/runtime rules:
+
+- only CLOSED bars mutate strategy state;
+- no open M5 candle is used;
+- duplicate/out-of-order/unsafe bars fail closed;
+- future bars cannot rewrite prior signal/decision identity;
+- decision event time is the bar close time;
+- strategy hot path has no pandas/DB/MT5/broker dependency.
+
+Implemented architecture includes product/candidate/config identity, signal state, trade plan, session admission, DecisionRecord, OperatorSnapshot, pure candidate pipeline, restart-safe candidate state, virtual lifecycle, costed virtual outcome, forward observation/performance plumbing, SHADOW host integration, telemetry/publication state, and broker-neutral pre-PAPER evidence owners.
+
+Restart/duplicate safety remains a first-class requirement. Deterministic IDs alone are not treated as restart-safe publication; persisted publication/checkpoint state is used where required.
+
+## 6. CAND-001 economic-evidence line — Steps 2102–2114
+
+This is the major change since the previous masterstand.
+
+### Step 2102 — evidence boundary audit — VERIFIED
+
+CAND-001-specific historical/OOS evidence was audited separately from REF-V11.2/V12. Legacy/reference metrics cannot be borrowed. Profitability and robustness remained explicitly UNVERIFIED pending CAND-001-bound measurement.
+
+### Step 2103 — deterministic historical descriptive replay — IMPLEMENTED / CI-VERIFIED
+
+A historical CAND-001 replay harness now reuses the canonical runtime semantics and audited recovered-M5 owner rather than creating a second DataFrame strategy engine. Dataset fingerprint mismatch fails closed.
+
+### Step 2104 — frozen OOS/WF contract — IMPLEMENTED / CI-VERIFIED
+
+- deterministic 45/20/20 scheduling;
+- no train-time candidate selection/tuning;
+- frozen candidate/config identity;
+- normal / 1.5× / 2× cost hooks;
+- no profitability claim and no automatic promotion.
+
+### Step 2105 — OOS/WF measurement runner — IMPLEMENTED / CI-VERIFIED
+
+The runner evaluates OOS slices only over the audited recovered-M5 Berlin-session data and reuses frozen SHADOW replay/fill/outcome semantics. It emits deterministic per-window evidence.
+
+### Step 2106 — deterministic aggregation — IMPLEMENTED / CI-VERIFIED
+
+Per-cost totals, window signs, medians, worst-window risk, open-end counts and adjacent cost degradation are aggregated with full lineage/fingerprints.
+
+### Step 2107 — immutable base evidence export — IMPLEMENTED / CI-VERIFIED
+
+The base export is intentionally exactly three JSON files:
+
+- `measurements.json`;
+- `aggregation.json`;
+- `manifest.json` written last.
+
+Existing target directories are refused.
+
+### Step 2108 — strict base-evidence reader — IMPLEMENTED / CI-VERIFIED
+
+The reader requires the exact three-file layout, rejects missing/unknown fields, reconstructs typed objects and recomputes lineage/fingerprints. External JSON is never trusted on syntax alone.
+
+### Step 2109 — cost-stress consistency audit — IMPLEMENTED / CI-VERIFIED
+
+It verifies path/count/Gross-R invariance, exact `net_r = gross_r - cost_r`, linear cost scaling and monotone adverse cost effects across normal/1.5×/2×. This is evidence-integrity checking, not an economic pass/fail threshold.
+
+Exact head evidence: `681f1306…` / `3fd127e4…`; `dax-bot-1x-ci` #240 GREEN; `research-lab-ci` #1024 GREEN.
+
+### Step 2110 — temporal OOS stability diagnostics — IMPLEMENTED / CI-VERIFIED
+
+Per cost model the project now reports, descriptively:
+
+- mean/median window net-R;
+- positive/negative/flat window rates;
+- zero-trade windows;
+- mean/median completed trades/window;
+- longest positive/negative window streaks;
+- cumulative window-net-R max drawdown;
+- first-half vs second-half net-R and activity;
+- full source fingerprints.
+
+There is no composite score, no economic pass threshold and no auto-promotion. PBO/DSR are explicitly not applied to this one frozen-candidate/no-new-selection surface.
+
+Head `4b9bb341…`: CI #243 / #1027 GREEN.
+
+### Step 2111 — standalone diagnostic evidence — IMPLEMENTED / CI-VERIFIED
+
+A separate immutable `diagnostics.json` binds the canonical measurement/aggregation evidence, unchanged Step-2107 base-manifest fingerprint, PASS cost-consistency audit and temporal stability diagnostics. The frozen three-file base export is not changed.
+
+Head `999d4995…`: CI #246 / #1030 GREEN.
+
+### Step 2112 — strict diagnostic reader — IMPLEMENTED / CI-VERIFIED
+
+The reader recomputes the canonical source chain and rejects schema/metric/fingerprint/safety tampering. A discovered false mismatch caused by Python tuple → JSON array normalization was fixed by comparing canonical JSON identity; the reader returns the freshly recomputed canonical object rather than trusting raw input.
+
+Head `3bf23550…`: CI #250 / #1034 GREEN.
+
+### Step 2113 — post-processing diagnostic CLI — IMPLEMENTED / CI-VERIFIED
+
+`scripts/build_cand001_oos_diagnostics.py` consumes only an already verified Step-2107 evidence directory, recomputes Step-2109/2110 diagnostics and writes one separate immutable `diagnostics.json`.
+
+Regression coverage proves:
+
+- no historical measurement rerun;
+- base evidence stays byte-identical;
+- base and diagnostic output directories must be separate;
+- overwrite is refused;
+- no optimizer, promotion or execution path is introduced.
+
+Head `f5fcf2ea…`: CI #253 / #1037 GREEN.
+
+### Step 2114 — LEAN/data-lane audit — COMPLETED
+
+No additional “combined verification receipt” layer is required. The existing chain is sufficient:
+
+`strict base reader -> canonical cost audit -> canonical stability -> standalone diagnostic artifact -> strict diagnostic reader`.
+
+Adding another wrapper now would be overengineering.
+
+The highest-value next step is therefore **actual frozen CAND-001 OOS evidence generation**, not more scaffolding.
+
+## 7. Historical data source for the first real CAND-001 OOS run — LOCATED / NOT YET MATERIALIZED IN THIS EXECUTION ENVIRONMENT
+
+The repository intentionally stores the audited manifest, not thousands of raw daily CSV files.
+
+The persisted historical source has been located in the connected Google Drive:
+
+- root folder: `DAX_V14_RECOVERED_CACHE_V13`;
+- root folder ID: `12aNhN7dNWZ9j9YqqaiOdcOsCm-cqhzUN`;
+- daily M5 folder: `m5_daily`;
+- `m5_daily` folder ID: `1p5-s3ccsBbohbephB7UIhUE_OL1M4b-y`.
+
+Drive listing confirmed ordinary daily `text/csv` files through `2019-12-31.csv` and reported about 1,694 folder items. **Do not equate Drive item count with the 1,673 audited valid session days.** The canonical loader/manifest determines the valid historical surface.
+
+Canonical dataset fingerprint expected by the recovered-M5 owner:
+`e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`.
+
+Current state:
+
+- data existence/location: **VERIFIED**;
+- repository manifest: **VERIFIED**;
+- CAND-001 OOS runner/export/diagnostics code: **IMPLEMENTED + CI-VERIFIED**;
+- first actual full CAND-001 OOS result artifact: **NOT YET PRODUCED**;
+- CAND-001 profitability: **UNVERIFIED**;
+- CAND-001 robustness: **UNVERIFIED**.
+
+No attractive future result may bypass the frozen no-tuning contract, cost-stress checks or prospective SHADOW/PAPER evidence.
+
+## 8. Parallel external / waiting lanes
+
+These lanes remain separate and must not globally stop independent repository/research work.
+
+### Current Candidate Windows/MT5 host verification
+
+Repository integration/runbook exists. Fresh real Windows/MT5 verification of the current Candidate-integrated branch remains a separate host lane until fresh host evidence is captured.
+
+### Real broker economics
+
+Read-only economics plumbing and research-only sizing translation exist, but verified venue-specific economics required for PAPER sizing/readiness remain an external evidence lane.
+
+### PAPER authorization
+
+Broker-neutral lifecycle, reconciliation, protection, telemetry/checkpoint and readiness infrastructure exist, but repository fixtures do not authorize PAPER. Explicit user authorization remains an independent STOP-gate.
+
+### LIVE
+
+Not authorized and not part of the current evidence-generation sequence.
+
+## 9. Research / architecture doctrine — BINDING
+
+Research decision hierarchy remains:
+
 `REGIME -> STRUCTURE -> ENTRY`.
 
-## 4. Forward evidence — REAL-DATA SHADOW VERIFIED, observation only
-The narrow real-data milestone is VERIFIED in `docs/evidence/2026-09-11_forward_shadow_real_data_milestone.md`.
+Do not accumulate filters merely because they are plausible. Use activation/removal evidence, R/Cash/DD impact, overlap/redundancy checks, OOS/WF discipline and multiple-testing governance where applicable.
 
-Verified scope:
-- real closed DE40 broker M5 bars reach the SHADOW path;
-- SHADOW remained observation-only with `action=NO_ORDER`;
-- closed-bar fingerprints link deterministically to V11.2-reference observations;
-- `execution_capability=NONE`;
-- `order_execution_enabled=false`;
-- broker timezone recorded as `Europe/Helsinki`;
-- timestamp interpretation recorded as `EXPLICIT_BROKER_WALL_CLOCK`;
-- cross-cycle overlap integrity was GREEN in the captured milestone;
-- profitability, PAPER readiness and LIVE readiness are NOT proven.
+Public/open-source comparison remains required, especially for engineering patterns from LEAN, NautilusTrader, Freqtrade, vectorbt and comparable systems. Reuse proven patterns for state/recovery/reconciliation, persistence, dry/forward discipline, data integrity, performance, overfitting control, observability and governance. Do not copy large generic frameworks or introduce multi-venue/portfolio complexity without a defined need.
 
-The forward stability/degradation research remains descriptive and non-promotional. Backtest→forward degradation is not a second strategy architecture and has no automatic promotion rule.
+Avoid blind multi-hour grids. Prefer FAST screening, targeted stages, checkpoints/resume and causal/event-driven semantics.
 
-Forward cash curves remain simulated. Broker balances are not treated as research capital.
+## 10. What must NOT be redone or silently changed
 
-## 5. Execution authorization — BINDING
-- SHADOW: AUTHORIZED.
-- PAPER: NOT AUTHORIZED.
-- LIVE: NOT AUTHORIZED.
-- Host-facing execution remains `execution_capability=NONE`.
-- `order_execution_enabled=false`.
+- Do not optimize or rewrite REF-V11.2.
+- Do not borrow REF-V11.2/V12 performance metrics for CAND-001.
+- Do not create a second CAND-001 strategy engine for historical testing.
+- Do not create a second historical-data/session owner.
+- Do not create a second paper/order contract.
+- Do not add another verification-wrapper/receipt layer unless a concrete evidence gap appears.
+- Do not introduce broker order submission while `NONE/false` is binding.
+- Do not change the Step-2107 exactly-three-file base evidence contract merely to append diagnostics.
+- Do not apply PBO/DSR mechanically to a single frozen candidate with no new multi-trial selection surface.
+- Do not use chat memory as current head/step truth when repository truth is available.
+- Do not stop after a normal Zwischenstand when the next safe step is known.
 
-DAX-BOT 1.x may construct simulation-only contracts and virtual trade geometry, but no code, research result, stability/degradation metric, CI result or version label changes broker authorization. PAPER or LIVE requires an explicit later user decision.
+## 11. Current work pointer and exact next technical value
 
-## 6. MT5 / Windows host state — VERIFIED where stated
-VERIFIED:
-- Windows MT5 Python IPC/bridge works.
-- DE40 is detected.
-- `trade_mode=0`, digits=2, point=0.01, contract size=1, profit currency EUR.
-- Broker timezone is `Europe/Helsinki` for the verified SHADOW evidence.
-- Timestamp interpretation is `EXPLICIT_BROKER_WALL_CLOCK`.
-- Real closed DE40 M5 bars reached the SHADOW path.
-- Windows read-only SHADOW host path has real host evidence.
+Canonical numbering lives only in `docs/CURRENT_WORK_STEP.md`.
 
-Binding safety:
-- no automatic broker order submission in the current research/SHADOW path;
-- `execution_capability=NONE`;
-- `order_execution_enabled=false`.
+At the start of this handover refresh:
 
-Windows host operating rule: exactly one concrete PowerShell/host command at a time; inspect the returned result before issuing the next command.
+- Step 2114: completed;
+- Step 2115: new canonical masterstand / next-chat handover;
+- next independent technical work after successful 2115 closeout: Step 2116.
 
-## 7. Runtime / reliability architecture
-Repository infrastructure includes Windows autostart, single-instance locking, heartbeat history, resume, cross-cycle integrity, gap diagnostics, decision outbox/telemetry and forward-evidence handling.
+Planned Step 2116 intent:
 
-Recovery canonicalization from the Step-2000 audit:
-- `src/daxlab/runtime/recovery_bundle.py` = canonical material-run recovery contract.
-- `src/daxlab/runtime/recovery.py` = legacy / retirement candidate; do not use for new production paths.
-- active SHADOW/replay state remains an operational restart/reconcile concern and is not silently collapsed into the material-run bundle.
+**Reuse the located Google Drive `m5_daily` source and existing dataset owner to materialize/attach the audited historical data in a suitable execution workspace, verify the freshly loaded session fingerprint against the authoritative audited SHA256, then run the frozen CAND-001 OOS/WF measurement → aggregation → immutable three-file export → strict verification → cost-consistency → temporal-stability → standalone diagnostic chain to produce the first actual CAND-001 OOS evidence. No tuning, no promotion and no execution.**
 
-DAX-BOT 1.x now reuses the existing atomic JSON persistence primitive for candidate state rather than adding a new writer/recovery subsystem.
+If bulk Drive materialization is not practical in the current tool environment, that is a lane-local execution constraint, not a reason to invent a new data format or globally stop the project. Reuse an existing Colab/Drive or other already-approved execution path and continue other safe work independently.
 
-Research execution should avoid blind 12–14-hour grids. Prefer FAST screening, targeted stages, checkpoints/resume and efficient/vectorized evaluation where scientifically appropriate.
+## 12. Source precedence
 
-## 8. DAX-BOT 1.x modular transition — IMPLEMENTED / VERIFIED
-The migration is compatibility-first, not rewrite-first. Existing useful infrastructure is preserved and components migrate individually.
+For active facts, prefer:
 
-Implemented component routing:
-- `LEGACY`
-- `DUAL_COMPARE`
-- `BOT_1X`
+1. exact repository code/contracts at the pinned SHA;
+2. audited manifests and hashed machine-readable evidence;
+3. fresh runtime telemetry for current runtime claims;
+4. current CI and specific audits;
+5. this masterstand;
+6. older prose only for provenance.
 
-`DUAL_COMPARE` may compute both providers for comparison, but exactly one provider is authoritative. Routing does not grant safety or execution authorization.
-
-Implemented deterministic product identity binds:
-- product name/version;
-- candidate ID;
-- full config fingerprint;
-- stable core version.
-
-Current alpha candidate: `CAND-001`.
-Its current rules are explicit `NEW_1X_SELECTION`, not a profitability claim and not a silent V11.2 inheritance:
-- symbol `DE40`;
-- timeframe `5m`;
-- Europe/Berlin session 09:00–17:30;
-- OR15 structure from exact closed 09:00/09:05/09:10 M5 slots;
-- confirmed breakout requires closed M5 close beyond completed OR, not wick-only touch;
-- LONG/SHORT symmetric;
-- OR-opposite stop;
-- fixed 1.5R target for the alpha candidate;
-- max one admitted trade per session.
-
-Implemented 1.x path:
-`canonical Candle -> pure signal state transition -> proposed trade geometry -> per-session admission -> canonical DecisionRecord -> read-only OperatorSnapshot`.
-
-Key behavior:
-- closed bars only;
-- duplicate/out-of-order bars are fail-closed/side-effect free;
-- unsafe bars do not mutate strategy state;
-- signals remain observable even when trade admission blocks them;
-- the second directional signal in one session can remain visible while `SESSION_TRADE_LIMIT` forces `NO_TRADE`;
-- no MT5, DB, pandas, Paper or broker dependency is allowed inside the candidate hot path by architecture test;
-- no broker order API is introduced.
-
-Pure one-bar orchestration is implemented so one closed Candle produces signal → proposed plan → admission → DecisionRecord → OperatorSnapshot without DB/MT5/Paper side effects.
-
-Candidate state persistence is restart-safe and fail-closed:
-- schema/candidate/core/config identity is checked;
-- state payload is hashed;
-- safety fields cannot escalate execution capability;
-- continuous processing and save→load→resume produce identical downstream signal/plan/decision/snapshot identities in the verified restart-parity tests;
-- the per-session admitted-trade limit survives restart.
-
-CI evidence at implementation head `61dc2e3d50debb5dfd86eb2005f067829879dd7c`:
-- `dax-bot-1x-ci` run #1: GREEN.
-- Candidate Ruff: GREEN.
-- Candidate correctness/restart tests: GREEN.
-- Candidate performance observation: GREEN.
-- Benchmark artifact upload: GREEN.
-- `research-lab-ci` run #785: GREEN across full tests plus existing recovery/reference/SHADOW smokes.
-
-Neon-dependent main-push CI steps remain environment/secret dependent; a skipped DB step is not treated as equivalent to DB verification.
-
-## 9. Performance doctrine for DAX-BOT 1.x — BINDING / BASELINE VERIFIED
-Runtime performance is measured before optimization.
-
-Current hot-path rules:
-- one incremental state transition per closed M5 bar;
-- no repeated DataFrame rebuild in the runtime decision loop;
-- no per-bar DB/history query;
-- no MT5-specific type inside strategy logic;
-- only active/promoted runtime features are computed;
-- research may remain vectorized/Pandas-oriented outside the runtime hot path;
-- correctness, causality, provenance and safety are never removed merely for speed.
-
-First reproducible product benchmark at CI run #1:
-- 50 synthetic sessions;
-- 103 bars/session;
-- 3 repeats;
-- 5,150 events/repeat;
-- median `309375.4221359223 ns/event` (~309 µs/event);
-- p95 `313607.3145631068 ns/event` (~314 µs/event);
-- median `3232.318821889658 events/s`;
-- Python 3.11.16 on GitHub-hosted Linux runner;
-- `performance_gate=OBSERVATION_ONLY`.
-
-Benchmark artifact:
-- artifact ID `10264245107`;
-- artifact SHA256 `a6b0614bc2db8b8fdf4b96f7c214174fa9d906705066fdd483badca90287037c`;
-- 30-day retention from the verified run.
-
-No hard runtime threshold is inferred from a single CI baseline. Future budgets should be based on repeated comparable evidence and should preferably detect regressions rather than encode an arbitrary absolute number.
-
-## 10. Web / observability architecture — PRESERVE + MODERNIZE
-The existing `web/index.html` is preserved as a useful small read-only UI shell.
-
-The old `web/status.json` is STALE for live runtime state because it mixes stable evidence with historical/pre-host runtime claims. The old validator also encodes pre-host expectations and is a 1.x cleanup item.
-
-DAX-BOT 1.x separates:
-1. stable/reference evidence — versioned and rarely changing;
-2. fresh operator/runtime state — generated from current bot/SHADOW contracts.
-
-`DAX_BOT_OPERATOR_SNAPSHOT_V1` is IMPLEMENTED as a credential-free read-only contract. It exposes product identity, signal reason/direction, admission status, final decision/blockers, proposed entry/stop/target/RR and explicit safety (`NONE`/`false`).
-
-The browser must not receive Neon credentials. GitHub must not be reintroduced as a Neon→JSON→ChatGPT runtime relay. A later small read-only operator surface may serve fresh snapshots, while stable evidence remains versioned.
-
-## 11. Open-source research doctrine
-Public/open-source research remains part of development. Relevant projects/methods include LEAN, NautilusTrader, vectorbt, Freqtrade, VN.PY, purged cross-validation implementations, RiskLabAI, ml4t/diagnostic, `arch` and related projects.
-
-Do not copy external systems blindly. Reuse proven patterns only when they solve a defined project need.
-
-Current adopted engineering principles include:
-- LEAN: separation of signal/alpha, risk and execution; measure performance before optimizing; keep repeated handlers thin.
-- NautilusTrader: deterministic/event-driven state, persistence/reconciliation and mode consistency where useful.
-- Freqtrade: explicit dry/forward discipline, closed-candle/no-lookahead testing and small health/operator surfaces.
-- vectorbt: powerful vectorized research, but event-driven/causal execution semantics remain the reference for runtime behavior.
-- GitHub Actions: new DAX-BOT 1.x product workflow uses current v7 action lines rather than intentionally inheriting the older Node-runtime warnings of the legacy workflow.
-
-External frameworks, generic multi-asset abstractions, venue complexity and large portfolio layers are not imported merely because they exist.
-
-## 12. Promotion architecture
-The high-level path remains:
-
-`DATA INTEGRITY -> FROZEN REFERENCE -> RESEARCH LAB -> ROBUST OOS / MULTIPLE-TESTING CHECKS -> REAL-DATA SHADOW -> DAX-BOT 1.x DUAL_COMPARE -> PAPER -> POSSIBLE LIVE`
-
-PAPER and LIVE are future states, not current permissions.
-
-The economic objective remains a systematic DAX daytrading bot that can eventually earn money under robust real-world conditions. Profitability is currently NOT proven. Starting-capital discussions around roughly EUR 1,000–2,000 are planning context only and are not live-trading authorization.
-
-## 13. Source precedence
-For active facts, prefer in this order:
-1. repository code/contracts and canonical active-reference artifacts at the exact commit under discussion;
-2. audited data manifests / hashed evidence files;
-3. fresh runtime telemetry for runtime status;
-4. current passing CI and specific audit documents;
-5. this consolidated handover document;
-6. older legacy prose/documents only for provenance.
-
-If older prose conflicts with canonical evidence, preserve the legacy record but use the canonical active evidence for current work.
-
-## 14. Recurring 500-step full-project audit — BINDING
-A full-project hygiene and integrity audit must be performed at least once every 500 numbered project steps, and may be triggered earlier after major architecture, data, database, recovery or research changes.
-
-Step 2000 audit: COMPLETED. Durable result: `docs/DAX_BOT_1X_MIGRATION_BACKLOG_STEP_2000.md`.
-Next mandatory full audit: Step 2500.
-
-The audit is a stop/go governance gate. It must cover identity/entities, searchability, code↔test↔registry mapping, reference integrity, data/database integrity, duplication/stale/dead paths, runtime/recovery/safety, performance/simplification and a selected public-project comparison.
-
-Each audit ends with material findings classified using `VERIFIED`, `FIX REQUIRED`, `STALE`, `DUPLICATE`, or `UNVERIFIED` and a remediation decision where applicable.
-
-Consolidation is compatibility-first, not deletion-first.
-
-## 15. Continuous visible-work rule — BINDING
-Begun step sequences are continued independently and visibly. Intermediate reports exist for visibility and are not stopping points.
-
-Normal positive checks, ordinary intermediate results and completion of a sub-check do not stop the sequence. Work stops only when:
-- a genuine milestone has been reached;
-- a concrete user input/action or user decision is required;
-- a hard technical error prevents reliable continuation;
-- a safety-relevant finding requires a stop.
-
-If no user action is required, work continues automatically with the next numbered step.
-
-There is no invisible background work. If work stops, the stop and its exact reason must be stated explicitly so the user never has to assume that work continues after the last assistant message.
-
-After context/tool-view loss, resume deterministically: pin repository SHA/branch, reconcile open PR/current CI, refresh runtime telemetry when making current-runtime claims, reload the necessary small repository subtrees/files, reconstruct the last VERIFIED numbered step and only then continue.
-
-## 16. Immediate next milestones after Step 2019 refresh
-- bind the implemented CAND-001 pure pipeline into `DUAL_COMPARE` without creating a second strategy architecture and without changing the authoritative provider prematurely;
-- define an explicit simulation-only sizing/risk policy before mapping a candidate trade to the existing `ExecutionIntent` contract;
-- reuse the existing Paper/virtual lifecycle only after its contracts are inspected and acceptance tests preserve `execution_capability=NONE` / `order_execution_enabled=false`;
-- connect CAND-001 read-only to real closed MT5 SHADOW bars only after DUAL_COMPARE/replay parity is proven;
-- modernize the web data contract so the existing UI shell consumes stable evidence plus a fresh read-only OperatorSnapshot source without browser credentials or GitHub-as-runtime-relay;
-- continue benchmark evidence across materially changed 1.x generations and introduce a regression budget only after comparable repeated observations exist;
-- continue regular public-project delta scans focused on performance, state/recovery, reconciliation, event-driven design, operator surfaces and version/migration governance;
-- use `LEGACY / DUAL_COMPARE / BOT_1X` for incremental component migration rather than a big-bang cutover;
-- keep PAPER and LIVE blocked until explicit later acceptance gates and user authorization.
+Step 2000 full audit is complete. Next mandatory full-project audit: **Step 2500**.
