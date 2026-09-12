@@ -9,10 +9,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 ## Current pointer
 
 - Last completed whole-number step: **2121**
-- Active whole-number step: **2122**
+- Active whole-number step: **2122 — WAITING_EXTERNAL / next open-fresh DE40 market window**
 - Next step after successful completion: **2123**
 - Outstanding lane-local step: **2116 — WAITING_EXTERNAL / historical Drive materialization-execution lane**
-- Active host-verification lane: **2122 — current-branch CAND-001 Windows/MT5 SHADOW real-host verification**
+- Active host-verification lane: **2122 — current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Next mandatory 250-step Masterstand checkpoint: **2250**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
@@ -47,6 +47,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2119 | Reconcile the binding SHADOW/PAPER acceptance contract with current authoritative state without changing execution capability or strategy semantics. | `docs/SHADOW_PAPER_ACCEPTANCE_V1.md` now records SHADOW authorized/no-order, current-branch Windows/MT5 Candidate host verification `WAITING_EXTERNAL`, PAPER not ready/not authorized and LIVE not eligible/not authorized; readback verified after commit `11615403…`. |
 | 2120 | Record the stale stage-status drift failure mode in the existing durable engineering-memory registry. | `PSR-017` added to `docs/PROBLEM_SOLUTION_REGISTRY_ADDENDUM_V1.md`; problem/root cause/fix/evidence/reuse rule read back and verified after commit `655695d5…`. |
 | 2121 | Preflight the current CAND-001 Windows/MT5 SHADOW deployment path before any user host action. Remove stale hard-pinned parity SHA, require local HEAD to match branch upstream, hash-check the host-facing fixed surface plus all commit-owned `candidate_*.py`/`mt5_*.py`, clarify isolated preflight vs scheduled-task state directories, and align regression tests. | Parity/script/runbook/test updates through `2bd6a9d1…`; initial research-lab CI exposed only the obsolete pinned-SHA test expectation and was corrected; exact final head `2bd6a9d1753d4505402c65db733a4665ec11bcd7` has `dax-bot-1x-ci` #270 GREEN and `research-lab-ci` #1054 GREEN. |
+| 2122 | Real Windows/MT5 CAND-001 SHADOW host verification. | **WAITING_EXTERNAL / market-open continuation.** On 2026-09-12, Windows host parity was corrected for `core.autocrlf=true` false positives and VERIFIED at commit `785fe94354db8f53fe3306390d3fcbb394719308` with `56/56` Git-canonical matches and safety `NONE/false`. Existing Scheduled Task configuration was observed read-only; `Europe/Helsinki` is configured but not yet VERIFIED. Weekend one-shot in isolated state correctly failed closed: `BLOCKED` with `MARKET_DATA_STALE`, `MT5_HOST_NOT_HEALTHY`, `CLOSED_M5_FEED_NOT_FRESH`, `CLOCK_NOT_SAFE`, while preserving `execution_capability=NONE` and `order_execution_enabled=false`. No candidate files were emitted because the upstream host gate blocked before candidate processing. Runbook/evidence refreshed in `c2624dd9…`. Remaining: fresh market clock/timezone proof, GREEN one-shot, candidate evidence, overlap/reconciliation, controlled Scheduled Task restart/runtime health. |
 
 ## Numbering and handoff rules
 
@@ -64,4 +65,6 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2122:** perform the real Windows/MT5 CAND-001 SHADOW host verification with the user on the existing host, strictly following `docs/CAND001_WINDOWS_SHADOW_DEPLOYMENT_RUNBOOK_V1.md`. Start with repository update + exact code parity. Continue only on GREEN through isolated one-shot SHADOW preflight, candidate evidence/safety assertions, isolated overlap/reconciliation, scheduled-task reload/restart evidence if required, and scheduled-task runtime health. Retain tested commit and fingerprints/evidence. No PAPER/LIVE authorization and no broker order submission.
+**Step 2122 — WAITING_EXTERNAL:** resume the real Windows/MT5 CAND-001 SHADOW host verification only in the next open/fresh DE40 market window. First re-pin branch/commit and rerun exact code parity. Then verify the configured broker timezone from a fresh tick/closed-M5 feed; require a GREEN isolated one-shot heartbeat before judging candidate evidence. Only after GREEN: verify candidate manifest/checkpoint/operator evidence, repeat the isolated cycle for overlap/reconciliation, then perform a controlled Scheduled Task reload/restart and runtime-health/reconciliation proof. Do not bypass stale-market/clock blockers. No PAPER/LIVE authorization and no broker order submission.
+
+Independent safe repository work may proceed at Step 2123 while 2122 remains parked, but any future claim that Step 2122 is complete requires the above real-host market-open evidence.
