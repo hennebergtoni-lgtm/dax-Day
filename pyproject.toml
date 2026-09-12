@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dax-day-research-lab"
 version = "0.1.0"
-description = "Deterministic DAX intraday research lab with a frozen V11.2 reference baseline"
+description = "Deterministic DAX research, reference, and DAX-BOT runtime toolkit with frozen REF-V11.2 baseline"
 requires-python = ">=3.11"
 dependencies = [
   "numpy>=1.26",
@@ -22,6 +22,9 @@ dev = [
 ]
 statistics = [
   "arch>=8.0,<9",
+]
+data = [
+  "pyarrow>=18,<27",
 ]
 
 [tool.pytest.ini_options]

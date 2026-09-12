@@ -11,6 +11,8 @@ EXPECTED_MIGRATIONS = (
     "0005_reproduced_detail_sources.sql",
     "0006_detail_evidence_rows.sql",
     "0007_mt5_shadow_telemetry.sql",
+    "0008_cand001_operator_telemetry.sql",
+    "0009_cand001_operator_current_view.sql",
 )
 EXPECTED_FILES = (
     "data/manifests/dax_m5_2014_2019_audited.json",

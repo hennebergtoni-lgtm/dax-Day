@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install
-        run: pip install -e '.[dev,statistics]'
+        run: pip install -e '.[dev,statistics,data]'
       - name: Ruff
         run: ruff check src tests scripts
       - name: Tests
@@ -27,8 +27,8 @@ jobs:
         run: python scripts/check_hypothesis_ledger.py
       - name: Web status integrity
         run: python scripts/check_web_status.py
-      - name: V11 pre-host hardening smoke
-        run: python scripts/v11_prehost_smoke.py
+      - name: Static read-only runtime safety smoke
+        run: python scripts/static_runtime_safety_smoke.py
       - name: V11.2 engine surface probe
         run: python scripts/probe_v112_engine.py
       - name: Guarded V11.2 replay smoke

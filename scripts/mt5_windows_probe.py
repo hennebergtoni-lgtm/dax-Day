@@ -29,15 +29,49 @@ def _trade_mode_name(mt5: Any, value: Any) -> str:
     return mapping.get(value, str(value))
 
 
+def _positive_attr(info: Any, name: str) -> float | None:
+    raw = getattr(info, name, None)
+    if raw is None:
+        return None
+    value = float(raw)
+    return value if value > 0 else None
+
+
+def _nonnegative_attr(info: Any, name: str) -> float | None:
+    raw = getattr(info, name, None)
+    if raw is None:
+        return None
+    value = float(raw)
+    return value if value >= 0 else None
+
+
+def _text_attr(info: Any, name: str) -> str | None:
+    raw = getattr(info, name, None)
+    if raw is None:
+        return None
+    value = str(raw).strip()
+    return value or None
+
+
 def _safe_symbol(mt5: Any, info: Any) -> BrokerSymbol:
     return BrokerSymbol(
         name=str(info.name),
         digits=int(info.digits),
         point=float(info.point),
         trade_mode=_trade_mode_name(mt5, info.trade_mode),
-        contract_size=float(info.trade_contract_size),
-        volume_min=float(info.volume_min),
-        volume_step=float(info.volume_step),
+        contract_size=_positive_attr(info, "trade_contract_size"),
+        volume_min=_positive_attr(info, "volume_min"),
+        volume_step=_positive_attr(info, "volume_step"),
+        volume_max=_positive_attr(info, "volume_max"),
+        volume_limit=_nonnegative_attr(info, "volume_limit"),
+        tick_size=_positive_attr(info, "trade_tick_size"),
+        tick_value=_nonnegative_attr(info, "trade_tick_value"),
+        tick_value_profit=_nonnegative_attr(info, "trade_tick_value_profit"),
+        tick_value_loss=_nonnegative_attr(info, "trade_tick_value_loss"),
+        currency_profit=_text_attr(info, "currency_profit"),
+        currency_margin=_text_attr(info, "currency_margin"),
+        margin_initial=_nonnegative_attr(info, "margin_initial"),
+        margin_maintenance=_nonnegative_attr(info, "margin_maintenance"),
     )
 
 
@@ -105,6 +139,16 @@ def collect_probe(
                 "contract_size": s.contract_size,
                 "volume_min": s.volume_min,
                 "volume_step": s.volume_step,
+                "volume_max": s.volume_max,
+                "volume_limit": s.volume_limit,
+                "tick_size": s.tick_size,
+                "tick_value": s.tick_value,
+                "tick_value_profit": s.tick_value_profit,
+                "tick_value_loss": s.tick_value_loss,
+                "currency_profit": s.currency_profit,
+                "currency_margin": s.currency_margin,
+                "margin_initial": s.margin_initial,
+                "margin_maintenance": s.margin_maintenance,
             }
             for s in symbols
             if s.name in resolution.candidates or (selected and s.name == selected.name)
@@ -159,7 +203,13 @@ def collect_probe(
             "broker_timezone": broker_timezone,
             "symbols": safe_symbols,
         }
-        notes = ["READ_ONLY", "BAR_0_EXCLUDED", "NO_CREDENTIALS", "NO_ORDER_API"]
+        notes = [
+            "READ_ONLY",
+            "BAR_0_EXCLUDED",
+            "NO_CREDENTIALS",
+            "NO_ORDER_API",
+            "BROKER_ECONOMICS_OBSERVATION_ONLY",
+        ]
         if raw_tick_delta_seconds is not None:
             notes.append(f"RAW_TICK_CLOCK_DELTA_SECONDS={raw_tick_delta_seconds:.3f}")
         if normalized_tick_delta_seconds is not None:

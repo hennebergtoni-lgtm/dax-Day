@@ -1,0 +1,78 @@
+name: dax-bot-1x-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/daxlab/runtime/candidate_*.py'
+      - 'src/daxlab/runtime/broker_*.py'
+      - 'src/daxlab/runtime/operator_snapshot.py'
+      - 'src/daxlab/runtime/operator_runtime_bridge.py'
+      - 'src/daxlab/strategies/cand001/**'
+      - 'tests/test_candidate*.py'
+      - 'tests/test_broker*.py'
+      - 'tests/test_operator_snapshot*.py'
+      - 'tests/test_operator_runtime_bridge.py'
+      - 'tests/test_nextgen_cand001_strategy_adapter.py'
+      - 'scripts/benchmark_cand001_pipeline.py'
+      - '.github/workflows/dax-bot-1x-ci.yml'
+  pull_request:
+    paths:
+      - 'src/daxlab/runtime/candidate_*.py'
+      - 'src/daxlab/runtime/broker_*.py'
+      - 'src/daxlab/runtime/operator_snapshot.py'
+      - 'src/daxlab/runtime/operator_runtime_bridge.py'
+      - 'src/daxlab/strategies/cand001/**'
+      - 'tests/test_candidate*.py'
+      - 'tests/test_broker*.py'
+      - 'tests/test_operator_snapshot*.py'
+      - 'tests/test_operator_runtime_bridge.py'
+      - 'tests/test_nextgen_cand001_strategy_adapter.py'
+      - 'scripts/benchmark_cand001_pipeline.py'
+      - '.github/workflows/dax-bot-1x-ci.yml'
+
+jobs:
+  candidate-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install lean candidate test surface
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . --no-deps
+          python -m pip install pytest ruff==0.16.2
+      - name: Candidate and broker-safety Ruff
+        run: >-
+          ruff check
+          src/daxlab/runtime/candidate_*.py
+          src/daxlab/runtime/broker_*.py
+          src/daxlab/runtime/operator_snapshot.py
+          src/daxlab/runtime/operator_runtime_bridge.py
+          src/daxlab/strategies/cand001/*.py
+          tests/test_candidate*.py
+          tests/test_broker*.py
+          tests/test_operator_snapshot*.py
+          tests/test_operator_runtime_bridge.py
+          tests/test_nextgen_cand001_strategy_adapter.py
+          scripts/benchmark_cand001_pipeline.py
+      - name: Candidate correctness, restart and broker-neutral safety tests
+        run: >-
+          pytest -q
+          tests/test_candidate*.py
+          tests/test_broker*.py
+          tests/test_operator_snapshot*.py
+          tests/test_operator_runtime_bridge.py
+          tests/test_nextgen_cand001_strategy_adapter.py
+      - name: Candidate performance observation
+        run: |
+          python scripts/benchmark_cand001_pipeline.py --sessions 50 --repeats 3 > candidate-benchmark.json
+          cat candidate-benchmark.json
+      - name: Upload candidate benchmark evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: dax-bot-cand001-benchmark-${{ github.sha }}
+          path: candidate-benchmark.json
+          retention-days: 30

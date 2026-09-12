@@ -9,7 +9,8 @@
     body { margin:0; background:#0b0d10; color:#f3f4f6; }
     main { max-width:980px; margin:auto; padding:24px 16px 48px; }
     h1 { margin:0 0 6px; font-size:28px; }
-    .sub { color:#9ca3af; margin-bottom:24px; }
+    .sub { color:#9ca3af; margin-bottom:14px; }
+    .notice { margin:0 0 18px; padding:12px 14px; border:1px solid #92400e; border-radius:10px; background:#1f1710; color:#fcd34d; font-size:13px; line-height:1.45; }
     .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
     .card { background:#15181d; border:1px solid #272b33; border-radius:12px; padding:16px; }
     .label { color:#9ca3af; font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
@@ -25,6 +26,7 @@
 <main>
   <h1>DAX Research Lab</h1>
   <div class="sub">Read-only observability surface — keine Orders, keine Strategieänderungen.</div>
+  <div id="runtime-notice" class="notice">Statusgrenze wird geprüft …</div>
   <div id="status" class="grid"><div class="card">Status wird geladen …</div></div>
   <div class="card" style="margin-top:12px">
     <div class="label">Research Families</div>
@@ -38,20 +40,25 @@
     <div class="label">Reproduction Evidence</div>
     <table><thead><tr><th>Artefakt</th><th>Zeilen</th><th>Hash / Aussage</th></tr></thead><tbody id="repro"></tbody></table>
   </div>
-  <footer>Canonical state remains in versioned repository contracts, verified DB registries and hashed run artifacts.</footer>
+  <footer>Canonical static evidence remains in versioned repository contracts, verified DB registries and hashed run artifacts. Current runtime truth is a separate source.</footer>
 </main>
 <script>
 const cls = v => ['GREEN','HASH_VERIFIED','ELIGIBLE','ACTIVE','IMPLEMENTED','EXACT_MATCH','RETAINED','COST_STRESSED'].includes(v) ? 'ok' : v === 'BLOCKED' ? 'block' : 'warn';
 const card = (label,value,small='') => `<div class="card"><div class="label">${label}</div><div class="value ${cls(String(value))}">${value}</div>${small ? `<div class="small">${small}</div>` : ''}</div>`;
 const shortHash = v => `${v.slice(0,12)}…${v.slice(-8)}`;
 fetch('status.json', {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('status.json unavailable'); return r.json(); }).then(s => {
-  const a=s.active_reference,d=s.dataset,w=s.walk_forward,r=s.reference_results,rd=s.readiness,rec=s.recovery,re=s.reproduction,rf=s.research_families,fm=s.forward_monitoring;
+  if (s.schema_version !== 'DAXLAB_WEB_STATIC_STATUS_V2' || s.runtime_truth_included !== false) {
+    throw new Error('static/runtime status boundary invalid');
+  }
+  const rb=s.runtime_boundary,a=s.active_reference,d=s.dataset,w=s.walk_forward,r=s.reference_results,rd=s.readiness,rec=s.recovery,re=s.reproduction,rf=s.research_families,fm=s.forward_monitoring;
+  document.getElementById('runtime-notice').textContent = `STATIC EVIDENCE ONLY — aktuelle Bot-/MT5-Laufzeitwerte sind hier nicht enthalten. Fresh source: ${rb.current_candidate_store}; Browser-Endpunkt: ${rb.browser_runtime_endpoint}.`;
   document.getElementById('status').innerHTML = [
+    card('Evidence Scope',s.status_scope,'keine aktuelle Health-/Host-Aussage aus status.json'),
     card('Active Reference',a.strategy,`${a.experiment_id} · ${a.status} · immutable=${a.immutable}`),
     card('Dataset',d.identity_state,`${d.session_rows.toLocaleString('de-DE')} M5 · ${d.session_days} Tage`),
     card('WF Contract',`${w.windows} Fenster`,`${w.train_days}/${w.oos_days}/${w.step_days} Train/OOS/Step`),
     card('Reference OOS',`${r.normal_oos_trades} Trades`,`${r.normal_oos_return_r.toFixed(4)} R · PF median ${r.median_wf_pf.toFixed(4)}`),
-    card('Forward Monitoring',fm.mode,`${fm.read_only ? 'read-only' : 'write-enabled'} · echte Forward-Evidenz: ${fm.real_forward_evidence_present ? 'vorhanden' : 'ausstehend'}`),
+    card('Forward Contract',fm.state,`${fm.mode} · ${fm.read_only ? 'read-only' : 'write-enabled'} · Runtime-Quelle getrennt`),
     card('V5 Reproduction',re.full_clean_reference,`${re.wf_metrics_rows} WF rows · ${re.selected_variants_rows} selections · ${re.trades_rows} trades`),
     card('Research Registry',`${rf.count} Familien`,rf.registry_schema),
     card('Clean Replay',rd.clean_reference_replay),
@@ -67,6 +74,7 @@ fetch('status.json', {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('
     ['Trades', re.trades_rows, `${shortHash(re.trades_sha256)} · reproducible clean evidence`]
   ].map(row => `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td></tr>`).join('');
 }).catch(err => {
+  document.getElementById('runtime-notice').textContent = 'STATIC/RUNTIME GRENZE UNBEKANNT — keine Laufzeitannahmen zulässig.';
   document.getElementById('status').innerHTML = card('Dashboard State','UNKNOWN',String(err));
 });
 </script>

@@ -20,6 +20,16 @@ class BrokerSymbol:
     contract_size: float | None = None
     volume_min: float | None = None
     volume_step: float | None = None
+    volume_max: float | None = None
+    volume_limit: float | None = None
+    tick_size: float | None = None
+    tick_value: float | None = None
+    tick_value_profit: float | None = None
+    tick_value_loss: float | None = None
+    currency_profit: str | None = None
+    currency_margin: str | None = None
+    margin_initial: float | None = None
+    margin_maintenance: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
