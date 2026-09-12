@@ -36,7 +36,9 @@ def test_handoff_and_refresher_use_monotonic_workflow_gate() -> None:
         assert "DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md" in text
         assert "Step-Close-Gate" in text
 
-    assert "Fortsetzung Schritt N" not in handoff
+    assert "visible numbering is monotonic" in handoff
+    assert "resume its unfinished scope under the next unused integer" in handoff
+    assert "the old wording `Fortsetzung Schritt N` must not be used" in handoff
     assert "pointer-before-next-step" in handoff.lower()
     assert "Monotonic carry-forward" in refresher
     assert "final/turn-ending response ends the active work turn" in refresher
