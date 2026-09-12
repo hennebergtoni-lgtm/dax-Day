@@ -1,16 +1,16 @@
 # Current Work Step — DAX Daytrading Bot
 
 Status: BINDING NUMBERING POINTER
-Updated: 2026-09-11
+Updated: 2026-09-12
 Branch: `nextgen-bot-line-v1`
 
 Purpose: preserve one unambiguous whole-number work sequence across chat/context loss. This file governs numbering only. Repository code, tests, evidence, safety contracts and verified runtime evidence remain authoritative for technical truth.
 
 ## Current pointer
 
-- Last completed whole-number step: **2102**
-- Active whole-number step: **2103**
-- Next step after successful completion: **2104**
+- Last completed whole-number step: **2103**
+- Active whole-number step: **2104**
+- Next step after successful completion: **2105**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -42,6 +42,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2100 | Add and regression-test an explicit fail-closed PAPER gate for qualifying broker execution checkpoint/restart evidence; repository fixtures/CI alone cannot satisfy broker-facing evidence and the independent user STOP-gate remains required. | readiness `60689803…`, tests `ab26bf02…`, matrix `8fd42c1b…`, matrix tests `9de8897b…`, acceptance contract `de1d06a0…` (exact-head CI: `dax-bot-1x-ci` #199 GREEN, `research-lab-ci` #983 GREEN) |
 | 2101 | Perform a LEAN ownership audit of remaining broker-neutral PAPER software; freeze the no-overbuild boundary because lifecycle, checkpoint, reconciliation, protection, telemetry and readiness already have owners, and enforce that all `broker_*.py` pre-authorization owners remain submission-free. | audit `b239985a…`, boundary test `9670c1a5…` (exact-head CI: `dax-bot-1x-ci` #202 GREEN, `research-lab-ci` #986 GREEN) |
 | 2102 | Audit CAND-001-specific economic evidence and prove the boundary: no historical/OOS/WF CAND-001 result artifacts currently exist; REF-V11.2/V12 metrics cannot be borrowed; define the minimum deterministic descriptive historical replay harness before any OOS/edge claim. | audit `b220999c…`, boundary tests `c63d30a4…`, knowledge index `7585410a…` (exact-head CI: `dax-bot-1x-ci` #206 GREEN, `research-lab-ci` #990 GREEN) |
+| 2103 | Implement and regression-test the deterministic CAND-001 historical descriptive replay harness; reuse canonical SHADOW strategy/lifecycle/outcome semantics and bind it directly to the audited recovered-M5 loader/session owner with fail-closed dataset-fingerprint verification. | replay `a3ce4e25…`; replay tests `c3d5b6b6…`; audited session owner `308a73d7…`; recovered-M5 bridge `dd7e831e…`; end-to-end tests `7c38b964…` (exact-head CI: `dax-bot-1x-ci` #212 GREEN, `research-lab-ci` #996 GREEN) |
 
 ## Numbering rules
 
@@ -56,4 +57,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2103:** implement and regression-test the minimum deterministic CAND-001 historical descriptive replay harness. Reuse the audited recovered M5 loader/session surface and the existing CAND-001 SHADOW strategy/lifecycle/outcome semantics; do not optimize or mutate CAND-001. Emit deterministic per-trade + summary evidence with explicit `HISTORICAL_DESCRIPTIVE` classification and no OOS/profitability claim.
+**Step 2104:** define and regression-test a separately versioned CAND-001 OOS / walk-forward evaluation contract over the frozen candidate semantics. Reuse the Step-2103 descriptive replay semantics and audited historical data identity; freeze selection/tuning during evaluation; define train/OOS/step chronology, evidence classes, cost-stress hooks and deterministic window/result identities without optimizing CAND-001 or claiming profitability. PAPER/LIVE boundaries remain unchanged.
