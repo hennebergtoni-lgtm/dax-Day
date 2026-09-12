@@ -63,15 +63,16 @@ class ReplayResult(Generic[StateT]):
             raise ValueError("replay result must contain exactly one decision per candle")
 
 
-def replay_candles(
+def prepare_replay_manifest(
     strategy: StrategyPlugin[StateT],
     candles: Sequence[Candle],
-) -> ReplayResult[StateT]:
-    """Replay an explicit canonical candle sequence through one Strategy Plugin."""
+) -> ReplayRunManifest:
+    """Validate a canonical stream and freeze deterministic run identity without executing it."""
+
     stream = tuple(candles)
     instrument_id, timeframe = _validate_stream(stream)
     input_fingerprint = _fingerprint(tuple(_candle_identity(candle) for candle in stream))
-    manifest = _build_manifest(
+    return _build_manifest(
         strategy=strategy,
         instrument_id=instrument_id,
         timeframe=timeframe,
@@ -79,16 +80,45 @@ def replay_candles(
         input_fingerprint=input_fingerprint,
     )
 
+
+def assert_replay_decision_compatible(
+    manifest: ReplayRunManifest,
+    candle: Candle,
+    decision: StrategyDecision,
+) -> None:
+    """Apply the same strategy-output identity checks used by uninterrupted replay."""
+
+    if decision.strategy_id != manifest.strategy_id:
+        raise StrategyContractError("strategy decision id does not match run manifest")
+    if decision.strategy_version != manifest.strategy_version:
+        raise StrategyContractError("strategy decision version does not match run manifest")
+    if decision.strategy_fingerprint != manifest.strategy_fingerprint:
+        raise StrategyContractError("strategy decision fingerprint does not match run manifest")
+    if decision.instrument_id != candle.instrument_id:
+        raise StrategyContractError("strategy decision instrument does not match candle")
+    if decision.event_time != candle.close_time:
+        raise StrategyContractError("strategy decision time must equal candle close_time")
+
+
+def replay_candles(
+    strategy: StrategyPlugin[StateT],
+    candles: Sequence[Candle],
+) -> ReplayResult[StateT]:
+    """Replay an explicit canonical candle sequence through one Strategy Plugin."""
+
+    stream = tuple(candles)
+    manifest = prepare_replay_manifest(strategy, stream)
+
     state = strategy.initial_state()
     decisions: list[StrategyDecision] = []
     for candle in stream:
         transition = strategy.on_candle(state, candle)
-        _validate_decision(manifest, candle, transition.decision)
+        assert_replay_decision_compatible(manifest, candle, transition.decision)
         state = transition.state
         decisions.append(transition.decision)
 
     frozen_decisions = tuple(decisions)
-    decision_ids_fingerprint = _fingerprint(
+    decision_ids_fingerprint = fingerprint_decision_ids(
         tuple(decision.decision_id for decision in frozen_decisions)
     )
     result_fingerprint = _fingerprint(
@@ -106,6 +136,15 @@ def replay_candles(
         decision_ids_fingerprint=decision_ids_fingerprint,
         result_fingerprint=result_fingerprint,
     )
+
+
+def fingerprint_decision_ids(decision_ids: Sequence[str]) -> str:
+    """Canonical ordered decision-identity fingerprint shared by replay and restart paths."""
+
+    frozen = tuple(decision_ids)
+    for value in frozen:
+        _require_sha256(value, "decision_id")
+    return _fingerprint(frozen)
 
 
 def _validate_stream(candles: tuple[Candle, ...]) -> tuple[InstrumentId, str]:
@@ -170,23 +209,6 @@ def _build_manifest(
         input_fingerprint=input_fingerprint,
         run_fingerprint=_fingerprint(identity),
     )
-
-
-def _validate_decision(
-    manifest: ReplayRunManifest,
-    candle: Candle,
-    decision: StrategyDecision,
-) -> None:
-    if decision.strategy_id != manifest.strategy_id:
-        raise StrategyContractError("strategy decision id does not match run manifest")
-    if decision.strategy_version != manifest.strategy_version:
-        raise StrategyContractError("strategy decision version does not match run manifest")
-    if decision.strategy_fingerprint != manifest.strategy_fingerprint:
-        raise StrategyContractError("strategy decision fingerprint does not match run manifest")
-    if decision.instrument_id != candle.instrument_id:
-        raise StrategyContractError("strategy decision instrument does not match candle")
-    if decision.event_time != candle.close_time:
-        raise StrategyContractError("strategy decision time must equal candle close_time")
 
 
 def _candle_identity(candle: Candle) -> dict[str, object]:
