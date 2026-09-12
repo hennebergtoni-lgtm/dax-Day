@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2103**
-- Active whole-number step: **2104**
-- Next step after successful completion: **2105**
+- Last completed whole-number step: **2104**
+- Active whole-number step: **2105**
+- Next step after successful completion: **2106**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -43,6 +43,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2101 | Perform a LEAN ownership audit of remaining broker-neutral PAPER software; freeze the no-overbuild boundary because lifecycle, checkpoint, reconciliation, protection, telemetry and readiness already have owners, and enforce that all `broker_*.py` pre-authorization owners remain submission-free. | audit `b239985a…`, boundary test `9670c1a5…` (exact-head CI: `dax-bot-1x-ci` #202 GREEN, `research-lab-ci` #986 GREEN) |
 | 2102 | Audit CAND-001-specific economic evidence and prove the boundary: no historical/OOS/WF CAND-001 result artifacts currently exist; REF-V11.2/V12 metrics cannot be borrowed; define the minimum deterministic descriptive historical replay harness before any OOS/edge claim. | audit `b220999c…`, boundary tests `c63d30a4…`, knowledge index `7585410a…` (exact-head CI: `dax-bot-1x-ci` #206 GREEN, `research-lab-ci` #990 GREEN) |
 | 2103 | Implement and regression-test the deterministic CAND-001 historical descriptive replay harness; reuse canonical SHADOW strategy/lifecycle/outcome semantics and bind it directly to the audited recovered-M5 loader/session owner with fail-closed dataset-fingerprint verification. | replay `a3ce4e25…`; replay tests `c3d5b6b6…`; audited session owner `308a73d7…`; recovered-M5 bridge `dd7e831e…`; end-to-end tests `7c38b964…` (exact-head CI: `dax-bot-1x-ci` #212 GREEN, `research-lab-ci` #996 GREEN) |
+| 2104 | Define and regression-test the frozen CAND-001 OOS/WF evaluation contract: reuse deterministic 45/20/20 scheduling, prohibit train-time selection/tuning, bind normal/1.5x/2x cost hooks, and create deterministic contract/window/result identities without claiming profitability. | contract `e8cf48b0…`; identity hardening `7a89c21d…`; regression tests `64f0c9ff…`; knowledge index `aa189390…`; Ruff fix `bf9d1d54…` (exact code/test-head CI: `dax-bot-1x-ci` #218 GREEN, `research-lab-ci` #1002 GREEN) |
 
 ## Numbering rules
 
@@ -57,4 +58,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2104:** define and regression-test a separately versioned CAND-001 OOS / walk-forward evaluation contract over the frozen candidate semantics. Reuse the Step-2103 descriptive replay semantics and audited historical data identity; freeze selection/tuning during evaluation; define train/OOS/step chronology, evidence classes, cost-stress hooks and deterministic window/result identities without optimizing CAND-001 or claiming profitability. PAPER/LIVE boundaries remain unchanged.
+**Step 2105:** implement and regression-test the deterministic CAND-001 historical OOS/WF measurement runner over the audited recovered-M5 Berlin-session dataset. Reuse the Step-2103 replay semantics and Step-2104 frozen contract; evaluate only each declared OOS slice, perform no train-time selection/tuning, run the declared normal/1.5x/2x cost stresses through the existing fill/outcome semantics, and emit deterministic per-window/per-cost evidence. Do not claim profitability or promote CAND-001 from these measurements alone; PAPER/LIVE boundaries remain unchanged.
