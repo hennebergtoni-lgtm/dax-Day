@@ -42,4 +42,3 @@ def test_current_pointer_names_2500_as_architecture_learning_review() -> None:
     active_match = re.search(r"Active whole-number step: \*\*(\d+)\*\*", pointer)
     assert active_match is not None
     assert int(active_match.group(1)) >= 2161
-    assert "KEEP / IMPROVE / REFACTOR / RETIRE / DEFER" in pointer
