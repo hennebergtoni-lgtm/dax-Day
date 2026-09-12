@@ -24,7 +24,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 - full prior ledger: `docs/CURRENT_WORK_STEP_ARCHIVE_THROUGH_2154_PRE_CLOSE.md`
 - archived blob SHA: `4d96586f85cf32f2e726080cf728837ea6dd20ef`
-- reconstruction anchor: `199e6bf073da1a717839b37e70a314f203e9ffa4`
+- reconstruction anchor `199e6bf073da1a717839b37e70a314f203e9ffa4` remains the canonical reconstruction anchor.
 - reconstructed Steps **2081** through **2089** remain preserved in that archive.
 
 ## Recent verified sequence
@@ -63,11 +63,12 @@ Required properties:
 
 1. One independent work unit = one whole-number step.
 2. Tests/fixes/docs proving the same unit remain inside the same step.
-3. New work starts only after the Step-Close-Gate and pointer synchronization.
-4. Decimal/letter step IDs are prohibited.
-5. Visible sequence remains monotonic.
-6. `Weiter mit dem DAXBot` resumes from repository truth.
-7. Next Masterstand checkpoint: **2250**; next full/architecture audit: **2500**.
+3. **Step-Close-Gate:** new work starts only after the prior step is formally closed and evidence is synchronized.
+4. **Pointer-before-next-step:** this file must name the next active whole-number step before substantive new work begins.
+5. Decimal/letter step IDs are prohibited.
+6. Visible sequence remains monotonic.
+7. `Weiter mit dem DAXBot` resumes from repository truth.
+8. Next Masterstand checkpoint: **2250**; next full/architecture audit: **2500**.
 
 ## Safety boundary
 
