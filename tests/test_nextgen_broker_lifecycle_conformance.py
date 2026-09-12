@@ -13,7 +13,7 @@ from daxlab.domain.risk import InstrumentRiskInputs, RiskRequest, evaluate_fixed
 from daxlab.domain.risk_policy import FixedCashRiskPolicy
 from daxlab.domain.risk_execution import build_execution_intent_from_risk
 from daxlab.domain.session_admission import (
-    SessionAdmissionObservation,
+    SessionAdmissionConsumptionState,
     SessionAdmissionPolicy,
     evaluate_session_admission,
 )
@@ -30,9 +30,7 @@ from daxlab.runtime.broker_reconciliation import (
 )
 from daxlab.runtime.nextgen_broker_lifecycle import begin_nextgen_order_lifecycle
 from daxlab.state.loss_exposure import build_loss_exposure_observation_checkpoint
-from daxlab.state.session_admission import (
-    build_session_admission_observation_checkpoint,
-)
+from daxlab.state.session_admission import build_session_admission_guard_checkpoint
 
 
 UTC = timezone.utc
@@ -63,12 +61,14 @@ def _loss_evidence():
 
 def _session_evidence():
     policy = SessionAdmissionPolicy.build(max_trades_per_session=1)
-    observation = SessionAdmissionObservation.build(
-        session_key="2026-09-11-DE40-DAY",
-        trades_admitted=0,
+    state = SessionAdmissionConsumptionState.build(
+        session_key="2026-09-11-DE40-DAY"
     )
-    decision = evaluate_session_admission(policy=policy, observation=observation)
-    return policy, observation, decision
+    decision = evaluate_session_admission(
+        policy=policy,
+        observation=state.observation,
+    )
+    return policy, state, decision
 
 
 def _canonical_chain():
@@ -252,10 +252,10 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         observation=loss_observation,
         observed_at=T0,
     )
-    session_policy, session_observation, session_decision = _session_evidence()
-    session_checkpoint = build_session_admission_observation_checkpoint(
+    session_policy, session_state, session_decision = _session_evidence()
+    session_guard = build_session_admission_guard_checkpoint(
         policy_fingerprint=session_policy.policy_fingerprint,
-        observation=session_observation,
+        state=session_state,
         observed_at=T0,
     )
 
@@ -280,8 +280,7 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         evaluated_at=T0 + timedelta(seconds=2),
         max_loss_observation_age_seconds=5.0,
         session_policy=session_policy,
-        session_observation=session_observation,
-        session_observation_checkpoint=session_checkpoint,
+        session_guard_checkpoint=session_guard,
         session_admission_decision=session_decision,
         max_session_observation_age_seconds=5.0,
     )
@@ -303,15 +302,16 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
     assert protection.session_policy_fingerprint == session_policy.policy_fingerprint
     assert (
         protection.session_observation_fingerprint
-        == session_observation.observation_fingerprint
+        == session_state.observation.observation_fingerprint
     )
     assert (
         protection.session_admission_evidence_fingerprint
         == session_decision.decision_fingerprint
     )
+    assert protection.session_observation_checkpoint_fingerprint is None
     assert (
-        protection.session_observation_checkpoint_fingerprint
-        == session_checkpoint.checkpoint_fingerprint
+        protection.session_guard_checkpoint_fingerprint
+        == session_guard.checkpoint_fingerprint
     )
     assert protection.session_observation_age_seconds == 2.0
     assert protection.execution_capability == "NONE"
