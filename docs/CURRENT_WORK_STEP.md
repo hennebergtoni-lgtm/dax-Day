@@ -4,13 +4,13 @@ Status: BINDING NUMBERING POINTER
 Updated: 2026-09-12
 Branch: `nextgen-bot-line-v1`
 
-Purpose: preserve one unambiguous whole-number work sequence across chat/context loss. This file governs numbering only. Repository code, tests, evidence, safety contracts and verified runtime evidence remain authoritative for technical truth.
+Purpose: preserve one unambiguous whole-number work sequence across chat/context loss. Repository code, tests, evidence, safety contracts and verified runtime evidence remain authoritative for technical truth.
 
 ## Current pointer
 
-- Last completed whole-number step: **2112**
-- Active whole-number step: **2113**
-- Next step after successful completion: **2114**
+- Last completed whole-number step: **2114**
+- Active whole-number step: **2115**
+- Next step after successful completion: **2116**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -18,40 +18,25 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 The last externally visible/trusted work unit before the numbering gap was Step 2081. Steps 2081–2089 were reconstructed from the exact first-parent commit chain through reconstruction anchor `199e6bf073da1a717839b37e70a314f203e9ffa4`. From Step 2090 onward this file is updated directly as part of the work sequence. Tightly coupled implementation + regression tests are one work unit and therefore consume one integer step, not separate numbers.
 
-| Step | Work unit | Evidence commits |
+| Step | Work unit | Evidence |
 | ---: | --- | --- |
-| 2081 | Complete the research-only BASE/BOOST/HIGH risk-profile sizing bridge and bind result currency; add its regression coverage. | `f0c06bc2…`, `525b8770…`, `5640a1a6…` |
-| 2082 | Add deterministic fingerprints/lineage to broker-risk and risk-profile sizing and verify fingerprint behavior. | `beed25f8…`, `273696ff…`, `fbd6b825…`, `d1e90114…` |
-| 2083 | Add the explicit research loss-cap admission gate and regression coverage. | `b2e25c3d…`, `2188e30f…` |
-| 2084 | Add broker-risk/risk-policy evidence to PAPER readiness and prove the fail-closed readiness gates. | `4319ade2…`, `da578915…` |
-| 2085 | Align the legacy pre-host CI smoke with the Web V2 static-evidence/runtime separation. | `982fea7f…` |
-| 2086 | Remove the browser runtime endpoint from repository-side alpha-blocking scope while retaining it as later read-only work. | `63dc9f20…` |
-| 2087 | Produce/finalize the evidence-linked DAX-BOT 1.0-alpha closeout, mark repository-side alpha acceptance passed and retire the superseded draft. | `2df6e208…`, `44f54c62…`, `cc68035f…`, `654ee817…` |
-| 2088 | Add the explicit user STOP-gate to PAPER readiness and prove PAPER cannot become ready without user authorization. | `e4de978c…`, `aca473fd…` |
-| 2089 | Split PAPER execution readiness into explicit broker order-lifecycle, broker-reconciliation and execution-protection evidence gates and prove each gate independently. | `80119bed…`, `199e6bf0…` |
-| 2090 | Add the canonical whole-number work-step ledger, make it mandatory in resume/navigation, and regression-test the pointer/audit sequence. | `72ec9641…`, `7fabecf8…`, `3b1b0bc8…`, `02aa4892…` |
-| 2091 | Produce and index an evidence-grounded PAPER-readiness gap matrix that separates reusable contracts, repository implementation gaps, external broker/host evidence and the user STOP-gate; regression-test the lane separation. | `a45d470e…`, `b4244e4d…`, `743ec5d2…` |
-| 2092 | Implement and regression-test the broker-neutral deterministic order-lifecycle evidence owner; reuse existing ExecutionIntent/client identity and paper lifecycle vocabulary; add fast broker-safety CI coverage. | `b9f6d23c…`, `55ca70c4…`, `3d6e33ac…` |
-| 2093 | Implement and regression-test broker-neutral exact reconciliation over local lifecycle evidence and plain venue observations; unknown/missing/contradictory truth fails closed and observation time stays out of venue-truth identity. | `4b2ea685…`, `3af91859…` |
-| 2094 | Implement and regression-test one broker-neutral execution-protection verdict over reconciliation, host/feed health, spread, duplicate identity, sizing/risk and session/admission evidence; all unsafe/unknown inputs fail closed and ALLOW remains non-executable. | `5f511d8c…` (exact-head CI: `dax-bot-1x-ci` #170 GREEN, `research-lab-ci` #954 GREEN) |
-| 2095 | Implement and regression-test deterministic credential-free broker execution telemetry records over canonical order events, reconciliation and protection evidence; reject unsafe free-text reasons and retain `NONE/false`. | `71f5adfd…`, `3be92a18…`, `4ec5d8c7…` (code-head CI: `dax-bot-1x-ci` #174 GREEN, `research-lab-ci` #958 GREEN); matrix refresh `772dbf53…` |
-| 2096 | Add an explicit broker-order-telemetry PAPER readiness gate; PAPER now fails closed on incomplete lifecycle telemetry even when lifecycle/reconciliation/protection are otherwise green, while fixture/clean replay and the independent user STOP-gate remain separate. | `6b84738c…`, `7ad7c7bd…`, matrix wording fix `d933e575…` (exact-head CI: `dax-bot-1x-ci` #179 GREEN, `research-lab-ci` #963 GREEN) |
-| 2097 | Implement and regression-test restart-safe append-only broker execution telemetry identity persistence/idempotency using the existing atomic JSON/publication-state patterns; duplicates remain suppressed after restart and tamper/safety drift fail closed. | `6d719a51…`, `cc0c4271…` (exact-head CI: `dax-bot-1x-ci` #182 GREEN, `research-lab-ci` #966 GREEN); matrix refresh `302cfef8…` |
-| 2098 | Add strict tamper-evident BrokerOrderLifecycle serialization/restoration and prove REQUESTED/ACK/PARTIAL restart continuity plus PARTIAL→FILLED parity with uninterrupted execution; identity/state/safety drift fail closed. | `fe0f4816…`, `4cbc0089…`, strengthened tests `cb037f11…` (exact-head CI: `dax-bot-1x-ci` #187 GREEN, `research-lab-ci` #971 GREEN); matrix refresh `cdd3ccb5…` |
-| 2099 | Implement and regression-test one tamper-evident broker execution checkpoint binding optional lifecycle restore state and telemetry journal into one atomic persistence envelope; prove PARTIAL→FILLED restart parity and nested/outer tamper/safety fail-closed behavior. | implementation `4c54a928…`; tests `d0b2910a…`, assertion fix `96d4fc6d…` (exact-head CI: `dax-bot-1x-ci` #192 GREEN, `research-lab-ci` #976 GREEN); matrix refresh `f6fef62f…` |
-| 2100 | Add and regression-test an explicit fail-closed PAPER gate for qualifying broker execution checkpoint/restart evidence; repository fixtures/CI alone cannot satisfy broker-facing evidence and the independent user STOP-gate remains required. | readiness `60689803…`, tests `ab26bf02…`, matrix `8fd42c1b…`, matrix tests `9de8897b…`, acceptance contract `de1d06a0…` (exact-head CI: `dax-bot-1x-ci` #199 GREEN, `research-lab-ci` #983 GREEN) |
-| 2101 | Perform a LEAN ownership audit of remaining broker-neutral PAPER software; freeze the no-overbuild boundary because lifecycle, checkpoint, reconciliation, protection, telemetry and readiness already have owners, and enforce that all `broker_*.py` pre-authorization owners remain submission-free. | audit `b239985a…`, boundary test `9670c1a5…` (exact-head CI: `dax-bot-1x-ci` #202 GREEN, `research-lab-ci` #986 GREEN) |
-| 2102 | Audit CAND-001-specific economic evidence and prove the boundary: no historical/OOS/WF CAND-001 result artifacts currently exist; REF-V11.2/V12 metrics cannot be borrowed; define the minimum deterministic descriptive historical replay harness before any OOS/edge claim. | audit `b220999c…`, boundary tests `c63d30a4…`, knowledge index `7585410a…` (exact-head CI: `dax-bot-1x-ci` #206 GREEN, `research-lab-ci` #990 GREEN) |
-| 2103 | Implement and regression-test the deterministic CAND-001 historical descriptive replay harness; reuse canonical SHADOW strategy/lifecycle/outcome semantics and bind it directly to the audited recovered-M5 loader/session owner with fail-closed dataset-fingerprint verification. | replay `a3ce4e25…`; replay tests `c3d5b6b6…`; audited session owner `308a73d7…`; recovered-M5 bridge `dd7e831e…`; end-to-end tests `7c38b964…` (exact-head CI: `dax-bot-1x-ci` #212 GREEN, `research-lab-ci` #996 GREEN) |
-| 2104 | Define and regression-test the frozen CAND-001 OOS/WF evaluation contract: reuse deterministic 45/20/20 scheduling, prohibit train-time selection/tuning, bind normal/1.5x/2x cost hooks, and create deterministic contract/window/result identities without claiming profitability. | contract `e8cf48b0…`; identity hardening `7a89c21d…`; regression tests `64f0c9ff…`; knowledge index `aa189390…`; Ruff fix `bf9d1d54…` (exact code/test-head CI: `dax-bot-1x-ci` #218 GREEN, `research-lab-ci` #1002 GREEN) |
-| 2105 | Implement and regression-test the deterministic CAND-001 historical OOS/WF measurement runner over the audited recovered-M5 Berlin-session dataset; evaluate OOS slices only, reuse frozen SHADOW replay/fill/outcome semantics, and emit deterministic normal/1.5x/2x per-window evidence with no train-time tuning or profitability claim. | runner `f2fb5caa…`; tests `8c687b52…`; Ruff fix `2f7da184…` (exact-head CI: `dax-bot-1x-ci` #223 GREEN, `research-lab-ci` #1007 GREEN) |
-| 2106 | Implement and regression-test deterministic aggregation over Step-2105 OOS evidence: per-cost totals/window signs/medians/worst-window risk/open-end counts, explicit adjacent cost degradation and fail-closed aggregate-PF reconstruction; bind summaries to full source payload plus every window-result fingerprint. | aggregation `9433e499…`; tests `31acfb2d…`; adjacent-cost fix `3abc1e53…`; test-boundary fix `5be2214b…`; count fix `b38886cb…`; provenance-schema fix `54f22cad…` (exact-head CI: `dax-bot-1x-ci` #230 GREEN, `research-lab-ci` #1014 GREEN) |
-| 2107 | Add a deterministic immutable machine-readable OOS evidence export/CLI: audited dataset fingerprint is mandatory, measurement/aggregation payloads and manifest are cross-bound, output is exactly three JSON artifacts, existing targets are refused and manifest is written last. | export `0d105920…`; CLI `f15b3e23…`; regression tests `845e4060…` (exact-head CI: `dax-bot-1x-ci` #234 GREEN, `research-lab-ci` #1018 GREEN) |
-| 2108 | Add and regression-test a strict round-trip verifier for exported OOS evidence: require the exact three-file layout, reject unknown/missing fields, reconstruct typed Step-2105/2106 objects, recompute full payload/manifest lineage and reject metric/manifest/safety tampering. | reader `f951b5f1…`; attack/round-trip tests `45f8ba5c…` (exact-head CI: `dax-bot-1x-ci` #237 GREEN, `research-lab-ci` #1021 GREEN) |
-| 2109 | Add and regression-test a deterministic cost-stress evidence-integrity audit: verify path/count/Gross-R invariance, exact `net_r = gross_r - cost_r`, linear cost scaling and monotone adverse cost effects across normal/1.5x/2x; explicitly exclude the cost-dependent trade-record fingerprint from false equality checks. | audit `681f1306…`; regression tests `3fd127e4…` (exact-head CI: `dax-bot-1x-ci` #240 GREEN, `research-lab-ci` #1024 GREEN) |
-| 2110 | Implement and regression-test descriptive temporal OOS stability diagnostics after canonical PASS cost-consistency evidence: per-cost mean/median window net-R, sign/flat rates, zero-trade windows, activity, longest sign streaks, cumulative max drawdown, first-vs-second-half net-R/activity and full source fingerprints; no score/threshold/promotion and PBO/DSR explicitly not applied to this single frozen-candidate/no-new-selection surface. | implementation present before `4b9bb341…`; regression tests `4b9bb341…` (exact-head CI: `dax-bot-1x-ci` #243 GREEN, `research-lab-ci` #1027 GREEN) |
-| 2111 | Add and regression-test a separate deterministic machine-readable OOS diagnostic artifact bound to the canonical measurement/aggregation evidence, unchanged Step-2107 base-manifest fingerprint, PASS Step-2109 cost-consistency audit and Step-2110 temporal-stability diagnostics; enforce immutable standalone write, no score/threshold/promotion and `NONE/false`. | implementation `e80ac46c…`; tests `999d4995…` (exact-head CI: `dax-bot-1x-ci` #246 GREEN, `research-lab-ci` #1030 GREEN) |
-| 2112 | Add and regression-test a strict standalone diagnostic reader/verifier: exact filename/schema/field set, canonical recomputation of Step-2109/2110/2111 lineage, attack tests for field/metric/fingerprint/safety tampering, and canonical JSON normalization for tuple→array round-trip. | reader `89cd4ea6…`; tests `7f66ba75…`; JSON-normalization fix `3bf23550…` (exact-head CI: `dax-bot-1x-ci` #250 GREEN, `research-lab-ci` #1034 GREEN) |
+| 2081 | Complete research-only BASE/BOOST/HIGH risk-profile sizing bridge and bind result currency. | `f0c06bc2…`, `525b8770…`, `5640a1a6…` |
+| 2089 | Split PAPER execution readiness into broker lifecycle, reconciliation and protection evidence gates. | `80119bed…`, `199e6bf0…` |
+| 2090 | Add canonical whole-number work-step ledger and resume navigation. | `72ec9641…`, `7fabecf8…`, `3b1b0bc8…`, `02aa4892…` |
+| 2091–2101 | Build and harden broker-neutral PAPER-readiness evidence owners, restart-safe lifecycle/checkpoint/telemetry, fail-closed readiness, and LEAN no-overbuild boundary. | See Git history and `docs/PAPER_READINESS_GAP_MATRIX_V1.md` |
+| 2102 | Audit CAND-001-specific economic evidence boundary; REF-V11.2/V12 metrics cannot be borrowed. | `b220999c…`, `c63d30a4…`, `7585410a…` |
+| 2103 | Implement deterministic historical CAND-001 descriptive replay over audited recovered M5 data. | `a3ce4e25…`, `c3d5b6b6…`, `308a73d7…`, `dd7e831e…`, `7c38b964…` |
+| 2104 | Freeze CAND-001 OOS/WF contract: 45/20/20, no train-time tuning, normal/1.5x/2x costs. | `e8cf48b0…`, `7a89c21d…`, `64f0c9ff…`, `bf9d1d54…` |
+| 2105 | Implement deterministic historical OOS/WF measurement runner. | `f2fb5caa…`, `8c687b52…`, `2f7da184…` |
+| 2106 | Implement deterministic OOS aggregation and cost degradation summaries. | `9433e499…`, `31acfb2d…`, `3abc1e53…`, `5be2214b…`, `b38886cb…`, `54f22cad…` |
+| 2107 | Add immutable three-file OOS evidence export/CLI. | `0d105920…`, `f15b3e23…`, `845e4060…` |
+| 2108 | Add strict round-trip verifier for exported OOS evidence. | `f951b5f1…`, `45f8ba5c…` |
+| 2109 | Add cost-stress evidence-integrity audit. | `681f1306…`, `3fd127e4…`; CI #240/#1024 GREEN |
+| 2110 | Add descriptive temporal OOS stability diagnostics; no score/threshold/promotion. | `4b9bb341…`; CI #243/#1027 GREEN |
+| 2111 | Add standalone deterministic `diagnostics.json` evidence artifact bound to canonical OOS evidence. | `e80ac46c…`, `999d4995…`; CI #246/#1030 GREEN |
+| 2112 | Add strict diagnostic reader/verifier; fix tuple→JSON-array canonical identity handling. | `89cd4ea6…`, `7f66ba75…`, `3bf23550…`; CI #250/#1034 GREEN |
+| 2113 | Add post-processing-only diagnostic CLI; base OOS evidence remains byte-identical and immutable. | `11a9fec6…`, `f5fcf2ea…`; CI #253/#1037 GREEN |
+| 2114 | LEAN/data-lane audit: no extra receipt layer needed; existing OOS verification chain is sufficient. Historical source located in Google Drive at `DAX_V14_RECOVERED_CACHE_V13/m5_daily`; daily CSVs are present through 2019-12-31. Remaining issue is materialization/execution environment, not data existence. | Drive folder IDs `12aNhN7dNWZ9j9YqqaiOdcOsCm-cqhzUN` / `1p5-s3ccsBbohbephB7UIhUE_OL1M4b-y`; no code change |
 
 ## Numbering rules
 
@@ -60,10 +45,10 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 3. A different independent deliverable consumes the next integer even if the previous step's CI is still running.
 4. Decimal suffixes, letter suffixes and nested official step IDs are forbidden.
 5. A lane marked `WAITING_EXTERNAL` does not consume repeated placeholder steps and does not block independent work.
-6. Before reporting a new official step number after resume, read this file after `SESSION_EXECUTION_REFRESHER.md` and repo/head pinning.
+6. Before reporting a new official step number after resume, read `docs/SESSION_EXECUTION_REFRESHER.md`, pin repo/branch/head, then read this file.
 7. At completion of an official step, update this pointer before or as part of starting the next independent step.
 8. This numbering ledger never authorizes PAPER/LIVE, changes VERIFIED evidence, or overrides safety/product contracts.
 
 ## Current work
 
-**Step 2113:** add and regression-test a separate diagnostic CLI that consumes only an already verified Step-2107 OOS evidence directory through the strict Step-2108 reader, recomputes canonical Step-2109 cost consistency and Step-2110 stability, and writes exactly one immutable standalone `diagnostics.json` artifact through the Step-2111 writer. It must not rerun historical measurement, modify the three-file base directory, introduce thresholds/promotion, or enable execution.
+**Step 2115:** create the new canonical handover/masterstand for the next chat. It must capture exact repository/PR/CI truth, immutable REF-V11.2 evidence, DAX-BOT 1.x/CAND-001 architecture, Steps 2102–2114 economic-evidence progress, Drive historical-data location, current safety/authorization boundaries, the continuous-work/resume contract, unresolved external lanes, and the exact next executable work unit. Then update project navigation and verify CI.
