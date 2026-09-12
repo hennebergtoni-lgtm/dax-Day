@@ -1,6 +1,13 @@
 """Canonical broker- and storage-neutral domain contracts for DAX-BOT NextGen."""
 
 from daxlab.domain.execution import ExecutionIntent, OrderSide
+from daxlab.domain.loss_admission import (
+    LossExposureAdmissionAction,
+    LossExposureAdmissionDecision,
+    LossExposureObservation,
+    LossExposurePolicy,
+    evaluate_loss_exposure_admission,
+)
 from daxlab.domain.market import Candle, DataQualityState, InstrumentId
 from daxlab.domain.risk import (
     InstrumentRiskInputs,
@@ -28,6 +35,10 @@ __all__ = [
     "FixedCashRiskPolicy",
     "InstrumentId",
     "InstrumentRiskInputs",
+    "LossExposureAdmissionAction",
+    "LossExposureAdmissionDecision",
+    "LossExposureObservation",
+    "LossExposurePolicy",
     "OrderSide",
     "RiskDecision",
     "RiskDecisionAction",
@@ -39,4 +50,5 @@ __all__ = [
     "build_execution_intent_from_risk",
     "build_risk_request_from_policy",
     "evaluate_fixed_cash_risk",
+    "evaluate_loss_exposure_admission",
 ]
