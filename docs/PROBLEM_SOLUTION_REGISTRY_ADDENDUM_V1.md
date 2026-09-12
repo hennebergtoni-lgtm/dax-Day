@@ -72,3 +72,20 @@ This addendum continues the canonical PSR numbering without rewriting the large 
 **Proof/evidence:** Step 2118 repository/backlog reconciliation; Step 2119 update/readback of `docs/SHADOW_PAPER_ACCEPTANCE_V1.md`; current Masterstand, `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_STATUS.md`, `docs/DAX_BOT_1_0_CLOSEOUT_FINAL.md`, `docs/CAND001_WINDOWS_SHADOW_DEPLOYMENT_RUNBOOK_V1.md`, and `docs/CURRENT_WORK_STEP.md`.
 
 **Reuse rule:** During every resume/audit that touches stage or authorization claims, separate stable gate definitions from mutable current-state prose. Reconcile mutable stage claims against the current Masterstand/acceptance status and fresh runtime evidence. A stale document may neither downgrade nor upgrade actual execution authorization; only the canonical current authorization/evidence chain may do that.
+
+---
+
+## PSR-018 — Technical progress, visible step state and pointer/CI truth can drift apart
+
+**Status:** BINDING PROCESS FIX / REGRESSION-GUARDED
+**Component:** workflow integrity / step ledger / user-visible progress
+
+**Problem:** Several work units advanced technically while the visible step narrative and `CURRENT_WORK_STEP.md` lagged behind. Tool/interface activity was shown without sufficient normal-text progress reports, older lane wording conflicted with monotonic numbering, and turn-ending language could imply that work continued after the active model turn had actually ended. The result was that the user could no longer reliably tell which step was active, which work was finished, which CI was still red, and whether the project was genuinely progressing.
+
+**Root cause:** The workflow had strong continuity rules but no single explicit Step-Close-Gate tying together: (1) active pointer, (2) step terminal/paused state, (3) exact-head CI/evidence, (4) visible normal-text reporting, (5) interrupted-lane carry-forward, and (6) truthful limits on work after a final response. A conflicting older `Fortsetzung Schritt N` rule also allowed apparent numbering rollback.
+
+**Accepted solution:** Introduce `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md` as the binding owner. Before a new independent step starts, the current step must be explicitly `COMPLETED`, `INTERRUPTED`, `WAITING_EXTERNAL` or `BLOCKED`, with evidence and pointer synchronized. `CURRENT_WORK_STEP.md` must point to the new step before its first substantive action. Old lanes resume only under the next unused higher integer with provenance wording. Explicit user workflow intervention first freezes the current step truth, then consumes the next integer for governance/review. Tool UI does not count as the required normal-text Zwischenstand. A final response ends the active work turn; no invisible continuation may be claimed.
+
+**Proof/evidence:** User-directed general check on 2026-09-12; Step 2131 correctly left incomplete after `research-lab-ci #1089` failed while `dax-bot-1x-ci #305` was green; Step 2132 pointer synchronization; `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`; reconciled `docs/DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md`; hardened `docs/SESSION_EXECUTION_REFRESHER.md`; workflow-integrity regression tests added in Step 2132.
+
+**Reuse rule:** At every resume and before every step transition ask four concrete questions: `Does the pointer name the actual active step?`, `Is the previous step explicitly closed/paused with evidence?`, `Is required CI checked on the exact current head?`, and `Will the user see a normal-text Zwischenstand before another meaningful tool chain?` If any answer is no, fix workflow state before advancing technical scope.
