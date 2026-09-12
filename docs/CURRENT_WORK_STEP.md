@@ -28,6 +28,7 @@ The exact prior full ledger has been preserved without rewriting at:
 - archived blob SHA: `4d96586f85cf32f2e726080cf728837ea6dd20ef`
 - archive state: full historical pointer through Step 2154 while 2154 was still marked `IN PROGRESS`.
 - reconstruction anchor `199e6bf073da1a717839b37e70a314f203e9ffa4` remains the canonical reconstruction anchor; detailed reconstructed history is preserved in the archive.
+- reconstructed Steps **2081** through **2089** remain preserved in that archive and are intentionally not duplicated into the compact active ledger.
 
 ## Recent verified sequence
 
