@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2168**
-- Active whole-number step: **2169**
-- Next step after successful completion: **2170**
-- Active Step 2169 scope: **Implement the minimal broker-neutral canonical session-admission owner approved by the Step-2168 audit: explicit positive `max_trades_per_session` policy, explicit caller-supplied `session_key` plus non-negative `trades_admitted` observation, deterministic ALLOW/BLOCK decision and fingerprints. Do not derive timezone/date/session boundaries, inherit CAND-001's numeric default, mutate CAND-001 behavior, or add broker submission/PAPER/LIVE authorization.**
+- Last completed whole-number step: **2169**
+- Active whole-number step: **2170**
+- Next step after successful completion: **2171**
+- Active Step 2170 scope: **Bind the Step-2169 canonical SessionAdmissionPolicy/Observation/Decision into the existing typed NextGen execution-protection path, replacing the coarse typed-path `session_admission_allowed` evidence with exact canonical re-evaluation and fingerprints while preserving the generic compatibility interface. Do not add session-key derivation/reset logic, mutate CAND-001 behavior, or add broker submission/PAPER/LIVE authorization.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -34,34 +34,36 @@ The exact prior full ledger has been preserved without rewriting at:
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
-| 2162 | Canonical single fixed-cash risk policy. | **COMPLETED.** Final tested head `e72a1fc8000f5966048f1cfe3cac654a43368099`; CI #455/#1239 GREEN. |
 | 2163 | Canonical loss/exposure admission policy. | **COMPLETED.** Final tested head `dcf0e1b632373ef6255e54d4c6c8e219c81e4fbb`; CI #461/#1245 GREEN. |
 | 2164 | Admission-bound Risk→ExecutionIntent bridge. | **COMPLETED.** Final tested head `7476959b7c429825fe8770f95ec47962af64621c`; CI #466/#1250 GREEN. |
 | 2165 | Canonical risk/admission evidence in broker execution protection. | **COMPLETED.** Final tested head `38bc6ee83c37a4f8dc891951e4e8b1932baf34e1`; CI #472/#1256 GREEN. |
 | 2166 | Restart-safe canonical Loss/Exposure observation persistence. | **COMPLETED.** Final tested head `482635101f87224517fd95f4ad4c0e1e76a8f952`; CI #478/#1262 GREEN. |
 | 2167 | Loss/Exposure observation freshness in NextGen protection. | **COMPLETED.** Final tested head `9989b8235411f8da95cb275ef3c2dad9f61040e5`; CI #482/#1266 GREEN. |
-| 2168 | Canonical session-admission promotion audit. | **COMPLETED.** Classified `ADAPT_CANONICALLY`: only explicit `session_key`, `trades_admitted` and configured `max_trades_per_session` are promotion-safe; timezone/date/reset production and CAND-001 numeric defaults remain candidate/environment-specific. Final tested head `aea72758412b2c06ae7d211a4cc048b5e92a0eb1`; `dax-bot-1x-ci` #485 GREEN and `research-lab-ci` #1269 GREEN. |
-| 2169 | Canonical broker-neutral session-admission owner. | **IN PROGRESS.** Implement only the audit-approved explicit policy/observation/decision semantics. |
+| 2168 | Canonical session-admission promotion audit. | **COMPLETED.** Final tested head `aea72758412b2c06ae7d211a4cc048b5e92a0eb1`; CI #485/#1269 GREEN. |
+| 2169 | Canonical broker-neutral session-admission owner. | **COMPLETED.** Added explicit SessionAdmissionPolicy/Observation/Decision with deterministic fingerprints and equality-at-limit blocking; no timezone/date/reset derivation or CAND-001 default promotion. Final tested head `a905c76994f3d23d40227543f6417dc5f9cd14ca`; `dax-bot-1x-ci` #490 GREEN and `research-lab-ci` #1274 GREEN. |
+| 2170 | Canonical session evidence in typed NextGen protection. | **IN PROGRESS.** Reuse the existing protection owner; exact canonical session evidence replaces the typed-path coarse boolean while generic compatibility remains. |
 
-## Step 2168 closeout truth
+## Step 2169 closeout truth
 
-Step 2168 audited the remaining coarse `session_admission_allowed` evidence and existing CAND-001 session admission. CAND-001 derives `session_date` using its fixed `Europe/Berlin` selection and persists that state; those derivation/reset semantics are not generic. The audit authorizes only a broker-neutral canonical owner that consumes an already-derived session key and admitted count, with an explicit configured limit and deterministic identity. Implementation is separated into Step 2169.
+Step 2169 adds a minimal canonical broker-neutral session-admission owner. Policy owns only an explicit positive integer trade limit; observation owns only caller-supplied normalized session key and admitted count; evaluation ALLOWs below the limit and BLOCKs at equality or above. The owner contains no timezone/date/session-boundary/reset logic and does not inherit CAND-001's numeric default.
 
-## Step 2169 active work
+## Step 2170 active work
 
-**Step 2169 — IN PROGRESS:** implement the minimal canonical session-admission contract.
+**Step 2170 — IN PROGRESS:** bind canonical session-admission evidence into typed NextGen protection.
 
 Required properties:
 
-1. `SessionAdmissionPolicy` owns only a positive integer `max_trades_per_session` plus deterministic fingerprint;
-2. `SessionAdmissionObservation` owns only normalized non-empty `session_key` and non-negative integer `trades_admitted` plus deterministic fingerprint;
-3. evaluation returns deterministic ALLOW when below the configured limit and BLOCK when equal to or above it;
-4. policy/observation/decision identities are deterministic and tamper-evident;
-5. no default `Europe/Berlin`, timestamp-to-session conversion, market calendar, session start/end or reset logic;
-6. no default value inherited from CAND-001's `max_trades_per_session = 1`;
-7. no CAND-001 strategy behavior/state mutation;
-8. no broker/account API, MT5 order API, broker submission or PAPER/LIVE authorization;
-9. software existence does not set readiness verification booleans true.
+1. reuse `broker_execution_protection.py`; no parallel protection service;
+2. typed NextGen protection receives SessionAdmissionPolicy, SessionAdmissionObservation and SessionAdmissionDecision;
+3. supplied decision must equal canonical re-evaluation exactly;
+4. session policy/observation/decision fingerprints are bound into protection provenance;
+5. BLOCK maps to explicit protection blocking evidence;
+6. tampered/mismatched session evidence fails closed;
+7. generic `evaluate_execution_protection()` may retain compatibility boolean for existing non-typed consumers;
+8. no timezone/session-key/reset derivation is added to protection;
+9. no CAND-001 behavior mutation;
+10. no broker submission, MT5 order API or PAPER/LIVE authorization;
+11. readiness booleans remain separately evidenced and unchanged.
 
 ## Binding numbering and handoff rules
 
