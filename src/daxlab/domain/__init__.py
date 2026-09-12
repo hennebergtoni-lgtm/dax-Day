@@ -10,6 +10,10 @@ from daxlab.domain.risk import (
     evaluate_fixed_cash_risk,
 )
 from daxlab.domain.risk_execution import build_execution_intent_from_risk
+from daxlab.domain.risk_policy import (
+    FixedCashRiskPolicy,
+    build_risk_request_from_policy,
+)
 from daxlab.domain.strategy import (
     StrategyAction,
     StrategyDecision,
@@ -21,6 +25,7 @@ __all__ = [
     "Candle",
     "DataQualityState",
     "ExecutionIntent",
+    "FixedCashRiskPolicy",
     "InstrumentId",
     "InstrumentRiskInputs",
     "OrderSide",
@@ -32,5 +37,6 @@ __all__ = [
     "TradeDirection",
     "TradePlan",
     "build_execution_intent_from_risk",
+    "build_risk_request_from_policy",
     "evaluate_fixed_cash_risk",
 ]
