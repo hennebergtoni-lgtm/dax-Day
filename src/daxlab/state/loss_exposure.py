@@ -62,22 +62,19 @@ def build_loss_exposure_observation_checkpoint(
     _require_sha256(policy_fingerprint, "policy_fingerprint")
     _require_aware(observed_at, "observed_at")
     observed_at_utc = observed_at.astimezone(timezone.utc)
-    values = {
-        "schema_version": LOSS_EXPOSURE_OBSERVATION_CHECKPOINT_SCHEMA,
-        "policy_fingerprint": policy_fingerprint,
-        "observation": observation,
-        "observed_at": observed_at_utc,
-        "execution_capability": "NONE",
-        "order_execution_enabled": False,
-    }
-    provisional = LossExposureObservationCheckpoint(
-        **values,
-        checkpoint_fingerprint="0" * 64,
+    identity = _identity_values(
+        schema_version=LOSS_EXPOSURE_OBSERVATION_CHECKPOINT_SCHEMA,
+        policy_fingerprint=policy_fingerprint,
+        observation=observation,
+        observed_at=observed_at_utc,
+        execution_capability="NONE",
+        order_execution_enabled=False,
     )
-    fingerprint = _fingerprint(_identity_payload(provisional))
     return LossExposureObservationCheckpoint(
-        **values,
-        checkpoint_fingerprint=fingerprint,
+        policy_fingerprint=policy_fingerprint,
+        observation=observation,
+        observed_at=observed_at_utc,
+        checkpoint_fingerprint=_fingerprint(identity),
     )
 
 
@@ -197,10 +194,28 @@ def assert_loss_exposure_checkpoint_compatible(
 def _identity_payload(
     checkpoint: LossExposureObservationCheckpoint,
 ) -> dict[str, object]:
-    observation = checkpoint.observation
+    return _identity_values(
+        schema_version=checkpoint.schema_version,
+        policy_fingerprint=checkpoint.policy_fingerprint,
+        observation=checkpoint.observation,
+        observed_at=checkpoint.observed_at,
+        execution_capability=checkpoint.execution_capability,
+        order_execution_enabled=checkpoint.order_execution_enabled,
+    )
+
+
+def _identity_values(
+    *,
+    schema_version: str,
+    policy_fingerprint: str,
+    observation: LossExposureObservation,
+    observed_at: datetime,
+    execution_capability: str,
+    order_execution_enabled: bool,
+) -> dict[str, object]:
     return {
-        "schema_version": checkpoint.schema_version,
-        "policy_fingerprint": checkpoint.policy_fingerprint,
+        "schema_version": schema_version,
+        "policy_fingerprint": policy_fingerprint,
         "observation": {
             "schema_version": observation.schema_version,
             "currency": observation.currency,
@@ -210,9 +225,9 @@ def _identity_payload(
             "open_positions": observation.open_positions,
             "observation_fingerprint": observation.observation_fingerprint,
         },
-        "observed_at_utc": checkpoint.observed_at.astimezone(timezone.utc).isoformat(),
-        "execution_capability": checkpoint.execution_capability,
-        "order_execution_enabled": checkpoint.order_execution_enabled,
+        "observed_at_utc": observed_at.astimezone(timezone.utc).isoformat(),
+        "execution_capability": execution_capability,
+        "order_execution_enabled": order_execution_enabled,
     }
 
 
