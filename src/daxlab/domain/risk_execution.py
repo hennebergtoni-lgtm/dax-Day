@@ -1,9 +1,9 @@
-"""Canonical bridge from approved pre-trade risk to broker-neutral execution intent.
+"""Canonical bridge from approved pre-trade risk/admission to product execution intent.
 
 The bridge preserves StrategyDecision identity as ExecutionIntent.decision_id and
-binds the complete Risk V1 approval chain into provenance_fingerprint. It creates
-product intent only; it has no broker adapter, submission API, PAPER or LIVE
-capability.
+binds the complete Risk V1 + loss/exposure admission chain into provenance. It
+creates product intent only; it has no broker adapter, submission API, PAPER or
+LIVE capability.
 """
 
 from __future__ import annotations
@@ -13,6 +13,12 @@ from hashlib import sha256
 import json
 
 from daxlab.domain.execution import ExecutionIntent, OrderSide
+from daxlab.domain.loss_admission import (
+    LossExposureAdmissionDecision,
+    LossExposureObservation,
+    LossExposurePolicy,
+    evaluate_loss_exposure_admission,
+)
 from daxlab.domain.risk import (
     RiskDecision,
     RiskDecisionAction,
@@ -22,16 +28,19 @@ from daxlab.domain.risk import (
 from daxlab.domain.strategy import TradeDirection
 
 
-_PROVENANCE_SCHEMA = "DAXLAB_RISK_TO_EXECUTION_PROVENANCE_V1"
+_PROVENANCE_SCHEMA = "DAXLAB_RISK_ADMISSION_TO_EXECUTION_PROVENANCE_V1"
 
 
 def build_execution_intent_from_risk(
     *,
     request: RiskRequest,
     decision: RiskDecision,
+    admission_policy: LossExposurePolicy,
+    admission_observation: LossExposureObservation,
+    admission_decision: LossExposureAdmissionDecision,
     created_at: datetime,
 ) -> ExecutionIntent:
-    """Build deterministic intent only from the exact canonical ALLOW decision."""
+    """Build deterministic intent only from exact canonical ALLOW decisions."""
 
     canonical_request = RiskRequest.build(
         strategy_decision_id=request.strategy_decision_id,
@@ -49,6 +58,15 @@ def build_execution_intent_from_risk(
     if decision.action is not RiskDecisionAction.ALLOW or decision.quantity is None:
         raise ValueError("ExecutionIntent requires an ALLOW risk decision with quantity")
 
+    expected_admission = evaluate_loss_exposure_admission(
+        policy=admission_policy,
+        observation=admission_observation,
+    )
+    if expected_admission != admission_decision:
+        raise ValueError("admission decision does not match canonical admission evaluation")
+    if not admission_decision.allowed:
+        raise ValueError("ExecutionIntent requires an ALLOW loss/exposure admission decision")
+
     plan = canonical_request.trade_plan
     if plan.direction is TradeDirection.LONG:
         side = OrderSide.BUY
@@ -63,6 +81,11 @@ def build_execution_intent_from_risk(
             "strategy_decision_id": canonical_request.strategy_decision_id,
             "risk_request_id": canonical_request.request_id,
             "risk_decision_id": decision.decision_id,
+            "admission_policy_fingerprint": admission_policy.policy_fingerprint,
+            "admission_observation_fingerprint": (
+                admission_observation.observation_fingerprint
+            ),
+            "admission_decision_fingerprint": admission_decision.decision_fingerprint,
         }
     )
 
