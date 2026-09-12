@@ -3,6 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from daxlab.domain.loss_admission import (
+    LossExposureObservation,
+    LossExposurePolicy,
+    evaluate_loss_exposure_admission,
+)
 from daxlab.domain.market import InstrumentId
 from daxlab.domain.risk import InstrumentRiskInputs, RiskRequest, evaluate_fixed_cash_risk
 from daxlab.domain.risk_execution import build_execution_intent_from_risk
@@ -47,9 +52,30 @@ def _canonical_chain():
         ),
     )
     decision = evaluate_fixed_cash_risk(request)
+    admission_policy = LossExposurePolicy.build(
+        currency="EUR",
+        daily_drawdown_cap_cash=100.0,
+        weekly_drawdown_cap_cash=250.0,
+        max_consecutive_losses=3,
+        max_open_positions=1,
+    )
+    admission_observation = LossExposureObservation.build(
+        currency="EUR",
+        daily_drawdown_cash=10.0,
+        weekly_drawdown_cash=20.0,
+        consecutive_losses=0,
+        open_positions=0,
+    )
+    admission_decision = evaluate_loss_exposure_admission(
+        policy=admission_policy,
+        observation=admission_observation,
+    )
     intent = build_execution_intent_from_risk(
         request=request,
         decision=decision,
+        admission_policy=admission_policy,
+        admission_observation=admission_observation,
+        admission_decision=admission_decision,
         created_at=T0,
     )
     return request, decision, intent
