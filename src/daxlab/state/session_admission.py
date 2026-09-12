@@ -1,8 +1,8 @@
-"""Restart-safe persistence for explicit canonical session-admission observations.
+"""Restart-safe persistence for explicit canonical session-admission state.
 
-This module persists caller-supplied session evidence only. It does not derive
-session keys, timezones, calendars or reset transitions. Storage mechanics remain
-owned by ``StateStorePort`` implementations.
+This module persists caller-supplied session evidence and exact consumption
+identity only. It does not derive session keys, timezones, calendars or reset
+transitions. Storage mechanics remain owned by ``StateStorePort`` implementations.
 """
 
 from __future__ import annotations
@@ -14,11 +14,18 @@ import json
 from typing import Any, Mapping
 
 from daxlab.domain.ports import StateStorePort
-from daxlab.domain.session_admission import SessionAdmissionObservation
+from daxlab.domain.session_admission import (
+    SessionAdmissionConsumptionRecord,
+    SessionAdmissionConsumptionState,
+    SessionAdmissionObservation,
+)
 
 
 SESSION_ADMISSION_OBSERVATION_CHECKPOINT_SCHEMA = (
     "DAXLAB_SESSION_ADMISSION_OBSERVATION_CHECKPOINT_V1"
+)
+SESSION_ADMISSION_CONSUMPTION_STATE_CHECKPOINT_SCHEMA = (
+    "DAXLAB_SESSION_ADMISSION_CONSUMPTION_STATE_CHECKPOINT_V1"
 )
 
 
@@ -53,6 +60,31 @@ class SessionAdmissionObservationCheckpoint:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class SessionAdmissionConsumptionStateCheckpoint:
+    state: SessionAdmissionConsumptionState
+    checkpoint_fingerprint: str
+    schema_version: str = SESSION_ADMISSION_CONSUMPTION_STATE_CHECKPOINT_SCHEMA
+    execution_capability: str = "NONE"
+    order_execution_enabled: bool = False
+
+    def __post_init__(self) -> None:
+        if self.schema_version != SESSION_ADMISSION_CONSUMPTION_STATE_CHECKPOINT_SCHEMA:
+            raise ValueError("session admission consumption checkpoint schema mismatch")
+        _require_sha256(self.checkpoint_fingerprint, "checkpoint_fingerprint")
+        if self.execution_capability != "NONE" or self.order_execution_enabled:
+            raise ValueError("session admission consumption checkpoint cannot authorize execution")
+        if self.checkpoint_fingerprint != _fingerprint(
+            _consumption_checkpoint_identity_payload(self)
+        ):
+            raise ValueError("session admission consumption checkpoint fingerprint mismatch")
+
+    def to_dict(self) -> dict[str, object]:
+        return _consumption_checkpoint_identity_payload(self) | {
+            "checkpoint_fingerprint": self.checkpoint_fingerprint,
+        }
+
+
 def build_session_admission_observation_checkpoint(
     *,
     policy_fingerprint: str,
@@ -75,29 +107,27 @@ def build_session_admission_observation_checkpoint(
     )
 
 
+def build_session_admission_consumption_state_checkpoint(
+    *,
+    state: SessionAdmissionConsumptionState,
+) -> SessionAdmissionConsumptionStateCheckpoint:
+    identity = _consumption_checkpoint_values_payload(state=state)
+    return SessionAdmissionConsumptionStateCheckpoint(
+        state=state,
+        checkpoint_fingerprint=_fingerprint(identity),
+    )
+
+
 def session_admission_checkpoint_to_bytes(
     checkpoint: SessionAdmissionObservationCheckpoint,
 ) -> bytes:
-    text = json.dumps(
-        checkpoint.to_dict(),
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-    )
-    return (text + "\n").encode("utf-8")
+    return _canonical_bytes(checkpoint.to_dict())
 
 
 def session_admission_checkpoint_from_bytes(
     payload: bytes,
 ) -> SessionAdmissionObservationCheckpoint:
-    if not isinstance(payload, bytes):
-        raise TypeError("session admission checkpoint payload must be bytes")
-    try:
-        decoded = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError("session admission checkpoint must be valid UTF-8 JSON") from exc
-    if not isinstance(decoded, dict):
-        raise ValueError("session admission checkpoint must be a JSON object")
+    decoded = _decode_json_object(payload, "session admission checkpoint")
 
     expected_keys = {
         "schema_version",
@@ -149,6 +179,83 @@ def session_admission_checkpoint_from_bytes(
     )
 
 
+def session_admission_consumption_state_checkpoint_to_bytes(
+    checkpoint: SessionAdmissionConsumptionStateCheckpoint,
+) -> bytes:
+    return _canonical_bytes(checkpoint.to_dict())
+
+
+def session_admission_consumption_state_checkpoint_from_bytes(
+    payload: bytes,
+) -> SessionAdmissionConsumptionStateCheckpoint:
+    decoded = _decode_json_object(
+        payload,
+        "session admission consumption checkpoint",
+    )
+    expected_keys = {
+        "schema_version",
+        "state",
+        "execution_capability",
+        "order_execution_enabled",
+        "checkpoint_fingerprint",
+    }
+    if set(decoded) != expected_keys:
+        raise ValueError("session admission consumption checkpoint field set mismatch")
+
+    raw_state = decoded["state"]
+    if not isinstance(raw_state, dict):
+        raise ValueError("session admission consumption state must be object")
+    state_keys = {
+        "schema_version",
+        "session_key",
+        "records",
+        "state_fingerprint",
+    }
+    if set(raw_state) != state_keys:
+        raise ValueError("session admission consumption state field set mismatch")
+
+    raw_records = raw_state["records"]
+    if not isinstance(raw_records, list):
+        raise ValueError("session admission consumption records must be list")
+    records: list[SessionAdmissionConsumptionRecord] = []
+    record_keys = {
+        "schema_version",
+        "consumption_id",
+        "admission_decision_fingerprint",
+        "record_fingerprint",
+    }
+    for raw_record in raw_records:
+        if not isinstance(raw_record, dict):
+            raise ValueError("session admission consumption record must be object")
+        if set(raw_record) != record_keys:
+            raise ValueError("session admission consumption record field set mismatch")
+        records.append(
+            SessionAdmissionConsumptionRecord(
+                consumption_id=_text(raw_record, "consumption_id"),
+                admission_decision_fingerprint=_text(
+                    raw_record,
+                    "admission_decision_fingerprint",
+                ),
+                record_fingerprint=_text(raw_record, "record_fingerprint"),
+                schema_version=_text(raw_record, "schema_version"),
+            )
+        )
+
+    state = SessionAdmissionConsumptionState(
+        session_key=_text(raw_state, "session_key"),
+        records=tuple(records),
+        state_fingerprint=_text(raw_state, "state_fingerprint"),
+        schema_version=_text(raw_state, "schema_version"),
+    )
+    return SessionAdmissionConsumptionStateCheckpoint(
+        state=state,
+        checkpoint_fingerprint=_text(decoded, "checkpoint_fingerprint"),
+        schema_version=_text(decoded, "schema_version"),
+        execution_capability=_text(decoded, "execution_capability"),
+        order_execution_enabled=_bool(decoded, "order_execution_enabled"),
+    )
+
+
 def save_session_admission_checkpoint(
     store: StateStorePort,
     key: str,
@@ -165,6 +272,27 @@ def load_session_admission_checkpoint(
     if payload is None:
         return None
     return session_admission_checkpoint_from_bytes(payload)
+
+
+def save_session_admission_consumption_state_checkpoint(
+    store: StateStorePort,
+    key: str,
+    checkpoint: SessionAdmissionConsumptionStateCheckpoint,
+) -> None:
+    store.save(
+        key,
+        session_admission_consumption_state_checkpoint_to_bytes(checkpoint),
+    )
+
+
+def load_session_admission_consumption_state_checkpoint(
+    store: StateStorePort,
+    key: str,
+) -> SessionAdmissionConsumptionStateCheckpoint | None:
+    payload = store.load(key)
+    if payload is None:
+        return None
+    return session_admission_consumption_state_checkpoint_from_bytes(payload)
 
 
 def assert_session_admission_checkpoint_compatible(
@@ -214,6 +342,69 @@ def _values_payload(
         "execution_capability": execution_capability,
         "order_execution_enabled": order_execution_enabled,
     }
+
+
+def _consumption_checkpoint_identity_payload(
+    checkpoint: SessionAdmissionConsumptionStateCheckpoint,
+) -> dict[str, object]:
+    return _consumption_checkpoint_values_payload(
+        state=checkpoint.state,
+        schema_version=checkpoint.schema_version,
+        execution_capability=checkpoint.execution_capability,
+        order_execution_enabled=checkpoint.order_execution_enabled,
+    )
+
+
+def _consumption_checkpoint_values_payload(
+    *,
+    state: SessionAdmissionConsumptionState,
+    schema_version: str = SESSION_ADMISSION_CONSUMPTION_STATE_CHECKPOINT_SCHEMA,
+    execution_capability: str = "NONE",
+    order_execution_enabled: bool = False,
+) -> dict[str, object]:
+    return {
+        "schema_version": schema_version,
+        "state": {
+            "schema_version": state.schema_version,
+            "session_key": state.session_key,
+            "records": [
+                {
+                    "schema_version": record.schema_version,
+                    "consumption_id": record.consumption_id,
+                    "admission_decision_fingerprint": (
+                        record.admission_decision_fingerprint
+                    ),
+                    "record_fingerprint": record.record_fingerprint,
+                }
+                for record in state.records
+            ],
+            "state_fingerprint": state.state_fingerprint,
+        },
+        "execution_capability": execution_capability,
+        "order_execution_enabled": order_execution_enabled,
+    }
+
+
+def _decode_json_object(payload: bytes, label: str) -> dict[str, Any]:
+    if not isinstance(payload, bytes):
+        raise TypeError(f"{label} payload must be bytes")
+    try:
+        decoded = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"{label} must be valid UTF-8 JSON") from exc
+    if not isinstance(decoded, dict):
+        raise ValueError(f"{label} must be a JSON object")
+    return decoded
+
+
+def _canonical_bytes(value: object) -> bytes:
+    text = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+    return (text + "\n").encode("utf-8")
 
 
 def _require_sha256(value: str, field_name: str) -> None:
