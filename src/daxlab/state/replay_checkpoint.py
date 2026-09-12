@@ -126,6 +126,8 @@ def build_product_checkpoint(
 
     if not isinstance(strategy_state, bytes):
         raise TypeError("strategy_state must be bytes")
+    if last_event_time is not None:
+        _require_aware(last_event_time, "last_event_time")
     values = dict(
         schema_version=CHECKPOINT_SCHEMA,
         engine_version=engine_version,
@@ -264,7 +266,11 @@ def assert_checkpoint_compatible(
     strategy_fingerprint: str,
     config_fingerprint: str,
     source_commit: str,
+    instrument_id: str,
+    timeframe: str,
+    total_event_count: int,
     input_fingerprint: str,
+    state_codec_id: str,
 ) -> None:
     """Fail closed before a caller trusts checkpoint state for deterministic resume."""
 
@@ -276,7 +282,11 @@ def assert_checkpoint_compatible(
         "strategy_fingerprint": strategy_fingerprint,
         "config_fingerprint": config_fingerprint,
         "source_commit": source_commit,
+        "instrument_id": instrument_id,
+        "timeframe": timeframe,
+        "total_event_count": total_event_count,
         "input_fingerprint": input_fingerprint,
+        "state_codec_id": state_codec_id,
     }
     for field_name, expected_value in expected.items():
         if getattr(checkpoint, field_name) != expected_value:
