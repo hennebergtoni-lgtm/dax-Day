@@ -13,7 +13,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Next step after successful completion: **2156**
 - Active Step 2155 scope: **Define Canonical Risk Decision V1 between canonical `TradePlan` and `ExecutionIntent`: broker-neutral instrument/sizing inputs, deterministic ALLOW/DENY identity, quantity output only after risk approval, and fail-closed validation. No MT5/order adapter, no broker submission, no PAPER/LIVE authorization, no automatic adoption of legacy BASE/BOOST/HIGH research profiles.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
-- Stable-branch governance lane: **2136 — COMPLETED AUDIT / enforcement WAITING_EXTERNAL / MANUAL_GITHUB_ADMIN; `main` remains observably unprotected until fresh admin evidence proves otherwise**
+- Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
 - Next mandatory 250-step Masterstand checkpoint: **2250**
 - Next mandatory 500-step full audit: **2500**
@@ -26,6 +26,7 @@ The exact prior full ledger has been preserved without rewriting at:
 - `docs/CURRENT_WORK_STEP_ARCHIVE_THROUGH_2154_PRE_CLOSE.md`
 - archived blob SHA: `4d96586f85cf32f2e726080cf728837ea6dd20ef`
 - archive state: full historical pointer through Step 2154 while 2154 was still marked `IN PROGRESS`.
+- reconstruction anchor `199e6bf073da1a717839b37e70a314f203e9ffa4` remains the canonical reconstruction anchor; detailed reconstructed history is preserved in the archive.
 
 The archive preserves reconstructed Steps 2081–2089, direct numbering from Step 2090 onward, all historical/interrupted/waiting lanes, evidence references, CI references and the prior full numbering rules. This compact pointer is now the authoritative active navigation surface; the archive is provenance/history and must not be edited retroactively.
 
