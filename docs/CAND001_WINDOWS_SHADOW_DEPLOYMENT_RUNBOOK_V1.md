@@ -194,3 +194,96 @@ Still WAITING_EXTERNAL for the next open/fresh DE40 market window:
 - only after those are green, perform the controlled Scheduled Task reload/restart and runtime-health/reconciliation proof.
 
 No PAPER or LIVE authorization is granted by this evidence.
+
+## 12. Optional weekend / 24/7 broker-clock cross-check — READ-ONLY DIAGNOSTIC ONLY
+
+Use this optional path when DE40 is closed and the broker exposes an actually active 24/7 instrument such as a crypto CFD. This can provide independent evidence about the broker's current encoded wall clock. It does **not** replace the market-open DE40 checks in Step 2122 and it does **not** by itself prove a unique IANA timezone/DST regime.
+
+### 12.1 Discover the broker's exact 24/7 symbol name first
+
+Do not assume the broker uses `BTCUSD`. With MT5 already open and logged in, use the existing MT5 Python environment and inspect names only:
+
+```powershell
+$py = "$HOME\Documents\dax-Day-main\.venv-mt5\Scripts\python.exe"
+
+@'
+import MetaTrader5 as mt5
+
+if not mt5.initialize():
+    print("MT5 INIT FAILED:", mt5.last_error())
+    raise SystemExit(1)
+
+try:
+    names = sorted(
+        str(s.name)
+        for s in (mt5.symbols_get() or ())
+        if "BTC" in str(s.name).upper() or "BITCOIN" in str(s.name).upper()
+    )
+    print("24X7 SYMBOL CANDIDATES:")
+    for name in names:
+        print(name)
+    print("COUNT =", len(names))
+finally:
+    mt5.shutdown()
+'@ | & $py -
+```
+
+This discovery call uses `initialize()`, `symbols_get()` and `shutdown()` only. It does not select a symbol, request prices, alter the SHADOW Scheduled Task or call an order API.
+
+Interpretation:
+
+- zero candidates: stop this optional path; do not guess a ticker;
+- multiple candidates: inspect the broker-visible instrument names/metadata and choose only an exact intended 24/7 market-data symbol; do not auto-pick by substring;
+- one plausible candidate: retain the exact broker symbol string for the diagnostic below.
+
+### 12.2 Compare explicit timezone candidates with the existing probe
+
+Use the existing diagnostic owner; do not create a second probe. Create a separate evidence directory so no scheduled-SHADOW state is touched:
+
+```powershell
+$symbol = '<EXACT_BROKER_24X7_SYMBOL>'
+$stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+$outDir = '.runtime\mt5_timezone_diagnostic'
+New-Item -ItemType Directory -Force $outDir | Out-Null
+$out = Join-Path $outDir "broker_timezone_24x7_$stamp.json"
+
+& $py .\scripts\diagnose_mt5_broker_timezone.py `
+  --symbol $symbol `
+  --candidate UTC `
+  --candidate Europe/Berlin `
+  --candidate Europe/Helsinki `
+  --bars 20 `
+  --max-age-seconds 600 `
+  --output $out
+```
+
+The diagnostic intentionally runs the credential-free MT5 probe once per timezone candidate and emits, per candidate, `clock_ok`, raw tick delta, normalized tick delta and closed-M5 timestamps. The underlying probe may call `symbol_select(<exact-symbol>, True)` to subscribe/show that market-data symbol in MT5; this is not broker order submission and does not alter the SHADOW task/state directory.
+
+Required safety surface in the diagnostic result:
+
+- `decision_state=HUMAN_REVIEW_REQUIRED`;
+- `auto_selected_timezone=null`;
+- `verification_state=UNVERIFIED`;
+- `execution_capability=NONE`;
+- `order_execution_enabled=false`;
+- notes include `READ_ONLY`, `DIAGNOSTIC_ONLY`, `NO_AUTO_TIMEZONE_SELECTION`, `NO_CREDENTIALS`, `NO_ORDER_API`.
+
+### 12.3 Evidence interpretation — never auto-verify the IANA zone
+
+A useful 24/7 observation requires the selected instrument to be genuinely active at observation time and at least one candidate to produce a plausibly fresh normalized tick delta within the configured age bound. Compare all candidates; do not judge from the raw tick alone.
+
+A point-in-time match may:
+
+- reject a timezone candidate whose normalized clock remains materially stale/shifted while another candidate is fresh;
+- support the **current UTC offset interpretation** of the configured broker timezone;
+- expose that the configured `Europe/Helsinki` interpretation is inconsistent with the active 24/7 feed.
+
+A point-in-time match may **not** by itself:
+
+- prove that the broker's IANA timezone identity is uniquely `Europe/Helsinki` rather than another zone with the same current offset;
+- prove the broker's DST transition rules over the year;
+- set `broker_timezone_verified=true`;
+- make the DE40 market-open host gate GREEN;
+- authorize PAPER/LIVE or any order capability.
+
+Retain the diagnostic JSON, exact Git commit, exact broker symbol and observation time as supporting evidence. Final broker-timezone verification remains fail-closed and requires evidence sufficient to distinguish the actual broker clock regime; the Step-2122 DE40 market-open freshness/candidate/restart gates remain separately mandatory.
