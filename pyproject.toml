@@ -23,6 +23,9 @@ dev = [
 statistics = [
   "arch>=8.0,<9",
 ]
+data = [
+  "pyarrow>=18,<27",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
