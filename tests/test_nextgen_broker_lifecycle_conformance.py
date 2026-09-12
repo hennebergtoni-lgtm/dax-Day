@@ -24,6 +24,7 @@ from daxlab.runtime.broker_reconciliation import (
     reconcile_broker_order,
 )
 from daxlab.runtime.nextgen_broker_lifecycle import begin_nextgen_order_lifecycle
+from daxlab.state.loss_exposure import build_loss_exposure_observation_checkpoint
 
 
 UTC = timezone.utc
@@ -228,6 +229,11 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         max_loss_cash=request.max_loss_cash,
     )
     loss_policy, loss_observation, loss_decision = _loss_evidence()
+    observation_checkpoint = build_loss_exposure_observation_checkpoint(
+        policy_fingerprint=loss_policy.policy_fingerprint,
+        observation=loss_observation,
+        observed_at=T0,
+    )
 
     protection = evaluate_nextgen_execution_protection(
         client_order_id=lifecycle.client_order_id,
@@ -245,7 +251,10 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         risk_decision=decision,
         loss_policy=loss_policy,
         loss_observation=loss_observation,
+        loss_observation_checkpoint=observation_checkpoint,
         loss_admission_decision=loss_decision,
+        evaluated_at=T0 + timedelta(seconds=2),
+        max_loss_observation_age_seconds=5.0,
         session_admission_allowed=True,
     )
 
@@ -258,6 +267,11 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         protection.loss_admission_evidence_fingerprint
         == loss_decision.decision_fingerprint
     )
+    assert (
+        protection.loss_observation_checkpoint_fingerprint
+        == observation_checkpoint.checkpoint_fingerprint
+    )
+    assert protection.loss_observation_age_seconds == 2.0
     assert protection.execution_capability == "NONE"
     assert protection.order_execution_enabled is False
 
@@ -265,10 +279,7 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
 def test_nextgen_lifecycle_bridge_has_no_venue_submission_dependency() -> None:
     path = (
         Path(__file__).resolve().parents[1]
-        / "src"
-        / "daxlab"
-        / "runtime"
-        / "nextgen_broker_lifecycle.py"
+        / "src/daxlab/runtime/nextgen_broker_lifecycle.py"
     )
     source = path.read_text(encoding="utf-8").lower()
     assert "metatrader5" not in source
