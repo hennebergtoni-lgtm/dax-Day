@@ -40,6 +40,8 @@ class EvaluationContractV1:
         if not self.cost_models:
             raise ValueError("cost_models must not be empty")
         names = tuple(item.name for item in self.cost_models)
+        for name in names:
+            _token(name, "cost model name")
         if len(set(names)) != len(names):
             raise ValueError("cost model names must be unique")
         _sha(self.fingerprint, "evaluation fingerprint")
@@ -126,7 +128,14 @@ class ProductStrategyArtifactV1:
 
     @classmethod
     def from_experiment(cls, experiment: ResearchExperimentV1) -> "ProductStrategyArtifactV1":
-        payload = _product_payload(experiment)
+        payload = _product_fields_payload(
+            strategy_id=experiment.strategy_id,
+            strategy_version=experiment.strategy_version,
+            strategy_fingerprint=experiment.strategy_fingerprint,
+            config_fingerprint=experiment.config_fingerprint,
+            source_experiment_fingerprint=experiment.experiment_fingerprint,
+            source_commit=experiment.source_commit,
+        )
         return cls(
             experiment.strategy_id, experiment.strategy_version,
             experiment.strategy_fingerprint, experiment.config_fingerprint,
@@ -136,8 +145,23 @@ class ProductStrategyArtifactV1:
     def __post_init__(self) -> None:
         if self.schema_version != PRODUCT_ARTIFACT_SCHEMA:
             raise ValueError("unsupported product artifact schema")
+        _token(self.strategy_id, "strategy_id")
+        _token(self.strategy_version, "strategy_version")
+        _sha(self.strategy_fingerprint, "strategy_fingerprint")
+        _sha(self.config_fingerprint, "config_fingerprint")
+        _sha(self.source_experiment_fingerprint, "source_experiment_fingerprint")
         _sha(self.artifact_fingerprint, "artifact_fingerprint")
         _commit(self.source_commit)
+        expected = _fp(_product_fields_payload(
+            strategy_id=self.strategy_id,
+            strategy_version=self.strategy_version,
+            strategy_fingerprint=self.strategy_fingerprint,
+            config_fingerprint=self.config_fingerprint,
+            source_experiment_fingerprint=self.source_experiment_fingerprint,
+            source_commit=self.source_commit,
+        ))
+        if self.artifact_fingerprint != expected:
+            raise ValueError("product strategy artifact fingerprint mismatch")
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,6 +215,10 @@ class ResearchPromotionArtifactV1:
         ):
             _sha(value, name)
         _commit(self.source_commit)
+        _nonempty_tuple(self.robustness_evidence_refs, "robustness_evidence_refs")
+        _nonempty_tuple(self.limitations, "limitations")
+        if len(set(self.robustness_evidence_refs)) != len(self.robustness_evidence_refs):
+            raise ValueError("robustness evidence references must be unique")
         if self.product_strategy.source_experiment_fingerprint != self.experiment_fingerprint:
             raise ValueError("product strategy experiment mismatch")
         if self.product_strategy.source_commit != self.source_commit:
@@ -264,15 +292,18 @@ def _experiment_payload(manifest: ExperimentManifest, strategy_id: str,
     }
 
 
-def _product_payload(experiment: ResearchExperimentV1) -> dict[str, object]:
+def _product_fields_payload(*, strategy_id: str, strategy_version: str,
+                            strategy_fingerprint: str, config_fingerprint: str,
+                            source_experiment_fingerprint: str,
+                            source_commit: str) -> dict[str, object]:
     return {
         "schema_version": PRODUCT_ARTIFACT_SCHEMA,
-        "strategy_id": experiment.strategy_id,
-        "strategy_version": experiment.strategy_version,
-        "strategy_fingerprint": experiment.strategy_fingerprint,
-        "config_fingerprint": experiment.config_fingerprint,
-        "source_experiment_fingerprint": experiment.experiment_fingerprint,
-        "source_commit": experiment.source_commit,
+        "strategy_id": strategy_id,
+        "strategy_version": strategy_version,
+        "strategy_fingerprint": strategy_fingerprint,
+        "config_fingerprint": config_fingerprint,
+        "source_experiment_fingerprint": source_experiment_fingerprint,
+        "source_commit": source_commit,
     }
 
 
@@ -300,16 +331,14 @@ def _promotion_payload(*, promotion_state: PromotionState, experiment_fingerprin
 
 
 def _product_payload_from_artifact(item: ProductStrategyArtifactV1) -> dict[str, object]:
-    return {
-        "schema_version": item.schema_version,
-        "strategy_id": item.strategy_id,
-        "strategy_version": item.strategy_version,
-        "strategy_fingerprint": item.strategy_fingerprint,
-        "config_fingerprint": item.config_fingerprint,
-        "source_experiment_fingerprint": item.source_experiment_fingerprint,
-        "source_commit": item.source_commit,
-        "artifact_fingerprint": item.artifact_fingerprint,
-    }
+    return _product_fields_payload(
+        strategy_id=item.strategy_id,
+        strategy_version=item.strategy_version,
+        strategy_fingerprint=item.strategy_fingerprint,
+        config_fingerprint=item.config_fingerprint,
+        source_experiment_fingerprint=item.source_experiment_fingerprint,
+        source_commit=item.source_commit,
+    ) | {"artifact_fingerprint": item.artifact_fingerprint}
 
 
 def _json_safe(value: Any) -> Any:
