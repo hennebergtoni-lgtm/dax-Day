@@ -271,6 +271,7 @@ def assert_checkpoint_compatible(
     total_event_count: int,
     input_fingerprint: str,
     state_codec_id: str,
+    minimum_processed_event_count: int = 0,
 ) -> None:
     """Fail closed before a caller trusts checkpoint state for deterministic resume."""
 
@@ -291,6 +292,15 @@ def assert_checkpoint_compatible(
     for field_name, expected_value in expected.items():
         if getattr(checkpoint, field_name) != expected_value:
             raise CheckpointCompatibilityError(f"checkpoint {field_name} mismatch")
+
+    if isinstance(minimum_processed_event_count, bool) or not isinstance(
+        minimum_processed_event_count, int
+    ):
+        raise ValueError("minimum_processed_event_count must be integer")
+    if not 0 <= minimum_processed_event_count <= total_event_count:
+        raise ValueError("minimum_processed_event_count outside run bounds")
+    if checkpoint.processed_event_count < minimum_processed_event_count:
+        raise CheckpointCompatibilityError("checkpoint processed_event_count regression")
 
 
 def _identity_payload(checkpoint: ProductCheckpointV1) -> dict[str, object]:
