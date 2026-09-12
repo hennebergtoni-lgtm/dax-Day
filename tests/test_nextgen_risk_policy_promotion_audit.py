@@ -47,7 +47,7 @@ def test_research_risk_owners_remain_explicitly_research_only() -> None:
     profile = _source("src/daxlab/research/risk_profile_sizing.py")
     loss_cap = _source("src/daxlab/research/loss_cap_gate.py")
 
-    assert "RESEARCH ONLY" in profile.upper()
+    assert "RESEARCH-ONLY" in profile.upper()
     assert "RESEARCH" in loss_cap.upper()
     assert 'execution_capability: str = "NONE"' in profile
     assert 'order_execution_enabled: bool = False' in profile
