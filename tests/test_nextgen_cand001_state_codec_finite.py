@@ -9,19 +9,29 @@ from daxlab.runtime.candidate_signal import Cand001SignalState
 from daxlab.strategies.cand001 import Cand001PipelineStateCodec
 
 
-@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
-def test_codec_rejects_non_finite_prices_when_encoding(value: float) -> None:
+@pytest.mark.parametrize(
+    ("field_name", "value"),
+    [
+        ("or_high", float("nan")),
+        ("or_high", float("inf")),
+        ("or_low", float("-inf")),
+    ],
+)
+def test_codec_rejects_non_finite_prices_when_encoding(
+    field_name: str,
+    value: float,
+) -> None:
     codec = Cand001PipelineStateCodec()
     state = Cand001PipelineState(
         signal=Cand001SignalState(
             session_date="2026-09-11",
-            or_high=value,
-            or_low=98.0,
+            or_high=value if field_name == "or_high" else 103.0,
+            or_low=value if field_name == "or_low" else 98.0,
             or_slots=("09:00",),
         )
     )
 
-    with pytest.raises(ValueError, match="signal.or_high must be finite"):
+    with pytest.raises(ValueError, match=rf"signal\.{field_name} must be finite"):
         codec.encode(state)
 
 
