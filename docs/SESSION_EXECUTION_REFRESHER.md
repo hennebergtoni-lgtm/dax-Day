@@ -67,5 +67,6 @@ Workflow integrity gate: `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`.
 Current whole-number pointer: `docs/CURRENT_WORK_STEP.md`.
 Authoritative continuity detail: `docs/WORK_CONTINUITY_PROTOCOL.md`.
 Canonical project handover: `docs/MASTERSTAND.md`.
+Latest explicit chat-capacity handoff: `docs/MASTERSTAND_CHAT_HANDOFF_STEP_2153.md`.
 
 This refresher is deliberately short and must be read first on resume before the longer protocol/navigation files when work continuity is relevant.
