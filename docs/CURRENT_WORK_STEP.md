@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2114**
-- Active whole-number step: **2115**
-- Next step after successful completion: **2116**
+- Last completed whole-number step: **2115**
+- Active whole-number step: **2116**
+- Next step after successful completion: **2117**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -37,6 +37,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2112 | Add strict diagnostic reader/verifier; fix tuple→JSON-array canonical identity handling. | `89cd4ea6…`, `7f66ba75…`, `3bf23550…`; CI #250/#1034 GREEN |
 | 2113 | Add post-processing-only diagnostic CLI; base OOS evidence remains byte-identical and immutable. | `11a9fec6…`, `f5fcf2ea…`; CI #253/#1037 GREEN |
 | 2114 | LEAN/data-lane audit: no extra receipt layer needed; existing OOS verification chain is sufficient. Historical source located in Google Drive at `DAX_V14_RECOVERED_CACHE_V13/m5_daily`; daily CSVs are present through 2019-12-31. Remaining issue is materialization/execution environment, not data existence. | Drive folder IDs `12aNhN7dNWZ9j9YqqaiOdcOsCm-cqhzUN` / `1p5-s3ccsBbohbephB7UIhUE_OL1M4b-y`; no code change |
+| 2115 | Refresh the canonical next-chat Masterstand and knowledge navigation with current repo/CI truth, frozen reference, CAND-001 architecture, Steps 2102–2114 economic-evidence progress, Drive historical-data location, safety boundaries, resume rules and exact next work. | Masterstand `df1f53e5…`; knowledge index `6457f676…`; exact documentation head CI: `dax-bot-1x-ci` #256 GREEN, `research-lab-ci` #1040 GREEN |
 
 ## Numbering rules
 
@@ -51,4 +52,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2115:** create the new canonical handover/masterstand for the next chat. It must capture exact repository/PR/CI truth, immutable REF-V11.2 evidence, DAX-BOT 1.x/CAND-001 architecture, Steps 2102–2114 economic-evidence progress, Drive historical-data location, current safety/authorization boundaries, the continuous-work/resume contract, unresolved external lanes, and the exact next executable work unit. Then update project navigation and verify CI.
+**Step 2116:** reuse the located Google Drive `DAX_V14_RECOVERED_CACHE_V13/m5_daily` historical source and the existing audited recovered-M5 data owner to attach/materialize the data in a suitable execution workspace, verify the freshly loaded session fingerprint against authoritative SHA256 `e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`, then run the frozen CAND-001 OOS/WF measurement → aggregation → immutable three-file export → strict verification → cost-consistency → temporal-stability → standalone diagnostic chain to produce the first actual CAND-001 OOS evidence. No tuning, no automatic promotion, no PAPER/LIVE execution. If bulk Drive materialization is unavailable in the current tool environment, treat that as a lane-local constraint, reuse an existing approved Colab/Drive execution path, and continue independent safe work rather than inventing a new data format or globally stopping.
