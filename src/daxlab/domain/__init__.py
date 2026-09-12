@@ -21,6 +21,13 @@ from daxlab.domain.risk_policy import (
     FixedCashRiskPolicy,
     build_risk_request_from_policy,
 )
+from daxlab.domain.session_admission import (
+    SessionAdmissionAction,
+    SessionAdmissionDecision,
+    SessionAdmissionObservation,
+    SessionAdmissionPolicy,
+    evaluate_session_admission,
+)
 from daxlab.domain.strategy import (
     StrategyAction,
     StrategyDecision,
@@ -43,6 +50,10 @@ __all__ = [
     "RiskDecision",
     "RiskDecisionAction",
     "RiskRequest",
+    "SessionAdmissionAction",
+    "SessionAdmissionDecision",
+    "SessionAdmissionObservation",
+    "SessionAdmissionPolicy",
     "StrategyAction",
     "StrategyDecision",
     "TradeDirection",
@@ -51,4 +62,5 @@ __all__ = [
     "build_risk_request_from_policy",
     "evaluate_fixed_cash_risk",
     "evaluate_loss_exposure_admission",
+    "evaluate_session_admission",
 ]
