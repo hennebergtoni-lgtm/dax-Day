@@ -25,6 +25,7 @@ class Cand001OosCostSummary:
     cost_model: str
     cost_multiplier: float
     window_count: int
+    window_result_fingerprints: tuple[str, ...]
     completed_trades: int
     total_gross_r: float
     total_cost_r: float
@@ -52,6 +53,10 @@ class Cand001OosCostSummary:
     def __post_init__(self) -> None:
         if not self.cost_model or self.cost_multiplier <= 0 or self.window_count <= 0:
             raise ValueError("invalid OOS cost summary identity/counts")
+        if len(self.window_result_fingerprints) != self.window_count:
+            raise ValueError("window result fingerprints must cover every OOS window")
+        for index, fingerprint in enumerate(self.window_result_fingerprints, start=1):
+            _assert_sha256(fingerprint, field=f"window_result_fingerprints[{index}]")
         if self.completed_trades < 0:
             raise ValueError("completed_trades must be non-negative")
         if self.positive_windows + self.negative_windows + self.flat_windows != self.window_count:
