@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2161**
-- Active whole-number step: **2162**
-- Next step after successful completion: **2163**
-- Active Step 2162 scope: **Implement the smallest evidence-neutral canonical single fixed-cash risk policy that binds one explicit currency and one per-trade maximum cash-loss ceiling to canonical Risk V1. Do not import or promote BASE/BOOST/HIGH research profiles, do not infer account balance/equity percentages, do not read broker/account APIs, and do not add broker submission or PAPER/LIVE authorization.**
+- Last completed whole-number step: **2162**
+- Active whole-number step: **2163**
+- Next step after successful completion: **2164**
+- Active Step 2163 scope: **Implement the smallest canonical product loss/exposure admission policy separated from per-trade Risk V1 sizing. Adapt only explicit daily/weekly drawdown caps, consecutive-loss cooldown and maximum-open-position limits from the Step-2160 audit. Promote no research numeric values, calculate no PnL, read no account/broker API, and add no broker submission or PAPER/LIVE authorization.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -34,34 +34,35 @@ The exact prior full ledger has been preserved without rewriting at:
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
-| 2155 | Canonical Risk Decision V1. | **COMPLETED.** Tested head `9c65949803e1fdf96fddf0eb7903c3545da35bf6`; CI #433/#1217 GREEN. |
 | 2156 | Canonical Risk-to-ExecutionIntent Bridge V1. | **COMPLETED.** Tested head `1f3a5f819ed115501c8c0902c73903b4a2f2e6e2`; CI #435/#1219 GREEN. |
 | 2157 | Broker lifecycle/reconciliation/protection reuse for canonical intent. | **COMPLETED.** Tested head `e65ad2994a6d8e243ef984b75a4724209df1a38a`; CI #437/#1221 GREEN. |
 | 2158 | PAPER pre-authorization composition / LEAN audit. | **COMPLETED.** Tested head `8a0052c71a284ab8b94dc5e7dafebf04d10af77a`; CI #439/#1223 GREEN. No new runtime orchestrator; PAPER/LIVE remain unauthorized. |
-| 2159 | Canonical read-only broker-economics → Risk Inputs adapter. | **COMPLETED.** Technical commit `cd68d6f45bee1bf552c195b5efd75d3582e5a10c`; final tested head `6f782e3d14754a744232ae1094a9b4534f767fcb`; CI #442/#1226 GREEN. |
-| 2160 | Risk-profile / loss-cap product-promotion audit. | **COMPLETED.** Research profile values remain unpromoted; fixed-cash/currency/floor-sizing semantics classified for reuse, product policy boundary separated from research evidence. Final tested head `fecff1962ce7e3c7c869dc49cd45b3bfbd5a145a`; `dax-bot-1x-ci` #445 GREEN and `research-lab-ci` #1229 GREEN. |
-| 2161 | 500-step Architecture & Learning Review governance. | **COMPLETED.** Added binding review contract `docs/FIVE_HUNDRED_STEP_ARCHITECTURE_LEARNING_REVIEW_V1.md` plus regression guard. Final tested head `fbc04354ef7e5b209bc3759309561b5d5974d5ed`; `dax-bot-1x-ci` #449 GREEN and `research-lab-ci` #1233 GREEN. |
-| 2162 | Canonical single fixed-cash risk policy. | **IN PROGRESS.** Implement only the smallest product policy identified by Step 2160; no research-profile promotion or broker/account capability. |
+| 2159 | Canonical read-only broker-economics → Risk Inputs adapter. | **COMPLETED.** Final tested head `6f782e3d14754a744232ae1094a9b4534f767fcb`; CI #442/#1226 GREEN. |
+| 2160 | Risk-profile / loss-cap product-promotion audit. | **COMPLETED.** Final tested head `fecff1962ce7e3c7c869dc49cd45b3bfbd5a145a`; CI #445/#1229 GREEN. |
+| 2161 | 500-step Architecture & Learning Review governance. | **COMPLETED.** Final tested head `fbc04354ef7e5b209bc3759309561b5d5974d5ed`; CI #449/#1233 GREEN. |
+| 2162 | Canonical single fixed-cash risk policy. | **COMPLETED.** Added `domain/risk_policy.py`, canonical export, contract and deterministic/fail-closed/Risk-V1 delegation tests. Final tested head `e72a1fc8000f5966048f1cfe3cac654a43368099`; `dax-bot-1x-ci` #455 GREEN and `research-lab-ci` #1239 GREEN. No research profile values, broker/account API or execution authorization added. |
+| 2163 | Canonical loss/exposure admission policy. | **IN PROGRESS.** Adapt explicit cap semantics only; no research numeric-value promotion, PnL calculation or broker/account capability. |
 
-## Step 2161 closeout truth
+## Step 2162 closeout truth
 
-The 500-step checkpoint is now a mandatory Architecture & Learning Review rather than a status-only recap. At each 500-step checkpoint, ordinary forward construction pauses until the review critically reassesses the preceding 500-step block and any inherited assumptions materially affected by newer evidence. The review must include measured performance/workflow efficiency, failures and structural debt, relevant current external/public-source patterns, and explicit `KEEP / IMPROVE / REFACTOR / RETIRE / DEFER` decisions. Any change decision requires evidence, expected benefit, migration/parity requirements, risk and rollback. `KEEP` and no-change are valid outcomes; reaching the checkpoint alone never justifies a rewrite. VERIFIED history and safety truth remain preserved.
+Step 2162 adds one canonical fixed-cash product policy with explicit currency, positive finite per-trade maximum cash loss and deterministic fingerprint. The policy delegates sizing to existing Risk V1 and fails closed on malformed values, tampering and currency mismatch. BASE/BOOST/HIGH, automatic escalation, account/equity percentage sizing and broker/account access remain absent. Readiness verification remains separate from software existence.
 
-## Step 2162 active work
+## Step 2163 active work
 
-**Step 2162 — IN PROGRESS:** implement one canonical fixed-cash product risk policy above Risk V1.
+**Step 2163 — IN PROGRESS:** adapt the separately audited loss/exposure admission semantics into a canonical product owner.
 
 Required properties:
 
-1. one explicit configured risk currency;
-2. one explicit positive finite per-trade maximum cash-loss ceiling;
-3. deterministic policy identity/fingerprint;
-4. policy binds into canonical `RiskRequest` / Risk V1 semantics without duplicating sizing logic;
-5. currency mismatch and malformed policy values fail closed;
-6. no `BASE`, `BOOST`, `HIGH`, automatic escalation or research policy version in the canonical owner;
-7. no account balance, equity percentage or broker/account API read;
-8. no MT5 SDK/order API, broker submission or PAPER/LIVE authorization;
-9. readiness verification state remains separate from mere software implementation.
+1. explicit currency plus positive finite daily and weekly drawdown caps;
+2. explicit integer limits for consecutive losses and open positions;
+3. explicit observation input only; no PnL/account computation inside the policy;
+4. equality at a cap blocks new admission fail-closed;
+5. currency mismatch blocks;
+6. deterministic policy/observation/decision identity;
+7. no research policy version or research numeric default is promoted;
+8. no per-trade quantity sizing duplicated here;
+9. no account/broker API, MT5 SDK/order API, broker submission or PAPER/LIVE authorization;
+10. readiness verification remains independent from implementation.
 
 ## Binding numbering and handoff rules
 
