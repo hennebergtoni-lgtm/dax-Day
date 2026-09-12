@@ -10,11 +10,12 @@ from daxlab.domain.loss_admission import (
 )
 from daxlab.domain.market import InstrumentId
 from daxlab.domain.risk import InstrumentRiskInputs, RiskRequest, evaluate_fixed_cash_risk
+from daxlab.domain.risk_policy import FixedCashRiskPolicy
 from daxlab.domain.risk_execution import build_execution_intent_from_risk
 from daxlab.domain.strategy import TradeDirection, TradePlan
 from daxlab.runtime.broker_execution_protection import (
     ExecutionProtectionStatus,
-    evaluate_execution_protection,
+    evaluate_nextgen_execution_protection,
 )
 from daxlab.runtime.broker_order_lifecycle import BrokerOrderState, apply_order_event
 from daxlab.runtime.broker_reconciliation import (
@@ -27,6 +28,28 @@ from daxlab.runtime.nextgen_broker_lifecycle import begin_nextgen_order_lifecycl
 
 UTC = timezone.utc
 T0 = datetime(2026, 9, 11, 8, 5, tzinfo=UTC)
+
+
+def _loss_evidence():
+    policy = LossExposurePolicy.build(
+        currency="EUR",
+        daily_drawdown_cap_cash=100.0,
+        weekly_drawdown_cap_cash=250.0,
+        max_consecutive_losses=3,
+        max_open_positions=1,
+    )
+    observation = LossExposureObservation.build(
+        currency="EUR",
+        daily_drawdown_cash=10.0,
+        weekly_drawdown_cash=20.0,
+        consecutive_losses=0,
+        open_positions=0,
+    )
+    decision = evaluate_loss_exposure_admission(
+        policy=policy,
+        observation=observation,
+    )
+    return policy, observation, decision
 
 
 def _canonical_chain():
@@ -52,24 +75,7 @@ def _canonical_chain():
         ),
     )
     decision = evaluate_fixed_cash_risk(request)
-    admission_policy = LossExposurePolicy.build(
-        currency="EUR",
-        daily_drawdown_cap_cash=100.0,
-        weekly_drawdown_cap_cash=250.0,
-        max_consecutive_losses=3,
-        max_open_positions=1,
-    )
-    admission_observation = LossExposureObservation.build(
-        currency="EUR",
-        daily_drawdown_cash=10.0,
-        weekly_drawdown_cash=20.0,
-        consecutive_losses=0,
-        open_positions=0,
-    )
-    admission_decision = evaluate_loss_exposure_admission(
-        policy=admission_policy,
-        observation=admission_observation,
-    )
+    admission_policy, admission_observation, admission_decision = _loss_evidence()
     intent = build_execution_intent_from_risk(
         request=request,
         decision=decision,
@@ -217,8 +223,13 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         average_fill_price=lifecycle.average_fill_price,
     )
     reconciliation = reconcile_broker_order(local=lifecycle, venue=venue)
+    risk_policy = FixedCashRiskPolicy.build(
+        currency=request.loss_currency,
+        max_loss_cash=request.max_loss_cash,
+    )
+    loss_policy, loss_observation, loss_decision = _loss_evidence()
 
-    protection = evaluate_execution_protection(
+    protection = evaluate_nextgen_execution_protection(
         client_order_id=lifecycle.client_order_id,
         host_health_green=True,
         broker_account_trade_allowed=True,
@@ -229,16 +240,24 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         reconciliation_inventory_complete=True,
         reconciliations=(reconciliation,),
         duplicate_client_order_id=False,
-        sizing_allowed=True,
-        sizing_evidence_fingerprint=decision.decision_id,
-        loss_cap_allowed=True,
-        risk_policy_fingerprint=request.request_id,
+        risk_policy=risk_policy,
+        risk_request=request,
+        risk_decision=decision,
+        loss_policy=loss_policy,
+        loss_observation=loss_observation,
+        loss_admission_decision=loss_decision,
         session_admission_allowed=True,
     )
 
     assert protection.status is ExecutionProtectionStatus.ALLOW_EVIDENCE
     assert protection.allow_evidence is True
     assert protection.blockers == ()
+    assert protection.sizing_evidence_fingerprint == decision.decision_id
+    assert protection.risk_policy_fingerprint == risk_policy.policy_fingerprint
+    assert (
+        protection.loss_admission_evidence_fingerprint
+        == loss_decision.decision_fingerprint
+    )
     assert protection.execution_capability == "NONE"
     assert protection.order_execution_enabled is False
 
