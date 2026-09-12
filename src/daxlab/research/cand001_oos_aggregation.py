@@ -243,6 +243,7 @@ def _aggregate_cost(
     identity = {
         "cost_model": cost_model,
         "cost_multiplier": multiplier,
+        "window_count": len(items),
         "window_result_fingerprints": tuple(item.result_fingerprint for item in items),
         "completed_trades": sum(item.completed_trades for item in items),
         "total_gross_r": float(sum(item.gross_r for item in items)),
