@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2108**
-- Active whole-number step: **2109**
-- Next step after successful completion: **2110**
+- Last completed whole-number step: **2109**
+- Active whole-number step: **2110**
+- Next step after successful completion: **2111**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -48,6 +48,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2106 | Implement and regression-test deterministic aggregation over Step-2105 OOS evidence: per-cost totals/window signs/medians/worst-window risk/open-end counts, explicit adjacent cost degradation and fail-closed aggregate-PF reconstruction; bind summaries to full source payload plus every window-result fingerprint. | aggregation `9433e499…`; tests `31acfb2d…`; adjacent-cost fix `3abc1e53…`; test-boundary fix `5be2214b…`; count fix `b38886cb…`; provenance-schema fix `54f22cad…` (exact-head CI: `dax-bot-1x-ci` #230 GREEN, `research-lab-ci` #1014 GREEN) |
 | 2107 | Add a deterministic immutable machine-readable OOS evidence export/CLI: audited dataset fingerprint is mandatory, measurement/aggregation payloads and manifest are cross-bound, output is exactly three JSON artifacts, existing targets are refused and manifest is written last. | export `0d105920…`; CLI `f15b3e23…`; regression tests `845e4060…` (exact-head CI: `dax-bot-1x-ci` #234 GREEN, `research-lab-ci` #1018 GREEN) |
 | 2108 | Add and regression-test a strict round-trip verifier for exported OOS evidence: require the exact three-file layout, reject unknown/missing fields, reconstruct typed Step-2105/2106 objects, recompute full payload/manifest lineage and reject metric/manifest/safety tampering. | reader `f951b5f1…`; attack/round-trip tests `45f8ba5c…` (exact-head CI: `dax-bot-1x-ci` #237 GREEN, `research-lab-ci` #1021 GREEN) |
+| 2109 | Add and regression-test a deterministic cost-stress evidence-integrity audit: verify path/count/Gross-R invariance, exact `net_r = gross_r - cost_r`, linear cost scaling and monotone adverse cost effects across normal/1.5x/2x; explicitly exclude the cost-dependent trade-record fingerprint from false equality checks. | audit `681f1306…`; regression tests `3fd127e4…` (exact-head CI: `dax-bot-1x-ci` #240 GREEN, `research-lab-ci` #1024 GREEN) |
 
 ## Numbering rules
 
@@ -62,4 +63,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2109:** implement and regression-test a deterministic cost-stress consistency audit over Step-2105/2106 CAND-001 OOS evidence. For every OOS window, normal/1.5x/2x must preserve strategy/lifecycle path evidence that costs are not allowed to change (signals/admissions/completed-trade count/open-end state/gross-R/trade-record identity as applicable), while cost-R must be non-decreasing and net-R non-increasing as the declared cost multiplier rises. Any violation is an evidence-integrity failure, not an economic result. Bind the audit to verified source fingerprints; keep `NONE/false` and make no profitability/promotion claim.
+**Step 2110:** implement and regression-test descriptive temporal OOS stability diagnostics over verified Step-2105/2106 evidence after a PASS Step-2109 cost-consistency audit. Report per cost model without composite score/pass threshold: mean/median window net-R, positive/negative/flat rates, zero-trade windows, mean/median trades per window, longest positive/negative streaks, cumulative window-net-R max drawdown, chronological first-half vs second-half net-R/activity, and source fingerprints. Explicitly record that PBO/DSR are not applied here because this is one frozen candidate without a new multi-trial selection surface. No automatic promotion or profitability claim; `NONE/false` remains binding.
