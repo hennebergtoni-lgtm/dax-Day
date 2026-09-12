@@ -1,7 +1,7 @@
 # Project Knowledge Index — DAX Daytrading Bot
 
 Status: BINDING NAVIGATION CONTRACT
-Updated: 2026-09-11
+Updated: 2026-09-12
 
 Purpose: make important project knowledge discoverable by topic so context loss never forces rediscovery from memory. This file is a navigation layer, not a replacement for evidence, code, tests or historical documents.
 
@@ -31,7 +31,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 | Step-2000 migration backlog | `docs/DAX_BOT_1X_MIGRATION_BACKLOG_STEP_2000.md` | Canonical migration/cleanup backlog until superseded by a later full audit; also records required Bot-1.0 closeout report and planned risk-profile control | Older milestone plans are historical |
 | DAX-BOT 1.x migration safety | `docs/DAX_BOT_1X_MIGRATION_SAFETY_GATE.md` | Binding migration constraints | Older V10/V11 reviews are context only |
 | DAX-BOT 1.x alpha acceptance | `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_GATE.md`, `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_STATUS.md`, `docs/DAX_BOT_1_0_CLOSEOUT_FINAL.md` | Repository-side 1.0-alpha accepted; real Windows-host Candidate verification remains a `WAITING_EXTERNAL` lane | Candidate tests/code remain executable proof |
-| CAND-001 economic evidence | `docs/CAND001_ECONOMIC_EVIDENCE_AUDIT_V1.md`, `tests/test_cand001_economic_evidence_boundary.py` | Economic performance/robustness currently `UNVERIFIED`; REF-V11.2/V12 metrics must never be borrowed; next safe measurement is a deterministic descriptive CAND-001 historical replay before any OOS/WF claim | Technical benchmark and synthetic forward-performance fixtures are plumbing/correctness evidence only |
+| CAND-001 economic evidence | `docs/CAND001_ECONOMIC_EVIDENCE_AUDIT_V1.md`, `src/daxlab/research/cand001_historical_replay.py`, `src/daxlab/research/cand001_recovered_m5_replay.py`, `src/daxlab/research/cand001_oos_walk_forward.py`, `tests/test_cand001_historical_replay.py`, `tests/test_cand001_recovered_m5_replay.py`, `tests/test_cand001_oos_walk_forward.py` | Descriptive historical harness + audited recovered-M5 binding are VERIFIED; frozen OOS/WF evaluation contract is the current next evidence owner. CAND-001 profitability/robustness remain `UNVERIFIED` until actual CAND-001 OOS/WF results exist; REF-V11.2/V12 metrics must never be borrowed | Technical benchmark and synthetic forward-performance fixtures are plumbing/correctness evidence only |
 | Versioning / identity | `docs/NEXTGEN_BOT_VERSIONING_V1.md` | Current product/candidate/versioning contract | Legacy V-number plans are provenance only |
 | Frozen V11.2 reference | `research/V112_REFERENCE_V1/reference_result.json`, `docs/LEGACY_ENGINE_PROVENANCE.md`, audited manifests | Immutable reference evidence | Legacy evidence remains provenance only |
 | Research modules / promotion | `docs/RESEARCH_MODULE_CATALOG.md`, `docs/RESEARCH_GATES.md` | Current research catalogue and promotion discipline | Family-specific research docs add detail |
