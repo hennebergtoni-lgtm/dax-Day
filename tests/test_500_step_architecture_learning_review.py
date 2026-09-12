@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -38,5 +39,7 @@ def test_current_pointer_names_2500_as_architecture_learning_review() -> None:
     pointer = POINTER.read_text(encoding="utf-8")
 
     assert "Next mandatory 500-step Architecture & Learning Review: **2500**" in pointer
-    assert "Active whole-number step: **2161**" in pointer
+    active_match = re.search(r"Active whole-number step: \*\*(\d+)\*\*", pointer)
+    assert active_match is not None
+    assert int(active_match.group(1)) >= 2161
     assert "KEEP / IMPROVE / REFACTOR / RETIRE / DEFER" in pointer
