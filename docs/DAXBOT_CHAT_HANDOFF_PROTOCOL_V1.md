@@ -79,6 +79,16 @@ Do not promise autonomous work while no model turn is running. If the app/networ
 - `WAITING_EXTERNAL` blocks only its lane and does not prevent later independent whole-number steps;
 - after any handoff, continue from repository truth without inventing skipped work.
 
-## 6. Safety boundary
+## 6. Visible work / progress-reporting contract
 
-This protocol changes only continuity/navigation. It never authorizes PAPER or LIVE trading, never changes VERIFIED evidence, never changes strategy semantics, and never bypasses explicit execution-authorization gates.
+For ongoing multi-step project work, the required visible cadence is binding:
+
+**Step N -> short activity -> visible intermediate report in normal assistant text -> status marker (`✅`, `⚠️`, or `❌`) -> immediate next step.**
+
+Tool activity/status lines shown by the interface do **not** count as the visible intermediate report. Do not run a long chain of tool calls without a normal-text progress report between meaningful checks. The user must be able to see what was checked, the current result, and what will happen next.
+
+A visible intermediate report is a visibility point, not a stop. After reporting, continue immediately when the next safe action is known. Stop only for a real blocker, required user action/decision, milestone stop, or safety-relevant issue.
+
+## 7. Safety boundary
+
+This protocol changes only continuity/navigation and visible reporting. It never authorizes PAPER or LIVE trading, never changes VERIFIED evidence, never changes strategy semantics, and never bypasses explicit execution-authorization gates.
