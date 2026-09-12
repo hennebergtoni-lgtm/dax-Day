@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2134**
-- Active whole-number step: **2135**
-- Next step after successful completion: **2136**
+- Last completed whole-number step: **2135**
+- Active whole-number step: **2136**
+- Next step after successful completion: **2137**
 - Outstanding lane-local step: **2116 — WAITING_EXTERNAL / historical Drive materialization-execution lane**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Historical interrupted scope: **2123 — INTERRUPTED / carried forward into 2125; never resume visibly under 2123**
@@ -32,7 +32,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2102 | Audit CAND-001-specific economic evidence boundary; REF-V11.2/V12 metrics cannot be borrowed. | `b220999c…`, `c63d30a4…`, `7585410a…` |
 | 2103 | Implement deterministic historical CAND-001 descriptive replay over audited recovered M5 data. | `a3ce4e25…`, `c3d5b6b6…`, `308a73d7…`, `dd7e831e…` |
 | 2104 | Freeze CAND-001 OOS/WF contract: 45/20/20, no train-time tuning, normal/1.5x/2x costs. | `e8cf48b0…`, `7a89c21d…`, `64f0c9ff…`, `bf9d1d54…` |
-| 2105 | Implement deterministic historical OOS/WF measurement runner. | `f2fb5caa…`, `8c687b52…`, `2f7da184…` |
+| 2105 | Implement deterministic OOS/WF measurement runner. | `f2fb5caa…`, `8c687b52…`, `2f7da184…` |
 | 2106 | Implement deterministic OOS aggregation and cost degradation summaries. | `9433e499…`, `31acfb2d…`, `3abc1e53…`, `5be2214b…`, `b38886cb…`, `54f22cad…` |
 | 2107 | Add immutable three-file OOS evidence export/CLI. | `0d105920…`, `f15b3e23…`, `845e4060…` |
 | 2108 | Add strict round-trip verifier for exported OOS evidence. | `f951b5f1…`, `45f8ba5c…` |
@@ -62,7 +62,8 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2132 | Harden workflow integrity after repeated visible step/progress drift. | **COMPLETED.** Added binding `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`, Step-Close-Gate, pointer-before-next-step rule, monotonic interrupted-lane carry-forward, user-intervention handling, truthful no-background-work rule, reconciled Handoff/Refresher contracts, durable `PSR-018`, and `tests/test_workflow_integrity_gate.py`. Existing pointer regression now permits only explicitly paused skipped integers. Historical Recovery references exposed by 2131 were classified without making the retirement decision. Exact tested head `c558f8773c31179fd0668cbe7a67ad11cff344d5`: `dax-bot-1x-ci` #315 GREEN; `research-lab-ci` #1099 GREEN. No strategy, execution or authorization change. |
 | 2133 | Continue the legacy recovery retirement audit originating in interrupted Step 2131. | **COMPLETED — `RETAIN_WITH_REASON`.** `docs/RECOVERY_CANONICALIZATION_AUDIT_V1.md` now records that `recovery_bundle.py` remains canonical while legacy `recovery.py` is frozen forensic compatibility only. Active code/config/script scans are clean, but behavior-union/legacy-artifact compatibility is not parity-proven, so physical deletion is not yet evidence-neutral. `tests/test_legacy_recovery_retirement_audit.py` guards both zero active consumers and the retention boundary. Exact tested head `f384f4c17f4875a370e384d7abf787cd651730d8`: `dax-bot-1x-ci` #318 GREEN; `research-lab-ci` #1102 GREEN. No runtime/safety behavior changed. |
 | 2134 | Reconcile the remaining safe repository backlog after workflow/recovery closeout and select the next non-duplicate engineering work unit. | **COMPLETED.** Reconciled current Masterstand, Step-2000 migration backlog, alpha acceptance/closeout, Knowledge Index, external lanes and current Public donor patterns. Steps 2128/2129/2130/2133 already resolved stale SHADOW wording, pre-host CI naming, versioning ambiguity and Recovery duplication respectively. Public scan of LEAN/Freqtrade/Nautilus supports clear CI responsibility boundaries without unnecessary workflow proliferation. Remaining safe repository gap selected: CI ownership/responsibility contract. Reconciliation addendum commit `c3297418…`; Knowledge Index refresh commit `9fbc5c3f…`; exact head `9fbc5c3ffa00f4eab839f7e24596f583d397d0b9`: `dax-bot-1x-ci` #321 GREEN; `research-lab-ci` #1105 GREEN. No execution/readiness change. |
-| 2135 | Define and regression-test CI ownership/responsibility boundaries without reducing aggregate regression coverage or proliferating workflows unnecessarily. | **IN PROGRESS.** Preserve `research-lab-ci` as the broad integration/regression gate and `dax-bot-1x-ci` as the focused Candidate/broker-safety gate unless evidence shows a concrete missing owner. Document authoritative responsibility boundaries and detect accidental responsibility drift without changing strategy/runtime semantics. |
+| 2135 | Define and regression-test CI ownership/responsibility boundaries without reducing aggregate regression coverage or proliferating workflows unnecessarily. | **COMPLETED.** Added binding `docs/CI_OWNERSHIP_CONTRACT_V1.md`, `tests/test_ci_ownership_contract.py`, and Knowledge Index navigation. Contract preserves `research-lab-ci` as the broad integration/regression owner, `dax-bot-1x-ci` as the focused Candidate/broker-safety owner, and `reference-payload-export` as the immutable legacy-reference owner. No workflow YAML or test coverage was removed. Exact final head `b86d0c00f506bc65d5044335831198e1c83a6461`: `dax-bot-1x-ci` #325 GREEN; `research-lab-ci` #1109 GREEN. CI remains non-authorizing for PAPER/LIVE. |
+| 2136 | Audit stable-branch protection/ruleset governance and determine the smallest enforceable protection boundary without blocking current development. | **IN PROGRESS.** Inspect current `main` branch protection/ruleset truth and repository capability. Do not change repository protection blindly; if the connected GitHub permission surface cannot inspect or enforce the intended controls, classify the lane explicitly as external/manual governance rather than pretending it is protected. |
 
 ## Numbering and handoff rules
 
@@ -85,10 +86,10 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2135 — IN PROGRESS:** define a CI ownership/responsibility contract for the current hybrid gate structure. Keep full `pytest`/integration coverage in `research-lab-ci`; keep focused Candidate/broker-safety coverage in `dax-bot-1x-ci`; clarify ownership of legacy reference probes, research integrity, runtime safety, SHADOW synthetic regression and optional main-only database drills. Prefer documentation + regression enforcement over creating more workflows unless a concrete execution need appears.
+**Step 2136 — IN PROGRESS:** audit current `main` branch protection/ruleset state and the available GitHub enforcement surface. Prefer the smallest reliable stable-branch guard (for example required PR/status-check protection) that fits the current account/repository capabilities. Do not alter branch governance unless the exact current state and write capability are known; otherwise record the external/manual governance dependency and continue independent safe work later.
 
 **Step 2131 — INTERRUPTED / HISTORICAL:** preserved as provenance only; do not visibly resume under 2131. Its unfinished scope was completed under Step 2133.
 
 **Step 2122 — WAITING_EXTERNAL:** resume the real Windows/MT5 CAND-001 SHADOW host verification only in the next open/fresh DE40 market window. When later resumed, use the then-next unused whole-number step and label it as continuation of the lane originating in Step 2122; do not display 2122 again as the active current step. First re-pin branch/commit and rerun exact code parity. Then verify the configured broker timezone from a fresh tick/closed-M5 feed; require a GREEN isolated one-shot heartbeat before judging candidate evidence. Only after GREEN: verify candidate manifest/checkpoint/operator evidence, repeat the isolated cycle for overlap/reconciliation, then perform a controlled Scheduled Task reload/restart and runtime-health/reconciliation proof. Do not bypass stale-market/clock blockers.
 
-Historical Step 2123 remains preserved as interrupted provenance only. Do not display it again as the active step. The next unused whole-number step after 2135 is 2136.
+Historical Step 2123 remains preserved as interrupted provenance only. Do not display it again as the active step. The next unused whole-number step after 2136 is 2137.
