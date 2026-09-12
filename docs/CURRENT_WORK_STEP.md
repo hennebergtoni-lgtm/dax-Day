@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2119**
-- Active whole-number step: **2120**
-- Next step after successful completion: **2121**
+- Last completed whole-number step: **2120**
+- Active whole-number step: **2121**
+- Next step after successful completion: **2122**
 - Outstanding lane-local step: **2116 — WAITING_EXTERNAL / historical Drive materialization-execution lane**
 - Outstanding host-verification lane: **current-branch CAND-001 Windows/MT5 SHADOW verification — WAITING_EXTERNAL**
 - Next mandatory 250-step Masterstand checkpoint: **2250**
@@ -45,6 +45,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2117 | Add repository-backed chat handoff protocol: `Weiter mit dem DAXBot` resume codeword, `Erstelle einen Masterstand` immediate handover command, mandatory 250-step Masterstand checkpoints, next at 2250. | `docs/DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md`, refreshed `SESSION_EXECUTION_REFRESHER.md` |
 | 2118 | Reconcile Masterstand, Step-2000 backlog, alpha closeout, PAPER gap matrix, current PR/head/CI and external lanes before further implementation. Confirm broker-neutral lifecycle/reconciliation/protection/checkpoint/telemetry owners already exist; identify stale SHADOW/PAPER acceptance status as the highest-value repository-side consistency gap. | Branch head `38baa3f…` had `dax-bot-1x-ci` #260 GREEN and `research-lab-ci` #1044 GREEN; `SHADOW_PAPER_ACCEPTANCE_V1.md` still said `Shadow: NOT STARTED` while current authoritative state had SHADOW authorized and CAND-001 real-host verification separately `WAITING_EXTERNAL`. |
 | 2119 | Reconcile the binding SHADOW/PAPER acceptance contract with current authoritative state without changing execution capability or strategy semantics. | `docs/SHADOW_PAPER_ACCEPTANCE_V1.md` now records SHADOW authorized/no-order, current-branch Windows/MT5 Candidate host verification `WAITING_EXTERNAL`, PAPER not ready/not authorized and LIVE not eligible/not authorized; readback verified after commit `11615403…`. |
+| 2120 | Record the stale stage-status drift failure mode in the existing durable engineering-memory registry. | `PSR-017` added to `docs/PROBLEM_SOLUTION_REGISTRY_ADDENDUM_V1.md`; problem/root cause/fix/evidence/reuse rule read back and verified after commit `655695d5…`. |
 
 ## Numbering and handoff rules
 
@@ -62,4 +63,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2120:** record the Step-2118/2119 governance inconsistency as a durable problem/solution entry using the existing registry. Preserve the reusable rule that stage/authorization documents must be reconciled against current Masterstand/acceptance/runtime truth during resume/audit, and that stale status prose must never downgrade or upgrade actual execution authorization. Do not create a parallel registry or new governance subsystem.
+**Step 2121:** preflight the existing CAND-001 Windows/MT5 SHADOW deployment runbook against the actual current branch scripts and interfaces before asking the user to touch the PC. Verify referenced script paths, required parameters, state/evidence outputs and the no-order safety assertions. Fix only genuine repository-side drift; do not perform or simulate the real-host verification and do not authorize PAPER/LIVE.
