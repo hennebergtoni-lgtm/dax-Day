@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import json
+from math import isfinite
 from typing import Any
 
 from daxlab.runtime.candidate_admission import Cand001AdmissionState
@@ -30,8 +31,8 @@ class Cand001PipelineStateCodec:
             "schema_version": CAND001_STATE_SCHEMA,
             "signal": {
                 "session_date": state.signal.session_date,
-                "or_high": state.signal.or_high,
-                "or_low": state.signal.or_low,
+                "or_high": _optional_number(state.signal.or_high, "signal.or_high"),
+                "or_low": _optional_number(state.signal.or_low, "signal.or_low"),
                 "or_slots": list(state.signal.or_slots),
                 "last_close_time_utc": _encode_datetime(state.signal.last_close_time),
             },
@@ -40,7 +41,13 @@ class Cand001PipelineStateCodec:
                 "trades_admitted": state.admission.trades_admitted,
             },
         }
-        text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+        text = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        )
         return text.encode("utf-8")
 
     def decode(self, payload: bytes) -> Cand001PipelineState:
@@ -145,7 +152,10 @@ def _optional_number(value: Any, field_name: str) -> float | None:
         return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{field_name} must be numeric or null")
-    return float(value)
+    number = float(value)
+    if not isfinite(number):
+        raise ValueError(f"{field_name} must be finite")
+    return number
 
 
 def _integer(value: Any, field_name: str) -> int:
