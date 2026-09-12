@@ -39,12 +39,24 @@ def test_parity_checker_tracks_upstream_and_covers_current_candidate_mt5_surface
     assert "dynamic_candidate_mt5" in text
     for path in CRITICAL_FIXED_PATHS:
         assert path in text
-    assert "raw.githubusercontent.com/$repository/$ExpectedCommit/$relativePath" in text
-    assert "Get-FileHash" in text
     assert "MISMATCH" in text
     assert "MISSING_LOCAL" in text
-    assert "REMOTE_UNAVAILABLE" in text
+    assert "EXPECTED_BLOB_UNAVAILABLE" in text
+    assert "LOCAL_HASH_UNAVAILABLE" in text
     assert "exit 1" in text
+
+
+def test_parity_checker_uses_git_canonical_blob_hashing_for_windows_crlf_safety() -> None:
+    text = _text()
+    assert "PARITY MODE | GIT_CANONICAL_BLOB / CRLF_SAFE" in text
+    assert "'hash-object'" in text
+    assert '"--path=$relativePath"' in text
+    assert '"${ExpectedCommit}:$relativePath"' in text
+    assert "LocalObjectId" in text
+    assert "ExpectedObjectId" in text
+    assert "Invoke-WebRequest" not in text
+    assert "raw.githubusercontent.com" not in text
+    assert "Get-FileHash" not in text
 
 
 def test_parity_checker_has_no_execution_or_scheduler_mutation_surface() -> None:
