@@ -1,7 +1,7 @@
 # Problem / Solution Registry — Addendum V1
 
 Status: BINDING ENGINEERING MEMORY / EXTENDS `PROBLEM_SOLUTION_REGISTRY.md`
-Updated: 2026-09-11
+Updated: 2026-09-12
 
 This addendum continues the canonical PSR numbering without rewriting the large historical registry. It is part of the same mandatory lookup surface and must be reviewed together with `docs/PROBLEM_SOLUTION_REGISTRY.md` until a later canonical consolidation.
 
@@ -55,3 +55,20 @@ This addendum continues the canonical PSR numbering without rewriting the large 
 **Proof/evidence:** `docs/SESSION_EXECUTION_REFRESHER.md`; `docs/WORK_CONTINUITY_PROTOCOL.md`; DAX-BOT alpha status explicitly classifies current Windows/MT5 Candidate verification as `WAITING_EXTERNAL` while repository work continues.
 
 **Reuse rule:** Before any final/status-only response in an active engineering sequence, check both: (1) is the blocker global, and (2) are there truly no independent safe work units left? If either answer is no, continue working.
+
+---
+
+## PSR-017 — Stale stage-status prose must not override current authorization truth
+
+**Status:** VERIFIED / FIXED
+**Component:** project governance / SHADOW-PAPER acceptance state
+
+**Problem:** `docs/SHADOW_PAPER_ACCEPTANCE_V1.md` remained a binding/referenced acceptance contract but still said `Shadow: NOT STARTED` after the project had already authorized no-order SHADOW, accepted repository-side CAND-001 SHADOW integration and recorded real Forward SHADOW milestone evidence. The stale prose could mislead resume logic into downgrading the current stage or, in the opposite direction, a future stale file could incorrectly imply stronger execution authority.
+
+**Root cause:** A long-lived acceptance document mixed stable prerequisite definitions with a mutable point-in-time stage decision and was not reconciled when later canonical Masterstand/acceptance/runtime truth advanced.
+
+**Accepted solution:** Preserve the stable SHADOW/PAPER prerequisites and execution boundaries, but reconcile the current decision against authoritative contemporary sources. The contract now records SHADOW as authorized with no broker orders, keeps current-branch CAND-001 Windows/MT5 host verification separately `WAITING_EXTERNAL`, keeps PAPER not ready/not authorized and LIVE not eligible/not authorized, and explicitly states that the document itself cannot create execution authority.
+
+**Proof/evidence:** Step 2118 repository/backlog reconciliation; Step 2119 update/readback of `docs/SHADOW_PAPER_ACCEPTANCE_V1.md`; current Masterstand, `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_STATUS.md`, `docs/DAX_BOT_1_0_CLOSEOUT_FINAL.md`, `docs/CAND001_WINDOWS_SHADOW_DEPLOYMENT_RUNBOOK_V1.md`, and `docs/CURRENT_WORK_STEP.md`.
+
+**Reuse rule:** During every resume/audit that touches stage or authorization claims, separate stable gate definitions from mutable current-state prose. Reconcile mutable stage claims against the current Masterstand/acceptance status and fresh runtime evidence. A stale document may neither downgrade nor upgrade actual execution authorization; only the canonical current authorization/evidence chain may do that.
