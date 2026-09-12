@@ -20,7 +20,10 @@ def main() -> None:
         f"blocked={summary['blocked']} | execution={summary['execution_capability']} | "
         f"fingerprint={summary['run_fingerprint']}"
     )
-    print("Real MT5 broker evidence: NOT PRESENT | Paper: NOT STARTED | Live: NOT AUTHORIZED")
+    print(
+        "Evidence scope: SYNTHETIC_OFFLINE_ONLY | "
+        "Real MT5 broker evidence: OUT_OF_SCOPE | Paper: NOT AUTHORIZED | Live: NOT AUTHORIZED"
+    )
 
 
 if __name__ == "__main__":
