@@ -9,6 +9,7 @@ from daxlab.domain.risk import (
     RiskRequest,
     evaluate_fixed_cash_risk,
 )
+from daxlab.domain.risk_execution import build_execution_intent_from_risk
 from daxlab.domain.strategy import (
     StrategyAction,
     StrategyDecision,
@@ -30,5 +31,6 @@ __all__ = [
     "StrategyDecision",
     "TradeDirection",
     "TradePlan",
+    "build_execution_intent_from_risk",
     "evaluate_fixed_cash_risk",
 ]
