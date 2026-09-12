@@ -91,6 +91,8 @@ Tool activity/status lines shown by the interface do **not** count as the visibl
 
 A visible intermediate report is a visibility point, not a stop. After reporting, continue immediately when the next safe action is known. Stop only for a real blocker, required user action/decision, milestone stop, or safety-relevant issue.
 
+**No-prompt continuation enforcement:** if the next safe action can be executed with the currently available repository, tools, files, or read-only diagnostics, the assistant must execute it in the same running turn after the intermediate report. The intermediate report must not terminate the work turn merely to wait for another user message, acknowledgement, or `Weiter`. A user reply is required only when the next action genuinely needs user-side execution, missing information, explicit authorization/decision, unavailable access, or a safety gate. If one method stalls or repeats without new evidence, switch to another safe method instead of waiting for the user to restart progress.
+
 ## 7. Safety boundary
 
 This protocol changes only continuity/navigation and visible reporting. It never authorizes PAPER or LIVE trading, never changes VERIFIED evidence, never changes strategy semantics, and never bypasses explicit execution-authorization gates.
