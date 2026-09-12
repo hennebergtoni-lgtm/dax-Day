@@ -221,9 +221,13 @@ def test_blocked_session_admission_becomes_protection_block() -> None:
     )
 
 
-def test_tampered_session_admission_decision_fails_closed() -> None:
-    policy, observation, decision = _session_chain()
-    forged = replace(decision, decision_fingerprint="f" * 64)
+def test_mismatched_session_admission_decision_fails_closed() -> None:
+    policy, observation, _ = _session_chain(trades_admitted=0, max_trades=1)
+    _, other_observation, other_decision = _session_chain(
+        trades_admitted=1,
+        max_trades=1,
+    )
+    assert other_observation != observation
 
     with pytest.raises(ValueError, match="canonical session evaluation"):
-        _evaluate(session=(policy, observation, forged))
+        _evaluate(session=(policy, observation, other_decision))
