@@ -184,7 +184,7 @@ def test_aggregation_rejects_incomplete_cost_window_coverage() -> None:
     bundle = _bundle()
     changed = list(bundle.measurements)
     changed[0] = replace(changed[0], cost_model="other", cost_multiplier=0.5)
-    modified = replace(bundle, measurements=tuple(changed), cost_model_count=4)
+    modified = replace(bundle, measurements=tuple(changed))
 
-    with pytest.raises(ValueError, match="does not cover every OOS window"):
+    with pytest.raises(ValueError, match="cost-model count drift"):
         aggregate_cand001_oos(modified)
