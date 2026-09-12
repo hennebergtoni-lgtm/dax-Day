@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2124**
-- Active whole-number step: **2125**
-- Next step after successful completion: **2126**
+- Last completed whole-number step: **2125**
+- Active whole-number step: **2126**
+- Next step after successful completion: **2127**
 - Outstanding lane-local step: **2116 — WAITING_EXTERNAL / historical Drive materialization-execution lane**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Historical interrupted scope: **2123 — INTERRUPTED / carried forward into 2125; never resume visibly under 2123**
@@ -51,7 +51,8 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2122 | Real Windows/MT5 CAND-001 SHADOW host verification. | **WAITING_EXTERNAL / market-open continuation.** On 2026-09-12, Windows host parity was corrected for `core.autocrlf=true` false positives and VERIFIED at commit `785fe94354db8f53fe3306390d3fcbb394719308` with `56/56` Git-canonical matches and safety `NONE/false`. Existing Scheduled Task configuration was observed read-only; `Europe/Helsinki` is configured but not yet VERIFIED. Weekend one-shot in isolated state correctly failed closed: `BLOCKED` with `MARKET_DATA_STALE`, `MT5_HOST_NOT_HEALTHY`, `CLOSED_M5_FEED_NOT_FRESH`, `CLOCK_NOT_SAFE`, while preserving `execution_capability=NONE` and `order_execution_enabled=false`. No candidate files were emitted because the upstream host gate blocked before candidate processing. Runbook/evidence refreshed in `c2624dd9…`. Remaining: fresh market clock/timezone proof, GREEN one-shot, candidate evidence, overlap/reconciliation, controlled Scheduled Task restart/runtime health. |
 | 2123 | Audit the broker-timezone verification path and its symbol abstraction so the configured timezone can be proven from read-only MT5 evidence rather than assumed; inspect whether a 24/7 symbol such as BTCUSD can be used as an independent clock cross-check without DAX-specific hard-wiring. | **INTERRUPTED / HISTORICAL.** Work began, then Step 2124 governance correction was inserted. This step must not be resumed visibly after a higher step number; its unfinished scope is carried into Step 2125. No order capability introduced. |
 | 2124 | Persist the user's required visible project-work cadence in durable repository governance. Tool/interface activity lines must not substitute for normal assistant-text progress reports. | `docs/DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md` commit `8a11273e…`; `docs/MASTERSTAND.md` commit `6175881d…`. Binding cadence: Step N → short activity → visible normal-text intermediate report → ✅/⚠️/❌ → immediate next step; no long tool-call chains without text visibility. |
-| 2125 | Continue and complete the unfinished broker-timezone / generic MT5-symbol diagnostic scope from historical Step 2123, while preserving monotonic visible numbering. | **IN PROGRESS.** First correction: canonical pointer now forbids visible step-number regression; technical audit continues under 2125 only. |
+| 2125 | Complete the broker-timezone / generic MT5-symbol diagnostic audit and prove explicit non-DAX symbol resolution without changing runtime execution semantics. | **COMPLETED.** `tests/test_mt5_readonly.py` adds an explicit `BTCUSD` configured-symbol regression (`801c2053…`); current probe remains credential-free/read-only and forwards explicit symbols before DAX alias fallback. Pointer-contract regressions discovered during CI were repaired through `8dccc446…`. Exact head `8dccc446b3c57fd0ac597927a7856a678756430d`: `dax-bot-1x-ci` #287 GREEN and `research-lab-ci` #1071 GREEN. `Europe/Helsinki` remains UNVERIFIED pending real host evidence. |
+| 2126 | Define a reusable read-only 24/7 MT5 host clock cross-check procedure, including exact broker-symbol discovery before any timezone inference. | **IN PROGRESS.** No order capability, PAPER or LIVE authorization may be introduced. |
 
 ## Numbering and handoff rules
 
@@ -71,8 +72,8 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2125 — IN PROGRESS:** finish the repository-level audit of the broker-timezone diagnostic and underlying MT5 symbol/probe abstraction, carrying forward only the unfinished technical scope from historical Step 2123. Determine whether an independent 24/7 symbol cross-check can be used safely and read-only to verify the configured timezone rather than assuming `Europe/Helsinki`. Do not prescribe a host command until the repository path is confirmed generic and fail-closed. No PAPER/LIVE authorization and no broker order submission.
+**Step 2126 — IN PROGRESS:** define and document the smallest reusable read-only weekend/24/7 MT5 broker-clock cross-check. The procedure must first discover the broker's exact candidate symbol name without assuming `BTCUSD`, then use the existing credential-free probe with explicit symbol/timezone candidates. A current offset match may support clock interpretation but must not by itself auto-verify an IANA timezone/DST regime. No broker order API, no PAPER/LIVE authorization, and no mutation of the existing scheduled SHADOW task.
 
 **Step 2122 — WAITING_EXTERNAL:** resume the real Windows/MT5 CAND-001 SHADOW host verification only in the next open/fresh DE40 market window. First re-pin branch/commit and rerun exact code parity. Then verify the configured broker timezone from a fresh tick/closed-M5 feed; require a GREEN isolated one-shot heartbeat before judging candidate evidence. Only after GREEN: verify candidate manifest/checkpoint/operator evidence, repeat the isolated cycle for overlap/reconciliation, then perform a controlled Scheduled Task reload/restart and runtime-health/reconciliation proof. Do not bypass stale-market/clock blockers.
 
-Historical Step 2123 remains preserved as interrupted provenance only. Do not display it again as the active step. The next unused whole-number step after 2125 is 2126.
+Historical Step 2123 remains preserved as interrupted provenance only. Do not display it again as the active step. The next unused whole-number step after 2126 is 2127.
