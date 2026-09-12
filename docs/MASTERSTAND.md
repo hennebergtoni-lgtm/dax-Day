@@ -1,12 +1,18 @@
 # DAX-BOT MASTERSTAND — NEXT-CHAT HANDOVER
 
 Status: **BINDING HANDOVER / REPOSITORY TRUTH FIRST**  
-Updated: **2026-09-12**  
+Updated: **2026-09-12 — Step 2152 continuity reconciliation**  
 Repository: `hennebergtoni-lgtm/dax-Day`  
 Working branch: `nextgen-bot-line-v1`  
 Pull request: `#109` -> `main`
 
-This file is the canonical next-chat handover. Exact repository code, tests, hashes, fresh CI, runtime telemetry and `docs/CURRENT_WORK_STEP.md` override prose if anything disagrees.
+This file is the canonical durable handover below exact repository code/tests/evidence. If prose here ever disagrees with fresh repository evidence, the precedence is:
+
+1. exact code / tests / machine evidence / fresh runtime telemetry;
+2. `docs/CURRENT_WORK_STEP.md` for official step numbering;
+3. binding safety/governance contracts;
+4. this Masterstand;
+5. chat memory.
 
 ## 1. Mandatory resume protocol
 
@@ -14,11 +20,12 @@ On a new chat, context loss, reconnect, compaction, or `Weiter mit dem DAXBot`:
 
 1. read `docs/SESSION_EXECUTION_REFRESHER.md`;
 2. pin repository, branch, PR and **fresh exact branch HEAD**;
-3. read `docs/CURRENT_WORK_STEP.md`;
+3. read `docs/CURRENT_WORK_STEP.md` and use it as the only active-step authority;
 4. read `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`;
 5. read this Masterstand;
-6. read `docs/PROJECT_KNOWLEDGE_INDEX.md` and only the topic-specific owners needed for the active step;
-7. continue the active step automatically when the Step-Close-Gate permits it.
+6. read `docs/PROJECT_KNOWLEDGE_INDEX.md` and only the topic owners needed for the active step;
+7. read the Problem/Solution registries before inventing a new fix;
+8. continue automatically when the Step-Close-Gate permits safe work.
 
 Repository truth overrides chat memory. Tool/interface activity does not replace the required normal-text Zwischenstand.
 
@@ -33,20 +40,21 @@ Official step numbers are whole integers only. Visible numbering is monotonic. I
 Next mandatory Masterstand checkpoint: **2250**.  
 Next mandatory full architecture/LEAN audit: **2500**.
 
-## 2. Repository / branch / PR / CI truth at this handover
+## 2. Repository / branch / PR truth at this reconciliation
 
-- Base branch: `main`.
-- Working branch: `nextgen-bot-line-v1`.
-- PR #109 is **open, unmerged, mergeable, not draft**.
-- PR base SHA: `e0784ebfc11bee28475fd9c3385be661af58a738`.
-- **Fresh branch HEAD immediately before this final Masterstand commit:** `cbcef2bb820a15c4aa454faaef4ffe4bbae21186`.
-- GitHub PR/check metadata now also reports `cbcef2bb…` as the PR head.
-- Exact checks on `cbcef2bb…`:
-  - `candidate-core` -> **SUCCESS**;
-  - broad `test` -> **SUCCESS**.
-- This Masterstand update itself creates a newer documentation commit. The next chat must still re-pin the fresh branch HEAD rather than assuming any SHA written here is self-referential current truth.
+Fresh PR metadata immediately before this Masterstand write:
 
-No merge into `main` is authorized by this handover.
+- base branch: `main`;
+- working branch: `nextgen-bot-line-v1`;
+- PR #109: **OPEN / UNMERGED / MERGEABLE / NOT DRAFT**;
+- PR base SHA: `e0784ebfc11bee28475fd9c3385be661af58a738`;
+- documentation head immediately before this Masterstand commit: `de435cbad67cfd1204c3d7f2789838f8767fec53`;
+- last fully tested technical/cleanup head before Step 2152 documentation work: `4a06038cb62be180e9d17afdc3389daf4b542aab`;
+- on `4a06038c…`: `dax-bot-1x-ci` #416 **GREEN** and `research-lab-ci` #1200 **GREEN**.
+
+This Masterstand commit creates a newer documentation head. Every later chat must therefore re-pin HEAD and CI rather than treating any SHA written here as self-referential current truth.
+
+No merge into `main` is authorized by this handover. `main` protection enforcement remains a separate manual GitHub-admin dependency.
 
 ## 3. Safety / authorization — BINDING
 
@@ -58,6 +66,7 @@ No merge into `main` is authorized by this handover.
 - No broker order-submission path is authorized.
 - No research/backtest/CI result may silently grant PAPER/LIVE authority.
 - Explicit later user authorization remains mandatory before PAPER or LIVE.
+- Promotion of a research artifact changes software/evidence state only; it never grants trading authority.
 
 ## 4. Scientific legacy anchor — REF-V11.2 — VERIFIED / IMMUTABLE
 
@@ -89,7 +98,7 @@ Never relabel these metrics as CAND-001 or NextGen performance.
 
 ## 5. DAX-BOT 1.0-alpha / CAND-001 legacy-product line
 
-Repository-side DAX-BOT 1.0-alpha acceptance remains a correctness/control milestone, not a profitability proof. The frozen `CAND-001` product candidate remains available as reference/compatibility evidence while NextGen is built beside it.
+Repository-side DAX-BOT 1.0-alpha acceptance remains a correctness/control milestone, not a profitability proof. Frozen `CAND-001` remains available as product/reference/compatibility evidence while NextGen is built beside it.
 
 Frozen CAND-001 semantics:
 
@@ -102,22 +111,20 @@ Frozen CAND-001 semantics:
 - target = 1.5R;
 - maximum one admitted trade/session.
 
-Existing legacy-product/runtime work already includes deterministic closed-bar handling, candidate state, trade-plan/admission/decision pipeline, restart/idempotency controls, virtual lifecycle/costed outcome, operator snapshot/telemetry, SHADOW host integration, broker-neutral lifecycle/reconciliation/protection/checkpoint/telemetry evidence owners, and fail-closed PAPER readiness gates.
+Existing legacy-product/runtime work includes deterministic closed-bar handling, candidate state, trade-plan/admission/decision pipeline, restart/idempotency controls, virtual lifecycle/costed outcome, operator snapshot/telemetry, SHADOW host integration, broker-neutral lifecycle/reconciliation/protection/checkpoint/telemetry evidence owners and fail-closed PAPER readiness gates.
 
-Do not silently migrate CAND-001 rules into NextGen core contracts. CAND-001 is now connected only through an explicit Strategy Plugin compatibility adapter.
+Do not silently migrate CAND-001 rules into NextGen core contracts. CAND-001 is connected to NextGen only through explicit compatibility boundaries.
 
-## 6. CAND-001 historical/OOS evidence line — preserved but no longer architecture-driving
+## 6. Historical CAND-001 OOS evidence line — preserved, not architecture-driving
 
-Steps 2102–2113 implemented a frozen CAND-001-specific historical/OOS evidence chain: deterministic replay, 45/20/20 WF/OOS schedule, normal/1.5x/2x costs, aggregation, immutable three-file evidence export, strict readers, cost-stress integrity, temporal stability diagnostics, standalone `diagnostics.json`, strict diagnostic verification, and post-processing CLI.
-
-This line remains valid evidence infrastructure, but it no longer dictates the NextGen data or strategy architecture.
+Steps 2102–2113 implemented the frozen CAND-001 historical/OOS evidence chain: deterministic replay, 45/20/20 WF/OOS schedule, normal/1.5x/2x costs, aggregation, immutable evidence export/readers, cost-stress integrity, temporal stability diagnostics and diagnostic evidence.
 
 Historical Drive source remains known:
 
 - root: `DAX_V14_RECOVERED_CACHE_V13`;
 - `m5_daily` folder ID: `1p5-s3ccsBbohbephB7UIhUE_OL1M4b-y`.
 
-Step 2137 proved one real private daily CSV can materialize locally and matches the old canonical loader shape. Bulk/folder materialization through the connector was not available. The user explicitly stopped this lane from becoming the NextGen chassis.
+Step 2137 proved one real private daily CSV can materialize locally and matches the old loader shape. Bulk/folder materialization through the connector was not available. The user explicitly stopped this lane from becoming the NextGen chassis.
 
 Therefore:
 
@@ -127,7 +134,7 @@ Therefore:
 - CAND-001 profitability/robustness: still UNVERIFIED;
 - old 1,673-file/CSV contract: **historical compatibility/evidence only**, not NextGen storage design.
 
-## 7. Workflow/governance hardening completed during this chat
+## 7. Workflow / governance state
 
 ### Step 2132 — workflow-integrity gate — COMPLETED
 
@@ -139,12 +146,12 @@ Binding rules include:
 - pointer-before-next-step;
 - monotonic interrupted-lane carry-forward;
 - visible text Zwischenstand separate from tool activity;
-- no long tool-call chains without text visibility;
+- no long meaningful tool-call chains without text visibility;
 - a Zwischenstand is not a stop;
 - no final/turn-ending response while executable safe work remains;
-- no claim of background work after a turn has ended;
+- no claim of background work after a turn ends;
 - exact-head CI/evidence discipline;
-- explicit user intervention as a valid sequence interruption.
+- explicit user intervention as valid sequence interruption.
 
 ### Step 2133 — Recovery canonicalization — COMPLETED / RETAIN_WITH_REASON
 
@@ -160,21 +167,19 @@ No specialty gate replaces the broad integration regression.
 
 ### Step 2136 — stable-branch governance audit — COMPLETED AUDIT / ENFORCEMENT WAITING_EXTERNAL
 
-Current observable GitHub state showed `main` unprotected and no repository ruleset. Minimal target protection is documented, but the current integration cannot apply the GitHub-admin setting. Do not claim `main` is protected until fresh admin evidence proves it.
+Observed `main` state was unprotected with no ruleset. Minimal target protection is documented, but the current integration cannot apply the GitHub-admin setting. Do not claim `main` is protected until fresh admin evidence proves it.
 
 ## 8. Architecture intervention — Ferrari, not Golf — BINDING
 
-The user explicitly corrected the project direction: do not treat historical V11.2/CSV/Colab/Drive constraints as the chassis for the new bot merely because they are already available.
+The user explicitly corrected project direction: historical V11.2/CSV/Colab/Drive constraints are not the chassis for the new bot merely because they already exist.
 
-New binding rule:
+Binding rule:
 
 **Legacy is reference, regression evidence and compatibility input — not the NextGen architecture constraint.**
 
-### Step 2138 — Greenfield / First-Principles reset — COMPLETED
-
 Canonical architecture: `docs/NEXTGEN_GREENFIELD_ARCHITECTURE_V1.md`.
 
-The contract defines:
+The Step-2138 First-Principles contract defines:
 
 - two speeds, shared semantics: fast Research Layer + deterministic Product Layer;
 - event/domain-first product core;
@@ -188,178 +193,125 @@ The contract defines:
 
 Public/open-source architecture patterns were checked against LEAN, NautilusTrader, Freqtrade and vectorbt. Reuse patterns, not copied strategies/framework bulk.
 
-Architecture commit `e4acdd2898c4275379b28348555a22e91e337106` passed `dax-bot-1x-ci` #333 and `research-lab-ci` #1117.
+## 9. Verified NextGen progression — Steps 2139–2151
 
-## 9. NextGen foundation — completed steps 2139–2143
+The following sequence is repository/CI verified. Exact details and hashes remain in `docs/CURRENT_WORK_STEP.md` and topic tests.
 
-### Step 2139 — canonical Domain + Ports — COMPLETED
-
-Final head: `b0fe61a09ba70fbed51afce283f7e486288e9c44`.
-
-Added:
+### 2139 — Canonical Domain + Ports — COMPLETED
 
 - broker-independent opaque `InstrumentId`;
-- canonical UTC market/Candle contracts;
-- deterministic broker-neutral `ExecutionIntent` identity;
+- canonical UTC Candle contracts;
+- deterministic broker-neutral execution-intent identity;
 - Protocol-only external ports;
-- negative architecture tests forbidding MT5/legacy-dataset/CAND-001/V11.2 coupling.
+- negative dependency tests against MT5/legacy/CAND-001/V11.2.
 
-CI: `dax-bot-1x-ci` #339 GREEN; `research-lab-ci` #1123 GREEN.
+Final tested head `b0fe61a09ba70fbed51afce283f7e486288e9c44`; CI #339/#1123 GREEN.
 
-### Step 2140 — Canonical Historical Data Catalog V1 — COMPLETED
+### 2140 — Canonical Historical Data Catalog V1 — COMPLETED
 
-Final head: `ccdc14ab681bfb7589bbdd04e14a893f497f8761`.
+- immutable Parquet/Arrow catalog;
+- canonical content fingerprint separate from physical Parquet SHA256;
+- UTC/instrument/data-quality roundtrip;
+- fail-closed mixed/open/duplicate/out-of-order/tamper handling;
+- legacy 1,673-file layout is not the storage contract.
 
-New Greenfield data path:
+Final tested head `ccdc14ab681bfb7589bbdd04e14a893f497f8761`; CI #346/#1130 GREEN.
 
-- Parquet V1 physical format;
-- PyArrow confined to optional `data` dependency surface;
-- deterministic content-based Dataset fingerprint independent of Parquet encoder bytes;
-- separate physical `parquet_sha256` integrity;
-- immutable fingerprint-addressed data + manifest;
-- canonical UTC/instrument/data-quality roundtrip;
-- fail-closed mixed-instrument/timeframe, open-candle, duplicate, out-of-order and tamper checks;
-- no silent sort/fix-up;
-- legacy 1,673-file CSV layout not imported or modified.
+### 2141 — Strategy Plugin V1 — COMPLETED
 
-CI: `research-lab-ci` #1130 GREEN; `dax-bot-1x-ci` #346 GREEN.
+- deterministic `StrategyDecision` / `TradePlan`;
+- generic `StrategyPlugin` / `StrategyTransition`;
+- strategy output stops before quantity/risk/broker/order authority.
 
-### Step 2141 — Strategy Plugin V1 — COMPLETED
+Final tested head `2b345016b7be03c47462527c776d53a9df6bd3ee`; CI #352/#1136 GREEN.
 
-Final head: `2b345016b7be03c47462527c776d53a9df6bd3ee`.
+### 2142 — CAND-001 compatibility adapter — COMPLETED
 
-Added:
+Existing CAND-001 pipeline remains behavior owner; adapter exposes it through the generic Strategy Plugin boundary without changing rules or adding execution capability.
 
-- `src/daxlab/domain/strategy.py`;
-- `src/daxlab/strategies/contracts.py`;
-- canonical package exports;
-- `tests/test_nextgen_strategy_plugin_contract.py`.
+Final tested head `6f8db8883df342d4d523e06c041ab1ce0cc5e9fb`; CI #357/#1141 GREEN.
 
-Contract:
+### 2143 — Deterministic Product Replay Engine — COMPLETED
 
-- strategy output stops before risk sizing and execution;
-- `NO_TRADE` or broker-neutral `TRADE_PLAN` only;
-- LONG/SHORT entry/stop/target directional invariants;
-- deterministic strategy-decision identity;
-- `StrategyPlugin.initial_state()` + `on_candle(state, candle) -> StrategyTransition`;
-- no quantity/account/broker/order authority;
-- no MT5/runtime/legacy/CAND-001 dependency.
+Generic fail-closed replay over canonical Candle + Strategy Plugin semantics; broker/storage neutral; execution capability remains `NONE`.
 
-CI: `dax-bot-1x-ci` #352 GREEN; `research-lab-ci` #1136 GREEN.
+Final tested head `1151f1fdf6df66d426cfc1add45113305567aad1`; CI #363/#1147 GREEN.
 
-### Step 2142 — CAND-001 Strategy Plugin compatibility adapter — COMPLETED
+### 2144 — Research Experiment / Promotion Artifact V1 — COMPLETED
 
-Final head: `6f8db8883df342d4d523e06c041ab1ce0cc5e9fb`.
+`src/daxlab/research/promotion.py` binds strategy/config, dataset, split/WF, costs/fills, robustness evidence, source commit and limitations into deterministic experiment/product/promotion identities. Promotion does not authorize execution.
 
-Added:
+Final implementation head `b4f7152bff59ee85aa459348e6b72219d597df89`; CI #373/#1157 GREEN.
 
-- `src/daxlab/strategies/cand001/adapter.py`;
-- package exports;
-- `tests/test_nextgen_cand001_strategy_adapter.py`;
-- focused Candidate-CI coverage for the adapter.
+### 2145 — Research→Product conformance — COMPLETED
 
-Purpose:
+Frozen canonical fixtures bind research/product provenance to exact replay-input and ordered strategy-decision identities. Provenance/input/semantic drift fails closed.
 
-- preserve the existing CAND-001 pipeline as the behavior owner;
-- translate its behavior through the new generic Strategy Plugin boundary;
-- avoid rewriting CAND-001 into the NextGen core;
-- add no broker/order/execution capability.
+Final tested head `50f908a861606c86d308824e224d506cb0197a13`; CI #378/#1162 GREEN.
 
-CI: `dax-bot-1x-ci` #357 GREEN; `research-lab-ci` #1141 GREEN.
+### 2146 — Explicit read-only MT5 market-data adapter — COMPLETED
 
-### Step 2143 — deterministic NextGen Product Replay Engine — COMPLETED
+Validated Closed-M5 feed is translated into canonical UTC Candles behind `CandleSourcePort`; no MT5 SDK/order dependency enters the canonical adapter.
 
-Final head: `1151f1fdf6df66d426cfc1add45113305567aad1`.
+Final tested head `347f0cbe44350403656baf62ff82c3258f19317f`; CI #382/#1166 GREEN.
 
-Added:
+### 2147 — Generic atomic StateStorePort adapter — COMPLETED
 
-- `src/daxlab/engine/replay.py`;
-- `src/daxlab/engine/__init__.py`;
-- `tests/test_nextgen_replay_engine.py`.
+Opaque bytes persist through an atomic fsync/replace file adapter with safe missing/replacement behavior; specialized/legacy recovery owners remain separate.
 
-Purpose:
+Final tested head `1c75bcf783572e80d79b865492791a486385c56d`; CI #386/#1170 GREEN.
 
-- generic deterministic product replay over canonical Candle + Strategy Plugin semantics;
-- broker/storage neutral;
-- fail closed;
-- shared semantics foundation for historical/replay/forward product modes;
-- execution capability remains `NONE`;
-- no order submission or PAPER/LIVE authorization.
+### 2148 — Generic operator read model — COMPLETED
 
-CI: `dax-bot-1x-ci` #363 GREEN; `research-lab-ci` #1147 GREEN.
+Product-neutral read-only operator view plus CAND-001 compatibility adapter. Candidate-specific detailed telemetry remains its own evidence surface; no control/order authority was promoted.
 
-## 10. ACTIVE STEP — 2144 — Research Experiment / Promotion Contract — IN PROGRESS
+Final tested head `52ff0174597fd0a039510ce4f9b369c6e807b59e`; CI #392/#1176 GREEN.
 
-`docs/CURRENT_WORK_STEP.md` is authoritative and currently states:
+### 2149 — Deterministic ProductCheckpointV1 — COMPLETED
 
-- last completed step: **2143**;
-- active step: **2144**;
-- next step after successful completion: **2145**.
+Checkpoint binds run/engine/strategy/config/source/input/event/decision/state-codec identity with canonical tamper-checked serialization through `StateStorePort`.
 
-### 2144 goal
+Final tested head `91d60ff8c15735ad06be14d073e15dd93b5255da`; CI #397/#1181 GREEN.
 
-Define the deterministic NextGen research experiment / promotion contract.
+### 2150 — Generic deterministic restart/resume parity — COMPLETED
 
-The step must begin by auditing existing provenance instead of duplicating it, especially:
+`StrategyStateCodec` + replay-resume path restores from multiple split points and reproduces uninterrupted ordered decisions and final strategy state exactly while processing only the suffix.
 
-- `daxlab.contracts.ExperimentManifest`;
-- `research.registry` and current research governance.
+Final tested head `0aa06bcc61655a589e4a2dc1ef8c1d0b5237b0e2`; CI #407/#1191 GREEN.
 
-The intended promotion artifact must bind, at minimum:
+### 2151 — CAND-001 canonical state codec + real Candidate resume parity — COMPLETED
 
-- canonical strategy/product identity;
-- canonical dataset identity/fingerprint;
-- evaluation split/window identity;
-- cost/fill assumptions;
-- robustness evidence;
-- source/provenance fingerprints;
-- research/promotion state;
-- explicit `order_execution_authorized=false`.
+- strict canonical JSON `Cand001PipelineStateCodec`;
+- explicit frozen schema/codec identity;
+- UTC-only timestamp handling;
+- exact-field and canonical-form checks;
+- finite-price enforcement; no NaN/Inf, no pickle;
+- real `Cand001StrategyPlugin` interruption/resume across multiple cut points;
+- exact prefix+suffix decision parity and final-state parity against uninterrupted replay.
 
-This step must **not** introduce:
+Final tested/cleaned head `4a06038cb62be180e9d17afdc3389daf4b542aab`; `dax-bot-1x-ci` #416 GREEN and `research-lab-ci` #1200 GREEN.
 
-- optimizer behavior;
-- broker connectivity;
-- order submission;
-- automatic economic promotion claims;
-- PAPER/LIVE authority.
+No CAND-001 strategy rule, broker/MT5 behavior, order capability or PAPER/LIVE authorization changed.
 
-### Exact 2144 state at handover
+## 10. Continuity reconciliation — Step 2152
 
-2144 is **formally active but substantively not yet implemented**.
+Step 2152 exists only to bring durable navigation/handover prose back in sync with verified repository progress through 2151. It changes no trading/runtime semantics.
 
-After the final green 2143 head `1151f1fd…`, the branch contains only:
+At the time this Masterstand was refreshed, `docs/CURRENT_WORK_STEP.md` named 2152 as active. **Do not infer the current step from this sentence in a later chat.** Always read `CURRENT_WORK_STEP.md`; after Step 2152 closes, the pointer will advance normally.
 
-- `CURRENT_WORK_STEP.md` activation of 2144;
-- Masterstand refresh commits;
-- Knowledge Index refresh commits.
+Step-2152 responsibilities:
 
-No 2144 production/research module or test has yet been added.
-
-This is therefore a clean handover boundary.
-
-### Exact next action in the next chat
-
-Continue **Step 2144**, do not open 2145 yet.
-
-1. Re-pin fresh branch HEAD and exact CI after the final Masterstand documentation commit.
-2. Re-read `CURRENT_WORK_STEP.md`, workflow-integrity gate and this Masterstand.
-3. Audit existing research provenance owners before writing code:
-   - `src/daxlab/contracts.py` / `ExperimentManifest`;
-   - current `src/daxlab/research/` registry/governance owner(s);
-   - `docs/RESEARCH_GATES.md` / `docs/RESEARCH_MODULE_CATALOG.md` as applicable;
-   - relevant tests.
-4. Decide what is KEEP/ADAPT rather than creating a duplicate experiment registry.
-5. Implement the smallest deterministic research experiment/promotion artifact on the new Domain/Data/Strategy/Replay identities.
-6. Add regression/conformance tests proving deterministic identity, provenance completeness and explicit non-authorization.
-7. Run exact-head broad CI + any relevant focused CI.
-8. Only after required evidence is green: close 2144 and activate 2145.
+- reconcile `PROJECT_KNOWLEDGE_INDEX.md` through verified Step 2151;
+- reconcile this Masterstand through verified Step 2151;
+- preserve safety/external-lane truth;
+- run exact-head CI for the documentation reconciliation;
+- only after evidence is green, close 2152 and select/activate 2153 from current Greenfield/backlog truth.
 
 ## 11. External / waiting / interrupted lanes
 
 These lanes remain separate and do not block independent safe NextGen work.
 
-### Step 2122 origin — Windows/MT5 current-branch SHADOW host verification — WAITING_EXTERNAL
+### Lane originating in Step 2122 — Windows/MT5 current-branch SHADOW host verification — WAITING_EXTERNAL
 
 Verified so far:
 
@@ -392,7 +344,7 @@ Old Drive/CSV materialization is retained only for historical evidence compatibi
 
 ### PAPER / LIVE
 
-PAPER remains not authorized. LIVE remains not authorized. Do not build broker submission merely because software evidence owners exist.
+PAPER remains not authorized. LIVE remains not authorized. Do not build/enable broker submission merely because software evidence owners exist.
 
 ## 12. Research / product doctrine — BINDING
 
@@ -415,12 +367,12 @@ Public/open-source scans remain mandatory when architecture/recovery/data/execut
 - Do not let the old 1,673-file CSV contract dictate the NextGen Data Catalog.
 - Do not make broker symbol `DE40` the canonical instrument identity.
 - Do not mix Strategy output with quantity/risk authorization/execution.
-- Do not rewrite CAND-001 as the NextGen architecture; use the explicit compatibility adapter.
-- Do not create a second Experiment/Promotion registry before auditing the existing provenance owners.
+- Do not rewrite CAND-001 as the NextGen architecture; use explicit compatibility adapters.
+- Do not duplicate existing research/promotion/conformance/state/recovery owners before auditing them.
 - Do not add a second parallel data/session owner when the new canonical owner already exists.
 - Do not introduce PAPER/LIVE/order submission while `NONE/false` and authorization gates remain binding.
 - Do not backfill several step numbers after substantive work; pointer first.
-- Do not call a step complete because a partial/general CI is green while its own acceptance work is missing.
+- Do not call a step complete because partial/general CI is green while its own acceptance work is missing.
 - Do not stop after a normal Zwischenstand when the next safe action is executable.
 - Do not claim work continues after a final response.
 
@@ -430,4 +382,4 @@ Use:
 
 `Weiter mit dem DAXBot`
 
-The next chat should recover from repository truth and continue **Step 2144** by auditing the existing experiment/provenance registry first, then building the smallest deterministic research/promotion contract on top of the new Domain + Data Catalog + Strategy Plugin + Replay Engine foundation. PAPER/LIVE remain unauthorized.
+The next chat must recover from repository truth and continue the **active step named by `docs/CURRENT_WORK_STEP.md`**. Never infer the active step from an older Masterstand section. Re-pin fresh HEAD/CI, preserve all safety/external-lane boundaries, and continue the Greenfield migration from the current verified architecture rather than falling back to legacy constraints. PAPER/LIVE remain unauthorized.
