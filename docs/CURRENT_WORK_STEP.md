@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2105**
-- Active whole-number step: **2106**
-- Next step after successful completion: **2107**
+- Last completed whole-number step: **2106**
+- Active whole-number step: **2107**
+- Next step after successful completion: **2108**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -45,6 +45,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2103 | Implement and regression-test the deterministic CAND-001 historical descriptive replay harness; reuse canonical SHADOW strategy/lifecycle/outcome semantics and bind it directly to the audited recovered-M5 loader/session owner with fail-closed dataset-fingerprint verification. | replay `a3ce4e25…`; replay tests `c3d5b6b6…`; audited session owner `308a73d7…`; recovered-M5 bridge `dd7e831e…`; end-to-end tests `7c38b964…` (exact-head CI: `dax-bot-1x-ci` #212 GREEN, `research-lab-ci` #996 GREEN) |
 | 2104 | Define and regression-test the frozen CAND-001 OOS/WF evaluation contract: reuse deterministic 45/20/20 scheduling, prohibit train-time selection/tuning, bind normal/1.5x/2x cost hooks, and create deterministic contract/window/result identities without claiming profitability. | contract `e8cf48b0…`; identity hardening `7a89c21d…`; regression tests `64f0c9ff…`; knowledge index `aa189390…`; Ruff fix `bf9d1d54…` (exact code/test-head CI: `dax-bot-1x-ci` #218 GREEN, `research-lab-ci` #1002 GREEN) |
 | 2105 | Implement and regression-test the deterministic CAND-001 historical OOS/WF measurement runner over the audited recovered-M5 Berlin-session dataset; evaluate OOS slices only, reuse frozen SHADOW replay/fill/outcome semantics, and emit deterministic normal/1.5x/2x per-window evidence with no train-time tuning or profitability claim. | runner `f2fb5caa…`; tests `8c687b52…`; Ruff fix `2f7da184…` (exact-head CI: `dax-bot-1x-ci` #223 GREEN, `research-lab-ci` #1007 GREEN) |
+| 2106 | Implement and regression-test deterministic aggregation over Step-2105 OOS evidence: per-cost totals/window signs/medians/worst-window risk/open-end counts, explicit adjacent cost degradation and fail-closed aggregate-PF reconstruction; bind summaries to full source payload plus every window-result fingerprint. | aggregation `9433e499…`; tests `31acfb2d…`; adjacent-cost fix `3abc1e53…`; test-boundary fix `5be2214b…`; count fix `b38886cb…`; provenance-schema fix `54f22cad…` (exact-head CI: `dax-bot-1x-ci` #230 GREEN, `research-lab-ci` #1014 GREEN) |
 
 ## Numbering rules
 
@@ -59,4 +60,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2106:** implement and regression-test deterministic aggregation over the Step-2105 per-window/per-cost CAND-001 OOS evidence. Summarize each frozen cost model without tuning or selection: total completed trades/net-R, positive/negative/flat windows, median window net-R/PF, worst window net-R/drawdown, aggregate profit factor from window trade-leg evidence where valid, open-at-window-end counts and explicit 1x→1.5x→2x degradation. Bind every summary to the Step-2105 bundle/result fingerprints. This remains historical OOS measurement, not a profitability or promotion claim; PAPER/LIVE boundaries remain unchanged.
+**Step 2107:** implement and regression-test a reproducible machine-readable Evidence export/CLI over the Step-2105 measurement bundle and Step-2106 aggregation. Reuse the audited recovered-M5 loader and canonical runner/aggregator; write deterministic JSON measurement, aggregation and manifest artifacts with explicit fingerprints and `NONE/false` safety. Refuse silent overwrite and fail closed on dataset-fingerprint mismatch. The export layer must add no strategy/replay/selection semantics and makes no profitability or promotion claim.
