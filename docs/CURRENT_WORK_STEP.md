@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2155**
-- Active whole-number step: **2156**
-- Next step after successful completion: **2157**
-- Active Step 2156 scope: **Build Canonical Risk-to-ExecutionIntent Bridge V1: audit current `ExecutionIntent` consumers, then add a deterministic broker-neutral builder that accepts only a matching `ALLOW` `RiskDecision`/`RiskRequest`/`TradePlan`, carries only the risk-approved quantity, maps trade direction to order side, binds strategy/risk provenance, and fails closed on mismatch or DENY. No MT5/order adapter, no `order_send`, no PAPER/LIVE authorization.**
+- Last completed whole-number step: **2156**
+- Active whole-number step: **2157**
+- Next step after successful completion: **2158**
+- Active Step 2157 scope: **Audit and reuse the existing broker lifecycle / reconciliation / execution-protection vocabulary behind the canonical NextGen `ExecutionIntent`, then add adapter-neutral synthetic lifecycle conformance where needed. Do not build a second lifecycle vocabulary, do not call MT5/order submission, and do not authorize PAPER/LIVE.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -37,30 +37,31 @@ The archive preserves reconstructed Steps 2081–2089, direct numbering from Ste
 | 2150 | Prove deterministic interrupted-replay restart/resume parity on the NextGen engine. | **COMPLETED.** Exact tested head `0aa06bcc61655a589e4a2dc1ef8c1d0b5237b0e2`; `dax-bot-1x-ci` #407 GREEN and `research-lab-ci` #1191 GREEN. |
 | 2151 | Add canonical CAND-001 strategy-state codec and prove real Candidate resume parity. | **COMPLETED.** Candidate restart/resume parity and canonical codec verified; no strategy/order authorization change. |
 | 2152 | Reconcile durable project continuity/navigation with verified NextGen progress. | **COMPLETED.** Knowledge Index and Masterstand reconciled; no runtime/authorization change. |
-| 2153 | Audit and enforce the NextGen legacy-dependency isolation boundary. | **COMPLETED.** `docs/NEXTGEN_DEPENDENCY_ISOLATION_V1.md`, AST import guard and evidence note; exact tested head `1234cf92125b21698dff4d5d0d6ea9be558c4ee3`, `dax-bot-1x-ci` #426 GREEN and `research-lab-ci` #1210 GREEN. Formal pointer head after closeout `0af66af8…` also GREEN (#427/#1211). |
+| 2153 | Audit and enforce the NextGen legacy-dependency isolation boundary. | **COMPLETED.** Exact tested head `1234cf92125b21698dff4d5d0d6ea9be558c4ee3`; `dax-bot-1x-ci` #426 GREEN and `research-lab-ci` #1210 GREEN. |
 | 2154 | Audit remaining documented NextGen compatibility/legacy edges for active and forensic consumers before retirement. | **COMPLETED — 7/7 `RETAIN_WITH_REASON`, 0 `RETIRE_CANDIDATE`.** Exact technical tested head `df29bb44c919c307eb7fe271e80841e677b97455`; `dax-bot-1x-ci` #429 GREEN and `research-lab-ci` #1213 GREEN. |
-| 2155 | Define Canonical Risk Decision V1 between strategy planning and deterministic execution intent. | **COMPLETED.** Added `src/daxlab/domain/risk.py`, canonical exports, `docs/NEXTGEN_RISK_DECISION_V1.md` and `tests/test_nextgen_risk_decision.py`. Final tested head `9c65949803e1fdf96fddf0eb7903c3545da35bf6`; `dax-bot-1x-ci` #433 GREEN and `research-lab-ci` #1217 GREEN. Deterministic ALLOW/DENY sizing is broker-neutral and fail-closed; no execution/PAPER/LIVE authorization changed. |
-| 2156 | Build Canonical Risk-to-ExecutionIntent Bridge V1. | **IN PROGRESS.** Audit existing intent consumers first, then add only the broker-neutral approved-risk bridge and tests. |
+| 2155 | Define Canonical Risk Decision V1 between strategy planning and deterministic execution intent. | **COMPLETED.** Final tested head `9c65949803e1fdf96fddf0eb7903c3545da35bf6`; `dax-bot-1x-ci` #433 GREEN and `research-lab-ci` #1217 GREEN. |
+| 2156 | Build Canonical Risk-to-ExecutionIntent Bridge V1. | **COMPLETED.** Added `src/daxlab/domain/risk_execution.py`, canonical export, `docs/NEXTGEN_RISK_EXECUTION_BRIDGE_V1.md` and `tests/test_nextgen_risk_execution_bridge.py`. Exact tested head `1f3a5f819ed115501c8c0902c73903b4a2f2e6e2`; `dax-bot-1x-ci` #435 GREEN and `research-lab-ci` #1219 GREEN. Existing strategy `decision_id` semantics were preserved while Risk V1 request/decision provenance is fingerprint-bound; no broker/PAPER/LIVE capability added. |
+| 2157 | Audit/reuse broker lifecycle, reconciliation and execution-protection contracts for canonical NextGen intent. | **IN PROGRESS.** Start from existing owners and synthetic events only; no order submission. |
 
-## Step 2155 closeout truth
+## Step 2156 closeout truth
 
-Step 2155 established a canonical pre-trade risk boundary. `TradePlan` still contains no quantity. `RiskRequest` binds one strategy decision and plan to canonical instrument economics and a maximum cash-loss budget. `RiskDecision` is deterministic `ALLOW`/`DENY`; quantity exists only on `ALLOW`, is step-floored/capped, and invalid economics or mismatches fail closed. The contract imports no MT5/broker SDK and grants no order capability or PAPER/LIVE authorization.
+Step 2156 proved a broker-neutral, fail-closed bridge from canonical Risk V1 to canonical `ExecutionIntent`. Consumer audit confirmed the historical CAND-001 SHADOW path uses its separate `runtime.paper_contracts.ExecutionIntent` and therefore did not require migration. The NextGen bridge reconstructs request identity, re-evaluates canonical risk, rejects DENY/mismatch/tampering, maps LONG/SHORT deterministically to BUY/SELL, carries exactly the approved quantity, preserves strategy `decision_id`, and binds strategy/risk identities into deterministic provenance. No MT5 SDK, broker adapter, `order_send`, PAPER or LIVE authorization was introduced.
 
-## Step 2156 active work
+## Step 2157 active work
 
-**Step 2156 — IN PROGRESS:** build the first canonical bridge from approved risk output into existing `ExecutionIntent` semantics.
+**Step 2157 — IN PROGRESS:** follow the binding Demo/PAPER readiness reuse rule instead of inventing a second lifecycle stack.
 
 Required properties:
 
-1. inspect existing `ExecutionIntent` consumers before changing or extending its contract;
-2. only a matching `ALLOW` risk decision with a non-null approved quantity may produce intent;
-3. a `DENY`, request/decision mismatch, instrument mismatch or plan mismatch fails closed;
-4. LONG/SHORT direction maps deterministically to BUY/SELL without broker-specific types;
-5. strategy/risk provenance remains deterministic and auditable;
-6. the bridge does not submit an order or implement a broker execution adapter;
-7. no PAPER/LIVE authorization change.
+1. inspect existing `runtime.paper_contracts`, broker lifecycle, reconciliation and execution-protection owners before adding a new canonical surface;
+2. reuse existing ACK/REJECT/PARTIAL/FILLED/CANCELLED vocabulary where semantically sound;
+3. define or adapt synthetic adapter-neutral broker event/lifecycle conformance behind canonical `ExecutionIntent`;
+4. preserve deterministic/idempotent identity and fail closed on contradictory or impossible state transitions;
+5. include reconnect/reconciliation semantics in synthetic tests where the current reusable owner permits it;
+6. no MT5/order-submission implementation and no actual broker order request;
+7. PAPER remains not authorized; LIVE remains not authorized.
 
-Architecture basis: `docs/NEXTGEN_GREENFIELD_ARCHITECTURE_V1.md` §5.5 Risk, portfolio and execution domain.
+Architecture/readiness basis: `docs/NEXTGEN_GREENFIELD_ARCHITECTURE_V1.md` §5.5 and `docs/PAPER_DEMO_READINESS_MATRIX_V1.md` reuse rule / next safe engineering work.
 
 ## Binding numbering and handoff rules
 
