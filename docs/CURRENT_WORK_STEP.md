@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2174**
-- Active whole-number step: **2175**
-- Next step after successful completion: **2176**
-- Active Step 2175 scope: **Implement the Step-2174-approved canonical broker-neutral SessionAdmissionConsumptionState and deterministic consume transition. Require explicit caller-supplied session_key and sha256 consumption_id, derive SessionAdmissionObservation from state, allow a new consumption only from an exact canonical ALLOW decision, make replay of the same consumption_id idempotent without increment, fail closed on same ID with conflicting decision provenance or session mismatch, and add no persistence yet. Do not derive dates/timezones/resets, mutate CAND-001 defaults, access brokers or add PAPER/LIVE authorization.**
+- Last completed whole-number step: **2175**
+- Active whole-number step: **2176**
+- Next step after successful completion: **2177**
+- Active Step 2176 scope: **Persist the Step-2175 canonical SessionAdmissionConsumptionState restart-safely through the existing StateStorePort/AtomicFileStateStore pattern. Add a strict tamper-evident canonical bytes envelope for the exact consumption state, save/load helpers, deterministic roundtrip and fail-closed schema/record/fingerprint validation. Reuse the existing session-admission state module/storage infrastructure; do not introduce a second storage service, derive dates/timezones/resets, mutate CAND-001, access brokers or add PAPER/LIVE authorization.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -31,33 +31,33 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
-| 2169 | Canonical broker-neutral session-admission owner. | **COMPLETED.** Final tested head `a905c76994f3d23d40227543f6417dc5f9cd14ca`; CI #490/#1274 GREEN. |
 | 2170 | Canonical session evidence in typed NextGen protection. | **COMPLETED.** Final tested head `109d195846c8ef27604093cdf79ff35c3a4168e4`; CI #495/#1279 GREEN. |
 | 2171 | Canonical session observation restart/freshness audit. | **COMPLETED.** Final tested head `3b8731e0a318ed27afd3e961d75bec253c33d072`; CI #499/#1283 GREEN. |
 | 2172 | Restart-safe canonical SessionAdmissionObservation checkpoint. | **COMPLETED.** Final tested head `378a651c463f621944456dc8a49c103dbc1abfca`; CI #508/#1292 GREEN. |
 | 2173 | Session observation freshness in typed NextGen protection. | **COMPLETED.** Final tested head `47c641f99ef948ac9052a40c5db4f504e798577e`; CI #512/#1296 GREEN. |
-| 2174 | Canonical session-admission consumption transition audit. | **COMPLETED.** Audit classified `ADAPT_CANONICALLY`: a naive count increment is not restart-idempotent; canonical consumption needs explicit deterministic IDs remembered in state, while CAND-001 session derivation/increment remains Candidate-specific. Final tested head `04197891c069570d277bbb03af611d86f39fd154`; `dax-bot-1x-ci` #515 GREEN and `research-lab-ci` #1299 GREEN. |
-| 2175 | Canonical deterministic session-admission consumption state/transition. | **IN PROGRESS.** Implement domain owner only; persistence is a separate later step. |
+| 2174 | Canonical session-admission consumption transition audit. | **COMPLETED.** Final tested head `04197891c069570d277bbb03af611d86f39fd154`; CI #515/#1299 GREEN. |
+| 2175 | Canonical deterministic session-admission consumption state/transition. | **COMPLETED.** Added deterministic consumption records/state/transition, exact-once increment, idempotent retry, stale-decision/session/provenance conflict fail-closed behavior, and canonical exports. Final tested head `b45891633d401dce6e585b2f02afead451df0381`; `dax-bot-1x-ci` #521 GREEN and `research-lab-ci` #1305 GREEN. |
+| 2176 | Restart-safe SessionAdmissionConsumptionState persistence. | **IN PROGRESS.** Reuse existing StateStorePort/session-admission persistence infrastructure; no new storage service. |
 
-## Step 2174 closeout truth
+## Step 2175 closeout truth
 
-Step 2174 established that SessionAdmissionObservation alone cannot guarantee duplicate-safe consumption across retry/restart because it stores only a count. The canonical product boundary therefore needs deterministic consumption identity retained in state. CAND-001's Europe/Berlin-derived session reset and strategy-stage increment remain compatibility behavior and are not promoted.
+Step 2175 provides the canonical broker-neutral exact-once session-slot consumption domain owner. The visible admitted count is derived from unique deterministic consumption records. Retry of the same ID with the same provenance is idempotent; conflicting provenance, stale decisions, session mismatch and blocked admission fail closed. No persistence, broker access or session-boundary inference was added.
 
-## Step 2175 active work
+## Step 2176 active work
 
-**Step 2175 — IN PROGRESS:** implement the canonical consumption state/transition approved by Step 2174.
+**Step 2176 — IN PROGRESS:** persist exact consumption identity/state restart-safely.
 
 Required properties:
-1. explicit normalized caller-supplied session_key;
-2. deterministic sha256 consumption_id;
-3. state retains exact applied consumption IDs and decision provenance;
-4. observation count derives from unique consumed records;
-5. a new consumption requires the exact canonical current SessionAdmissionDecision and it must be ALLOW;
-6. replaying the same consumption_id with matching provenance is idempotent and does not increment;
-7. same consumption_id with conflicting decision provenance fails closed;
-8. session-key mismatch fails closed and never resets automatically;
-9. no persistence implementation in this step;
-10. no date/timezone/calendar/reset derivation, CAND-001 mutation, broker submission or PAPER/LIVE authorization.
+1. persist exact `SessionAdmissionConsumptionState`, including every consumption ID and bound decision provenance;
+2. deterministic tamper-evident checkpoint/envelope identity;
+3. strict canonical UTF-8 JSON bytes roundtrip;
+4. save/load through existing `StateStorePort` and `AtomicFileStateStore` compatibility;
+5. fail closed on unknown/missing fields, schema drift, duplicate IDs, record fingerprint drift, state fingerprint drift and safety drift;
+6. restored state must preserve Step-2175 idempotent retry behavior exactly;
+7. no second storage implementation or database path;
+8. no session-key/date/timezone/reset derivation;
+9. no CAND-001 mutation;
+10. no broker submission, PAPER or LIVE authorization.
 
 ## Binding numbering and handoff rules
 
