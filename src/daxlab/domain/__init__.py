@@ -2,6 +2,12 @@
 
 from daxlab.domain.execution import ExecutionIntent, OrderSide
 from daxlab.domain.market import Candle, DataQualityState, InstrumentId
+from daxlab.domain.strategy import (
+    StrategyAction,
+    StrategyDecision,
+    TradeDirection,
+    TradePlan,
+)
 
 __all__ = [
     "Candle",
@@ -9,4 +15,8 @@ __all__ = [
     "ExecutionIntent",
     "InstrumentId",
     "OrderSide",
+    "StrategyAction",
+    "StrategyDecision",
+    "TradeDirection",
+    "TradePlan",
 ]
