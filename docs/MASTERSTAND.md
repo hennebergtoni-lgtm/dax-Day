@@ -4,60 +4,66 @@ Status: **BINDING HANDOVER / REPOSITORY TRUTH FIRST**
 Updated: **2026-09-12**  
 Repository: `hennebergtoni-lgtm/dax-Day`  
 Working branch: `nextgen-bot-line-v1`  
-Pull request: `#109` → `main`
+Pull request: `#109` -> `main`
 
-This file is the canonical next-chat handover. It consolidates the current project state without replacing exact code, hashed evidence, fresh runtime telemetry or CI. If this prose conflicts with exact repository evidence, exact repository evidence wins.
+This file is the canonical next-chat handover. Exact repository code, tests, hashes, fresh CI, runtime telemetry and `docs/CURRENT_WORK_STEP.md` override prose if anything disagrees.
 
 ## 1. Mandatory resume protocol
 
-After a new chat, context loss, compaction, tool reconnect, or any explicit `weiter` / `fortsetzen`:
+On a new chat, context loss, reconnect, compaction, or `Weiter mit dem DAXBot`:
 
 1. read `docs/SESSION_EXECUTION_REFRESHER.md`;
-2. pin repository, branch, PR and **fresh exact head SHA**;
-3. read `docs/CURRENT_WORK_STEP.md` and use its whole-number pointer;
-4. read this `docs/MASTERSTAND.md`;
-5. read `docs/PROJECT_KNOWLEDGE_INDEX.md` and only the topic-specific owners needed for the active step;
-6. continue the active step automatically.
+2. pin repository, branch, PR and **fresh exact branch HEAD**;
+3. read `docs/CURRENT_WORK_STEP.md`;
+4. read `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`;
+5. read this Masterstand;
+6. read `docs/PROJECT_KNOWLEDGE_INDEX.md` and only the topic-specific owners needed for the active step;
+7. continue the active step automatically when the Step-Close-Gate permits it.
 
-Binding continuity rule: **a Zwischenstand, successful test, warning, found file, recovered context, CI state or completed sub-check is visibility only, not a stop.** Continue to the next concrete work unit unless a real stop condition from `docs/WORK_CONTINUITY_PROTOCOL.md` exists.
+Repository truth overrides chat memory. Tool/interface activity does not replace the required normal-text Zwischenstand.
 
-Binding visible-work rule: **Step N -> short activity -> visible intermediate report in normal assistant text -> status marker (`✅`, `⚠️`, or `❌`) -> immediate next step.** Interface/tool activity lines alone do not count as the intermediate report. Do not run long chains of tool calls without a normal-text status update between meaningful checks. Each visible report must state what was checked, the current result, and what happens next; then continue immediately when the next safe action is known.
+Binding visible cadence:
 
-A lane-local blocker such as Windows hardware, market time, broker metadata or a user-only action does not stop unrelated safe work.
+`Step N -> short activity -> visible normal-text Zwischenstand -> ✅ / ⚠️ / ❌ -> actual next tool/action`.
 
-Official step numbers are integers only. Decimal/letter pseudo-steps are prohibited.
+A Zwischenstand is visibility, not a stop. Do not end a turn merely because a sub-check succeeded or CI is still running when safe executable work remains. A final answer ends the active tool turn; never claim invisible background continuation afterward.
 
-## 2. Repository / PR / CI truth at handover
+Official step numbers are whole integers only. Visible numbering is monotonic. Interrupted older lanes resume only under a new later integer with provenance preserved.
+
+Next mandatory Masterstand checkpoint: **2250**.  
+Next mandatory full architecture/LEAN audit: **2500**.
+
+## 2. Repository / branch / PR / CI truth at this handover
 
 - Base branch: `main`.
-- PR #109 base SHA: `e0784ebfc11bee28475fd9c3385be661af58a738`.
 - Working branch: `nextgen-bot-line-v1`.
-- PR #109 is open, unmerged and mergeable at the handover refresh.
-- Repository-side DAX-BOT 1.0-alpha acceptance was previously recorded at `2df6e20893144f87f04511823bc7b72699ad7cce`; later 1.x work continues on the same branch and does not invalidate that milestone.
-- Last fully CI-verified implementation head before this handover documentation refresh: `f5fcf2ea715897a4b471c9dd1d1495f2dfca9371`.
-- At `f5fcf2ea…`: `dax-bot-1x-ci` #253 = **GREEN** and `research-lab-ci` #1037 = **GREEN**.
-- The subsequent pointer-only handover-start commit is `0b28a5fa4b396b6a2a72e93237d51cf0501569ee`.
-- Because this document itself creates a newer commit, the next chat must pin the fresh branch head rather than treating any SHA written inside this document as self-referential current head truth.
+- PR #109 is **open, unmerged, mergeable, not draft**.
+- PR base SHA reported by GitHub: `e0784ebfc11bee28475fd9c3385be661af58a738`.
+- **Fresh technical branch HEAD before this Masterstand commit:** `cc8c06da4fed102879f953cffe0720e9751c2226`.
+- On `cc8c06da…` both current checks are GREEN:
+  - broad `test` / `research-lab-ci` -> SUCCESS;
+  - focused `candidate-core` / `dax-bot-1x-ci` -> SUCCESS.
+- GitHub PR metadata currently reports an older PR `head_sha` (`958165fa…`) than the real branch HEAD. Treat this as metadata lag; **the next chat must re-pin the branch HEAD directly**.
+- This Masterstand update creates a newer documentation commit after `cc8c06da…`; do not treat any SHA written here as self-referential current-head truth after the commit.
 
 No merge into `main` is authorized by this handover.
 
-## 3. Safety and authorization — BINDING
+## 3. Safety / authorization — BINDING
 
-- SHADOW: **AUTHORIZED**.
+- SHADOW: **AUTHORIZED only within the existing no-order contract**.
 - PAPER/demo broker execution: **NOT AUTHORIZED**.
 - LIVE: **NOT AUTHORIZED**.
-- `execution_capability=NONE`.
-- `order_execution_enabled=false`.
+- `execution_capability=NONE` where currently required.
+- `order_execution_enabled=false` where currently required.
 - No broker order-submission path is authorized.
-- No `mt5.order_send` path may be introduced by research/evidence work.
+- No research/backtest/CI result may silently grant PAPER/LIVE authority.
+- Explicit later user authorization remains mandatory before PAPER or LIVE.
 
-No backtest, OOS result, stability metric, CI success, version label, operator setting or readiness object silently grants PAPER/LIVE permission. Explicit later user authorization remains mandatory.
+## 4. Scientific legacy anchor — REF-V11.2 — VERIFIED / IMMUTABLE
 
-## 4. Frozen reference — REF-V11.2 — VERIFIED / IMMUTABLE
+`REF-V11.2` is a frozen scientific comparison/reference, **not** the NextGen architecture and **not** CAND-001 performance evidence.
 
-`REF-V11.2` is the scientific legacy/reference anchor, not the current product strategy and not CAND-001 performance evidence.
-
-Canonical active result source: `research/V112_REFERENCE_V1/reference_result.json`.  
+Canonical reference source: `research/V112_REFERENCE_V1/reference_result.json`.  
 Audited dataset manifest: `data/manifests/dax_m5_2014_2019_audited.json`.
 
 Verified historical surface:
@@ -71,248 +77,315 @@ Verified historical surface:
 - 0 known invalid OHLC rows;
 - session OHLC SHA256 `e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`;
 - 144 variants;
-- 81 WF windows, Train 45d / OOS 20d / Step 20d;
+- 81 WF windows; Train 45d / OOS 20d / Step 20d;
 - 856 OOS trades;
 - normal OOS total `-31.309210619787684 R`;
 - 37 positive / 44 negative / 0 flat WFs;
 - median WF PF `0.905769310256018`;
-- stress 1.5× `-40.921695023387514 R`;
-- stress 2× `-48.424611963007294 R`.
+- stress 1.5x `-40.921695023387514 R`;
+- stress 2x `-48.424611963007294 R`.
 
-These metrics must never be relabeled as CAND-001 results.
+Never relabel these metrics as CAND-001 or NextGen performance.
 
-## 5. DAX-BOT 1.x / CAND-001 product line — IMPLEMENTED / CI-VERIFIED where stated
+## 5. DAX-BOT 1.0-alpha / CAND-001 legacy-product line
 
-Product identities are intentionally separate:
+Repository-side DAX-BOT 1.0-alpha acceptance remains a correctness/control milestone, not a profitability proof. The frozen `CAND-001` product candidate remains available as reference/compatibility evidence while NextGen is built beside it.
 
-- `REF-V11.2` = frozen reference;
-- `DAX-BOT 1.x` = active product line;
-- `CAND-001` = current frozen alpha candidate, not a bot-version number.
+Frozen CAND-001 semantics include:
 
-CAND-001 frozen strategy semantics:
-
-- symbol `DE40`;
-- timeframe M5;
-- Europe/Berlin session 09:00–17:30;
+- DE40 M5;
+- Europe/Berlin 09:00–17:30 session;
 - OR15;
-- confirmed breakout requires a **closed M5 close** beyond the completed opening range; wick/touch is insufficient;
-- BOTH directions, symmetric long/short logic;
+- closed-M5 confirmed breakout, not wick/touch;
+- BOTH directions;
 - stop = OR opposite;
 - target = 1.5R;
-- maximum one admitted trade per session.
+- maximum one admitted trade/session.
 
-Causal/runtime rules:
+Existing product/runtime work already includes deterministic closed-bar handling, candidate state, trade-plan/admission/decision pipeline, restart/idempotency controls, virtual lifecycle/costed outcome, operator snapshot/telemetry, SHADOW host integration, broker-neutral lifecycle/reconciliation/protection/checkpoint/telemetry evidence owners, and fail-closed PAPER readiness gates.
 
-- only CLOSED bars mutate strategy state;
-- no open M5 candle is used;
-- duplicate/out-of-order/unsafe bars fail closed;
-- future bars cannot rewrite prior signal/decision identity;
-- decision event time is the bar close time;
-- strategy hot path has no pandas/DB/MT5/broker dependency.
+Do not silently migrate CAND-001 rules into NextGen core contracts. Later, CAND-001 may become one adapter/plugin implementation if evidence supports it.
 
-Implemented architecture includes product/candidate/config identity, signal state, trade plan, session admission, DecisionRecord, OperatorSnapshot, pure candidate pipeline, restart-safe candidate state, virtual lifecycle, costed virtual outcome, forward observation/performance plumbing, SHADOW host integration, telemetry/publication state, and broker-neutral pre-PAPER evidence owners.
+## 6. CAND-001 historical/OOS evidence line — preserved but no longer architecture-driving
 
-Restart/duplicate safety remains a first-class requirement. Deterministic IDs alone are not treated as restart-safe publication; persisted publication/checkpoint state is used where required.
+Steps 2102–2113 implemented a frozen CAND-001-specific historical/OOS evidence chain: deterministic replay, 45/20/20 WF/OOS schedule, normal/1.5x/2x costs, aggregation, immutable three-file evidence export, strict readers, cost-stress integrity, temporal stability diagnostics, standalone `diagnostics.json`, strict diagnostic verification, and post-processing CLI.
 
-## 6. CAND-001 economic-evidence line — Steps 2102–2114
+This line remains valid evidence infrastructure, but it no longer dictates the NextGen data or strategy architecture.
 
-This is the major change since the previous masterstand.
+Historical Drive source remains known:
 
-### Step 2102 — evidence boundary audit — VERIFIED
-
-CAND-001-specific historical/OOS evidence was audited separately from REF-V11.2/V12. Legacy/reference metrics cannot be borrowed. Profitability and robustness remained explicitly UNVERIFIED pending CAND-001-bound measurement.
-
-### Step 2103 — deterministic historical descriptive replay — IMPLEMENTED / CI-VERIFIED
-
-A historical CAND-001 replay harness now reuses the canonical runtime semantics and audited recovered-M5 owner rather than creating a second DataFrame strategy engine. Dataset fingerprint mismatch fails closed.
-
-### Step 2104 — frozen OOS/WF contract — IMPLEMENTED / CI-VERIFIED
-
-- deterministic 45/20/20 scheduling;
-- no train-time candidate selection/tuning;
-- frozen candidate/config identity;
-- normal / 1.5× / 2× cost hooks;
-- no profitability claim and no automatic promotion.
-
-### Step 2105 — OOS/WF measurement runner — IMPLEMENTED / CI-VERIFIED
-
-The runner evaluates OOS slices only over the audited recovered-M5 Berlin-session data and reuses frozen SHADOW replay/fill/outcome semantics. It emits deterministic per-window evidence.
-
-### Step 2106 — deterministic aggregation — IMPLEMENTED / CI-VERIFIED
-
-Per-cost totals, window signs, medians, worst-window risk, open-end counts and adjacent cost degradation are aggregated with full lineage/fingerprints.
-
-### Step 2107 — immutable base evidence export — IMPLEMENTED / CI-VERIFIED
-
-The base export is intentionally exactly three JSON files:
-
-- `measurements.json`;
-- `aggregation.json`;
-- `manifest.json` written last.
-
-Existing target directories are refused.
-
-### Step 2108 — strict base-evidence reader — IMPLEMENTED / CI-VERIFIED
-
-The reader requires the exact three-file layout, rejects missing/unknown fields, reconstructs typed objects and recomputes lineage/fingerprints. External JSON is never trusted on syntax alone.
-
-### Step 2109 — cost-stress consistency audit — IMPLEMENTED / CI-VERIFIED
-
-It verifies path/count/Gross-R invariance, exact `net_r = gross_r - cost_r`, linear cost scaling and monotone adverse cost effects across normal/1.5×/2×. This is evidence-integrity checking, not an economic pass/fail threshold.
-
-Exact head evidence: `681f1306…` / `3fd127e4…`; `dax-bot-1x-ci` #240 GREEN; `research-lab-ci` #1024 GREEN.
-
-### Step 2110 — temporal OOS stability diagnostics — IMPLEMENTED / CI-VERIFIED
-
-Per cost model the project now reports, descriptively:
-
-- mean/median window net-R;
-- positive/negative/flat window rates;
-- zero-trade windows;
-- mean/median completed trades/window;
-- longest positive/negative window streaks;
-- cumulative window-net-R max drawdown;
-- first-half vs second-half net-R and activity;
-- full source fingerprints.
-
-There is no composite score, no economic pass threshold and no auto-promotion. PBO/DSR are explicitly not applied to this one frozen-candidate/no-new-selection surface.
-
-Head `4b9bb341…`: CI #243 / #1027 GREEN.
-
-### Step 2111 — standalone diagnostic evidence — IMPLEMENTED / CI-VERIFIED
-
-A separate immutable `diagnostics.json` binds the canonical measurement/aggregation evidence, unchanged Step-2107 base-manifest fingerprint, PASS cost-consistency audit and temporal stability diagnostics. The frozen three-file base export is not changed.
-
-Head `999d4995…`: CI #246 / #1030 GREEN.
-
-### Step 2112 — strict diagnostic reader — IMPLEMENTED / CI-VERIFIED
-
-The reader recomputes the canonical source chain and rejects schema/metric/fingerprint/safety tampering. A discovered false mismatch caused by Python tuple → JSON array normalization was fixed by comparing canonical JSON identity; the reader returns the freshly recomputed canonical object rather than trusting raw input.
-
-Head `3bf23550…`: CI #250 / #1034 GREEN.
-
-### Step 2113 — post-processing diagnostic CLI — IMPLEMENTED / CI-VERIFIED
-
-`scripts/build_cand001_oos_diagnostics.py` consumes only an already verified Step-2107 evidence directory, recomputes Step-2109/2110 diagnostics and writes one separate immutable `diagnostics.json`.
-
-Regression coverage proves:
-
-- no historical measurement rerun;
-- base evidence stays byte-identical;
-- base and diagnostic output directories must be separate;
-- overwrite is refused;
-- no optimizer, promotion or execution path is introduced.
-
-Head `f5fcf2ea…`: CI #253 / #1037 GREEN.
-
-### Step 2114 — LEAN/data-lane audit — COMPLETED
-
-No additional “combined verification receipt” layer is required. The existing chain is sufficient:
-
-`strict base reader -> canonical cost audit -> canonical stability -> standalone diagnostic artifact -> strict diagnostic reader`.
-
-Adding another wrapper now would be overengineering.
-
-The highest-value next step is therefore **actual frozen CAND-001 OOS evidence generation**, not more scaffolding.
-
-## 7. Historical data source for the first real CAND-001 OOS run — LOCATED / NOT YET MATERIALIZED IN THIS EXECUTION ENVIRONMENT
-
-The repository intentionally stores the audited manifest, not thousands of raw daily CSV files.
-
-The persisted historical source has been located in the connected Google Drive:
-
-- root folder: `DAX_V14_RECOVERED_CACHE_V13`;
-- root folder ID: `12aNhN7dNWZ9j9YqqaiOdcOsCm-cqhzUN`;
-- daily M5 folder: `m5_daily`;
+- root: `DAX_V14_RECOVERED_CACHE_V13`;
 - `m5_daily` folder ID: `1p5-s3ccsBbohbephB7UIhUE_OL1M4b-y`.
 
-Drive listing confirmed ordinary daily `text/csv` files through `2019-12-31.csv` and reported about 1,694 folder items. **Do not equate Drive item count with the 1,673 audited valid session days.** The canonical loader/manifest determines the valid historical surface.
+Step 2137 proved one real private daily CSV can now materialize locally and matches the old canonical loader shape. Bulk/folder materialization through the connector was not available. The user explicitly stopped this lane from becoming the NextGen chassis.
 
-Canonical dataset fingerprint expected by the recovered-M5 owner:
-`e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`.
+Therefore:
 
-Current state:
+- historical-data existence/location: VERIFIED;
+- old CAND-001 evidence code: IMPLEMENTED/CI-VERIFIED;
+- first actual frozen full CAND-001 OOS result artifact: still not produced;
+- CAND-001 profitability/robustness: still UNVERIFIED;
+- old 1,673-file/CSV contract: **historical compatibility/evidence only**, not NextGen storage design.
 
-- data existence/location: **VERIFIED**;
-- repository manifest: **VERIFIED**;
-- CAND-001 OOS runner/export/diagnostics code: **IMPLEMENTED + CI-VERIFIED**;
-- first actual full CAND-001 OOS result artifact: **NOT YET PRODUCED**;
-- CAND-001 profitability: **UNVERIFIED**;
-- CAND-001 robustness: **UNVERIFIED**.
+## 7. Workflow/governance hardening completed during this chat
 
-No attractive future result may bypass the frozen no-tuning contract, cost-stress checks or prospective SHADOW/PAPER evidence.
+Repeated chat/workflow drift was treated as an engineering defect, not cosmetic formatting.
 
-## 8. Parallel external / waiting lanes
+### Step 2132 — workflow-integrity gate — COMPLETED
 
-These lanes remain separate and must not globally stop independent repository/research work.
+Canonical owner: `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`.
 
-### Current Candidate Windows/MT5 host verification
+Binding rules now include:
 
-Repository integration/runbook exists. Fresh real Windows/MT5 verification of the current Candidate-integrated branch remains a separate host lane until fresh host evidence is captured.
+- Step-Close-Gate;
+- pointer-before-next-step;
+- monotonic interrupted-lane carry-forward;
+- visible text Zwischenstand separate from tool activity;
+- no long tool-call chains without text visibility;
+- a Zwischenstand is not a stop;
+- no final/turn-ending response while executable safe work remains;
+- no claim of background work after a turn has ended;
+- exact-head CI/evidence discipline;
+- explicit user intervention as a valid sequence interruption.
 
-### Real broker economics
+### Step 2133 — Recovery canonicalization — COMPLETED / RETAIN_WITH_REASON
 
-Read-only economics plumbing and research-only sizing translation exist, but verified venue-specific economics required for PAPER sizing/readiness remain an external evidence lane.
+`recovery_bundle.py` remains canonical. Legacy `recovery.py` is frozen forensic compatibility only, with no new active consumers.
 
-### PAPER authorization
+### Step 2135 — CI ownership — COMPLETED
 
-Broker-neutral lifecycle, reconciliation, protection, telemetry/checkpoint and readiness infrastructure exist, but repository fixtures do not authorize PAPER. Explicit user authorization remains an independent STOP-gate.
+- `research-lab-ci` / `test` = broad integration/regression owner;
+- `dax-bot-1x-ci` / `candidate-core` = focused candidate/broker-safety owner;
+- `reference-payload-export` = frozen reference integrity/export owner.
 
-### LIVE
+No specialty gate replaces the broad integration regression.
 
-Not authorized and not part of the current evidence-generation sequence.
+### Step 2136 — stable-branch governance audit — COMPLETED AUDIT / ENFORCEMENT WAITING_EXTERNAL
 
-## 9. Research / architecture doctrine — BINDING
+Current observable GitHub state showed `main` unprotected and no repository ruleset. Minimal target protection is documented, but the current integration cannot apply the GitHub-admin setting. Do not claim `main` is protected until fresh admin evidence proves it.
+
+## 8. Architecture intervention — Ferrari, not Golf — BINDING
+
+The user explicitly corrected the project direction: do not treat historical V11.2/CSV/Colab/Drive constraints as the chassis for the new bot merely because they are already available.
+
+New binding rule:
+
+**Legacy is reference, regression evidence and compatibility input — not the NextGen architecture constraint.**
+
+### Step 2138 — Greenfield / First-Principles reset — COMPLETED
+
+Canonical architecture: `docs/NEXTGEN_GREENFIELD_ARCHITECTURE_V1.md`.
+
+The contract defines:
+
+- two speeds, shared semantics: fast Research Layer + deterministic Product Layer;
+- event/domain-first product core;
+- data, strategy, risk, execution, state/recovery and adapters separated by boundaries;
+- broker/venue adapters at the edge;
+- MT5/legacy/V11.2/CAND-001 isolated behind compatibility boundaries;
+- modern columnar data-plane direction;
+- research/promotion separation;
+- KEEP / ADAPT / ISOLATE-LEGACY / REPLACE / RETIRE classification;
+- strangler migration instead of Big-Bang rewrite.
+
+Public/open-source architecture patterns were checked against LEAN, NautilusTrader, Freqtrade and vectorbt. Reuse patterns, not copied strategies/framework bulk.
+
+Architecture commit `e4acdd2898c4275379b28348555a22e91e337106` passed `dax-bot-1x-ci` #333 and `research-lab-ci` #1117.
+
+## 9. NextGen foundation already built
+
+### Step 2139 — canonical domain + ports — COMPLETED
+
+Final implementation head: `b0fe61a09ba70fbed51afce283f7e486288e9c44`.
+
+Added canonical broker/storage-neutral domain foundation under `src/daxlab/domain/`:
+
+- opaque `InstrumentId` independent of broker ticker;
+- canonical UTC Candle / market-data semantics;
+- deterministic `ExecutionIntent` identity;
+- protocol-only external ports;
+- negative architecture tests preventing MT5, legacy-dataset, CAND-001 and V11.2 coupling.
+
+No existing runtime/strategy file was changed in the step.
+
+CI:
+
+- `dax-bot-1x-ci` #339 GREEN;
+- `research-lab-ci` #1123 GREEN.
+
+### Step 2140 — Canonical Historical Data Catalog V1 — COMPLETED
+
+Final implementation head: `ccdc14ab681bfb7589bbdd04e14a893f497f8761`.
+
+New Greenfield data path:
+
+- Parquet as canonical V1 physical format;
+- PyArrow confined to optional `data` dependency surface;
+- content-based deterministic Dataset fingerprint independent of Parquet encoder bytes;
+- separate `parquet_sha256` physical-file integrity;
+- immutable fingerprint-addressed object + manifest;
+- canonical UTC/instrument/data-quality roundtrip;
+- fail-closed checks for mixed instrument/timeframe, open candles, duplicates, out-of-order data, manifest/file tampering;
+- no silent sort/fix-up;
+- legacy `1,673` CSV surface not imported and not modified.
+
+CI:
+
+- `research-lab-ci` #1130 GREEN;
+- `dax-bot-1x-ci` #346 GREEN.
+
+This is the first modern data chassis independent of the recovered CSV layout.
+
+## 10. ACTIVE STEP — 2141 — Strategy Plugin Contract V1 — IN PROGRESS
+
+`docs/CURRENT_WORK_STEP.md` is authoritative and currently states:
+
+- last completed step: **2140**;
+- active step: **2141**;
+- next step after successful completion: **2142**.
+
+### 2141 goal
+
+Build the generic strategy boundary on the new domain contracts **without** migrating CAND-001 and without adding risk sizing or execution authority.
+
+A strategy may output only:
+
+- `NO_TRADE`, or
+- a broker-neutral `TRADE_PLAN` with direction, entry, stop and target.
+
+A strategy must **not** own or authorize:
+
+- quantity/position size;
+- account/cash risk;
+- broker/venue;
+- order submission;
+- persistence backend;
+- host scheduler;
+- PAPER/LIVE authority.
+
+Risk sizing and execution remain downstream systems.
+
+### Exact 2141 implementation state at handover
+
+Step activation commit: `711f73561ecc219346f068f17ab3ede3bcfc3b33`.
+
+Current technical implementation head before this Masterstand commit: `cc8c06da4fed102879f953cffe0720e9751c2226`.
+
+Exactly four 2141 files differ from the activation commit:
+
+1. `src/daxlab/domain/strategy.py` — added;
+2. `src/daxlab/domain/__init__.py` — exports strategy-domain contracts;
+3. `src/daxlab/strategies/contracts.py` — added generic `StrategyTransition` + `StrategyPlugin` Protocol;
+4. `src/daxlab/strategies/__init__.py` — added package exports.
+
+Current contracts include:
+
+- `StrategyAction.NO_TRADE / TRADE_PLAN`;
+- `TradeDirection.LONG / SHORT`;
+- `TradePlan` with instrument, entry, stop, target and directional invariants;
+- deterministic `StrategyDecision` identity with strategy ID/version/fingerprint, event time, reasons and optional plan;
+- `StrategyPlugin.initial_state()`;
+- `StrategyPlugin.on_candle(state, candle) -> StrategyTransition`.
+
+Current HEAD checks are GREEN (`test` and `candidate-core`), **but 2141 is NOT COMPLETED**.
+
+Why not complete: the planned dedicated Strategy-Conformance/architecture test has not yet been created. Existing broad CI success does not substitute for the missing acceptance content.
+
+### Exact next action in the next chat
+
+Continue **Step 2141**, do not open 2142 yet.
+
+1. Re-pin branch/head/pointer after the Masterstand documentation commit.
+2. Re-read:
+   - `src/daxlab/domain/strategy.py`;
+   - `src/daxlab/strategies/contracts.py`;
+   - `src/daxlab/domain/market.py`;
+   - existing NextGen foundation tests.
+3. Add the dedicated Strategy-Conformance test (expected naming can be `tests/test_nextgen_strategy_contract.py`, but repository truth decides).
+4. Test at least:
+   - same state + same candle -> deterministic transition/decision identity;
+   - `NO_TRADE` and valid LONG/SHORT plan invariants;
+   - mismatched instrument rejection;
+   - no quantity/account/broker/order fields in strategy output;
+   - no MT5/runtime/legacy-dataset/CAND-001/V11.2 imports in the new strategy boundary;
+   - plugin remains pure/deterministic and broker/storage-neutral.
+5. Run exact-head CI.
+6. Only after required tests/CI are green: close 2141 in `CURRENT_WORK_STEP.md` and activate 2142.
+
+Do **not** migrate CAND-001 in the handover step. Do **not** add order capability.
+
+## 11. External / waiting / interrupted lanes
+
+These lanes are preserved but do not block independent safe NextGen work.
+
+### Step 2122 origin — Windows/MT5 current-branch SHADOW host verification — WAITING_EXTERNAL
+
+Verified so far:
+
+- Windows host wiring/parity path;
+- Git-canonical parity corrected for CRLF false positives;
+- 56/56 parity evidence on the tested host commit;
+- fail-closed weekend behavior with stale market feed;
+- `execution_capability=NONE`;
+- `order_execution_enabled=false`.
+
+Still required in a fresh/open DE40 market window:
+
+- fresh broker clock/timezone proof;
+- GREEN isolated one-shot;
+- candidate manifest/checkpoint/operator evidence;
+- overlap/reconciliation repeat;
+- controlled Scheduled Task reload/restart + runtime health.
+
+`Europe/Helsinki` is configured but remains UNVERIFIED until fresh host evidence proves it.
+
+When this lane is later resumed, use the then-next unused whole-number step; never display 2122 again as the active current step.
+
+### Step 2136 enforcement lane — WAITING_EXTERNAL / MANUAL_GITHUB_ADMIN
+
+Stable-branch governance target exists, but actual `main` protection/ruleset enforcement requires GitHub-admin action outside the current connector permission.
+
+### Step 2137 — INTERRUPTED / HISTORICAL
+
+Old Drive/CSV materialization is retained only for historical evidence compatibility. It must not steer NextGen design.
+
+### PAPER / LIVE
+
+PAPER remains not authorized. LIVE remains not authorized. Do not build broker submission merely because software evidence owners exist.
+
+## 12. Research / product doctrine — BINDING
+
+Primary objective: build a robust, economically useful DAX daytrading system. Profitability is the goal but **not yet proven**.
 
 Research decision hierarchy remains:
 
 `REGIME -> STRUCTURE -> ENTRY`.
 
-Do not accumulate filters merely because they are plausible. Use activation/removal evidence, R/Cash/DD impact, overlap/redundancy checks, OOS/WF discipline and multiple-testing governance where applicable.
+Do not accumulate plausible filters without evidence. Use causal semantics, activation/removal evidence, OOS/WF discipline, cost stress, overlap/redundancy analysis and multiple-testing governance where applicable.
 
-Public/open-source comparison remains required, especially for engineering patterns from LEAN, NautilusTrader, Freqtrade, vectorbt and comparable systems. Reuse proven patterns for state/recovery/reconciliation, persistence, dry/forward discipline, data integrity, performance, overfitting control, observability and governance. Do not copy large generic frameworks or introduce multi-venue/portfolio complexity without a defined need.
+Use FAST/vectorized screening for broad idea search and a deterministic shared-semantics Product Layer for promoted candidates. Do not force the Product Layer to serve as the early-search brute-force engine.
 
-Avoid blind multi-hour grids. Prefer FAST screening, targeted stages, checkpoints/resume and causal/event-driven semantics.
+Public/open-source scans remain mandatory when architecture/recovery/data/execution/research questions arise, especially LEAN, NautilusTrader, Freqtrade, vectorbt and comparable mature systems. Take proven patterns; do not import unnecessary framework bulk or strategies.
 
-## 10. What must NOT be redone or silently changed
+## 13. What must NOT be redone or silently changed
 
-- Do not optimize or rewrite REF-V11.2.
-- Do not borrow REF-V11.2/V12 performance metrics for CAND-001.
-- Do not create a second CAND-001 strategy engine for historical testing.
-- Do not create a second historical-data/session owner.
-- Do not create a second paper/order contract.
-- Do not add another verification-wrapper/receipt layer unless a concrete evidence gap appears.
-- Do not introduce broker order submission while `NONE/false` is binding.
-- Do not change the Step-2107 exactly-three-file base evidence contract merely to append diagnostics.
-- Do not apply PBO/DSR mechanically to a single frozen candidate with no new multi-trial selection surface.
-- Do not use chat memory as current head/step truth when repository truth is available.
-- Do not stop after a normal Zwischenstand when the next safe step is known.
+- Do not rewrite or optimize REF-V11.2.
+- Do not use REF-V11.2/V12 metrics as CAND-001 or NextGen evidence.
+- Do not let the old 1,673-file CSV contract dictate the NextGen Data Catalog.
+- Do not make broker symbol `DE40` the canonical instrument identity.
+- Do not mix Strategy output with quantity/risk authorization/execution.
+- Do not migrate CAND-001 into the new strategy contract before the generic contract is tested and closed.
+- Do not add a second parallel data/session owner when the new canonical owner already exists.
+- Do not introduce PAPER/LIVE/order submission while `NONE/false` and authorization gates remain binding.
+- Do not backfill several step numbers after substantive work; pointer first.
+- Do not call a step complete because a partial/general CI is green while its own acceptance work is missing.
+- Do not stop after a normal Zwischenstand when the next safe action is executable.
+- Do not claim work continues after a final response.
 
-## 11. Current work pointer and exact next technical value
+## 14. Next-chat one-line resume
 
-Canonical numbering lives only in `docs/CURRENT_WORK_STEP.md`.
+Use:
 
-At the start of this handover refresh:
+`Weiter mit dem DAXBot`
 
-- Step 2114: completed;
-- Step 2115: new canonical masterstand / next-chat handover;
-- next independent technical work after successful 2115 closeout: Step 2116.
-
-Planned Step 2116 intent:
-
-**Reuse the located Google Drive `m5_daily` source and existing dataset owner to materialize/attach the audited historical data in a suitable execution workspace, verify the freshly loaded session fingerprint against the authoritative audited SHA256, then run the frozen CAND-001 OOS/WF measurement → aggregation → immutable three-file export → strict verification → cost-consistency → temporal-stability → standalone diagnostic chain to produce the first actual CAND-001 OOS evidence. No tuning, no promotion and no execution.**
-
-If bulk Drive materialization is not practical in the current tool environment, that is a lane-local execution constraint, not a reason to invent a new data format or globally stop the project. Reuse an existing Colab/Drive or other already-approved execution path and continue other safe work independently.
-
-## 12. Source precedence
-
-For active facts, prefer:
-
-1. exact repository code/contracts at the pinned SHA;
-2. audited manifests and hashed machine-readable evidence;
-3. fresh runtime telemetry for current runtime claims;
-4. current CI and specific audits;
-5. this masterstand;
-6. older prose only for provenance.
-
-Step 2000 full audit is complete. Next mandatory full-project audit: **Step 2500**.
+The next chat should recover from repository truth and continue **Step 2141** at the missing Strategy-Conformance test, then exact-head CI, then close 2141 only if all acceptance checks are genuinely green.
