@@ -16,6 +16,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
 - Next mandatory 250-step Masterstand checkpoint: **2250**
+- Next mandatory 500-step full audit: **2500**
 - Next mandatory 500-step Architecture & Learning Review: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -74,7 +75,7 @@ Required properties:
 6. **Pointer-before-next-step:** this file must name the new active step before substantive work starts.
 7. **Visible official step numbering is monotonic.** Once a higher official step has started, unfinished older scope is preserved as provenance and may continue only under the next unused whole-number step.
 8. `Weiter mit dem DAXBot` triggers repository-backed recovery; `Erstelle einen Masterstand` triggers canonical handover refresh.
-9. Next Masterstand checkpoint: **2250**; next 500-step Architecture & Learning Review: **2500**.
+9. Next Masterstand checkpoint: **2250**; next 500-step full audit and Architecture & Learning Review: **2500**.
 10. Visible work remains short: Step N → activity → ✅/⚠️/❌ Zwischenstand → immediate next action.
 11. Never claim work continues after a turn-ending response.
 
