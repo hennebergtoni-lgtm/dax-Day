@@ -32,7 +32,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2102 | Audit CAND-001-specific economic evidence boundary; REF-V11.2/V12 metrics cannot be borrowed. | `b220999c…`, `c63d30a4…`, `7585410a…` |
 | 2103 | Implement deterministic historical CAND-001 descriptive replay over audited recovered M5 data. | `a3ce4e25…`, `c3d5b6b6…`, `308a73d7…`, `dd7e831e…` |
 | 2104 | Freeze CAND-001 OOS/WF contract: 45/20/20, no train-time tuning, normal/1.5x/2x costs. | `e8cf48b0…`, `7a89c21d…`, `64f0c9ff…`, `bf9d1d54…` |
-| 2105 | Implement deterministic OOS/WF measurement runner. | `f2fb5caa…`, `8c687b52…`, `2f7da184…` |
+| 2105 | Implement deterministic historical OOS/WF measurement runner. | `f2fb5caa…`, `8c687b52…`, `2f7da184…` |
 | 2106 | Implement deterministic OOS aggregation and cost degradation summaries. | `9433e499…`, `31acfb2d…`, `3abc1e53…`, `5be2214b…`, `b38886cb…`, `54f22cad…` |
 | 2107 | Add immutable three-file OOS evidence export/CLI. | `0d105920…`, `f15b3e23…`, `845e4060…` |
 | 2108 | Add strict round-trip verifier for exported OOS evidence. | `f951b5f1…`, `45f8ba5c…` |
