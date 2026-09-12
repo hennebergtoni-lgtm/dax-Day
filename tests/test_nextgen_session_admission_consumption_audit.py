@@ -30,12 +30,15 @@ def test_audit_does_not_promote_candidate_session_reset_semantics() -> None:
     assert "no timezone/date/calendar/session-reset inference" in text
 
 
-def test_current_canonical_domain_has_evaluation_but_no_consumption_transition() -> None:
+def test_step_2174_audit_boundary_is_now_implemented_without_rewriting_history() -> None:
+    text = AUDIT.read_text(encoding="utf-8")
     source = DOMAIN_SESSION.read_text(encoding="utf-8")
 
+    assert "does **not** yet have a canonical owner" in text
+    assert "Implementation is a separate next whole-number step" in text
     assert "def evaluate_session_admission" in source
-    assert "consumption_id" not in source
-    assert "consume_session" not in source
+    assert "def consume_session_admission" in source
+    assert "consumption_id" in source
 
 
 def test_audit_preserves_explicit_consumption_boundary_and_safety() -> None:
