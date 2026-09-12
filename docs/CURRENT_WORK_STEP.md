@@ -8,11 +8,11 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2120**
-- Active whole-number step: **2121**
-- Next step after successful completion: **2122**
+- Last completed whole-number step: **2121**
+- Active whole-number step: **2122**
+- Next step after successful completion: **2123**
 - Outstanding lane-local step: **2116 — WAITING_EXTERNAL / historical Drive materialization-execution lane**
-- Outstanding host-verification lane: **current-branch CAND-001 Windows/MT5 SHADOW verification — WAITING_EXTERNAL**
+- Active host-verification lane: **2122 — current-branch CAND-001 Windows/MT5 SHADOW real-host verification**
 - Next mandatory 250-step Masterstand checkpoint: **2250**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
@@ -46,6 +46,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2118 | Reconcile Masterstand, Step-2000 backlog, alpha closeout, PAPER gap matrix, current PR/head/CI and external lanes before further implementation. Confirm broker-neutral lifecycle/reconciliation/protection/checkpoint/telemetry owners already exist; identify stale SHADOW/PAPER acceptance status as the highest-value repository-side consistency gap. | Branch head `38baa3f…` had `dax-bot-1x-ci` #260 GREEN and `research-lab-ci` #1044 GREEN; `SHADOW_PAPER_ACCEPTANCE_V1.md` still said `Shadow: NOT STARTED` while current authoritative state had SHADOW authorized and CAND-001 real-host verification separately `WAITING_EXTERNAL`. |
 | 2119 | Reconcile the binding SHADOW/PAPER acceptance contract with current authoritative state without changing execution capability or strategy semantics. | `docs/SHADOW_PAPER_ACCEPTANCE_V1.md` now records SHADOW authorized/no-order, current-branch Windows/MT5 Candidate host verification `WAITING_EXTERNAL`, PAPER not ready/not authorized and LIVE not eligible/not authorized; readback verified after commit `11615403…`. |
 | 2120 | Record the stale stage-status drift failure mode in the existing durable engineering-memory registry. | `PSR-017` added to `docs/PROBLEM_SOLUTION_REGISTRY_ADDENDUM_V1.md`; problem/root cause/fix/evidence/reuse rule read back and verified after commit `655695d5…`. |
+| 2121 | Preflight the current CAND-001 Windows/MT5 SHADOW deployment path before any user host action. Remove stale hard-pinned parity SHA, require local HEAD to match branch upstream, hash-check the host-facing fixed surface plus all commit-owned `candidate_*.py`/`mt5_*.py`, clarify isolated preflight vs scheduled-task state directories, and align regression tests. | Parity/script/runbook/test updates through `2bd6a9d1…`; initial research-lab CI exposed only the obsolete pinned-SHA test expectation and was corrected; exact final head `2bd6a9d1753d4505402c65db733a4665ec11bcd7` has `dax-bot-1x-ci` #270 GREEN and `research-lab-ci` #1054 GREEN. |
 
 ## Numbering and handoff rules
 
@@ -63,4 +64,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2121:** preflight the existing CAND-001 Windows/MT5 SHADOW deployment runbook against the actual current branch scripts and interfaces before asking the user to touch the PC. Verify referenced script paths, required parameters, state/evidence outputs and the no-order safety assertions. Fix only genuine repository-side drift; do not perform or simulate the real-host verification and do not authorize PAPER/LIVE.
+**Step 2122:** perform the real Windows/MT5 CAND-001 SHADOW host verification with the user on the existing host, strictly following `docs/CAND001_WINDOWS_SHADOW_DEPLOYMENT_RUNBOOK_V1.md`. Start with repository update + exact code parity. Continue only on GREEN through isolated one-shot SHADOW preflight, candidate evidence/safety assertions, isolated overlap/reconciliation, scheduled-task reload/restart evidence if required, and scheduled-task runtime health. Retain tested commit and fingerprints/evidence. No PAPER/LIVE authorization and no broker order submission.
