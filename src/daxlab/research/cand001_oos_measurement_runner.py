@@ -9,7 +9,6 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, replace
 from datetime import date
 from pathlib import Path
-from typing import Iterable
 from zoneinfo import ZoneInfo
 
 import pandas as pd
