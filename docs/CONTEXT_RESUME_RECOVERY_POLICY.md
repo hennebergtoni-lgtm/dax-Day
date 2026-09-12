@@ -93,6 +93,21 @@ Public-project findings are RESEARCH input only. They may improve future design 
 
 Begun step sequences are continued independently and visibly. Intermediate reports are visibility points, not stopping points.
 
+### Binding visible work cadence
+
+For tool-backed project work, the visible interaction cadence is mandatory:
+
+1. `Schritt N` plus a short plain-language statement of the activity being performed;
+2. execute only the next bounded tool action or small logically inseparable tool cluster;
+3. provide a visible **textual Zwischenstand** before starting the next tool block;
+4. mark the result plainly as `✅` positive/verified, `⚠️` anomaly/open point, or `❌` error/blocker where applicable;
+5. state the **immediate next step** in text;
+6. continue automatically unless a real stop condition exists.
+
+Tool output, activity indicators, or hidden/internal reasoning are **not** a substitute for the textual Zwischenstand. Do not run long chains of tool calls without explanatory text between meaningful work units. For a longer operation, expose meaningful checkpoints as the work proceeds rather than disappearing into an extended invisible block.
+
+This visibility rule survives chat changes, compaction, reconnects and handovers. On resume, re-establish the same cadence immediately; do not fall back to silent tool chains.
+
 Stop only when:
 
 1. a real milestone has been reached,
