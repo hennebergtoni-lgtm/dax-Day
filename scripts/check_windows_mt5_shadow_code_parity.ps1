@@ -8,8 +8,6 @@ Set-StrictMode -Version Latest
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
-$repository = 'hennebergtoni-lgtm/dax-Day'
-
 function Invoke-GitLine {
     param(
         [Parameter(Mandatory = $true)]
@@ -81,57 +79,59 @@ if ($dynamicRuntimeFiles.Count -eq 0) {
 }
 
 Write-Host "PARITY SURFACE | files=$($runtimeFiles.Count) | dynamic_candidate_mt5=$($dynamicRuntimeFiles.Count)"
-
-$tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("daxlab-parity-" + [Guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $tempRoot | Out-Null
+Write-Host 'PARITY MODE | GIT_CANONICAL_BLOB / CRLF_SAFE'
 
 $results = @()
-try {
-    foreach ($relativePath in $runtimeFiles) {
-        $localPath = Join-Path $repoRoot ($relativePath -replace '/', [IO.Path]::DirectorySeparatorChar)
-        if (-not (Test-Path -LiteralPath $localPath -PathType Leaf)) {
-            $results += [PSCustomObject]@{
-                Path = $relativePath
-                Status = 'MISSING_LOCAL'
-                LocalSHA256 = $null
-                PublicSHA256 = $null
-            }
-            continue
-        }
-
-        $fileName = [IO.Path]::GetFileName($relativePath)
-        $tempPath = Join-Path $tempRoot (([Guid]::NewGuid().ToString('N')) + '-' + $fileName)
-        $rawUrl = "https://raw.githubusercontent.com/$repository/$ExpectedCommit/$relativePath"
-
-        try {
-            Invoke-WebRequest -Uri $rawUrl -OutFile $tempPath -UseBasicParsing
-        }
-        catch {
-            $results += [PSCustomObject]@{
-                Path = $relativePath
-                Status = 'REMOTE_UNAVAILABLE'
-                LocalSHA256 = $null
-                PublicSHA256 = $null
-            }
-            continue
-        }
-
-        $localHash = (Get-FileHash -LiteralPath $localPath -Algorithm SHA256).Hash.ToUpperInvariant()
-        $publicHash = (Get-FileHash -LiteralPath $tempPath -Algorithm SHA256).Hash.ToUpperInvariant()
-        $status = if ($localHash -eq $publicHash) { 'MATCH' } else { 'MISMATCH' }
+foreach ($relativePath in $runtimeFiles) {
+    $localPath = Join-Path $repoRoot ($relativePath -replace '/', [IO.Path]::DirectorySeparatorChar)
+    if (-not (Test-Path -LiteralPath $localPath -PathType Leaf)) {
         $results += [PSCustomObject]@{
             Path = $relativePath
-            Status = $status
-            LocalSHA256 = $localHash
-            PublicSHA256 = $publicHash
+            Status = 'MISSING_LOCAL'
+            LocalObjectId = $null
+            ExpectedObjectId = $null
         }
+        continue
+    }
+
+    try {
+        $expectedObjectId = (Invoke-GitLine -Arguments @('rev-parse', "${ExpectedCommit}:$relativePath")).Trim().ToLowerInvariant()
+    }
+    catch {
+        $results += [PSCustomObject]@{
+            Path = $relativePath
+            Status = 'EXPECTED_BLOB_UNAVAILABLE'
+            LocalObjectId = $null
+            ExpectedObjectId = $null
+        }
+        continue
+    }
+
+    try {
+        # Use the path-aware Git clean-filter pipeline so normal Windows CRLF
+        # worktree conversion does not create a false parity mismatch.
+        $localObjectId = (Invoke-GitLine -Arguments @('hash-object', "--path=$relativePath", $localPath)).Trim().ToLowerInvariant()
+    }
+    catch {
+        $results += [PSCustomObject]@{
+            Path = $relativePath
+            Status = 'LOCAL_HASH_UNAVAILABLE'
+            LocalObjectId = $null
+            ExpectedObjectId = $expectedObjectId
+        }
+        continue
+    }
+
+    $status = if ($localObjectId -eq $expectedObjectId) { 'MATCH' } else { 'MISMATCH' }
+    $results += [PSCustomObject]@{
+        Path = $relativePath
+        Status = $status
+        LocalObjectId = $localObjectId
+        ExpectedObjectId = $expectedObjectId
     }
 }
-finally {
-    Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
-}
 
-$results | Format-Table Path, Status, LocalSHA256, PublicSHA256 -AutoSize
+$results | Format-Table Path, Status, LocalObjectId, ExpectedObjectId -AutoSize
 
 $failed = @($results | Where-Object { $_.Status -ne 'MATCH' })
 Write-Host "PARITY SUMMARY | commit=$ExpectedCommit | total=$($results.Count) | match=$($results.Count - $failed.Count) | failed=$($failed.Count)"
