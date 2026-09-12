@@ -10,7 +10,6 @@ from daxlab.research.cand001_oos_walk_forward import (
     SELECTION_POLICY,
     TRAIN_ROLE,
     Cand001OosResultIdentity,
-    Cand001OosWalkForwardContract,
     Cand001OosWindow,
     build_cand001_oos_contract,
     build_cand001_oos_result_identity,
