@@ -19,14 +19,14 @@ Treat this phrase as an immediate handover command. Refresh `docs/MASTERSTAND.md
 
 ### Scheduled checkpoints
 
-A Masterstand refresh is mandatory every 250 official whole-number steps. The next scheduled checkpoint is **2250**. Every second checkpoint is also the existing 500-step full audit, so **2500** includes both Masterstand refresh and full audit.
+A Masterstand refresh is mandatory every 250 official whole-number work steps. The next scheduled checkpoint is **2250**. Every second checkpoint is also the existing 500-step full audit, so **2500** includes both Masterstand refresh and full audit.
 
 ## Mandatory preflight before substantive work
 
 Before the first concrete tool/code action after any `weiter`, `fortsetzen`, `Weiter mit dem DAXBot`, resume, context reconstruction, reconnect, tool disruption or new work turn, verify these ten items:
 
 1. **Repo/head truth first.** Re-pin repository, branch, exact head SHA, PR and relevant CI. Do not work from a stale remembered head.
-2. **Canonical step pointer.** Read `docs/CURRENT_WORK_STEP.md`; official numbering comes from that file, never chat-memory inference or raw commit count.
+2. **Canonical step pointer.** Read `docs/CURRENT_WORK_STEP.md`; official numbering comes from that file, never from chat memory or raw commit count.
 3. **Workflow-integrity gate.** Read `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md` and ensure the previous step satisfies the Step-Close-Gate before a new independent step begins.
 4. **Integer step only.** Official visible work steps are whole numbers only. Never use `.1`, letters, nested official numbering or pseudo-substeps.
 5. **Pointer-before-next-step.** The current pointer must name the active new integer before the first substantive action of that independent work unit.
