@@ -174,7 +174,7 @@ def aggregate_cand001_oos(
 
     degradations = tuple(
         _degradation(left, right)
-        for left, right in zip(summaries, summaries[1:], strict=True)
+        for left, right in zip(summaries[:-1], summaries[1:], strict=True)
     )
     summary_tuple = tuple(summaries)
     aggregate_identity = {
