@@ -9,7 +9,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 ## Current pointer
 
 - Last completed whole-number step: **2124**
-- Active whole-number step: **2125 — broker-timezone + generic MT5-symbol diagnostic continuation**
+- Active whole-number step: **2125**
 - Next unused whole-number step: **2126**
 - Outstanding lane-local step: **2116 — WAITING_EXTERNAL / historical Drive materialization-execution lane**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
@@ -31,10 +31,10 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2102 | Audit CAND-001-specific economic evidence boundary; REF-V11.2/V12 metrics cannot be borrowed. | `b220999c…`, `c63d30a4…`, `7585410a…` |
 | 2103 | Implement deterministic historical CAND-001 descriptive replay over audited recovered M5 data. | `a3ce4e25…`, `c3d5b6b6…`, `308a73d7…`, `dd7e831e…` |
 | 2104 | Freeze CAND-001 OOS/WF contract: 45/20/20, no train-time tuning, normal/1.5x/2x costs. | `e8cf48b0…`, `7a89c21d…`, `64f0c9ff…`, `bf9d1d54…` |
-| 2105 | Implement deterministic historical OOS/WF measurement runner. | `f2fb5caa…`, `8c687b52…`, `2f7da184…` |
+| 2105 | Implement deterministic historical OOS/WF measurement runner. | `f2fb5caa…`, `8c687b52…` |
 | 2106 | Implement deterministic OOS aggregation and cost degradation summaries. | `9433e499…`, `31acfb2d…`, `3abc1e53…`, `5be2214b…`, `b38886cb…`, `54f22cad…` |
 | 2107 | Add immutable three-file OOS evidence export/CLI. | `0d105920…`, `f15b3e23…`, `845e4060…` |
-| 2108 | Add strict round-trip verifier for exported OOS evidence. | `f951b5f1…`, `45f8ba5c…` |
+| 2108 | Add strict round-trip verifier for exported OOS evidence. | `f951b5f1…`, `45f8ba5c1…` |
 | 2109 | Add cost-stress evidence-integrity audit. | `681f1306…`, `3fd127e4…`; CI #240/#1024 GREEN |
 | 2110 | Add descriptive temporal OOS stability diagnostics; no score/threshold/promotion. | `4b9bb341…`; CI #243/#1027 GREEN |
 | 2111 | Add standalone deterministic `diagnostics.json` evidence artifact bound to canonical OOS evidence. | `e80ac46c…`, `999d4995…`; CI #246/#1030 GREEN |
