@@ -1,7 +1,7 @@
 # PAPER Readiness Gap Matrix V1
 
 Status: BINDING PLANNING / EVIDENCE MATRIX — PAPER NOT AUTHORIZED
-Updated: 2026-09-11
+Updated: 2026-09-12
 Branch: `nextgen-bot-line-v1`
 
 Purpose: turn the coarse goal "get to real demo/PAPER quickly" into explicit evidence lanes without creating broker-order capability prematurely. This matrix maps directly to `ReadinessSnapshot` / `RunKind.PAPER` and to `docs/SHADOW_PAPER_ACCEPTANCE_V1.md`.
@@ -51,9 +51,29 @@ The core **broker-neutral execution evidence owners and readiness gates now exis
 
 Their existence does **not** make PAPER ready. Broker-facing PAPER readiness still requires real Windows/demo-venue evidence, verified DE40 economics/risk policy, reconnect/reconciliation/telemetry/checkpoint evidence and the independent user STOP-gate.
 
+## Step 2127 repository-owner reassessment — 2026-09-12
+
+Step 2127 re-audited the current branch owner-by-owner against implementation and regression tests rather than relying on this matrix summary alone. The reviewed broker-neutral surfaces were:
+
+- broker order lifecycle + lifecycle state restore;
+- atomic broker execution checkpoint;
+- local-vs-venue reconciliation;
+- execution protection/admission evidence;
+- deterministic order/reconciliation/protection telemetry;
+- restart-safe telemetry idempotency journal;
+- read-only broker economics readiness;
+- research-only cash-at-stop sizing translation;
+- BASE/BOOST/HIGH explicit cash-risk profile bridge;
+- research-only loss-cap admission gate;
+- `ReadinessSnapshot` / `RunKind.PAPER` fail-closed gate composition.
+
+Result: **no material missing broker-neutral software evidence owner was identified.** The existing owner set already separates repository/fixture proof from broker-facing proof and keeps broker-order submission intentionally absent. The PAPER readiness evaluator independently requires lifecycle, checkpoint, reconciliation, protection, telemetry, MT5 read-only health, broker economics, broker risk sizing, risk-profile policy, loss-cap policy and explicit user authorization before PAPER can be allowed.
+
+Therefore the remaining gap is **evidence collection and authorization**, not another generic execution scaffold. Real demo-broker observations must populate the existing evidence contracts before their PAPER readiness booleans may become true. Building a broker submission adapter before that evidence exists and before explicit PAPER authorization would be premature overengineering and remains prohibited.
+
 The next safe repository work is therefore:
 
-1. reassess whether any additional broker-neutral software evidence owner is genuinely missing before authorization;
+1. preserve the existing owner set unless new evidence reveals a concrete missing contract;
 2. keep real host/economics/reconciliation/telemetry/checkpoint evidence as parallel `WAITING_EXTERNAL` lanes;
 3. prefer thin read-only evidence adapters/tests over inventing a broker submission stack prematurely;
 4. do not create a broker submission adapter until the authorization-gated boundary is explicitly crossed.
