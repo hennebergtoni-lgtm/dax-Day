@@ -7,9 +7,11 @@ separately authorized PAPER adapter could require before submission.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import StrEnum
 from hashlib import sha256
 import json
+from math import isfinite
 from typing import Any
 
 from daxlab.domain.loss_admission import (
@@ -21,6 +23,7 @@ from daxlab.domain.loss_admission import (
 from daxlab.domain.risk import RiskDecision, RiskRequest, evaluate_fixed_cash_risk
 from daxlab.domain.risk_policy import FixedCashRiskPolicy
 from daxlab.runtime.broker_reconciliation import BrokerReconciliationVerdict
+from daxlab.state.loss_exposure import LossExposureObservationCheckpoint
 
 
 BROKER_EXECUTION_PROTECTION_SCHEMA = "DAXLAB_BROKER_EXECUTION_PROTECTION_V1"
@@ -43,6 +46,8 @@ class BrokerExecutionProtectionVerdict:
     feed_age_seconds: float
     observed_spread_points: float | None
     loss_admission_evidence_fingerprint: str | None = None
+    loss_observation_checkpoint_fingerprint: str | None = None
+    loss_observation_age_seconds: float | None = None
     execution_capability: str = "NONE"
     order_execution_enabled: bool = False
 
@@ -59,6 +64,10 @@ class BrokerExecutionProtectionVerdict:
                 self.loss_admission_evidence_fingerprint,
                 "loss_admission_evidence_fingerprint",
             ),
+            (
+                self.loss_observation_checkpoint_fingerprint,
+                "loss_observation_checkpoint_fingerprint",
+            ),
         ):
             if value is not None:
                 _sha(value, field)
@@ -66,6 +75,15 @@ class BrokerExecutionProtectionVerdict:
             raise ValueError("feed_age_seconds must be non-negative")
         if self.observed_spread_points is not None and self.observed_spread_points < 0:
             raise ValueError("observed_spread_points must be non-negative")
+        if self.loss_observation_age_seconds is not None and (
+            not isfinite(self.loss_observation_age_seconds)
+            or self.loss_observation_age_seconds < 0
+        ):
+            raise ValueError("loss_observation_age_seconds must be finite and non-negative")
+        if (
+            self.loss_observation_checkpoint_fingerprint is None
+        ) != (self.loss_observation_age_seconds is None):
+            raise ValueError("loss observation checkpoint identity and age must appear together")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("execution protection verdict cannot authorize execution")
         if self.status is ExecutionProtectionStatus.ALLOW_EVIDENCE and self.blockers:
@@ -91,6 +109,10 @@ class BrokerExecutionProtectionVerdict:
                 "loss_admission_evidence_fingerprint": (
                     self.loss_admission_evidence_fingerprint
                 ),
+                "loss_observation_checkpoint_fingerprint": (
+                    self.loss_observation_checkpoint_fingerprint
+                ),
+                "loss_observation_age_seconds": self.loss_observation_age_seconds,
                 "feed_age_seconds": float(self.feed_age_seconds),
                 "observed_spread_points": (
                     None
@@ -121,6 +143,9 @@ def evaluate_execution_protection(
     risk_policy_fingerprint: str | None,
     session_admission_allowed: bool,
     loss_admission_evidence_fingerprint: str | None = None,
+    loss_observation_checkpoint_fingerprint: str | None = None,
+    loss_observation_age_seconds: float | None = None,
+    loss_observation_fresh: bool | None = None,
 ) -> BrokerExecutionProtectionVerdict:
     """Combine normalized protection evidence; submit and authorize nothing."""
     _sha(client_order_id, "client_order_id")
@@ -137,9 +162,31 @@ def evaluate_execution_protection(
             loss_admission_evidence_fingerprint,
             "loss_admission_evidence_fingerprint",
         ),
+        (
+            loss_observation_checkpoint_fingerprint,
+            "loss_observation_checkpoint_fingerprint",
+        ),
     ):
         if value is not None:
             _sha(value, field)
+
+    freshness_values = (
+        loss_observation_checkpoint_fingerprint,
+        loss_observation_age_seconds,
+        loss_observation_fresh,
+    )
+    if any(value is not None for value in freshness_values) and any(
+        value is None for value in freshness_values
+    ):
+        raise ValueError("loss observation freshness evidence must be complete")
+    if loss_observation_age_seconds is not None and (
+        isinstance(loss_observation_age_seconds, bool)
+        or not isfinite(loss_observation_age_seconds)
+        or loss_observation_age_seconds < 0
+    ):
+        raise ValueError("loss_observation_age_seconds must be finite and non-negative")
+    if loss_observation_fresh is not None and type(loss_observation_fresh) is not bool:
+        raise ValueError("loss_observation_fresh must be boolean")
 
     blockers: list[str] = []
     if not host_health_green:
@@ -168,6 +215,8 @@ def evaluate_execution_protection(
         blockers.append("RISK_POLICY_EVIDENCE_MISSING")
     if not loss_cap_allowed:
         blockers.append("LOSS_CAP_BLOCKED")
+    if loss_observation_fresh is False:
+        blockers.append("LOSS_EXPOSURE_OBSERVATION_STALE")
     if not session_admission_allowed:
         blockers.append("SESSION_ADMISSION_BLOCKED")
 
@@ -191,8 +240,14 @@ def evaluate_execution_protection(
         observed_spread_points=(
             None if observed_spread_points is None else float(observed_spread_points)
         ),
-        loss_admission_evidence_fingerprint=(
-            loss_admission_evidence_fingerprint
+        loss_admission_evidence_fingerprint=loss_admission_evidence_fingerprint,
+        loss_observation_checkpoint_fingerprint=(
+            loss_observation_checkpoint_fingerprint
+        ),
+        loss_observation_age_seconds=(
+            None
+            if loss_observation_age_seconds is None
+            else float(loss_observation_age_seconds)
         ),
     )
 
@@ -214,7 +269,10 @@ def evaluate_nextgen_execution_protection(
     risk_decision: RiskDecision,
     loss_policy: LossExposurePolicy,
     loss_observation: LossExposureObservation,
+    loss_observation_checkpoint: LossExposureObservationCheckpoint,
     loss_admission_decision: LossExposureAdmissionDecision,
+    evaluated_at: datetime,
+    max_loss_observation_age_seconds: float,
     session_admission_allowed: bool,
 ) -> BrokerExecutionProtectionVerdict:
     """Bind canonical product risk/admission evidence into existing protection."""
@@ -247,6 +305,28 @@ def evaluate_nextgen_execution_protection(
         )
     if risk_policy.currency != loss_policy.currency:
         raise ValueError("risk and loss/admission policy currencies must match")
+    if loss_observation_checkpoint.policy_fingerprint != loss_policy.policy_fingerprint:
+        raise ValueError("loss observation checkpoint policy mismatch")
+    if loss_observation_checkpoint.observation != loss_observation:
+        raise ValueError("loss observation checkpoint observation mismatch")
+
+    if not isinstance(evaluated_at, datetime) or evaluated_at.tzinfo is None:
+        raise ValueError("evaluated_at must be timezone-aware")
+    if (
+        isinstance(max_loss_observation_age_seconds, bool)
+        or not isfinite(max_loss_observation_age_seconds)
+        or max_loss_observation_age_seconds < 0
+    ):
+        raise ValueError(
+            "max_loss_observation_age_seconds must be finite and non-negative"
+        )
+    observation_age_seconds = (
+        evaluated_at.astimezone(timezone.utc)
+        - loss_observation_checkpoint.observed_at.astimezone(timezone.utc)
+    ).total_seconds()
+    if observation_age_seconds < 0:
+        raise ValueError("loss observation checkpoint cannot be future-dated")
+    observation_fresh = observation_age_seconds <= max_loss_observation_age_seconds
 
     return evaluate_execution_protection(
         client_order_id=client_order_id,
@@ -267,6 +347,11 @@ def evaluate_nextgen_execution_protection(
         loss_admission_evidence_fingerprint=(
             loss_admission_decision.decision_fingerprint
         ),
+        loss_observation_checkpoint_fingerprint=(
+            loss_observation_checkpoint.checkpoint_fingerprint
+        ),
+        loss_observation_age_seconds=observation_age_seconds,
+        loss_observation_fresh=observation_fresh,
     )
 
 
