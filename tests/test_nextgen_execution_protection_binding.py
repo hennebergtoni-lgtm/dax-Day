@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -17,9 +18,13 @@ from daxlab.runtime.broker_execution_protection import (
     ExecutionProtectionStatus,
     evaluate_nextgen_execution_protection,
 )
+from daxlab.state.loss_exposure import build_loss_exposure_observation_checkpoint
 
 
+UTC = timezone.utc
 CLIENT_ID = "e" * 64
+EVALUATED_AT = datetime(2026, 9, 12, 12, 0, tzinfo=UTC)
+MAX_OBSERVATION_AGE_SECONDS = 60.0
 
 
 def _risk_chain(*, policy_cash: float = 257.0, request_cash: float | None = None):
@@ -70,9 +75,18 @@ def _loss_chain(*, open_positions: int = 0, currency: str = "EUR"):
     return policy, observation, decision
 
 
+def _checkpoint(policy: LossExposurePolicy, observation: LossExposureObservation):
+    return build_loss_exposure_observation_checkpoint(
+        policy_fingerprint=policy.policy_fingerprint,
+        observation=observation,
+        observed_at=EVALUATED_AT - timedelta(seconds=1),
+    )
+
+
 def _evaluate(*, risk=None, loss=None):
     risk_policy, request, risk_decision = risk or _risk_chain()
     loss_policy, observation, admission = loss or _loss_chain()
+    checkpoint = _checkpoint(loss_policy, observation)
     return evaluate_nextgen_execution_protection(
         client_order_id=CLIENT_ID,
         host_health_green=True,
@@ -89,14 +103,18 @@ def _evaluate(*, risk=None, loss=None):
         risk_decision=risk_decision,
         loss_policy=loss_policy,
         loss_observation=observation,
+        loss_observation_checkpoint=checkpoint,
         loss_admission_decision=admission,
+        evaluated_at=EVALUATED_AT,
+        max_loss_observation_age_seconds=MAX_OBSERVATION_AGE_SECONDS,
         session_admission_allowed=True,
     )
 
 
 def test_canonical_evidence_produces_allow_evidence_and_binds_fingerprints() -> None:
     risk_policy, _, risk_decision = _risk_chain()
-    _, _, admission = _loss_chain()
+    loss_policy, observation, admission = _loss_chain()
+    checkpoint = _checkpoint(loss_policy, observation)
 
     verdict = _evaluate()
 
@@ -108,6 +126,11 @@ def test_canonical_evidence_produces_allow_evidence_and_binds_fingerprints() -> 
         verdict.loss_admission_evidence_fingerprint
         == admission.decision_fingerprint
     )
+    assert (
+        verdict.loss_observation_checkpoint_fingerprint
+        == checkpoint.checkpoint_fingerprint
+    )
+    assert verdict.loss_observation_age_seconds == 1.0
     assert verdict.execution_capability == "NONE"
     assert verdict.order_execution_enabled is False
 
