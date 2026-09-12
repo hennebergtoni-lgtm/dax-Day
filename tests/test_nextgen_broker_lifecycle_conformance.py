@@ -30,6 +30,9 @@ from daxlab.runtime.broker_reconciliation import (
 )
 from daxlab.runtime.nextgen_broker_lifecycle import begin_nextgen_order_lifecycle
 from daxlab.state.loss_exposure import build_loss_exposure_observation_checkpoint
+from daxlab.state.session_admission import (
+    build_session_admission_observation_checkpoint,
+)
 
 
 UTC = timezone.utc
@@ -250,6 +253,11 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         observed_at=T0,
     )
     session_policy, session_observation, session_decision = _session_evidence()
+    session_checkpoint = build_session_admission_observation_checkpoint(
+        policy_fingerprint=session_policy.policy_fingerprint,
+        observation=session_observation,
+        observed_at=T0,
+    )
 
     protection = evaluate_nextgen_execution_protection(
         client_order_id=lifecycle.client_order_id,
@@ -273,7 +281,9 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         max_loss_observation_age_seconds=5.0,
         session_policy=session_policy,
         session_observation=session_observation,
+        session_observation_checkpoint=session_checkpoint,
         session_admission_decision=session_decision,
+        max_session_observation_age_seconds=5.0,
     )
 
     assert protection.status is ExecutionProtectionStatus.ALLOW_EVIDENCE
@@ -299,6 +309,11 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         protection.session_admission_evidence_fingerprint
         == session_decision.decision_fingerprint
     )
+    assert (
+        protection.session_observation_checkpoint_fingerprint
+        == session_checkpoint.checkpoint_fingerprint
+    )
+    assert protection.session_observation_age_seconds == 2.0
     assert protection.execution_capability == "NONE"
     assert protection.order_execution_enabled is False
 
