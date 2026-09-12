@@ -12,6 +12,11 @@ from daxlab.domain.market import InstrumentId
 from daxlab.domain.risk import InstrumentRiskInputs, RiskRequest, evaluate_fixed_cash_risk
 from daxlab.domain.risk_policy import FixedCashRiskPolicy
 from daxlab.domain.risk_execution import build_execution_intent_from_risk
+from daxlab.domain.session_admission import (
+    SessionAdmissionObservation,
+    SessionAdmissionPolicy,
+    evaluate_session_admission,
+)
 from daxlab.domain.strategy import TradeDirection, TradePlan
 from daxlab.runtime.broker_execution_protection import (
     ExecutionProtectionStatus,
@@ -50,6 +55,16 @@ def _loss_evidence():
         policy=policy,
         observation=observation,
     )
+    return policy, observation, decision
+
+
+def _session_evidence():
+    policy = SessionAdmissionPolicy.build(max_trades_per_session=1)
+    observation = SessionAdmissionObservation.build(
+        session_key="2026-09-11-DE40-DAY",
+        trades_admitted=0,
+    )
+    decision = evaluate_session_admission(policy=policy, observation=observation)
     return policy, observation, decision
 
 
@@ -234,6 +249,7 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         observation=loss_observation,
         observed_at=T0,
     )
+    session_policy, session_observation, session_decision = _session_evidence()
 
     protection = evaluate_nextgen_execution_protection(
         client_order_id=lifecycle.client_order_id,
@@ -255,7 +271,9 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         loss_admission_decision=loss_decision,
         evaluated_at=T0 + timedelta(seconds=2),
         max_loss_observation_age_seconds=5.0,
-        session_admission_allowed=True,
+        session_policy=session_policy,
+        session_observation=session_observation,
+        session_admission_decision=session_decision,
     )
 
     assert protection.status is ExecutionProtectionStatus.ALLOW_EVIDENCE
@@ -272,6 +290,15 @@ def test_existing_protection_owner_accepts_only_complete_synthetic_evidence() ->
         == observation_checkpoint.checkpoint_fingerprint
     )
     assert protection.loss_observation_age_seconds == 2.0
+    assert protection.session_policy_fingerprint == session_policy.policy_fingerprint
+    assert (
+        protection.session_observation_fingerprint
+        == session_observation.observation_fingerprint
+    )
+    assert (
+        protection.session_admission_evidence_fingerprint
+        == session_decision.decision_fingerprint
+    )
     assert protection.execution_capability == "NONE"
     assert protection.order_execution_enabled is False
 
