@@ -24,12 +24,16 @@ from daxlab.runtime.broker_execution_protection import (
     evaluate_nextgen_execution_protection,
 )
 from daxlab.state.loss_exposure import build_loss_exposure_observation_checkpoint
+from daxlab.state.session_admission import (
+    build_session_admission_observation_checkpoint,
+)
 
 
 UTC = timezone.utc
 CLIENT_ID = "e" * 64
 EVALUATED_AT = datetime(2026, 9, 12, 12, 0, tzinfo=UTC)
 MAX_OBSERVATION_AGE_SECONDS = 60.0
+MAX_SESSION_OBSERVATION_AGE_SECONDS = 60.0
 
 
 def _risk_chain(*, policy_cash: float = 257.0, request_cash: float | None = None):
@@ -98,11 +102,40 @@ def _checkpoint(policy: LossExposurePolicy, observation: LossExposureObservation
     )
 
 
-def _evaluate(*, risk=None, loss=None, session=None):
+def _session_checkpoint(
+    policy: SessionAdmissionPolicy,
+    observation: SessionAdmissionObservation,
+    *,
+    observed_at: datetime | None = None,
+):
+    return build_session_admission_observation_checkpoint(
+        policy_fingerprint=policy.policy_fingerprint,
+        observation=observation,
+        observed_at=(
+            EVALUATED_AT - timedelta(seconds=1)
+            if observed_at is None
+            else observed_at
+        ),
+    )
+
+
+def _evaluate(
+    *,
+    risk=None,
+    loss=None,
+    session=None,
+    session_checkpoint=None,
+    evaluated_at: datetime = EVALUATED_AT,
+    max_session_age_seconds: float = MAX_SESSION_OBSERVATION_AGE_SECONDS,
+):
     risk_policy, request, risk_decision = risk or _risk_chain()
     loss_policy, observation, admission = loss or _loss_chain()
     session_policy, session_observation, session_decision = session or _session_chain()
     checkpoint = _checkpoint(loss_policy, observation)
+    session_checkpoint = session_checkpoint or _session_checkpoint(
+        session_policy,
+        session_observation,
+    )
     return evaluate_nextgen_execution_protection(
         client_order_id=CLIENT_ID,
         host_health_green=True,
@@ -121,11 +154,13 @@ def _evaluate(*, risk=None, loss=None, session=None):
         loss_observation=observation,
         loss_observation_checkpoint=checkpoint,
         loss_admission_decision=admission,
-        evaluated_at=EVALUATED_AT,
+        evaluated_at=evaluated_at,
         max_loss_observation_age_seconds=MAX_OBSERVATION_AGE_SECONDS,
         session_policy=session_policy,
         session_observation=session_observation,
+        session_observation_checkpoint=session_checkpoint,
         session_admission_decision=session_decision,
+        max_session_observation_age_seconds=max_session_age_seconds,
     )
 
 
@@ -134,6 +169,7 @@ def test_canonical_evidence_produces_allow_evidence_and_binds_fingerprints() -> 
     loss_policy, observation, admission = _loss_chain()
     checkpoint = _checkpoint(loss_policy, observation)
     session_policy, session_observation, session_decision = _session_chain()
+    session_checkpoint = _session_checkpoint(session_policy, session_observation)
 
     verdict = _evaluate()
 
@@ -159,6 +195,11 @@ def test_canonical_evidence_produces_allow_evidence_and_binds_fingerprints() -> 
         verdict.session_admission_evidence_fingerprint
         == session_decision.decision_fingerprint
     )
+    assert (
+        verdict.session_observation_checkpoint_fingerprint
+        == session_checkpoint.checkpoint_fingerprint
+    )
+    assert verdict.session_observation_age_seconds == 1.0
     assert verdict.execution_capability == "NONE"
     assert verdict.order_execution_enabled is False
 
@@ -231,3 +272,87 @@ def test_mismatched_session_admission_decision_fails_closed() -> None:
 
     with pytest.raises(ValueError, match="canonical session evaluation"):
         _evaluate(session=(policy, observation, other_decision))
+
+
+def test_session_checkpoint_policy_mismatch_fails_closed() -> None:
+    policy, observation, decision = _session_chain()
+    other_policy = SessionAdmissionPolicy.build(max_trades_per_session=2)
+    checkpoint = build_session_admission_observation_checkpoint(
+        policy_fingerprint=other_policy.policy_fingerprint,
+        observation=observation,
+        observed_at=EVALUATED_AT - timedelta(seconds=1),
+    )
+
+    with pytest.raises(ValueError, match="session observation checkpoint policy mismatch"):
+        _evaluate(
+            session=(policy, observation, decision),
+            session_checkpoint=checkpoint,
+        )
+
+
+def test_session_checkpoint_observation_mismatch_fails_closed() -> None:
+    policy, observation, decision = _session_chain()
+    other_observation = SessionAdmissionObservation.build(
+        session_key=observation.session_key,
+        trades_admitted=1,
+    )
+    checkpoint = build_session_admission_observation_checkpoint(
+        policy_fingerprint=policy.policy_fingerprint,
+        observation=other_observation,
+        observed_at=EVALUATED_AT - timedelta(seconds=1),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="session observation checkpoint observation mismatch",
+    ):
+        _evaluate(
+            session=(policy, observation, decision),
+            session_checkpoint=checkpoint,
+        )
+
+
+def test_stale_session_checkpoint_blocks_new_admission() -> None:
+    policy, observation, decision = _session_chain()
+    checkpoint = _session_checkpoint(
+        policy,
+        observation,
+        observed_at=EVALUATED_AT - timedelta(seconds=61),
+    )
+
+    verdict = _evaluate(
+        session=(policy, observation, decision),
+        session_checkpoint=checkpoint,
+    )
+
+    assert verdict.status is ExecutionProtectionStatus.BLOCKED
+    assert "SESSION_ADMISSION_OBSERVATION_STALE" in verdict.blockers
+    assert verdict.session_observation_age_seconds == 61.0
+    assert (
+        verdict.session_observation_checkpoint_fingerprint
+        == checkpoint.checkpoint_fingerprint
+    )
+
+
+def test_future_dated_session_checkpoint_fails_closed() -> None:
+    policy, observation, decision = _session_chain()
+    checkpoint = _session_checkpoint(
+        policy,
+        observation,
+        observed_at=EVALUATED_AT + timedelta(seconds=1),
+    )
+
+    with pytest.raises(ValueError, match="session observation checkpoint cannot be future-dated"):
+        _evaluate(
+            session=(policy, observation, decision),
+            session_checkpoint=checkpoint,
+        )
+
+
+@pytest.mark.parametrize("value", [-1.0, float("inf"), True])
+def test_invalid_max_session_observation_age_fails_closed(value) -> None:
+    with pytest.raises(
+        ValueError,
+        match="max_session_observation_age_seconds must be finite and non-negative",
+    ):
+        _evaluate(max_session_age_seconds=value)
