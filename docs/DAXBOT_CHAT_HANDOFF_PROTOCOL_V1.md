@@ -77,7 +77,9 @@ Do not promise autonomous work while no model turn is running. If the app/networ
 - no `.1`, letter suffix or nested official step number;
 - a masterstand refresh at a scheduled checkpoint is itself part of that official whole-number work unit;
 - `WAITING_EXTERNAL` blocks only its lane and does not prevent later independent whole-number steps;
-- after any handoff, continue from repository truth without inventing skipped work.
+- after any handoff, continue from repository truth without inventing skipped work;
+- if an older still-open step is resumed after a later independent/governance step has already been completed, label it explicitly as **`Fortsetzung Schritt N`** so the chronology is not mistaken for a numbering rollback;
+- intermediate reports inside an active/resumed step are labeled simply **`Zwischenstand`** and must not introduce or repeat a different official step number.
 
 ## 6. Visible work / progress-reporting contract
 
