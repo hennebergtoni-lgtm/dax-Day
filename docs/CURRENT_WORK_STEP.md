@@ -8,9 +8,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2111**
-- Active whole-number step: **2112**
-- Next step after successful completion: **2113**
+- Last completed whole-number step: **2112**
+- Active whole-number step: **2113**
+- Next step after successful completion: **2114**
 - Next mandatory 500-step full audit: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
 
@@ -51,6 +51,7 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 | 2109 | Add and regression-test a deterministic cost-stress evidence-integrity audit: verify path/count/Gross-R invariance, exact `net_r = gross_r - cost_r`, linear cost scaling and monotone adverse cost effects across normal/1.5x/2x; explicitly exclude the cost-dependent trade-record fingerprint from false equality checks. | audit `681f1306…`; regression tests `3fd127e4…` (exact-head CI: `dax-bot-1x-ci` #240 GREEN, `research-lab-ci` #1024 GREEN) |
 | 2110 | Implement and regression-test descriptive temporal OOS stability diagnostics after canonical PASS cost-consistency evidence: per-cost mean/median window net-R, sign/flat rates, zero-trade windows, activity, longest sign streaks, cumulative max drawdown, first-vs-second-half net-R/activity and full source fingerprints; no score/threshold/promotion and PBO/DSR explicitly not applied to this single frozen-candidate/no-new-selection surface. | implementation present before `4b9bb341…`; regression tests `4b9bb341…` (exact-head CI: `dax-bot-1x-ci` #243 GREEN, `research-lab-ci` #1027 GREEN) |
 | 2111 | Add and regression-test a separate deterministic machine-readable OOS diagnostic artifact bound to the canonical measurement/aggregation evidence, unchanged Step-2107 base-manifest fingerprint, PASS Step-2109 cost-consistency audit and Step-2110 temporal-stability diagnostics; enforce immutable standalone write, no score/threshold/promotion and `NONE/false`. | implementation `e80ac46c…`; tests `999d4995…` (exact-head CI: `dax-bot-1x-ci` #246 GREEN, `research-lab-ci` #1030 GREEN) |
+| 2112 | Add and regression-test a strict standalone diagnostic reader/verifier: exact filename/schema/field set, canonical recomputation of Step-2109/2110/2111 lineage, attack tests for field/metric/fingerprint/safety tampering, and canonical JSON normalization for tuple→array round-trip. | reader `89cd4ea6…`; tests `7f66ba75…`; JSON-normalization fix `3bf23550…` (exact-head CI: `dax-bot-1x-ci` #250 GREEN, `research-lab-ci` #1034 GREEN) |
 
 ## Numbering rules
 
@@ -65,4 +66,4 @@ The last externally visible/trusted work unit before the numbering gap was Step 
 
 ## Current work
 
-**Step 2112:** add and regression-test a strict reader/verifier for the standalone `diagnostics.json` artifact from Step 2111. Require the fixed filename and exact schema/field set, recompute canonical measurement/aggregation/base-manifest/cost-consistency/stability lineage from supplied verified source evidence, reject unknown/missing fields and any metric/fingerprint/safety tampering, and return only fully verified diagnostic evidence. No promotion or execution semantics are introduced.
+**Step 2113:** add and regression-test a separate diagnostic CLI that consumes only an already verified Step-2107 OOS evidence directory through the strict Step-2108 reader, recomputes canonical Step-2109 cost consistency and Step-2110 stability, and writes exactly one immutable standalone `diagnostics.json` artifact through the Step-2111 writer. It must not rerun historical measurement, modify the three-file base directory, introduce thresholds/promotion, or enable execution.
