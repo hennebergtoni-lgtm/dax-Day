@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2160**
-- Active whole-number step: **2161**
-- Next step after successful completion: **2162**
-- Active Step 2161 scope: **Define and bind the mandatory 500-step Architecture & Learning Review governance. At each 500-step checkpoint, pause normal forward construction and critically reassess the preceding 500-step block plus inherited assumptions from earlier blocks using repository evidence, measured performance, failures, new architectural knowledge and current external/public-source patterns. Produce explicit KEEP / IMPROVE / REFACTOR / RETIRE / DEFER decisions with evidence, expected benefit, migration risk and rollback path. Preserve VERIFIED evidence and safety truth; do not force rewrites merely because a checkpoint was reached.**
+- Last completed whole-number step: **2161**
+- Active whole-number step: **2162**
+- Next step after successful completion: **2163**
+- Active Step 2162 scope: **Implement the smallest evidence-neutral canonical single fixed-cash risk policy that binds one explicit currency and one per-trade maximum cash-loss ceiling to canonical Risk V1. Do not import or promote BASE/BOOST/HIGH research profiles, do not infer account balance/equity percentages, do not read broker/account APIs, and do not add broker submission or PAPER/LIVE authorization.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -40,30 +40,28 @@ The exact prior full ledger has been preserved without rewriting at:
 | 2158 | PAPER pre-authorization composition / LEAN audit. | **COMPLETED.** Tested head `8a0052c71a284ab8b94dc5e7dafebf04d10af77a`; CI #439/#1223 GREEN. No new runtime orchestrator; PAPER/LIVE remain unauthorized. |
 | 2159 | Canonical read-only broker-economics → Risk Inputs adapter. | **COMPLETED.** Technical commit `cd68d6f45bee1bf552c195b5efd75d3582e5a10c`; final tested head `6f782e3d14754a744232ae1094a9b4534f767fcb`; CI #442/#1226 GREEN. |
 | 2160 | Risk-profile / loss-cap product-promotion audit. | **COMPLETED.** Research profile values remain unpromoted; fixed-cash/currency/floor-sizing semantics classified for reuse, product policy boundary separated from research evidence. Final tested head `fecff1962ce7e3c7c869dc49cd45b3bfbd5a145a`; `dax-bot-1x-ci` #445 GREEN and `research-lab-ci` #1229 GREEN. |
-| 2161 | 500-step Architecture & Learning Review governance. | **IN PROGRESS.** Bind the review contract and regression guard; do not perform the Step-2500 review early. |
+| 2161 | 500-step Architecture & Learning Review governance. | **COMPLETED.** Added binding review contract `docs/FIVE_HUNDRED_STEP_ARCHITECTURE_LEARNING_REVIEW_V1.md` plus regression guard. Final tested head `fbc04354ef7e5b209bc3759309561b5d5974d5ed`; `dax-bot-1x-ci` #449 GREEN and `research-lab-ci` #1233 GREEN. |
+| 2162 | Canonical single fixed-cash risk policy. | **IN PROGRESS.** Implement only the smallest product policy identified by Step 2160; no research-profile promotion or broker/account capability. |
 
-## Step 2160 closeout truth
+## Step 2161 closeout truth
 
-Step 2160 confirmed that explicit fixed-cash risk, currency identity and conservative floor-sizing semantics are reusable product concepts, while BASE/BOOST/HIGH profile values and research policy versions remain research-only and are not automatically promoted. Per-trade sizing stays separate from daily/weekly/consecutive-loss/open-position admission controls. Repository-tested software semantics do not satisfy the broker/policy evidence required for PAPER. No broker submission or PAPER/LIVE capability was added.
+The 500-step checkpoint is now a mandatory Architecture & Learning Review rather than a status-only recap. At each 500-step checkpoint, ordinary forward construction pauses until the review critically reassesses the preceding 500-step block and any inherited assumptions materially affected by newer evidence. The review must include measured performance/workflow efficiency, failures and structural debt, relevant current external/public-source patterns, and explicit `KEEP / IMPROVE / REFACTOR / RETIRE / DEFER` decisions. Any change decision requires evidence, expected benefit, migration/parity requirements, risk and rollback. `KEEP` and no-change are valid outcomes; reaching the checkpoint alone never justifies a rewrite. VERIFIED history and safety truth remain preserved.
 
-## Step 2161 active work
+## Step 2162 active work
 
-**Step 2161 — IN PROGRESS:** turn the 500-step checkpoint into a mandatory architecture/learning pause rather than a status-only checkpoint.
+**Step 2162 — IN PROGRESS:** implement one canonical fixed-cash product risk policy above Risk V1.
 
 Required properties:
 
-1. normal forward feature construction pauses at each 500-step checkpoint until the review is completed and recorded;
-2. review at least the preceding 500-step block and challenge inherited assumptions when newer evidence affects them;
-3. compare intended architecture/process with observed reality: failures, CI friction, runtime cost, bottlenecks, duplicated truth, dead paths, coupling, recovery/reconciliation, test quality and operator usability;
-4. explicitly ask what is now known that was not known when the earlier design was chosen;
-5. include current external/public-source patterns and relevant established systems where they can materially improve the design; external popularity alone is not evidence to rewrite;
-6. classify findings as `KEEP`, `IMPROVE`, `REFACTOR`, `RETIRE` or `DEFER` with concrete evidence and rationale;
-7. for `IMPROVE`/`REFACTOR`/`RETIRE`, record expected benefit, affected modules, migration/parity proof, risk, rollback and sequencing before implementation;
-8. measured performance and workflow efficiency must be reviewed so slow or wasteful structures are caught before another large block is built on them;
-9. modular boundaries may be changed deliberately when the review proves a better structure, but changes must preserve required contracts/evidence and avoid cascading rewrites where a compatibility-first migration is safer;
-10. VERIFIED evidence/history is not rewritten because architecture improved; new evidence may supersede interpretations only with explicit provenance;
-11. the 500-step review must produce a prioritized post-review plan, not merely commentary;
-12. reaching a 500-step checkpoint does **not** itself justify a rewrite: no-change/KEEP is a valid outcome when evidence supports it.
+1. one explicit configured risk currency;
+2. one explicit positive finite per-trade maximum cash-loss ceiling;
+3. deterministic policy identity/fingerprint;
+4. policy binds into canonical `RiskRequest` / Risk V1 semantics without duplicating sizing logic;
+5. currency mismatch and malformed policy values fail closed;
+6. no `BASE`, `BOOST`, `HIGH`, automatic escalation or research policy version in the canonical owner;
+7. no account balance, equity percentage or broker/account API read;
+8. no MT5 SDK/order API, broker submission or PAPER/LIVE authorization;
+9. readiness verification state remains separate from mere software implementation.
 
 ## Binding numbering and handoff rules
 
