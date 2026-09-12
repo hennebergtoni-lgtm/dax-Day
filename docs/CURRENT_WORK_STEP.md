@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2171**
-- Active whole-number step: **2172**
-- Next step after successful completion: **2173**
-- Active Step 2172 scope: **Implement the Step-2171-approved tamper-evident, policy-linked SessionAdmissionObservation checkpoint using the existing StateStorePort/AtomicFileStateStore pattern. Persist only exact canonical SessionAdmissionObservation plus policy fingerprint and caller-supplied timezone-aware observed_at; provide strict bytes roundtrip, save/load and policy-compatibility checks. Do not derive sessions, reset counts, access brokers or add PAPER/LIVE authorization.**
+- Last completed whole-number step: **2172**
+- Active whole-number step: **2173**
+- Next step after successful completion: **2174**
+- Active Step 2173 scope: **Bind the Step-2172 policy-linked SessionAdmissionObservation checkpoint and explicit freshness evidence into the existing typed NextGen execution-protection path. Require exact checkpoint policy/observation match, timezone-aware evaluation time and explicit non-negative finite max session-observation age; fail closed on future-dated evidence, block stale evidence, and bind checkpoint identity/age into verdict provenance. Do not derive session keys, resets, timezones/calendars or add broker submission/PAPER/LIVE authorization.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
@@ -31,33 +31,33 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
-| 2166 | Restart-safe canonical Loss/Exposure observation persistence. | **COMPLETED.** Final tested head `482635101f87224517fd95f4ad4c0e1e76a8f952`; CI #478/#1262 GREEN. |
 | 2167 | Loss/Exposure observation freshness in NextGen protection. | **COMPLETED.** Final tested head `9989b8235411f8da95cb275ef3c2dad9f61040e5`; CI #482/#1266 GREEN. |
 | 2168 | Canonical session-admission promotion audit. | **COMPLETED.** Final tested head `aea72758412b2c06ae7d211a4cc048b5e92a0eb1`; CI #485/#1269 GREEN. |
 | 2169 | Canonical broker-neutral session-admission owner. | **COMPLETED.** Final tested head `a905c76994f3d23d40227543f6417dc5f9cd14ca`; CI #490/#1274 GREEN. |
 | 2170 | Canonical session evidence in typed NextGen protection. | **COMPLETED.** Final tested head `109d195846c8ef27604093cdf79ff35c3a4168e4`; CI #495/#1279 GREEN. |
-| 2171 | Canonical session observation restart/freshness audit. | **COMPLETED.** Classified `ADAPT_CANONICALLY`: policy-linked exact observation checkpoint plus caller-supplied observed-at/freshness evidence is justified; session derivation/reset remains deferred. Final tested head `3b8731e0a318ed27afd3e961d75bec253c33d072`; `dax-bot-1x-ci` #499 GREEN and `research-lab-ci` #1283 GREEN. |
-| 2172 | Restart-safe canonical SessionAdmissionObservation checkpoint. | **IN PROGRESS.** Reuse existing StateStorePort; no session derivation/reset semantics. |
+| 2171 | Canonical session observation restart/freshness audit. | **COMPLETED.** Final tested head `3b8731e0a318ed27afd3e961d75bec253c33d072`; CI #499/#1283 GREEN. |
+| 2172 | Restart-safe canonical SessionAdmissionObservation checkpoint. | **COMPLETED.** Added policy-linked tamper-evident session observation checkpoint, strict bytes roundtrip, StateStore save/load and compatibility checks. Final tested head `378a651c463f621944456dc8a49c103dbc1abfca`; `dax-bot-1x-ci` #508 GREEN and `research-lab-ci` #1292 GREEN. No session derivation/reset or execution authorization added. |
+| 2173 | Session observation freshness in typed NextGen protection. | **IN PROGRESS.** Bind exact checkpoint/freshness evidence; no session derivation/reset semantics. |
 
-## Step 2171 closeout truth
+## Step 2172 closeout truth
 
-Step 2171 confirmed that admitted-trade count is restart-relevant safety evidence and that typed protection should not trust arbitrarily old restored session evidence. The approved boundary mirrors the existing loss/exposure persistence pattern while keeping session-key production and reset semantics completely caller/environment owned.
+Step 2172 implements the Step-2171-approved restart boundary using existing StateStorePort infrastructure. The checkpoint preserves exact canonical SessionAdmissionObservation, policy identity and caller-supplied UTC-normalized observed-at evidence, fails closed on tamper/schema/safety drift and adds no session production or execution capability.
 
-## Step 2172 active work
+## Step 2173 active work
 
-**Step 2172 — IN PROGRESS:** implement only the approved restart-safe session observation persistence boundary.
+**Step 2173 — IN PROGRESS:** harden typed NextGen protection against stale or mismatched session observation evidence.
 
 Required properties:
-1. exact policy fingerprint + exact canonical observation + timezone-aware observed_at;
-2. deterministic tamper-evident checkpoint fingerprint;
-3. strict canonical UTF-8 JSON bytes roundtrip;
-4. save/load through existing `StateStorePort`;
-5. explicit policy compatibility check;
-6. fail closed on shape/schema/fingerprint/safety drift;
-7. no session-key/date/timezone/reset derivation;
-8. no CAND-001 state mutation;
-9. no broker/account API or order submission;
-10. PAPER/LIVE remain unauthorized.
+1. require SessionAdmissionObservationCheckpoint in the typed path;
+2. checkpoint policy fingerprint must match SessionAdmissionPolicy;
+3. checkpoint observation must equal SessionAdmissionObservation;
+4. reuse explicit timezone-aware `evaluated_at` and add explicit non-negative finite `max_session_observation_age_seconds`;
+5. future-dated session checkpoint fails closed;
+6. stale evidence adds `SESSION_ADMISSION_OBSERVATION_STALE` and blocks;
+7. bind session checkpoint fingerprint and computed age into verdict fingerprint;
+8. generic compatibility interface remains backward compatible;
+9. no session key/date/timezone/calendar/reset derivation;
+10. no CAND-001 mutation, broker submission or PAPER/LIVE authorization.
 
 ## Binding numbering and handoff rules
 
@@ -65,7 +65,7 @@ Required properties:
 2. Tests/fixes/docs proving the same unit remain inside the same step.
 3. **Step-Close-Gate:** new work starts only after the prior step is formally closed and evidence is synchronized.
 4. **Pointer-before-next-step:** this file must name the next active whole-number step before substantive new work begins.
-5. Decimal/letter step IDs are prohibited.
+5. Decimal or letter step IDs are prohibited.
 6. **Visible official step numbering is monotonic.**
 7. `Weiter mit dem DAXBot` resumes from repository truth.
 8. Next Masterstand checkpoint: **2250**; next full/architecture audit: **2500**.
