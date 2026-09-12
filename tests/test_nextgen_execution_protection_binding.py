@@ -13,6 +13,11 @@ from daxlab.domain.loss_admission import (
 from daxlab.domain.market import InstrumentId
 from daxlab.domain.risk import InstrumentRiskInputs, RiskRequest, evaluate_fixed_cash_risk
 from daxlab.domain.risk_policy import FixedCashRiskPolicy
+from daxlab.domain.session_admission import (
+    SessionAdmissionObservation,
+    SessionAdmissionPolicy,
+    evaluate_session_admission,
+)
 from daxlab.domain.strategy import TradeDirection, TradePlan
 from daxlab.runtime.broker_execution_protection import (
     ExecutionProtectionStatus,
@@ -75,6 +80,16 @@ def _loss_chain(*, open_positions: int = 0, currency: str = "EUR"):
     return policy, observation, decision
 
 
+def _session_chain(*, trades_admitted: int = 0, max_trades: int = 1):
+    policy = SessionAdmissionPolicy.build(max_trades_per_session=max_trades)
+    observation = SessionAdmissionObservation.build(
+        session_key="2026-09-12-DE40-DAY",
+        trades_admitted=trades_admitted,
+    )
+    decision = evaluate_session_admission(policy=policy, observation=observation)
+    return policy, observation, decision
+
+
 def _checkpoint(policy: LossExposurePolicy, observation: LossExposureObservation):
     return build_loss_exposure_observation_checkpoint(
         policy_fingerprint=policy.policy_fingerprint,
@@ -83,9 +98,10 @@ def _checkpoint(policy: LossExposurePolicy, observation: LossExposureObservation
     )
 
 
-def _evaluate(*, risk=None, loss=None):
+def _evaluate(*, risk=None, loss=None, session=None):
     risk_policy, request, risk_decision = risk or _risk_chain()
     loss_policy, observation, admission = loss or _loss_chain()
+    session_policy, session_observation, session_decision = session or _session_chain()
     checkpoint = _checkpoint(loss_policy, observation)
     return evaluate_nextgen_execution_protection(
         client_order_id=CLIENT_ID,
@@ -107,7 +123,9 @@ def _evaluate(*, risk=None, loss=None):
         loss_admission_decision=admission,
         evaluated_at=EVALUATED_AT,
         max_loss_observation_age_seconds=MAX_OBSERVATION_AGE_SECONDS,
-        session_admission_allowed=True,
+        session_policy=session_policy,
+        session_observation=session_observation,
+        session_admission_decision=session_decision,
     )
 
 
@@ -115,6 +133,7 @@ def test_canonical_evidence_produces_allow_evidence_and_binds_fingerprints() -> 
     risk_policy, _, risk_decision = _risk_chain()
     loss_policy, observation, admission = _loss_chain()
     checkpoint = _checkpoint(loss_policy, observation)
+    session_policy, session_observation, session_decision = _session_chain()
 
     verdict = _evaluate()
 
@@ -131,6 +150,15 @@ def test_canonical_evidence_produces_allow_evidence_and_binds_fingerprints() -> 
         == checkpoint.checkpoint_fingerprint
     )
     assert verdict.loss_observation_age_seconds == 1.0
+    assert verdict.session_policy_fingerprint == session_policy.policy_fingerprint
+    assert (
+        verdict.session_observation_fingerprint
+        == session_observation.observation_fingerprint
+    )
+    assert (
+        verdict.session_admission_evidence_fingerprint
+        == session_decision.decision_fingerprint
+    )
     assert verdict.execution_capability == "NONE"
     assert verdict.order_execution_enabled is False
 
@@ -176,3 +204,26 @@ def test_tampered_loss_admission_decision_fails_closed() -> None:
 def test_risk_and_loss_policy_currency_mismatch_fails_closed() -> None:
     with pytest.raises(ValueError, match="policy currencies must match"):
         _evaluate(loss=_loss_chain(currency="USD"))
+
+
+def test_blocked_session_admission_becomes_protection_block() -> None:
+    session = _session_chain(trades_admitted=1, max_trades=1)
+    _, _, decision = session
+    assert decision.allowed is False
+
+    verdict = _evaluate(session=session)
+
+    assert verdict.status is ExecutionProtectionStatus.BLOCKED
+    assert "SESSION_ADMISSION_BLOCKED" in verdict.blockers
+    assert (
+        verdict.session_admission_evidence_fingerprint
+        == decision.decision_fingerprint
+    )
+
+
+def test_tampered_session_admission_decision_fails_closed() -> None:
+    policy, observation, decision = _session_chain()
+    forged = replace(decision, decision_fingerprint="f" * 64)
+
+    with pytest.raises(ValueError, match="canonical session evaluation"):
+        _evaluate(session=(policy, observation, forged))
