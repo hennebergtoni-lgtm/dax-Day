@@ -4,6 +4,7 @@ import ast
 from pathlib import Path
 
 
+# Binding contract: docs/NEXTGEN_DEPENDENCY_ISOLATION_V1.md
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
 
