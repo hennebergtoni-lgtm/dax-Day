@@ -1,25 +1,30 @@
 # NextGen Risk-to-ExecutionIntent Bridge V1
 
-Status: **STEP-2156 PRODUCT CONTRACT**  
+Status: **STEP-2156 PRODUCT CONTRACT / STEP-2164 ADMISSION HARDENING**  
 Date: **2026-09-12**  
 Branch: `nextgen-bot-line-v1`
 
 ## Purpose
 
-Define the first canonical broker-neutral bridge from an approved Risk V1 decision into the existing NextGen `ExecutionIntent` contract.
+Define the canonical broker-neutral bridge from approved Risk V1 plus approved Loss/Exposure Admission into the existing NextGen `ExecutionIntent` contract.
 
 ## Consumer audit
 
-The existing CAND-001 SHADOW path remains separate and continues to use `daxlab.runtime.paper_contracts.ExecutionIntent`. It is not migrated or modified by this step.
+The existing CAND-001 SHADOW path remains separate and continues to use its existing runtime execution-intent contracts. It is not migrated or modified by this bridge hardening.
 
-The canonical NextGen `daxlab.domain.execution.ExecutionIntent` remains a broker-neutral product intent consumed through `ExecutionIntentSinkPort`; it is not an order submission contract.
+The canonical NextGen `daxlab.domain.execution.ExecutionIntent` remains a broker-neutral product intent; it is not an order submission contract.
 
-For backward-compatible causal identity, canonical `ExecutionIntent.decision_id` continues to carry the originating strategy decision ID. The Risk V1 chain is bound into `provenance_fingerprint` using:
+## Provenance identity
+
+For causal compatibility, canonical `ExecutionIntent.decision_id` continues to carry the originating strategy decision ID. `provenance_fingerprint` now binds:
 
 - strategy decision ID;
 - risk request ID;
 - risk decision ID;
-- schema identity `DAXLAB_RISK_TO_EXECUTION_PROVENANCE_V1`.
+- loss/exposure policy fingerprint;
+- loss/exposure observation fingerprint;
+- loss/exposure admission decision fingerprint;
+- schema identity `DAXLAB_RISK_ADMISSION_TO_EXECUTION_PROVENANCE_V1`.
 
 ## Bridge rules
 
@@ -27,13 +32,22 @@ For backward-compatible causal identity, canonical `ExecutionIntent.decision_id`
 
 1. reconstructs and verifies the canonical `RiskRequest` identity;
 2. re-evaluates Risk V1 and requires the supplied `RiskDecision` to equal the canonical result;
-3. refuses `DENY` or missing quantity;
-4. maps LONG → BUY and SHORT → SELL;
-5. carries exactly the risk-approved quantity;
-6. carries the canonical trade-plan instrument, entry, stop and target unchanged;
-7. produces deterministic provenance and intent identity for equivalent inputs.
+3. requires Risk V1 `ALLOW` with a quantity;
+4. re-evaluates canonical Loss/Exposure Admission from the supplied policy and observation;
+5. requires the supplied admission decision to equal the canonical result;
+6. requires Loss/Exposure Admission `ALLOW`;
+7. maps LONG → BUY and SHORT → SELL;
+8. carries exactly the risk-approved quantity and canonical trade-plan prices;
+9. produces deterministic provenance and intent identity for equivalent inputs.
 
-This design fails closed if a request ID, decision, quantity, instrument economics or risk budget is tampered after canonical construction.
+This design fails closed if risk or admission evidence is blocked, stale/mismatched or tampered after canonical construction.
+
+## Separation of ownership
+
+The bridge does not duplicate either algorithm:
+
+- quantity sizing remains owned by canonical Risk V1;
+- daily/weekly loss, consecutive-loss and open-position admission remains owned by canonical Loss/Exposure Admission.
 
 ## Safety boundary
 
@@ -48,4 +62,4 @@ The bridge does **not**:
 - change CAND-001 SHADOW behavior;
 - change frozen V11.2 evidence.
 
-An `ExecutionIntent` remains a deterministic product-domain intent only. Broker execution and environment authorization require later, separately governed steps.
+An `ExecutionIntent` remains a deterministic product-domain intent only. Broker execution and environment authorization require later, separately governed evidence and authorization.
