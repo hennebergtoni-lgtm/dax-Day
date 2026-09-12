@@ -10,7 +10,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 - Last completed whole-number step: **2124**
 - Active whole-number step: **2125**
-- Next unused whole-number step: **2126**
+- Next step after successful completion: **2126**
 - Outstanding lane-local step: **2116 — WAITING_EXTERNAL / historical Drive materialization-execution lane**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Historical interrupted scope: **2123 — INTERRUPTED / carried forward into 2125; never resume visibly under 2123**
