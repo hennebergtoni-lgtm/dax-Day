@@ -30,6 +30,7 @@ from daxlab.domain.session_admission import (
 )
 from daxlab.runtime.broker_reconciliation import BrokerReconciliationVerdict
 from daxlab.state.loss_exposure import LossExposureObservationCheckpoint
+from daxlab.state.session_admission import SessionAdmissionObservationCheckpoint
 
 
 BROKER_EXECUTION_PROTECTION_SCHEMA = "DAXLAB_BROKER_EXECUTION_PROTECTION_V1"
@@ -57,6 +58,8 @@ class BrokerExecutionProtectionVerdict:
     session_policy_fingerprint: str | None = None
     session_observation_fingerprint: str | None = None
     session_admission_evidence_fingerprint: str | None = None
+    session_observation_checkpoint_fingerprint: str | None = None
+    session_observation_age_seconds: float | None = None
     execution_capability: str = "NONE"
     order_execution_enabled: bool = False
 
@@ -86,6 +89,10 @@ class BrokerExecutionProtectionVerdict:
                 self.session_admission_evidence_fingerprint,
                 "session_admission_evidence_fingerprint",
             ),
+            (
+                self.session_observation_checkpoint_fingerprint,
+                "session_observation_checkpoint_fingerprint",
+            ),
         ):
             if value is not None:
                 _sha(value, field)
@@ -93,22 +100,31 @@ class BrokerExecutionProtectionVerdict:
             raise ValueError("feed_age_seconds must be non-negative")
         if self.observed_spread_points is not None and self.observed_spread_points < 0:
             raise ValueError("observed_spread_points must be non-negative")
-        if self.loss_observation_age_seconds is not None and (
-            not isfinite(self.loss_observation_age_seconds)
-            or self.loss_observation_age_seconds < 0
+        _validate_optional_age(
+            self.loss_observation_age_seconds,
+            "loss_observation_age_seconds",
+        )
+        _validate_optional_age(
+            self.session_observation_age_seconds,
+            "session_observation_age_seconds",
+        )
+        if (self.loss_observation_checkpoint_fingerprint is None) != (
+            self.loss_observation_age_seconds is None
         ):
-            raise ValueError("loss_observation_age_seconds must be finite and non-negative")
-        if (
-            self.loss_observation_checkpoint_fingerprint is None
-        ) != (self.loss_observation_age_seconds is None):
             raise ValueError("loss observation checkpoint identity and age must appear together")
-        session_values = (
+        if (self.session_observation_checkpoint_fingerprint is None) != (
+            self.session_observation_age_seconds is None
+        ):
+            raise ValueError(
+                "session observation checkpoint identity and age must appear together"
+            )
+        session_identity = (
             self.session_policy_fingerprint,
             self.session_observation_fingerprint,
             self.session_admission_evidence_fingerprint,
         )
-        if any(value is not None for value in session_values) and any(
-            value is None for value in session_values
+        if any(value is not None for value in session_identity) and any(
+            value is None for value in session_identity
         ):
             raise ValueError("session admission identity evidence must be complete")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
@@ -147,6 +163,10 @@ class BrokerExecutionProtectionVerdict:
                 "session_admission_evidence_fingerprint": (
                     self.session_admission_evidence_fingerprint
                 ),
+                "session_observation_checkpoint_fingerprint": (
+                    self.session_observation_checkpoint_fingerprint
+                ),
+                "session_observation_age_seconds": self.session_observation_age_seconds,
                 "feed_age_seconds": float(self.feed_age_seconds),
                 "observed_spread_points": (
                     None
@@ -183,6 +203,9 @@ def evaluate_execution_protection(
     session_policy_fingerprint: str | None = None,
     session_observation_fingerprint: str | None = None,
     session_admission_evidence_fingerprint: str | None = None,
+    session_observation_checkpoint_fingerprint: str | None = None,
+    session_observation_age_seconds: float | None = None,
+    session_observation_fresh: bool | None = None,
 ) -> BrokerExecutionProtectionVerdict:
     """Combine normalized protection evidence; submit and authorize nothing."""
     _sha(client_order_id, "client_order_id")
@@ -209,35 +232,34 @@ def evaluate_execution_protection(
             session_admission_evidence_fingerprint,
             "session_admission_evidence_fingerprint",
         ),
+        (
+            session_observation_checkpoint_fingerprint,
+            "session_observation_checkpoint_fingerprint",
+        ),
     ):
         if value is not None:
             _sha(value, field)
 
-    freshness_values = (
-        loss_observation_checkpoint_fingerprint,
-        loss_observation_age_seconds,
-        loss_observation_fresh,
+    _validate_freshness_bundle(
+        checkpoint_fingerprint=loss_observation_checkpoint_fingerprint,
+        age_seconds=loss_observation_age_seconds,
+        fresh=loss_observation_fresh,
+        label="loss observation",
     )
-    if any(value is not None for value in freshness_values) and any(
-        value is None for value in freshness_values
-    ):
-        raise ValueError("loss observation freshness evidence must be complete")
-    if loss_observation_age_seconds is not None and (
-        isinstance(loss_observation_age_seconds, bool)
-        or not isfinite(loss_observation_age_seconds)
-        or loss_observation_age_seconds < 0
-    ):
-        raise ValueError("loss_observation_age_seconds must be finite and non-negative")
-    if loss_observation_fresh is not None and type(loss_observation_fresh) is not bool:
-        raise ValueError("loss_observation_fresh must be boolean")
+    _validate_freshness_bundle(
+        checkpoint_fingerprint=session_observation_checkpoint_fingerprint,
+        age_seconds=session_observation_age_seconds,
+        fresh=session_observation_fresh,
+        label="session observation",
+    )
 
-    session_values = (
+    session_identity = (
         session_policy_fingerprint,
         session_observation_fingerprint,
         session_admission_evidence_fingerprint,
     )
-    if any(value is not None for value in session_values) and any(
-        value is None for value in session_values
+    if any(value is not None for value in session_identity) and any(
+        value is None for value in session_identity
     ):
         raise ValueError("session admission identity evidence must be complete")
 
@@ -272,6 +294,8 @@ def evaluate_execution_protection(
         blockers.append("LOSS_EXPOSURE_OBSERVATION_STALE")
     if not session_admission_allowed:
         blockers.append("SESSION_ADMISSION_BLOCKED")
+    if session_observation_fresh is False:
+        blockers.append("SESSION_ADMISSION_OBSERVATION_STALE")
 
     unique = tuple(dict.fromkeys(blockers))
     status = (
@@ -307,6 +331,14 @@ def evaluate_execution_protection(
         session_admission_evidence_fingerprint=(
             session_admission_evidence_fingerprint
         ),
+        session_observation_checkpoint_fingerprint=(
+            session_observation_checkpoint_fingerprint
+        ),
+        session_observation_age_seconds=(
+            None
+            if session_observation_age_seconds is None
+            else float(session_observation_age_seconds)
+        ),
     )
 
 
@@ -333,7 +365,9 @@ def evaluate_nextgen_execution_protection(
     max_loss_observation_age_seconds: float,
     session_policy: SessionAdmissionPolicy,
     session_observation: SessionAdmissionObservation,
+    session_observation_checkpoint: SessionAdmissionObservationCheckpoint,
     session_admission_decision: SessionAdmissionDecision,
+    max_session_observation_age_seconds: float,
 ) -> BrokerExecutionProtectionVerdict:
     """Bind canonical product risk/admission evidence into existing protection."""
     canonical_request = RiskRequest.build(
@@ -372,21 +406,18 @@ def evaluate_nextgen_execution_protection(
 
     if not isinstance(evaluated_at, datetime) or evaluated_at.tzinfo is None:
         raise ValueError("evaluated_at must be timezone-aware")
-    if (
-        isinstance(max_loss_observation_age_seconds, bool)
-        or not isfinite(max_loss_observation_age_seconds)
-        or max_loss_observation_age_seconds < 0
-    ):
-        raise ValueError(
-            "max_loss_observation_age_seconds must be finite and non-negative"
-        )
-    observation_age_seconds = (
-        evaluated_at.astimezone(timezone.utc)
-        - loss_observation_checkpoint.observed_at.astimezone(timezone.utc)
-    ).total_seconds()
-    if observation_age_seconds < 0:
-        raise ValueError("loss observation checkpoint cannot be future-dated")
-    observation_fresh = observation_age_seconds <= max_loss_observation_age_seconds
+    _validate_max_age(
+        max_loss_observation_age_seconds,
+        "max_loss_observation_age_seconds",
+    )
+    loss_observation_age_seconds = _observation_age_seconds(
+        evaluated_at=evaluated_at,
+        observed_at=loss_observation_checkpoint.observed_at,
+        future_error="loss observation checkpoint cannot be future-dated",
+    )
+    loss_observation_fresh = (
+        loss_observation_age_seconds <= max_loss_observation_age_seconds
+    )
 
     expected_session_admission = evaluate_session_admission(
         policy=session_policy,
@@ -396,6 +427,22 @@ def evaluate_nextgen_execution_protection(
         raise ValueError(
             "session admission decision does not match canonical session evaluation"
         )
+    if session_observation_checkpoint.policy_fingerprint != session_policy.policy_fingerprint:
+        raise ValueError("session observation checkpoint policy mismatch")
+    if session_observation_checkpoint.observation != session_observation:
+        raise ValueError("session observation checkpoint observation mismatch")
+    _validate_max_age(
+        max_session_observation_age_seconds,
+        "max_session_observation_age_seconds",
+    )
+    session_observation_age_seconds = _observation_age_seconds(
+        evaluated_at=evaluated_at,
+        observed_at=session_observation_checkpoint.observed_at,
+        future_error="session observation checkpoint cannot be future-dated",
+    )
+    session_observation_fresh = (
+        session_observation_age_seconds <= max_session_observation_age_seconds
+    )
 
     return evaluate_execution_protection(
         client_order_id=client_order_id,
@@ -419,8 +466,8 @@ def evaluate_nextgen_execution_protection(
         loss_observation_checkpoint_fingerprint=(
             loss_observation_checkpoint.checkpoint_fingerprint
         ),
-        loss_observation_age_seconds=observation_age_seconds,
-        loss_observation_fresh=observation_fresh,
+        loss_observation_age_seconds=loss_observation_age_seconds,
+        loss_observation_fresh=loss_observation_fresh,
         session_policy_fingerprint=session_policy.policy_fingerprint,
         session_observation_fingerprint=(
             session_observation.observation_fingerprint
@@ -428,7 +475,56 @@ def evaluate_nextgen_execution_protection(
         session_admission_evidence_fingerprint=(
             session_admission_decision.decision_fingerprint
         ),
+        session_observation_checkpoint_fingerprint=(
+            session_observation_checkpoint.checkpoint_fingerprint
+        ),
+        session_observation_age_seconds=session_observation_age_seconds,
+        session_observation_fresh=session_observation_fresh,
     )
+
+
+def _validate_freshness_bundle(
+    *,
+    checkpoint_fingerprint: str | None,
+    age_seconds: float | None,
+    fresh: bool | None,
+    label: str,
+) -> None:
+    values = (checkpoint_fingerprint, age_seconds, fresh)
+    if any(value is not None for value in values) and any(
+        value is None for value in values
+    ):
+        raise ValueError(f"{label} freshness evidence must be complete")
+    _validate_optional_age(age_seconds, f"{label.replace(' ', '_')}_age_seconds")
+    if fresh is not None and type(fresh) is not bool:
+        raise ValueError(f"{label.replace(' ', '_')}_fresh must be boolean")
+
+
+def _validate_max_age(value: float, field_name: str) -> None:
+    if isinstance(value, bool) or not isfinite(value) or value < 0:
+        raise ValueError(f"{field_name} must be finite and non-negative")
+
+
+def _validate_optional_age(value: float | None, field_name: str) -> None:
+    if value is not None and (
+        isinstance(value, bool) or not isfinite(value) or value < 0
+    ):
+        raise ValueError(f"{field_name} must be finite and non-negative")
+
+
+def _observation_age_seconds(
+    *,
+    evaluated_at: datetime,
+    observed_at: datetime,
+    future_error: str,
+) -> float:
+    age = (
+        evaluated_at.astimezone(timezone.utc)
+        - observed_at.astimezone(timezone.utc)
+    ).total_seconds()
+    if age < 0:
+        raise ValueError(future_error)
+    return float(age)
 
 
 def _sha(value: str, field: str) -> None:
