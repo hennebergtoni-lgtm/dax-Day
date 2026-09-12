@@ -1,7 +1,7 @@
 # CAND-001 Windows SHADOW Deployment Runbook V1
 
-Status: PLANNED HOST VERIFICATION — SHADOW ONLY
-Updated: 2026-09-11
+Status: PREFLIGHTED HOST VERIFICATION — SHADOW ONLY / REAL HOST STILL WAITING_EXTERNAL
+Updated: 2026-09-12
 
 ## Purpose
 
@@ -24,16 +24,36 @@ git fetch origin
 git checkout nextgen-bot-line-v1
 git pull --ff-only origin nextgen-bot-line-v1
 git status --short
+git rev-parse HEAD
 ```
 
-Expected: clean working tree after update.
+Expected: clean working tree after update. Retain the full tested commit SHA.
 
-## 2. Run existing one-shot preflight
+## 2. Verify exact host-code parity before touching runtime state
 
-Use the already-owned preflight script; do not create a second launcher.
+Run the existing parity owner after the update:
 
 ```powershell
-.\scripts\preflight_windows_mt5_shadow_autostart.ps1 -BrokerTimezone '<VERIFIED_BROKER_TIMEZONE>'
+.\scripts\check_windows_mt5_shadow_code_parity.ps1
+```
+
+The checker now resolves the branch upstream commit automatically, requires local `HEAD` to match that upstream commit and verifies the committed host-facing surface including all `candidate_*.py` and `mt5_*.py` runtime modules at that commit.
+
+Required result:
+
+- `HEAD PARITY | MATCH`;
+- `PARITY SUMMARY ... failed=0`;
+- `execution_capability=NONE`;
+- `order_execution_enabled=false`.
+
+If parity fails, STOP this host-verification lane and fix/sync the checkout before any runtime restart.
+
+## 3. Run one-shot preflight in its isolated state directory
+
+Use the already-owned preflight script; do not create a second launcher. Keep its isolated default state directory so the one-shot does not overwrite the scheduled task's normal state.
+
+```powershell
+.\scripts\preflight_windows_mt5_shadow_autostart.ps1 -BrokerTimezone '<VERIFIED_BROKER_TIMEZONE>' -StateDir '.runtime\mt5_shadow_preflight'
 ```
 
 Required legacy safety result:
@@ -43,11 +63,18 @@ Required legacy safety result:
 - `order_execution_enabled=false`;
 - no order API/order submission.
 
-## 3. Verify new CAND-001 evidence from the same one-shot cycle
+State-directory ownership is intentional:
 
-The existing supervisor now writes additional files only after the established GREEN host/cross-cycle gate permits candidate processing.
+- one-shot preflight: `.runtime\mt5_shadow_preflight`;
+- installed/scheduled SHADOW runtime: `.runtime\mt5_shadow` by default.
 
-Expected paths under the selected state directory:
+Do not mix evidence from those directories without recording which owner produced it.
+
+## 4. Verify new CAND-001 evidence from the same one-shot cycle
+
+The existing supervisor writes additional files only after the established GREEN host/cross-cycle gate permits candidate processing.
+
+Expected paths under `.runtime\mt5_shadow_preflight` for the one-shot test:
 
 - `candidate_manifest.json`
 - `candidate_checkpoint.json`
@@ -57,7 +84,7 @@ Expected paths under the selected state directory:
 
 Absence of intent/outcome files is normal when no qualifying signal/outcome occurred.
 
-## 4. Safety assertions
+## 5. Safety assertions
 
 For every candidate evidence file that exists:
 
@@ -67,31 +94,49 @@ For every candidate evidence file that exists:
 - `candidate_manifest.json` mode must be `SHADOW`;
 - checkpoint and manifest fingerprints must remain stable across ordinary sliding-window cycles.
 
-## 5. Restart / overlap verification
+## 6. Fast overlap/reconciliation check in isolated preflight state
 
-After at least one successful candidate checkpoint exists:
+After the first one-shot succeeds, run the same preflight command again with the same `.runtime\mt5_shadow_preflight` state directory. This is a safe early check that re-observing the normal sliding window does not treat old CLOSED bars as new causal market events.
 
-1. stop/restart only through the existing Windows SHADOW process/task ownership;
-2. let the next probe include the normal overlapping sliding window;
-3. verify old bars are suppressed/reconciled rather than reprocessed as new market events;
-4. verify the candidate checkpoint advances only on genuinely newer CLOSED bars;
-5. if a virtual position was open before restart, verify its origin decision/lifecycle identity survives the restart;
-6. if it later closes, verify a deterministic outcome file is produced exactly once by ID.
+Required behavior:
 
-## 6. Existing runtime health check
+- legacy heartbeat remains GREEN;
+- no execution capability appears;
+- old bars are suppressed/reconciled rather than duplicated;
+- candidate checkpoint does not regress;
+- any newly advanced checkpoint is attributable only to a genuinely newer CLOSED bar.
 
-Use the existing runtime check:
+This fast overlap check does not replace the scheduled-task restart proof below.
+
+## 7. Scheduled-task restart / overlap verification
+
+Only after parity and one-shot checks are green:
+
+1. use the existing Windows SHADOW Scheduled Task as the process owner; do not launch an unmanaged parallel supervisor;
+2. stop/start that SHADOW task through Task Scheduler ownership if a reload of the newly pulled code is required;
+3. let the next probe include the normal overlapping sliding window;
+4. verify old bars are suppressed/reconciled rather than reprocessed as new market events;
+5. verify the candidate checkpoint advances only on genuinely newer CLOSED bars;
+6. if a virtual position was open before restart, verify its origin decision/lifecycle identity survives the restart;
+7. if it later closes, verify a deterministic outcome file is produced exactly once by ID.
+
+The scheduled task normally owns `.runtime\mt5_shadow`; do not use the isolated preflight directory when judging scheduled-task recovery.
+
+## 8. Existing runtime health check
+
+Use the existing runtime check against the scheduled-task state:
 
 ```powershell
-.\scripts\check_windows_mt5_shadow_runtime.ps1
+.\scripts\check_windows_mt5_shadow_runtime.ps1 -StateDir '.runtime\mt5_shadow'
 ```
 
 This remains the owner for Task Scheduler policy + legacy heartbeat safety. Candidate-specific evidence is supplementary and must not weaken this gate.
 
-## 7. Fail-closed behavior
+## 9. Fail-closed behavior
 
 If any of the following occurs, do not promote the candidate path:
 
+- code parity/HEAD parity fails;
 - legacy heartbeat not GREEN;
 - cross-cycle overlap mutation/blocker;
 - candidate checkpoint cannot be parsed/restored;
@@ -102,18 +147,19 @@ If any of the following occurs, do not promote the candidate path:
 
 A failed candidate layer must not be worked around by bypassing the legacy host gate.
 
-## 8. Evidence to retain after the host test
+## 10. Evidence to retain after the host test
 
 Record at minimum:
 
-- tested Git commit SHA;
+- tested Git commit SHA and successful parity summary;
 - timestamp/timezone;
 - legacy heartbeat summary;
 - candidate manifest fingerprint;
 - candidate checkpoint fingerprint;
-- latest candidate operator snapshot fingerprint;
-- restart result;
-- duplicate/overlap result;
+- latest candidate operator snapshot fingerprint when present;
+- isolated overlap result;
+- scheduled-task restart result;
+- scheduled-task duplicate/overlap result;
 - any intent/outcome IDs observed;
 - confirmation `execution_capability=NONE` / `order_execution_enabled=false`.
 
