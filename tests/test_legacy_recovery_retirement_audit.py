@@ -42,3 +42,16 @@ def test_no_active_surface_depends_on_legacy_recovery_contract() -> None:
         "legacy runtime/recovery.py still has active code/config/script consumers; "
         f"retirement is blocked by {offenders}"
     )
+
+
+def test_retirement_decision_stays_retain_with_reason_until_compatibility_is_proved() -> None:
+    """Do not convert zero active imports into deletion proof."""
+    root = Path(__file__).resolve().parents[1]
+    audit = (root / "docs/RECOVERY_CANONICALIZATION_AUDIT_V1.md").read_text(encoding="utf-8")
+
+    assert "Current retirement decision: `RETAIN_WITH_REASON`" in audit
+    assert "runtime/recovery.py` = **LEGACY / FROZEN / RETAIN_WITH_REASON**" in audit
+    assert "No new code may import the legacy module" in audit
+    assert "Retirement unlock conditions" in audit
+    assert "tested compatibility reader/migration path" in audit
+    assert "does **not** prove that deleting" in audit
