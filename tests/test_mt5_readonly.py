@@ -24,6 +24,18 @@ def test_configured_symbol_requires_exact_match() -> None:
     assert result.broker_symbol is None
 
 
+def test_configured_non_dax_symbol_resolves_exactly_for_read_only_probe() -> None:
+    result = resolve_dax_symbol(
+        [_symbol("BTCUSD")],
+        configured_symbol="BTCUSD",
+        allow_data_only=True,
+    )
+    assert result.state == "CONFIGURED_EXACT"
+    assert result.broker_symbol is not None
+    assert result.broker_symbol.name == "BTCUSD"
+    assert result.candidates == ("BTCUSD",)
+
+
 def test_ambiguous_aliases_fail_closed() -> None:
     result = resolve_dax_symbol([_symbol("DAX40"), _symbol("GER40")])
     assert result.state == "AMBIGUOUS"
