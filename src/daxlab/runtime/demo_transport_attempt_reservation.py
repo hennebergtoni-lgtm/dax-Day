@@ -327,6 +327,42 @@ def reconcile_reserved_demo_transport_query(
     CONSISTENT nor BLOCKED permits submission, repair, slot release or promotion.
     Callers reuse telemetry_from_reconciliation and the existing broker journal.
     """
+    bundle, _ = _reserved_demo_query_context(
+        reservation=reservation, bundle_payload=bundle_payload, evaluated_at=evaluated_at,
+    )
+    if venue is not None:
+        venue.__post_init__()
+        if not bundle.host.observed_at <= venue.observed_at <= evaluated_at:
+            raise ValueError("demo query venue observation is future or stale")
+    return reconcile_broker_order(local=reservation.prepared.broker.lifecycle, venue=venue)
+
+
+def validate_reserved_demo_transport_query(
+    *,
+    reservation: DemoTransportAttemptReservation,
+    bundle_payload: Mapping[str, Any],
+    evaluated_at: datetime,
+) -> DemoEvidenceAuthorizationVerdict:
+    """Preflight a future read-only query before it runs; grant no execution.
+
+    The query adapter remains external. It must use the pinned reservation's
+    client identity and exact account/server/symbol; recheck returned evidence
+    through reconcile_reserved_demo_transport_query. Never reuse SUBMIT scope as
+    QUERY scope or reuse this preflight as submission/recovery authorization.
+    """
+    _, scope = _reserved_demo_query_context(
+        reservation=reservation, bundle_payload=bundle_payload, evaluated_at=evaluated_at,
+    )
+    return scope
+
+
+def _reserved_demo_query_context(
+    *,
+    reservation: DemoTransportAttemptReservation,
+    bundle_payload: Mapping[str, Any],
+    evaluated_at: datetime,
+) -> tuple[WindowsMt5Bundle, DemoEvidenceAuthorizationVerdict]:
+    """One shared current-context veto for pre-query and returned-query evidence."""
     reservation.__post_init__()
     _aware(evaluated_at, "evaluated_at")
     if evaluated_at < reservation.evaluated_at:
@@ -354,11 +390,7 @@ def reconcile_reserved_demo_transport_query(
     )
     if not scope.scope_valid:
         raise ValueError("demo query authorization blocked: " + ",".join(scope.blockers))
-    if venue is not None:
-        venue.__post_init__()
-        if not bundle.host.observed_at <= venue.observed_at <= evaluated_at:
-            raise ValueError("demo query venue observation is future or stale")
-    return reconcile_broker_order(local=reservation.prepared.broker.lifecycle, venue=venue)
+    return bundle, scope
 
 
 def demo_transport_attempt_reservation_from_bytes(

@@ -210,3 +210,48 @@ def test_historical_reservation_load_does_not_renew_expired_query_scope(prepared
         )
     assert restored == reservation
     assert store.saves == 2
+
+
+@pytest.mark.parametrize("change", ["valid", "submit_only", "account", "host_stale"])
+def test_query_preflight_vetoes_before_any_future_adapter_call(prepared_attempt, change):
+    store, prepared = prepared_attempt
+    authorization = evidence._authorization()
+    if change == "submit_only":
+        authorization = replace(
+            authorization, allowed_actions=(DemoEvidenceAction.SUBMIT_EVIDENCE_ORDER,)
+        )
+    reservation = evidence._reserve(store, prepared, authorization=authorization)
+    raw = evidence._raw_bundle()
+    evaluated = reservation.evaluated_at
+    if change == "account":
+        raw["host_probe"]["demo_account_context"]["account_fingerprint"] = "d" * 64
+        raw = evidence._seal(raw)
+    elif change == "host_stale":
+        evaluated += timedelta(seconds=31)
+    args = dict(reservation=reservation, bundle_payload=raw, evaluated_at=evaluated)
+    if change == "valid":
+        verdict = owner.validate_reserved_demo_transport_query(**args)
+        assert verdict.scope_valid
+        assert verdict.requested_action is DemoEvidenceAction.QUERY_EVIDENCE_ORDER
+        assert verdict.execution_capability == "NONE"
+        assert verdict.order_execution_enabled is False
+    else:
+        with pytest.raises(ValueError):
+            owner.validate_reserved_demo_transport_query(**args)
+    assert store.saves == 2
+
+
+def test_exhausted_submit_limit_does_not_block_read_only_query_or_release_slot(prepared_attempt):
+    store, prepared = prepared_attempt
+    reservation = evidence._reserve(
+        store, prepared, authorization=evidence._authorization(max_submissions=1)
+    )
+    verdict = owner.validate_reserved_demo_transport_query(
+        reservation=reservation,
+        bundle_payload=evidence._raw_bundle(),
+        evaluated_at=reservation.evaluated_at,
+    )
+    assert verdict.scope_valid
+    assert verdict.order_execution_enabled is False
+    assert not owner.demo_transport_restart_status(reservation)["session_slot_release_allowed"]
+    assert store.saves == 2
