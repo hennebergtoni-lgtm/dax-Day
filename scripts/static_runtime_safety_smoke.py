@@ -45,8 +45,15 @@ def main() -> None:
     boundary = web.get("runtime_boundary")
     if not isinstance(boundary, dict):
         raise SystemExit("static web status must expose runtime boundary")
-    if boundary.get("browser_runtime_endpoint") != "NOT_IMPLEMENTED":
-        raise SystemExit("static web must not fabricate browser runtime endpoint")
+    if boundary.get("browser_runtime_endpoint") != "IMPLEMENTED_LOCAL_GET_ONLY":
+        raise SystemExit("static web endpoint must match the implemented local GET contract")
+    if boundary.get("browser_runtime_path") != "/api/operator":
+        raise SystemExit("read-only runtime endpoint path drift")
+    if boundary.get("remote_deployment") != "WAITING_EXTERNAL_PROTECTED_ACCESS":
+        raise SystemExit("static web must not fabricate real-host/public deployment")
+    for asset in ("web/operator.html", "web/operator.js", "web/operator.css", "scripts/serve_operator_console.py"):
+        if not (root / asset).is_file():
+            raise SystemExit("declared local read-only runtime surface is missing")
 
     paper = web.get("paper_preparation")
     readiness = web.get("readiness")
