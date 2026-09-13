@@ -26,7 +26,7 @@ from daxlab.runtime.broker_reconciliation import (
     VENUE_ORDER_OBSERVATION_SCHEMA,
     VenueOrderObservation,
 )
-from daxlab.domain.ports import StateStorePort
+from daxlab.domain.ports import ClockPort, StateStorePort
 from daxlab.runtime.demo_transport_attempt_reservation import (
     DemoTransportAttemptReservation,
     load_reserved_demo_transport_attempt,
@@ -981,3 +981,196 @@ def _fingerprint(payload: Mapping[str, Any]) -> str:
         ensure_ascii=True,
     ).encode("utf-8")
     return sha256(encoded).hexdigest()
+
+
+OPEN_INVENTORY_SCHEMA = 'DAXLAB_MT5_DEMO_OPEN_INVENTORY_V1'
+
+
+@dataclass(frozen=True, slots=True)
+class DemoMt5OpenInventoryRow:
+    kind: str
+    ticket: str
+    symbol: str
+    side: str
+    native_volume: float
+    observed_open_price: float
+    transport_tag_matches_attempt: bool
+
+    def __post_init__(self) -> None:
+        if self.kind not in ('ORDER', 'POSITION') or self.side not in ('BUY', 'SELL'):
+            raise ValueError('inventory kind/side invalid')
+        if not isinstance(self.ticket, str) or not self.ticket.isascii() or not self.ticket.isdecimal() or int(self.ticket) <= 0:
+            raise ValueError('inventory ticket invalid')
+        _nonempty(self.symbol, 'inventory symbol')
+        if not _positive(self.native_volume) or not _positive(self.observed_open_price):
+            raise ValueError('inventory native volume/open price must be finite and positive')
+        if type(self.transport_tag_matches_attempt) is not bool:
+            raise ValueError('inventory tag match must be bool')
+
+    def to_payload(self) -> dict[str, Any]:
+        return {name: getattr(self, name) for name in self.__dataclass_fields__}
+
+
+@dataclass(frozen=True, slots=True)
+class DemoMt5OpenInventoryObservation:
+    request_fingerprint: str
+    client_order_id: str
+    account_context: Mt5DemoAccountContextEvidence
+    collection_started_at: datetime
+    collection_completed_at: datetime
+    status: str
+    blockers: tuple[str, ...]
+    rows: tuple[DemoMt5OpenInventoryRow, ...]
+
+    def __post_init__(self) -> None:
+        _sha(self.request_fingerprint, 'inventory request fingerprint')
+        _sha(self.client_order_id, 'inventory client order id')
+        self.account_context.__post_init__()
+        if self.account_context.account_mode.value != 'DEMO':
+            raise ValueError('inventory requires bound DEMO account')
+        _aware(self.collection_started_at, 'collection_started_at')
+        _aware(self.collection_completed_at, 'collection_completed_at')
+        if self.collection_completed_at < self.collection_started_at:
+            raise ValueError('inventory collection clock regressed')
+        if not isinstance(self.rows, tuple) or not isinstance(self.blockers, tuple) or any(not isinstance(b, str) or not b for b in self.blockers):
+            raise ValueError('inventory rows/blockers must be immutable typed evidence')
+        if self.status not in ('OBSERVED', 'BLOCKED'):
+            raise ValueError('inventory status invalid')
+        for row in self.rows:
+            row.__post_init__()
+        keys = tuple((r.kind, r.ticket) for r in self.rows)
+        if keys != tuple(sorted(set(keys))):
+            raise ValueError('inventory rows must have unique ordered identities')
+        if self.status == 'BLOCKED' and (not self.blockers or self.rows):
+            raise ValueError('blocked inventory cannot imply partial/empty account truth')
+        if self.status == 'OBSERVED':
+            expected = tuple(f'ACCOUNT_HAS_OPEN_{kind}' for kind in ('ORDERS', 'POSITIONS')
+                             if any(r.kind == kind[:-1] for r in self.rows))
+            if self.blockers != expected:
+                raise ValueError('inventory blocker/row mismatch')
+
+    def to_payload(self) -> dict[str, Any]:
+        body = {
+            'schema_version': OPEN_INVENTORY_SCHEMA,
+            'request_fingerprint': self.request_fingerprint, 'client_order_id': self.client_order_id,
+            'account_context': self.account_context.to_payload(),
+            'account_context_fingerprint': self.account_context.fingerprint,
+            'collection_started_at': _iso(self.collection_started_at),
+            'collection_completed_at': _iso(self.collection_completed_at),
+            'time_source': 'LOCAL_OBSERVATION_CLOCK_NOT_BROKER_CLOCK',
+            'collection_is_atomic': False,
+            'scope': 'ACCOUNT_OPEN_ORDERS_AND_POSITIONS_ONLY',
+            'status': self.status, 'blockers': list(self.blockers),
+            'rows': [r.to_payload() for r in self.rows],
+            'open_queries_completed': self.status == 'OBSERVED',
+            'broker_reconciliation_complete': False, 'history_completeness': 'UNKNOWN',
+            'risk_loss_values': None, 'execution_capability': 'NONE', 'order_execution_enabled': False,
+        }
+        return body | {'observation_fingerprint': _fingerprint(body)}
+
+
+def parse_demo_mt5_open_inventory(payload: Mapping[str, Any]) -> DemoMt5OpenInventoryObservation:
+    if not isinstance(payload, Mapping):
+        raise ValueError('inventory payload must be mapping')
+    for name in ('open_queries_completed', 'broker_reconciliation_complete', 'collection_is_atomic', 'order_execution_enabled'):
+        if type(payload.get(name)) is not bool:
+            raise ValueError('inventory flags must be bool')
+    unsigned = dict(payload)
+    digest = unsigned.pop('observation_fingerprint', None)
+    if digest != _fingerprint(unsigned):
+        raise ValueError('inventory fingerprint mismatch')
+    try:
+        observation = DemoMt5OpenInventoryObservation(
+            request_fingerprint=payload['request_fingerprint'], client_order_id=payload['client_order_id'],
+            account_context=parse_mt5_demo_account_context_payload(payload['account_context']),
+            collection_started_at=_timestamp(payload['collection_started_at'], 'collection_started_at'),
+            collection_completed_at=_timestamp(payload['collection_completed_at'], 'collection_completed_at'),
+            status=payload['status'], blockers=tuple(payload['blockers']),
+            rows=tuple(DemoMt5OpenInventoryRow(**row) for row in payload['rows']),
+        )
+    except (KeyError, TypeError) as exc:
+        raise ValueError('inventory payload fields invalid') from exc
+    if observation.to_payload() != dict(payload):
+        raise ValueError('inventory contract/provenance mismatch')
+    return observation
+
+
+def query_mt5_demo_open_inventory(
+    *, mt5: Any, request: DemoMt5LookupRequest, clock: ClockPort,
+) -> DemoMt5OpenInventoryObservation:
+    """Observe full-account open objects; never claim ownership or compute PnL.
+
+    Multiple SDK reads are non-atomic. Even an empty successful observation is
+    not complete historical/account reconciliation and cannot authorize execution.
+    Raw comments/login and margin/profit values never enter this read model.
+    """
+    request.__post_init__()
+    started = _aware(clock.now(), 'inventory clock')
+
+    def finish(reason: str | None, rows: tuple[DemoMt5OpenInventoryRow, ...] = ()):
+        completed = _aware(clock.now(), 'inventory clock')
+        if completed < started:
+            raise ValueError('inventory collection clock regressed')
+        if not request.query_evaluated_at <= started <= completed <= request.history_to:
+            reason, rows = 'INVENTORY_OUTSIDE_QUERY_WINDOW', ()
+        blockers = (reason,) if reason else tuple(
+            f'ACCOUNT_HAS_OPEN_{kind}' for kind in ('ORDERS', 'POSITIONS')
+            if any(r.kind == kind[:-1] for r in rows)
+        )
+        return DemoMt5OpenInventoryObservation(
+            request.fingerprint, request.identity.client_order_id, request.account_context,
+            started, completed, 'BLOCKED' if reason else 'OBSERVED', blockers, rows,
+        )
+
+    if request.account_context.account_mode.value != 'DEMO':
+        raise ValueError('inventory requires DEMO request')
+    if started < request.query_evaluated_at or started > request.history_to:
+        return finish('INVENTORY_OUTSIDE_QUERY_WINDOW')
+    account = _query(mt5, 'account_info')
+    try:
+        if account is _QUERY_ERROR or _normalized_account(mt5, account, request.identity.symbol) != request.account_context:
+            return finish('INVENTORY_ACCOUNT_CONTEXT_UNAVAILABLE_OR_MISMATCH')
+    except (TypeError, ValueError):
+        return finish('INVENTORY_ACCOUNT_CONTEXT_INVALID')
+    orders = _query(mt5, 'orders_get')
+    positions = _query(mt5, 'positions_get')
+    after = _query(mt5, 'account_info')
+    try:
+        if after is _QUERY_ERROR or _normalized_account(mt5, after, request.identity.symbol) != request.account_context:
+            return finish('INVENTORY_ACCOUNT_CONTEXT_CHANGED_OR_UNAVAILABLE')
+    except (TypeError, ValueError):
+        return finish('INVENTORY_ACCOUNT_CONTEXT_INVALID')
+    if orders is _QUERY_ERROR or positions is _QUERY_ERROR:
+        return finish('INVENTORY_OPEN_QUERY_FAILED')
+    parsed: dict[tuple[str, str], DemoMt5OpenInventoryRow] = {}
+    try:
+        for kind, objects in (('ORDER', orders), ('POSITION', positions)):
+            for raw in objects:
+                row = DemoMt5OpenInventoryRow(
+                    kind=kind, ticket=_positive_ticket(raw, 'ticket'), symbol=_field(raw, 'symbol'),
+                    side=_inventory_side(mt5, raw, kind),
+                    native_volume=_float_field(raw, 'volume_current' if kind == 'ORDER' else 'volume'),
+                    observed_open_price=_float_field(raw, 'price_open'),
+                    transport_tag_matches_attempt=_matches_identity(raw, request.identity),
+                )
+                key = (row.kind, row.ticket)
+                if key in parsed and parsed[key] != row:
+                    return finish('INVENTORY_DUPLICATE_OBJECT_CONTRADICTION')
+                parsed[key] = row
+    except (TypeError, ValueError):
+        return finish('INVENTORY_OBJECT_INVALID')
+    return finish(None, tuple(parsed[key] for key in sorted(parsed)))
+
+
+def _inventory_side(mt5: Any, row: Any, kind: str) -> str:
+    names = ('BUY', 'SELL') if kind == 'POSITION' else (
+        'BUY', 'SELL', 'BUY_LIMIT', 'SELL_LIMIT', 'BUY_STOP', 'SELL_STOP', 'BUY_STOP_LIMIT', 'SELL_STOP_LIMIT',
+    )
+    prefix = 'POSITION_TYPE_' if kind == 'POSITION' else 'ORDER_TYPE_'
+    constants = tuple(getattr(mt5, prefix + name, None) for name in names)
+    if any(type(c) is not int for c in constants) or len(set(constants)) != len(constants):
+        raise ValueError('inventory side constants invalid')
+    value = _int_field(row, 'type')
+    if value not in constants:
+        raise ValueError('inventory side unsupported')
+    return 'BUY' if names[constants.index(value)].startswith('BUY') else 'SELL'

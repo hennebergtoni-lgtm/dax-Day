@@ -17,10 +17,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from daxlab.adapters.file_state_store import AtomicFileStateStore
-from daxlab.domain.ports import StateStorePort
+from daxlab.domain.ports import ClockPort, StateStorePort
 from daxlab.runtime.mt5_demo_evidence_transport import (
     demo_mt5_lookup_request_from_payload,
     query_mt5_demo_evidence,
+    query_mt5_demo_open_inventory,
     validate_reserved_demo_mt5_lookup,
 )
 
@@ -69,6 +70,7 @@ def execute_reserved_readonly_lookup(
     *, mt5: Any, store: StateStorePort, attempt_key: str,
     expected_reservation_fingerprint: str, bundle_payload: Mapping[str, Any],
     request_payload: Mapping[str, Any], observed_at: datetime,
+    inventory_clock: ClockPort | None = None,
 ) -> dict[str, Any]:
     """Operational boundary: current reserved QUERY preflight before SDK reads."""
     validate_reserved_demo_mt5_lookup(
@@ -87,6 +89,20 @@ def execute_reserved_readonly_lookup(
         current_windows_bundle_fingerprint=bundle_payload["sha256"],
         query_preflight_evaluated_at=_iso(observed_at),
     )
+    if inventory_clock is not None:
+        # Optional observation in this existing export, never a parallel store.
+        current = inventory_clock.now()
+        request = validate_reserved_demo_mt5_lookup(
+            store=store, key=attempt_key, expected_reservation_fingerprint=expected_reservation_fingerprint,
+            request_payload=request_payload, bundle_payload=bundle_payload, evaluated_at=current,
+        )
+        inventory = query_mt5_demo_open_inventory(mt5=mt5, request=request, clock=inventory_clock)
+        validate_reserved_demo_mt5_lookup(
+            store=store, key=attempt_key, expected_reservation_fingerprint=expected_reservation_fingerprint,
+            request_payload=request_payload, bundle_payload=bundle_payload,
+            evaluated_at=inventory.collection_completed_at,
+        )
+        body['account_open_inventory'] = inventory.to_payload()
     return body | {"sha256": _fingerprint(body)}
 
 
@@ -98,6 +114,7 @@ def main() -> int:
     parser.add_argument("--attempt-key", required=True)
     parser.add_argument("--reservation-fingerprint", required=True)
     parser.add_argument("--bundle", required=True)
+    parser.add_argument("--include-account-open-inventory", action="store_true")
     args = parser.parse_args()
 
     request_path = Path(args.request)
@@ -137,6 +154,7 @@ def main() -> int:
             bundle_payload=bundle,
             request_payload=raw,
             observed_at=observed_at,
+            inventory_clock=_LocalObservationClock() if args.include_account_open_inventory else None,
         )
     finally:
         mt5.shutdown()
@@ -149,6 +167,13 @@ def main() -> int:
     print(json.dumps(result, indent=2, sort_keys=True))
     print(f"WROTE {output_path.resolve()}")
     return 0
+
+
+class _LocalObservationClock:
+    """Source interval timestamps only; no broker timezone or freshness policy."""
+
+    def now(self) -> datetime:
+        return datetime.now(timezone.utc)
 
 
 def _iso(value: datetime) -> str:

@@ -136,3 +136,25 @@ Read-only in-memory SDK fixtures at `d7854e47cbc00c2843971760f1db72397bff4007`:
 Neither reproduction sent an order or used a real broker/MT5 connection. The
 existing REQUESTED lifecycle comparison still blocks ACK/fill mismatch. These
 findings therefore concern evidence integrity, not execution authorization.
+
+## Step 2217 — open inventory observation, not account reconciliation
+
+The REUSE search found no `positions_get` collection owner in the runtime/Windows
+lookup surface; loss admission accepts already-normalized observation counts but
+is not a collector. `mt5_demo_evidence_transport` now owns an optional typed,
+redacted full-account open-order/position read observation. The existing Windows
+lookup runner can embed it in the same output envelope using
+`--include-account-open-inventory`. Default lookup result bytes are unchanged.
+There is no second store/journal, risk calculation or account reconciliation owner.
+
+Both SDK legs must succeed and the normalized account must remain the bound DEMO
+context before/after. Unknown enums, invalid finite quantity/price, contradictory
+object duplicates or failed legs block; absence is not inferred from failure.
+Any existing position or open order is explicit blocking evidence even if its
+transport tag matches this attempt. No external object is claimed or repaired.
+Local collection start/end is distinct from broker event time, feed/snapshot time
+and browser fetch. Reads are explicitly NON-ATOMIC; an empty successful open
+observation proves neither complete history nor resolved submission outcome.
+Current scope/freshness is rechecked with the existing reserved QUERY validator
+before and after optional collection. Real account inventory, broker precision,
+broker-side history completeness and exclusive-terminal operation remain external.
