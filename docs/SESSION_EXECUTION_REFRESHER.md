@@ -1,9 +1,9 @@
 # SESSION EXECUTION REFRESHER — READ BEFORE CONTINUING WORK
 
 Status: BINDING
-Updated: 2026-09-12
+Updated: 2026-09-13
 
-Purpose: prevent avoidable project stops, step-number drift, pointer lag and chat-handoff loss during long DAX-BOT engineering sessions.
+Purpose: prevent avoidable project stops, step-number drift, pointer lag and chat-handoff loss during long DAX-BOT engineering sessions, including platform conversation-length saturation.
 
 Canonical workflow-integrity owner: `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`.
 
@@ -11,7 +11,7 @@ Canonical workflow-integrity owner: `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`.
 
 ### `Weiter mit dem DAXBot`
 
-Treat this phrase as the canonical repository-backed resume codeword. Do not ask the user to paste the previous Masterstand when the repository is available. Execute the recovery sequence from `docs/DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md`, reconstruct current truth from the repository and continue the next safe whole-number work unit automatically only after the workflow-integrity gate is consistent.
+Treat this phrase as the canonical repository-backed resume codeword. The user-friendly alias `Weiter mit DAXbot` means the same thing. Do not ask the user to paste the previous Masterstand when the repository is available. Execute the recovery sequence from `docs/DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md`, reconstruct current truth from the repository and continue the next safe whole-number work unit automatically only after the workflow-integrity gate is consistent.
 
 ### `Erstelle einen Masterstand`
 
@@ -23,7 +23,7 @@ A Masterstand refresh is mandatory every 250 official whole-number work steps. T
 
 ## Mandatory preflight before substantive work
 
-Before the first concrete tool/code action after any `weiter`, `fortsetzen`, `Weiter mit dem DAXBot`, resume, context reconstruction, reconnect, tool disruption or new work turn, verify these ten items:
+Before the first concrete tool/code action after any `weiter`, `fortsetzen`, `Weiter mit dem DAXBot`, `Weiter mit DAXbot`, resume, context reconstruction, reconnect, tool disruption or new work turn, verify these ten items:
 
 1. **Repo/head truth first.** Re-pin repository, branch, exact head SHA, PR and relevant CI. Do not work from a stale remembered head.
 2. **Canonical step pointer.** Read `docs/CURRENT_WORK_STEP.md`; official numbering comes from that file, never from chat memory or raw commit count.
@@ -38,7 +38,7 @@ Before the first concrete tool/code action after any `weiter`, `fortsetzen`, `We
 
 ## User-intervention guard
 
-If the user explicitly stops, audits, reviews or corrects the workflow:
+If the user explicitly stops, audits, reviews, requests a Masterstand or corrects the workflow:
 
 1. stop further substantive work on the active technical step;
 2. inspect its real repo/CI/evidence state;
@@ -47,18 +47,38 @@ If the user explicitly stops, audits, reviews or corrects the workflow:
 5. only then start the governance/review work under the next unused integer;
 6. resume unfinished technical scope later under another new integer, never by rolling the visible step number backward.
 
+## Chat-capacity guard
+
+If the platform reports that the conversation is too long to continue, treat this as a **chat/context-capacity interruption**, not a technical DAX-BOT blocker.
+
+When actions are still possible in the old chat:
+
+1. pin repo/head/CI/pointer;
+2. truthfully interrupt any incomplete active technical step;
+3. refresh the Masterstand/handoff protocol under the next unused whole-number step;
+4. reserve unfinished technical scope for the following unused integer;
+5. hand the user the resume codeword for the new chat.
+
+If the old chat is already hard-stopped, the new chat performs this reconciliation before substantive work. Never infer that an unfinished step completed merely because the old conversation disappeared.
+
+The repository is the durable cross-chat memory. The user should not need to reconstruct the project manually from conversation history.
+
 ## End-of-turn guard
 
 Immediately before producing a final/status-only response during an active engineering sequence, ask internally:
 
-`Is there a real stop condition, explicit user stop/review, or no executable safe work left in this turn?`
+`Is there a real stop condition, explicit user stop/review, completed controlled chat-capacity handoff, or no executable safe work left in this turn?`
 
 - **NO** -> do not finalize; execute the next concrete work item.
 - **YES** -> state the exact stop/interruption condition.
 
 A final/turn-ending response ends the active work turn. Never claim or imply that repository work keeps running afterward unless a real scheduled automation/background mechanism was actually created. If app/network/platform suspension ends the turn, re-pin repo/head/CI/pointer on the next turn before continuing.
 
-The user being away from the foreground, a temporary disconnect, context compaction, CI still running, a tool miss, a completed intermediate check, or one externally blocked dependency lane are not by themselves valid global stop conditions.
+The user being away from the foreground, a temporary disconnect, context compaction, CI still running, a tool miss, a completed intermediate check, a found file, a partial audit, or one externally blocked dependency lane are not by themselves valid global stop conditions.
+
+### 2026-09-13 incident lesson
+
+Repeated premature final/status responses occurred while the next safe repository action was already known. This is recorded as a workflow failure, not a technical failure. The prevention rule is binding: **progress report -> actual next action** while safe work remains. If the chat itself is saturated, execute the chat-capacity guard instead of stopping ambiguously.
 
 ## Navigation
 
@@ -67,6 +87,6 @@ Workflow integrity gate: `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`.
 Current whole-number pointer: `docs/CURRENT_WORK_STEP.md`.
 Authoritative continuity detail: `docs/WORK_CONTINUITY_PROTOCOL.md`.
 Canonical project handover: `docs/MASTERSTAND.md`.
-Latest explicit chat-capacity handoff: `docs/MASTERSTAND_CHAT_HANDOFF_STEP_2153.md`.
+Historical explicit chat-capacity handoff: `docs/MASTERSTAND_CHAT_HANDOFF_STEP_2153.md`.
 
 This refresher is deliberately short and must be read first on resume before the longer protocol/navigation files when work continuity is relevant.
