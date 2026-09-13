@@ -14,7 +14,10 @@ from daxlab.runtime.demo_evidence_authorization import (
     DemoEvidenceAuthorization,
 )
 from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
-from daxlab.runtime.nextgen_prepared_checkpoint import prepare_nextgen_checkpoint
+from daxlab.runtime.nextgen_prepared_checkpoint import (
+    build_nextgen_prepared_checkpoint,
+    prepare_nextgen_checkpoint,
+)
 import test_nextgen_execution_protection_binding as evidence
 
 
@@ -215,13 +218,19 @@ def test_reserved_key_cross_wiring_fails_without_save(prepared_attempt, change):
     assert store.saves == 2
 
 
-def test_different_prepared_on_reserved_key_fails_closed(prepared_attempt):
+def test_different_valid_prepared_on_reserved_key_fails_closed(prepared_attempt):
     store, prepared = prepared_attempt
     _reserve(store, prepared)
-    altered = replace(prepared, prepared_fingerprint="d" * 64) if hasattr(prepared, "prepared_fingerprint") else None
-    assert altered is None
-    other = replace(prepared, status="OTHER")
-    with pytest.raises(ValueError):
+    other = build_nextgen_prepared_checkpoint(
+        intent=prepared.intent,
+        policy=prepared.policy,
+        admission=prepared.admission,
+        pre_guard=prepared.pre_guard,
+        protection=prepared.protection,
+        requested_at=prepared.broker.lifecycle.last_event_time + timedelta(seconds=1),
+    )
+    assert other.fingerprint != prepared.fingerprint
+    with pytest.raises(ValueError, match="collision"):
         _reserve(store, other)
     assert store.saves == 2
 
