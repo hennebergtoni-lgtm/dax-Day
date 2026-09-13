@@ -16,7 +16,7 @@
     el('commit').textContent='UNKNOWN';el('build-note').textContent='Laufender Bot-Commit nicht bestätigt.';
     el('decision').textContent='UNKNOWN';el('strategy').replaceChildren();el('trade-plan').replaceChildren();
     for(const id of ['decision-evidence','risk','session','reservation','reconciliation','virtual','recovery','context','times','provenance','inventory','monday','health','freshness']) rows(id,[['Quelle','UNKNOWN']]);
-    list('blockers',[reason,'EXECUTION_SAFETY_UNCONFIRMED']);list('events',[]);
+    list('blockers',[reason,'EXECUTION_SAFETY_UNCONFIRMED']);list('events',[]);list('timeline',[]);
     el('connection').textContent='UNKNOWN · Laufzeitdaten fehlen oder sind ungültig';
   };
   const validate = v => {
@@ -57,6 +57,7 @@
     rows('context',[['Account mode',ctx.account_mode],['Server',ctx.server],['Account fingerprint',ctx.account_fingerprint],['Symbol',ctx.symbol],['Broker timezone (declared)',v.clock?.broker_timezone],['Timestamp interpretation',v.clock?.timestamp_interpretation],['Session review',v.clock?.session_review_state],['Broker tick time',v.clock?.broker_tick_time],['Clock OK (observed)',v.host_observation?.clock_ok],['Point / digits',`${show(econ.point)} / ${show(econ.digits)}`],['Economics review',v.economics?.verification]]);
     rows('times',[['Backend queried at',v.queried_at_utc],['Snapshot generated at',ts.snapshot_generated_at],['Last CLOSED-M5 close',ts.last_closed_m5_close_time],['Feed observed at',ts.feed_observed_at],['Current feed age (s)',ts.current_feed_age_seconds],['Source feed limit (s)',ts.source_max_feed_age_seconds],['Original bar age (s)',ts.snapshot_measured_bar_age_seconds],['Host observed at',ts.host_observed_at],['Host age (s)',ts.host_age_seconds],['Host threshold',ts.host_age_threshold],['Heartbeat observed at',ts.heartbeat_observed_at]]);
     list('events',c?.runtime?.events);
+    list('timeline',v.incident_timeline?.events);
     rows('provenance',[['Candidate / core',`${show(c?.candidate_id)} / ${show(c?.core_version)}`],['Config fingerprint',c?.config_fingerprint],['Snapshot fingerprint',v.provenance?.snapshot_fingerprint],['Bundle fingerprint',v.provenance?.bundle_fingerprint],['Candidate cycle binding',v.provenance?.candidate_cycle_binding],['Evidence scope',v.provenance?.evidence_kind],['Console fingerprint',v.console_fingerprint]]);
     el('connection').textContent=`${v.source_available===false?'UNKNOWN · Quelle fehlt':'READ-ONLY · Quelle gelesen'} · Backend: ${show(v.queried_at_utc)} · keine Execution-Freigabe`;
   };

@@ -64,6 +64,8 @@ def read_local_operator_projection(
     bundle = read("latest_bundle.json")
     snapshot = read("candidate_operator_snapshot.json")
     checkpoint = read("candidate_checkpoint.json")
+    from daxlab.runtime.mt5_heartbeat_history import load_heartbeat_history
+    history = load_heartbeat_history(state_dir / "heartbeat_history")
     reserved = load_reserved_demo_transport_attempt(
         store=attempt_store, key=attempt_key, expected_reservation_fingerprint=reservation_fingerprint,
     ) if attempt_store is not None else None
@@ -81,6 +83,7 @@ def read_local_operator_projection(
         candidate_checkpoint_payload=checkpoint, reservation=reserved,
         expected_reservation_fingerprint=reservation_fingerprint,
         broker_evidence_payload=broker_evidence, expected_broker_evidence_fingerprint=broker_evidence_fingerprint,
+        heartbeat_history=history,
     )
     view["source_available"] = all(v is not None for v in (heartbeat, bundle, snapshot))
     view["health_matrix"]["web_process_alive"] = {"state": "GREEN", "value": "this HTTP process responding only"}

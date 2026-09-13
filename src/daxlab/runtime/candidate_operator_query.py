@@ -119,6 +119,7 @@ def build_operator_console_projection(
     expected_reservation_fingerprint: str | None = None,
     broker_evidence_payload: Mapping[str, Any] | None = None,
     expected_broker_evidence_fingerprint: str | None = None,
+    heartbeat_history: tuple[Mapping[str, Any], ...] = (),
 ) -> dict[str, Any]:
     """Project canonical observations; NEVER evaluate readiness or grant execution.
 
@@ -491,6 +492,50 @@ def build_operator_console_projection(
                                      "external_step": 2206, "host_lane": 2122}
     projection["alerts"] = [{"code": code, "state": "BLOCKED", "action": "OBSERVE_REVIEW_NO_REPAIR"}
                             for code in projection["blockers"]]
+    timeline = []
+
+    def event(stage: str, observed: datetime, fingerprint: str, scope: str, detail: Any):
+        future_local = observed > now and scope.startswith("ORIGINAL_")
+        if future_local:
+            projection["blockers"].append("LOCAL_CHECKPOINT_TIME_AFTER_CURRENT_OBSERVATION")
+        else:
+            _observation_age(now, observed)
+        row = {"stage": stage, "observed_at": observed.isoformat(), "source_fingerprint": fingerprint,
+               "scope": scope, "detail": detail, "independent_transition_time": "UNKNOWN",
+               "state": "BLOCKED" if future_local else "UNKNOWN"}
+        row["event_id"] = stable_fingerprint(row)
+        timeline.append(row)
+
+    if feed:
+        event("MARKET_OBSERVATION", feed.observed_at, bundle.fingerprint, "OBSERVED_CLOSED_M5", close_time.isoformat())
+    if snapshot:
+        for stage, section in (("SIGNAL", "signal"), ("ADMISSION", "admission"), ("DECISION", "decision")):
+            event(stage, snapshot.generated_at, snapshot.snapshot_fingerprint,
+                  "CURRENT_SNAPSHOT_GENERATED_AT_NOT_INDEPENDENT_TRANSITION_TIME", display_snapshot[section])
+    if reservation:
+        event("PREPARED", reservation.prepared.post_guard.observed_at, reservation.prepared.fingerprint,
+              "ORIGINAL_POST_GUARD_OBSERVATION_NOT_PREPARED_CREATION_TIME_OR_VENUE_FACT", {"state": "REQUESTED"})
+        event("RESERVATION", reservation.evaluated_at, reservation.fingerprint,
+              "ORIGINAL_DURABLE_LOCAL_ATTEMPT_NOT_SUBMISSION_ACK", {"venue_state": "UNKNOWN"})
+    if broker_evidence_payload is not None:
+        event("QUERY_RECONCILIATION_OBSERVATION", result.observed_at, expected_broker_evidence_fingerprint,
+              "BROKER_LOOKUP_NOT_APPLIED_RECONCILIATION", {"status": result.status.value})
+    for hb in heartbeat_history:
+        _assert_credential_free(hb)
+        if (hb.get("execution_capability") != "NONE" or hb.get("order_execution_enabled") is not False
+                or hb.get("status") not in {"GREEN", "BLOCKED", "ERROR", "STOPPED"}):
+            raise ValueError("incident heartbeat safety/status contract invalid")
+        event("SUPERVISOR_OBSERVATION", operator_timestamp(hb.get("observed_at_utc"), "incident heartbeat time"),
+              stable_fingerprint(hb), "EXISTING_BOUNDED_HEARTBEAT_ARCHIVE_NOT_EXECUTION_JOURNAL",
+              {"status": hb["status"], "blocker_count": len(hb.get("blockers", []))})
+    unique_events = {row["event_id"]: row for row in timeline}
+    projection["incident_timeline"] = {
+        "events": sorted(unique_events.values(), key=lambda row: (row["observed_at"], row["stage"], row["event_id"])),
+        "history_completeness": "UNKNOWN", "replay_scope": "DISPLAY_ONLY_NO_STATE_REPLAY",
+        "missing_transition_times": "UNKNOWN_NOT_INFERRED_FROM_BROWSER_OR_BAR_TIME",
+    }
+    projection["blockers"] = list(dict.fromkeys(projection["blockers"]))
+    projection["health_dimensions"]["readiness"]["blockers"] = list(projection["blockers"])
     _assert_credential_free(projection)
     projection["console_fingerprint"] = stable_fingerprint(projection)
     return projection
