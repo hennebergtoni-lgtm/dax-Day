@@ -1,12 +1,12 @@
 # WORK CONTINUITY PROTOCOL — BINDING
 
 Status: BINDING
-Updated: 2026-09-11
-Applies to: DAX Daytrading Bot project work, especially long engineering/research sequences
+Updated: 2026-09-13
+Applies to: DAX Daytrading Bot project work, especially long engineering/research sequences and delegated ChatGPT Work tasks
 
 ## Purpose
 
-Protect engineering time, debugging time, research time and optimization time from avoidable interruptions. A progress report is visibility only; it is never a stop signal by itself.
+Protect engineering time, debugging time, research time and optimization time from avoidable interruptions. A progress report is visibility only; it is never a stop signal by itself. This document is also the canonical owner for how the main project chat delegates bounded work to ChatGPT Work.
 
 ## 1. Core execution rule
 
@@ -59,6 +59,7 @@ A dependency lane may stop only for one of these reasons:
 3. A hard technical blocker remains after reasonable recovery routes were exhausted.
 4. A safety/security/execution-authorization boundary requires a stop.
 5. Continuing would violate a binding project rule or corrupt VERIFIED evidence.
+6. The user explicitly orders a STOP or a controlled chat handoff; this is an explicit sequence interruption and must be durably recorded before stopping when repository access is available.
 
 ### 4A. Lane blocker versus global project stop
 
@@ -76,9 +77,9 @@ When a lane is blocked:
 3. immediately inspect the backlog/gates for the next independent safe work unit;
 4. continue with the next whole-number step without asking for permission.
 
-A global work sequence may stop only when a valid stop condition exists AND no useful independent safe work unit remains, or when a project-wide safety/governance boundary itself forbids further work.
+A global work sequence may stop only when a valid stop condition exists AND no useful independent safe work unit remains, or when a project-wide safety/governance boundary itself forbids further work, or when the user explicitly requested a controlled STOP/chat handoff.
 
-If independent safe work remains, finalizing because one lane is waiting is a process defect.
+If independent safe work remains, finalizing because one lane is waiting is a process defect unless the user explicitly requested that stop.
 
 ## 5. No artificial approval gates
 
@@ -132,12 +133,6 @@ A step represents one independent concrete work unit or one tightly coupled veri
 
 Several inseparable checks may stay inside the same step only when they verify the same concrete change and would be misleading as separate project work units. Do not use one step as a container for many distinct deliverables merely to avoid nested numbering.
 
-Examples:
-- implement one lifecycle module + its immediate direct regression check: may remain one tightly coupled step;
-- then update the durable problem registry: next integer step;
-- then add a separate forward-performance adapter: next integer step;
-- then build a distinct end-to-end integration test package: next integer step.
-
 The objective is a meaningful, approximately uniform work counter. Both excessive subdivision and excessive bundling are defects because either one distorts the 500-step audit cadence.
 
 The 500-step audit cadence is measured only by the integer sequence. Therefore, after the completed STEP 2000 audit, the next full audit remains STEP 2500.
@@ -157,6 +152,96 @@ This continuity rule never overrides execution authorization or scientific gover
 
 ## 11. Operational acceptance criterion
 
-This protocol is being followed only when progress reports are followed by continued concrete work unless a valid global stop condition is explicitly identified. A status-only termination without a valid global stop condition is a process defect and must not be repeated.
+This protocol is being followed only when progress reports are followed by continued concrete work unless a valid global stop condition is explicitly identified.
 
-A response that ends merely because the assistant summarized recovered context, reported a tool error, restated the next step, reached an intermediate finding, resumed after a temporary client interruption, or encountered one externally blocked lane fails this acceptance criterion unless section 4A shows that no independent safe work remains.
+A response that ends merely because the assistant summarized recovered context, reported a tool error, restated the next step, reached an intermediate finding, resumed after a temporary client interruption, or encountered one externally blocked lane fails this acceptance criterion unless section 4A shows that no independent safe work remains or the user explicitly ordered the stop/handoff.
+
+## 12. Main chat versus ChatGPT Work — binding roles
+
+ChatGPT Work is an independent bounded audit/Red-Team/implementation workbench. It is not the project master architect.
+
+The main project chat owns:
+- architecture and roadmap ordering;
+- task selection and decomposition;
+- scope boundaries and safety constraints;
+- acceptance of Work results;
+- final classification of evidence;
+- Acceptance refresh and merge decisions;
+- sequencing of numbered project steps.
+
+ChatGPT Work is best used at high-leverage control points such as CI/truth-layer hardening, persistence/restore/recovery, execution safety, pre-merge and pre-PAPER reviews. Do not flood the project with many parallel Work jobs. Prefer one tightly scoped high-value assignment at a time.
+
+A Work result is never automatically accepted merely because Work reports success. The main chat must re-pin repository truth, inspect the exact result/diff and required CI, distinguish skipped external gates, and then decide whether the result is VERIFIED/IMPLEMENTED, needs further hardening, changes Acceptance, or remains WAITING_EXTERNAL.
+
+## 13. Mandatory Work-order header and assignment format
+
+Every new Work assignment should begin with a compact header that makes capability/cost explicit, for example:
+
+`👷 WORK-AUFTRAG — MODELL: GPT-5.6 SOL — DENKSTUFE: MITTEL — IMPLEMENTIERUNG ERLAUBT — 💳 CREDIT-BUDGET: NIEDRIG–MITTEL`
+
+The exact model available may change; use the best appropriate currently available model/configuration rather than hard-coding an unavailable option. The header must still state the chosen model/configuration and thinking level when the product exposes them.
+
+Thinking level is selected by task complexity, not status/prestige:
+- LOW/LEICHT: narrow deterministic lookup, tiny isolated fix, mechanical verification;
+- MEDIUM/MITTEL: bounded multi-file implementation, focused architecture/composition audit;
+- HIGH/HOCH: cross-cutting Red-Team, recovery/consistency review, pre-merge/pre-PAPER architecture or safety audit.
+
+Every Work order must pin or state at minimum:
+1. repository, branch and PR;
+2. exact starting HEAD SHA and instruction to re-check actual HEAD before work;
+3. READ-ONLY audit versus IMPLEMENTATION permission;
+4. exact scope/files/contracts and intended outcome;
+5. forbidden actions and non-goals;
+6. frozen/accepted reference constraints when relevant;
+7. execution-safety boundary;
+8. required local tests, CI checks and external evidence classification;
+9. expected final evidence/report shape;
+10. branch-drift rule: never overwrite a newer head blindly.
+
+If the exact branch head moved unexpectedly, Work must re-pin and reconcile before writing. It must not force an old patch over newer repository truth.
+
+## 14. Credit-budget discipline
+
+Work credits are an engineering resource. Spend them where independent execution materially reduces risk or main-chat workload.
+
+Use these practical classes:
+- **LOW / NIEDRIG:** narrow file/test/docs fix, isolated deterministic audit, small bounded verification;
+- **MEDIUM / MITTEL:** focused multi-file change, bounded architecture/composition implementation, moderate regression package;
+- **HIGH / HOCH:** whole-PR Red-Team, cross-cutting restore/recovery/CI/security hardening, pre-merge or pre-PAPER independent review.
+
+Ranges such as `NIEDRIG–MITTEL` or `MITTEL–HOCH` are allowed when uncertainty is genuine.
+
+Credit rules:
+- prefer the smallest Work unit that buys meaningful independent evidence;
+- do not spend Work credits on repetitive status polling or cheap steering the main chat can do directly;
+- use higher budget for hard-to-reconstruct semantic/state/recovery defects, broad regression campaigns and independent final gates;
+- split very large umbrella requests into bounded high-value assignments when this improves auditability;
+- connectors/plugins may be used when genuinely helpful and authorized, but Work must not assume an unavailable capability or silently replace missing external evidence with simulation.
+
+## 15. Work safety, Acceptance and merge ownership
+
+Unless a Work order explicitly says otherwise, Work must NOT:
+- merge a PR;
+- update Acceptance status;
+- enable broker submission;
+- set `order_execution_enabled=true`;
+- authorize PAPER or LIVE;
+- change frozen V11.2 evidence/fingerprints;
+- change strategy parameters/cost assumptions outside the assigned scope;
+- manufacture Windows/MT5/Neon/external evidence not actually executed.
+
+Skipped external gates must be reported separately as `WAITING_EXTERNAL`; green Linux/unit CI cannot substitute for real-host evidence.
+
+Acceptance and merge remain main-chat decisions. Before any merge, Acceptance must be deliberately refreshed against the exact current PR head and all required evidence classes.
+
+## 16. Integrating out-of-band Work commits
+
+If Work lands commits while the official numbered pointer is on a different unfinished step:
+1. do not retroactively relabel those commits as that numbered step;
+2. verify exact commit chain/diff/CI in the main chat;
+3. record them as out-of-band Work evidence with classification and safety status;
+4. mark the interrupted numbered step honestly if user/task interruption occurred;
+5. use the next unused whole-number continuity/reconciliation step to restore pointer, Masterstand and handoff consistency;
+6. carry the interrupted technical scope prospectively to a later whole-number step.
+
+This preserves repository truth without falsifying the official work ledger.
