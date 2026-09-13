@@ -1,0 +1,104 @@
+# Pre-DEMO operator / reconciliation REUSE audit
+
+Step 2207. Pinned input: `96c22897194015a7b25e8f6894b932552b641c06`.
+Base/main: `e0784ebfc11bee28475fd9c3385be661af58a738`. No start drift.
+This is repository architecture/test evidence, not real Windows or broker evidence.
+Step 2206 and host lane 2122 remain WAITING_EXTERNAL / USER_AUTH.
+
+## REUSE decision
+
+| Surface | Existing canonical owner | Decision |
+| --- | --- | --- |
+| Current strategy, plan, virtual position and runtime context | runtime.operator_snapshot.OperatorSnapshot, build_operator_snapshot | REUSE; add observation projection here, not another readiness orchestrator |
+| Credential-free Candidate validation and current observation | candidate_operator_telemetry.validate_candidate_operator_snapshot; candidate_operator_query.build_candidate_operator_current | REUSE / harden finite values and observation times |
+| Durable source files | scripts/mt5_shadow_supervisor.py: heartbeat.json, latest_bundle.json, candidate_operator_snapshot.json, candidate_checkpoint.json | REUSE read-only; no new store or aggregate journal |
+| Database mirror | export_mt5_shadow_telemetry.py; migrations 0008/0009; cand001_operator_current; read_candidate_operator_runtime.py | REUSE; local console needs no database connection, migration or browser DSN |
+| Host, feed, clock and redacted account | mt5_windows_bundle, mt5_feed_payload, mt5_host_contract, mt5_demo_account_context | REUSE strict parsers; clock_ok is an observation, not proof of reviewed broker timezone |
+| Risk / loss / economics | domain.risk, risk_policy, loss_admission; nextgen_broker_economics; nextgen_loss_exposure_provenance | REUSE; absent observed policy/provenance remains unknown, never invented |
+| Protection / consumed guard / local PREPARED | broker_execution_protection; nextgen_prepared_checkpoint | REUSE typed checkpoints; ALLOW_EVIDENCE is not order authorization |
+| Reserved attempt / restart | demo_transport_attempt_reservation | REUSE pinned parse and demo_transport_restart_status; always query first, never resubmit/release |
+| Broker lifecycle / checkpoint / order reconciliation / telemetry | broker_order_lifecycle; broker_execution_checkpoint; broker_reconciliation; broker_execution_telemetry_journal | REUSE; no second lifecycle or reconciliation engine |
+| Targeted read-only lookup | mt5_demo_evidence_transport; scripts/mt5_demo_evidence_lookup.py | REUSE; targeted intent lookup does not prove complete account inventory/history |
+| Static research website | web/index.html, web/status.json; check_web_status.py | KEEP STATIC; separate local operator page and explicit local GET-only endpoint boundary |
+
+Minimal justified addition: a loopback-only HTTP read adapter and mobile page over
+these existing files/read contracts. The existing supervisor remains the sole
+writer/process owner. The console must not mutate checkpoints, publish intents,
+read secrets into the browser or import MT5. No second state store/export journal.
+
+## Reproduced input gaps
+
+1. candidate_operator_query.build_candidate_operator_current validates the bar
+   against queried_at but not snapshot generated_at. A payload dated 2099 with
+   runtime.freshness_seconds=NaN is accepted at a 2026 query. Existing validator
+   only checks number type and `< 0`. Fix finite/time validation at existing owner;
+   preserve valid original snapshot bytes/fingerprint and original measured age.
+2. BrokerOrderLifecycle and VenueOrderObservation accept requested_quantity=+Inf.
+   With both quantities +Inf, reconcile_broker_order returns CONSISTENT. Direct
+   constructors and lifecycle parser need finite canonical number validation.
+   Valid finite equality/fingerprints must remain unchanged.
+3. No browser runtime endpoint exists. Existing static website correctly refuses
+   runtime health claims. Missing data, source failures and a stale Candidate
+   behind a running host need explicit projection, not an inferred GREEN.
+4. Snapshot/host maximum observation age is not a reviewed console policy.
+   Show age and UNVERIFIED_THRESHOLD / UNKNOWN; do not invent a timeout.
+   Feed has an authoritative per-bundle max_age_seconds: reuse it at query time.
+5. Targeted reservation lookup is NOT an account-wide positions/orders inventory
+   or proof that a bounded history window is complete. Console must display this
+   boundary as UNKNOWN/BLOCKED, including when targeted open orders are empty.
+   True account inventory scope/completeness and PnL calculation remain external
+   evidence/contracts; do not promote summary booleans from fixtures.
+
+## Public-project review input (retrieved 2026-09-13)
+
+Primary documentation, no strategy transplant or copied numeric thresholds:
+
+- NautilusTrader: https://nautilustrader.io/docs/latest/concepts/reconciliation/
+  and https://nautilustrader.io/docs/latest/how_to/configure_live_trading/ .
+  Startup and continuous reconciliation are separate. In-flight requests,
+  external orders, partial fills and positions require venue reports. Missing
+  reports and bounded history need explicit completeness, not absence inference.
+  Its active reconciliation/repair behavior is NOT added to this observation-only
+  tranche. https://nautilustrader.io/docs/latest/developer_guide/adapters/ documents
+  distinct tracked/external/suppressed updates and one history cutoff.
+- Freqtrade/FreqUI: https://www.freqtrade.io/en/stable/rest-api/ and
+  https://www.freqtrade.io/en/stable/freq-ui/ . Remote monitoring can use a small
+  client separate from the trading process; prefer loopback and protected tunnel.
+  FreqUI also has controls, which this console deliberately does not implement.
+  https://www.freqtrade.io/en/stable/advanced-setup/ distinguishes dry-run/live
+  persistence. Here existing SHADOW stores remain unchanged.
+- QuantConnect LEAN: https://www.quantconnect.com/docs/v2/writing-algorithms/live-trading/brokerages
+  documents disconnect/reconnect state synchronization, including fills observed
+  after reconnect without assuming a fresh order callback. Reconciliation and
+  existing account holdings must be considered:
+  https://www.quantconnect.com/docs/v2/cloud-platform/live-trading/reconciliation .
+  https://www.quantconnect.com/docs/v2/cloud-platform/live-trading/algorithm-control
+  warns about external/manual interference. Here it is blocking evidence; no
+  liquidation, cancellation, account claiming or automatic state repair.
+
+## Adversarial coverage / evidence boundary
+
+| Case | Existing contract / planned narrow test | Current evidence |
+| --- | --- | --- |
+| Existing position/order or manual order at startup | targeted lookup is insufficient; no complete inventory => UNKNOWN/BLOCKED | WAITING_EXTERNAL account inventory |
+| Reserved attempt, lost connection after transport, reconnect finds fill | demo_transport_restart_status + reconcile_broker_order state/ID/fill mismatch | IMPLEMENTED; no blind retry, venue drill WAITING_EXTERNAL |
+| Partial fill / local-venue quantity or price mismatch | broker lifecycle PARTIAL semantics; exact reconciliation comparison | IMPLEMENTED; finite input hardening required |
+| Duplicate/out-of-order event | apply_order_event + telemetry journal duplicate keys/time order | IMPLEMENTED; relevant regression suite required |
+| Incomplete/short history, empty orders with contrary deals | lookup blocks missing/ambiguous/contradictory results; completeness not inferred | IMPLEMENTED targeted lookup; complete scope WAITING_EXTERNAL |
+| Symbol/account/server mismatch | strict DEMO account context + reservation/lookup preflight | IMPLEMENTED; real account WAITING_EXTERNAL |
+| Clock drift/timezone mismatch | host clock_ok + explicit feed/host timestamp contract | IMPLEMENTED; real broker/session review WAITING_EXTERNAL |
+| Web alive but snapshot stale / source unavailable | query-time bar age; no snapshot threshold => UNKNOWN, never cached healthy | local projection required |
+| Runtime alive MT5 down / MT5 alive Candidate stale | bundle/heartbeat blockers independently override Candidate display | local composition tests required |
+| Browser alive, API/source down | discard old green display; fixed safe error, no exception/DSN text | local HTTP/UI tests required |
+
+## Rejected overengineering
+
+No cloud dashboard platform, second readiness composer, live control API, second
+PnL/risk/lifecycle engine, account claiming/repair loop, new persistent journal,
+automatic restart resubmission, generated risk values or guessed freshness limits.
+A runtime commit is a supervisor startup observation, NOT the webserver's current
+checkout or a manually supplied expected SHA. Legacy heartbeats without build
+observation remain parseable and display UNKNOWN.
+
+Execution remains NONE / disabled. SHADOW only is authorized. DEMO/PAPER/LIVE are
+not authorized. V11.2, CAND-001 strategy, costs, Acceptance and main are unchanged.

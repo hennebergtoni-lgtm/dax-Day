@@ -10,17 +10,17 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 - Last completed whole-number step: **2205**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2206**
-- Active step state: **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**
-- Work tranche state: **COMPLETED_AT_EXTERNAL_POLICY_AUTH_BOUNDARY**
-- Next step after successful completion: **2207**
+- Active whole-number step: **2207**
+- Active step state: **ACTIVE — READ-ONLY AUDIT / NO BROKER SIDE EFFECT**
+- Work tranche state: **ACTIVE_LOCAL_OPERATOR_OBSERVABILITY**
+- Next step after successful completion: **2208**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
 - Historical Step 2203 scope: **Narrow provenance adapter beside the existing loss checkpoint, preserving its canonical bytes and fingerprints.**
 - Historical Step 2204 scope: **Close the reproduced history-window-only preflight gap without order APIs, new evidence owners or persistence.**
 - Historical Step 2205 scope: **Read-only Windows evidence instructions and composition conformance only; no new readiness/risk/lifecycle owner.**
-- Active Step 2206 scope: **Independent review and actual host/policy evidence only. No first-order or submission authorization is implied by this pointer.**
+- Outstanding Step 2206 scope: **Independent review and actual host/policy evidence only. No first-order or submission authorization is implied by this pointer.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive/current history: **2116 / 2123 / 2131 / 2137 / 2180 / 2183 / 2185**
@@ -28,6 +28,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Next mandatory 500-step full audit: **2500**
 - Next mandatory 500-step Architecture & Learning Review: **2500**
 - Decimal or letter step IDs: **PROHIBITED**
+
+- Step 2206 remains **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**; independent local Work uses Steps 2207 onward under WORK_CONTINUITY_PROTOCOL section 4A.
+- Active Step 2207 scope: **REUSE audit and public-project reconciliation/observability review; preserve all external gates and trading prohibitions.**
 
 ## Ledger archive
 
