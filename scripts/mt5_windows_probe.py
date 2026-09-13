@@ -1,6 +1,6 @@
 """Credential-free, read-only MT5 desktop probe for the Windows host.
 
-Run this only where MetaTrader 5 Desktop is already open and logged into a demo
+Run this only where MetaTrader 5 Desktop is already open and logged into a trading
 account. The script never accepts login/password fields and never calls order APIs.
 """
 from __future__ import annotations
@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from daxlab.runtime.mt5_broker_session import server_wall_clock_epoch_to_utc
+from daxlab.runtime.mt5_demo_account_context import normalize_mt5_demo_account_context
 from daxlab.runtime.mt5_readonly import BrokerSymbol, closed_rates_start_pos, resolve_dax_symbol
 
 FORBIDDEN_OUTPUT_KEYS = {"login", "password", "token", "secret", "email", "phone", "account_id"}
@@ -154,6 +155,26 @@ def collect_probe(
             if s.name in resolution.candidates or (selected and s.name == selected.name)
         ]
 
+        demo_account_context = None
+        demo_account_context_state = "UNAVAILABLE"
+        if account is not None and selected is not None:
+            try:
+                normalized_account = normalize_mt5_demo_account_context(
+                    raw_login=getattr(account, "login", None),
+                    raw_server=getattr(account, "server", None),
+                    raw_trade_mode=getattr(account, "trade_mode", None),
+                    trade_allowed=getattr(account, "trade_allowed", None),
+                    resolved_symbol=selected.name,
+                    demo_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_DEMO", None),
+                    contest_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_CONTEST", None),
+                    real_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_REAL", None),
+                )
+            except ValueError:
+                demo_account_context_state = "UNAVAILABLE_FAIL_CLOSED"
+            else:
+                demo_account_context = normalized_account.to_payload()
+                demo_account_context_state = "AVAILABLE_REDACTED"
+
         raw_tick_delta_seconds = None
         normalized_tick_delta_seconds = None
         clock_ok = False
@@ -203,12 +224,16 @@ def collect_probe(
             "broker_timezone": broker_timezone,
             "symbols": safe_symbols,
         }
+        if demo_account_context is not None:
+            host_probe["demo_account_context"] = demo_account_context
+
         notes = [
             "READ_ONLY",
             "BAR_0_EXCLUDED",
             "NO_CREDENTIALS",
             "NO_ORDER_API",
             "BROKER_ECONOMICS_OBSERVATION_ONLY",
+            f"DEMO_ACCOUNT_CONTEXT_STATE={demo_account_context_state}",
         ]
         if raw_tick_delta_seconds is not None:
             notes.append(f"RAW_TICK_CLOCK_DELTA_SECONDS={raw_tick_delta_seconds:.3f}")
