@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 from datetime import datetime, timezone
-from enum import StrEnum
 from hashlib import sha256
 import json
 from math import isfinite
@@ -104,10 +103,7 @@ class DemoTransportAttemptReservation:
         host_age_seconds = (self.evaluated_at - self.host_observed_at).total_seconds()
         if host_age_seconds > self.max_host_age_seconds:
             raise ValueError("demo transport reservation host evidence is stale")
-        if (
-            type(self.submission_ordinal) is not int
-            or self.submission_ordinal < 1
-        ):
+        if type(self.submission_ordinal) is not int or self.submission_ordinal < 1:
             raise ValueError("submission_ordinal must be an integer >= 1")
 
         if (
@@ -164,7 +160,9 @@ def build_demo_transport_attempt_reservation(
         raise ValueError("demo transport reservation requires one host/feed observation cycle")
     if bundle.demo_account_context.trade_allowed != bundle.host.account_trade_allowed:
         raise ValueError("demo transport reservation account trade-allowed mismatch")
-    if bundle.demo_account_context.symbol not in {symbol.name for symbol in bundle.host.symbols}:
+    if bundle.demo_account_context.symbol not in {
+        symbol.name for symbol in bundle.host.symbols
+    }:
         raise ValueError("demo transport reservation account symbol is not in host bundle")
 
     verdict = evaluate_demo_evidence_authorization(
@@ -415,7 +413,7 @@ def _verdict_from_payload(payload: Any) -> DemoEvidenceAuthorizationVerdict:
 def _schema(payload: bytes) -> str | None:
     try:
         raw = json.loads(payload)
-    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+    except (TypeError, ValueError) as exc:
         raise ValueError("demo transport attempt state is not valid JSON") from exc
     if not isinstance(raw, dict):
         raise ValueError("demo transport attempt state must be an object")
