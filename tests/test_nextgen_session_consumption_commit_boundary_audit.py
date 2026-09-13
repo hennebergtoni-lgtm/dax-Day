@@ -11,7 +11,7 @@ def test_commit_boundary_audit_records_fail_safe_prepared_ordering() -> None:
 
     required = (
         "submit-before-consume",
-        "consume-before",
+        "Consume before an unrecorded submission attempt",
         "PREPARED",
         "ALLOW_EVIDENCE",
         "SessionAdmissionGuardCheckpoint",
