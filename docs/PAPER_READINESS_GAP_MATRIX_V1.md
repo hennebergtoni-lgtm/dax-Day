@@ -1,7 +1,7 @@
 # PAPER Readiness Gap Matrix V1
 
 Status: BINDING PLANNING / EVIDENCE MATRIX — PAPER NOT AUTHORIZED
-Updated: 2026-09-12
+Updated: 2026-09-13
 Branch: `nextgen-bot-line-v1`
 
 Purpose: turn the coarse goal "get to real demo/PAPER quickly" into explicit evidence lanes without creating broker-order capability prematurely. This matrix maps directly to `ReadinessSnapshot` / `RunKind.PAPER` and to `docs/SHADOW_PAPER_ACCEPTANCE_V1.md`.
@@ -77,6 +77,65 @@ The next safe repository work is therefore:
 2. keep real host/economics/reconciliation/telemetry/checkpoint evidence as parallel `WAITING_EXTERNAL` lanes;
 3. prefer thin read-only evidence adapters/tests over inventing a broker submission stack prematurely;
 4. do not create a broker submission adapter until the authorization-gated boundary is explicitly crossed.
+
+## Step 2188 PAPER readiness evidence ownership reassessment — 2026-09-13
+
+Step 2188 rechecked the current PR head after the atomic local PREPARED checkpoint was completed. The purpose is to prevent the Monday demo target from turning readiness booleans into evidence substitutes or triggering duplicate runtime owners.
+
+### Ownership classes
+
+- **REUSE** — a canonical owner/evidence contract already exists; do not duplicate it.
+- **ADAPT** — the semantic owner exists, but a narrow promotion/evidence-binding step is still required before the corresponding PAPER boolean may become true.
+- **EXTERNAL** — the owner/collector exists, but current truth requires real Windows, MT5, Neon/database or demo-venue evidence that repository CI cannot invent.
+- **USER_AUTH** — only an explicit user STOP-gate decision may satisfy the gate; software evidence must never infer it.
+
+### ReadinessSnapshot ownership map
+
+| PAPER gate | Canonical owner/evidence | Ownership class | Current truth / promotion rule |
+| --- | --- | --- | --- |
+| `ci_green` | required GitHub checks on the exact PR head | REUSE | exact-head GREEN required; stale runs do not count |
+| `dataset_verified` + `dataset_identity` | frozen audited V11.2/reference identity | REUSE | preserve `HASH_VERIFIED`; no research result may rewrite it |
+| `engine_verified` | frozen engine/reference gates | REUSE | preserve verified engine identity; no new engine owner |
+| `database_verified` | Neon migration/integrity/restore/detail-import gates | EXTERNAL | five Neon/DB gates were skipped on the Step-2187 PR runs and remain `WAITING_EXTERNAL`; prior repository-alpha shorthand must not silently satisfy the current-head PAPER gate |
+| `technical_replay_verified` | existing replay/technical gates | REUSE | exact-head regression evidence required |
+| `audited_bundle_available` | audited recovery/reference bundle | REUSE | preserve provenance/fingerprint |
+| `full_reference_replay_verified` | clean full-reference replay evidence | REUSE | repository/replay evidence may satisfy this non-broker gate when exact-head provenance is preserved |
+| `execution_boundary_verified` | legacy `paper_contracts.py` / intent separation | REUSE | compatibility gate only; explicitly insufficient for PAPER by itself |
+| `mt5_readonly_health_verified` | current host gate, supervisor, `mt5_windows_probe.py`, `latest_bundle.json` | EXTERNAL | current-branch real Windows/MT5 market-open GREEN/clock/CLOSED-M5 evidence required |
+| `broker_economics_verified` | `broker_economics_readiness.py` + read-only DE40 probe | EXTERNAL | must come from verified real demo-broker DE40 economics; synthetic/default values do not count |
+| `broker_risk_sizing_verified` | `nextgen_broker_economics.py` / existing broker-risk translation | REUSE | typed owner already fails closed until economics are externally verified; validate concrete cash-at-stop/rounding on the verified symbol before promotion |
+| `risk_profile_policy_verified` | `FixedCashRiskPolicy` + existing explicit risk-profile research lineage | ADAPT | promote one explicit validated cash-risk policy with provenance; BASE/BOOST/HIGH research values must not auto-promote |
+| `loss_cap_policy_verified` | `LossExposurePolicy` / canonical loss-exposure admission owner | ADAPT | promote explicit validated daily/weekly/consecutive/open-position thresholds and prove policy interaction; do not invent values to clear the gate |
+| `broker_order_lifecycle_verified` | `broker_order_lifecycle.py` / `nextgen_broker_lifecycle.py` | EXTERNAL | software owner is REUSED, but PAPER=true requires real demo-venue lifecycle observations after the authorization-gated execution boundary exists |
+| `broker_execution_checkpoint_verified` | `broker_execution_checkpoint.py` + Step-2187 PREPARED owner | EXTERNAL | local PREPARED/restart proof is necessary but does not prove broker checkpoint/restart behavior; qualifying demo-runtime evidence required |
+| `broker_reconciliation_verified` | `broker_reconciliation.py` | EXTERNAL | reconcile real local-vs-demo-venue truth including reconnect/restart ambiguity; fixtures do not count |
+| `execution_protection_gates_verified` | `broker_execution_protection.py` + typed NextGen protection | EXTERNAL | owner is REUSED; PAPER=true requires concrete real host/spread/reconciliation/risk/session evidence, not merely offline `ALLOW_EVIDENCE` tests |
+| `broker_order_telemetry_verified` | broker telemetry owner + idempotency journal/checkpoint | EXTERNAL | complete qualifying real demo request/outcome/reconciliation/protection telemetry required |
+| `paper_user_authorized` | explicit PAPER STOP-gate | USER_AUTH | remains false until the user reviews the complete evidence bundle and explicitly authorizes demo/PAPER; never infer from technical readiness |
+
+### Evidence-less boolean finding
+
+`ReadinessSnapshot` remains a normalized fail-closed summary and intentionally accepts booleans. The Step-2188 audit does **not** promote a second readiness architecture merely to replace those fields. Instead, every future transition to `True` must cite the owner/evidence named above. A naked caller-supplied `True` without that provenance is not qualifying PAPER evidence.
+
+No generic PAPER-readiness composer is justified before the external evidence exists. Creating one now would mostly wrap unavailable evidence in another object and would not move the Monday target forward.
+
+### Smallest Monday-demo path after this audit
+
+1. keep exact-head CI/replay/reference evidence green;
+2. clear the five Neon/database gates using real connected database evidence rather than CI inference;
+3. at the next market-open Windows/MT5 window, capture current-branch read-only host/clock/CLOSED-M5 plus DE40 economics through the existing probe/supervisor bundle;
+4. bind verified DE40 economics into the existing broker-aware risk translation;
+5. promote explicit risk-profile and loss-cap policy values only with named provenance and validation;
+6. keep broker lifecycle/checkpoint/reconciliation/protection/telemetry PAPER gates false until qualifying real demo-venue evidence exists;
+7. only after the complete evidence bundle is reviewable may the independent `paper_user_authorized` STOP-gate be considered;
+8. real-money LIVE remains out of scope.
+
+### Step-2188 product decision
+
+- **REUSE** the existing readiness evaluator and all existing broker-neutral evidence owners.
+- **DO NOT BUILD** a generic readiness composer or second evidence stack now.
+- **ADAPT NEXT** only the smallest evidence/policy promotion boundary that remains after connected Neon and real MT5 evidence are harvested.
+- Treat skipped Neon/DB and unavailable real Windows/MT5/demo-venue observations as `WAITING_EXTERNAL`, never as failures that stop unrelated safe work and never as VERIFIED evidence.
 
 ## What does not count as broker evidence
 
