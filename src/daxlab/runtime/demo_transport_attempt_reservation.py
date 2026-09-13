@@ -18,6 +18,11 @@ from math import isfinite
 from typing import Any, Mapping
 
 from daxlab.domain.ports import StateStorePort
+from daxlab.runtime.broker_reconciliation import (
+    BrokerReconciliationVerdict,
+    VenueOrderObservation,
+    reconcile_broker_order,
+)
 from daxlab.runtime.demo_evidence_authorization import (
     DemoEvidenceAction,
     DemoEvidenceAuthorization,
@@ -29,7 +34,7 @@ from daxlab.runtime.mt5_demo_account_context import (
     Mt5DemoAccountContextEvidence,
     parse_mt5_demo_account_context_payload,
 )
-from daxlab.runtime.mt5_windows_bundle import WindowsMt5Bundle
+from daxlab.runtime.mt5_windows_bundle import WindowsMt5Bundle, parse_windows_mt5_bundle
 from daxlab.runtime.nextgen_prepared_checkpoint import (
     NextgenPreparedCheckpoint,
     nextgen_prepared_checkpoint_from_bytes,
@@ -150,24 +155,11 @@ def build_demo_transport_attempt_reservation(
     submission_ordinal: int,
 ) -> DemoTransportAttemptReservation:
     """Compose already-validated evidence only; perform no I/O and no venue action."""
-    if not bundle.green:
-        raise ValueError("demo transport reservation requires GREEN Windows MT5 bundle")
-    if bundle.demo_account_context is None:
-        raise ValueError("demo transport reservation requires DEMO account context")
-    if bundle.feed is None:
-        raise ValueError("demo transport reservation requires CLOSED-M5 feed evidence")
-    if bundle.feed.observed_at != bundle.host.observed_at:
-        raise ValueError("demo transport reservation requires one host/feed observation cycle")
-    if bundle.demo_account_context.trade_allowed != bundle.host.account_trade_allowed:
-        raise ValueError("demo transport reservation account trade-allowed mismatch")
-    if bundle.demo_account_context.symbol not in {
-        symbol.name for symbol in bundle.host.symbols
-    }:
-        raise ValueError("demo transport reservation account symbol is not in host bundle")
+    account_context = _validated_demo_bundle_context(bundle)
 
     verdict = evaluate_demo_evidence_authorization(
         authorization=authorization,
-        observed=bundle.demo_account_context.to_observed_context(),
+        observed=account_context.to_observed_context(),
         requested_action=DemoEvidenceAction.SUBMIT_EVIDENCE_ORDER,
         evaluated_at=evaluated_at,
         submissions_already_attempted=submission_ordinal - 1,
@@ -184,8 +176,8 @@ def build_demo_transport_attempt_reservation(
         authorization=authorization,
         authorization_verdict=verdict,
         authorization_fingerprint=authorization.fingerprint,
-        account_context=bundle.demo_account_context,
-        account_context_fingerprint=bundle.demo_account_context.fingerprint,
+        account_context=account_context,
+        account_context_fingerprint=account_context.fingerprint,
         bundle_fingerprint=bundle.fingerprint,
         host_observed_at=bundle.host.observed_at,
         feed_observed_at=bundle.feed.observed_at,
@@ -194,6 +186,28 @@ def build_demo_transport_attempt_reservation(
         max_host_age_seconds=float(max_host_age_seconds),
         submission_ordinal=submission_ordinal,
     )
+
+
+def _validated_demo_bundle_context(
+    bundle: WindowsMt5Bundle,
+) -> Mt5DemoAccountContextEvidence:
+    """Share the existing reservation host/account vetoes with read-only query."""
+    if not bundle.green:
+        raise ValueError("demo transport reservation requires GREEN Windows MT5 bundle")
+    if bundle.demo_account_context is None:
+        raise ValueError("demo transport reservation requires DEMO account context")
+    if bundle.feed is None:
+        raise ValueError("demo transport reservation requires CLOSED-M5 feed evidence")
+    if bundle.feed.observed_at != bundle.host.observed_at:
+        raise ValueError("demo transport reservation requires one host/feed observation cycle")
+    if bundle.demo_account_context.trade_allowed != bundle.host.account_trade_allowed:
+        raise ValueError("demo transport reservation account trade-allowed mismatch")
+    if bundle.demo_account_context.symbol not in {
+        symbol.name for symbol in bundle.host.symbols
+    }:
+        raise ValueError("demo transport reservation account symbol is not in host bundle")
+
+    return bundle.demo_account_context
 
 
 def reserve_demo_transport_attempt(
@@ -297,6 +311,54 @@ def demo_transport_restart_status(
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }
+
+
+def reconcile_reserved_demo_transport_query(
+    *,
+    reservation: DemoTransportAttemptReservation,
+    bundle_payload: Mapping[str, Any],
+    venue: VenueOrderObservation | None,
+    evaluated_at: datetime,
+) -> BrokerReconciliationVerdict:
+    """Veto current query evidence, then delegate comparison to its existing owner.
+
+    No broker query is performed here. Supplied observations remain external
+    evidence; an empty/missing observation never proves non-execution. Neither
+    CONSISTENT nor BLOCKED permits submission, repair, slot release or promotion.
+    Callers reuse telemetry_from_reconciliation and the existing broker journal.
+    """
+    reservation.__post_init__()
+    _aware(evaluated_at, "evaluated_at")
+    if evaluated_at < reservation.evaluated_at:
+        raise ValueError("demo query cannot precede reservation")
+    # Parse the actual current envelope, not a caller-forged GREEN summary.
+    bundle = parse_windows_mt5_bundle(bundle_payload)
+    context = _validated_demo_bundle_context(bundle)
+    if context.fingerprint != reservation.account_context_fingerprint:
+        raise ValueError("demo query account context cross-wiring")
+    if bundle.host.observed_at < reservation.evaluated_at:
+        raise ValueError("demo query host observation precedes reservation")
+    host_age = (evaluated_at - bundle.host.observed_at).total_seconds()
+    if host_age < 0 or host_age > reservation.max_host_age_seconds:
+        raise ValueError("demo query host observation is future or stale")
+    feed_limit = bundle_payload["closed_m5_feed"]["max_age_seconds"]
+    if bundle.feed.age_seconds + host_age > feed_limit:
+        raise ValueError("demo query feed evidence is stale at evaluation")
+
+    scope = evaluate_demo_evidence_authorization(
+        authorization=reservation.authorization,
+        observed=context.to_observed_context(),
+        requested_action=DemoEvidenceAction.QUERY_EVIDENCE_ORDER,
+        evaluated_at=evaluated_at,
+        submissions_already_attempted=reservation.submission_ordinal,
+    )
+    if not scope.scope_valid:
+        raise ValueError("demo query authorization blocked: " + ",".join(scope.blockers))
+    if venue is not None:
+        venue.__post_init__()
+        if not bundle.host.observed_at <= venue.observed_at <= evaluated_at:
+            raise ValueError("demo query venue observation is future or stale")
+    return reconcile_broker_order(local=reservation.prepared.broker.lifecycle, venue=venue)
 
 
 def demo_transport_attempt_reservation_from_bytes(
