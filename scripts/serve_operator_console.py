@@ -24,6 +24,7 @@ from daxlab.runtime.atomic_json import read_json_object
 from daxlab.runtime.candidate_operator_query import (
     CONSOLE_SCHEMA,
     build_operator_console_projection,
+    validate_operator_console_safety,
 )
 
 WEB_ROOT = Path(__file__).resolve().parents[1] / "web"
@@ -175,6 +176,7 @@ class OperatorReadHandler(BaseHTTPRequestHandler):
                     attempt_store=self.server.attempt_store, attempt_key=self.server.attempt_key,
                     reservation_fingerprint=self.server.reservation_fingerprint,
                 )
+                validate_operator_console_safety(view)
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
                 view = source_unavailable_projection()
             code = 200 if view["source_available"] else 503

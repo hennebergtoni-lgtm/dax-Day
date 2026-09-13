@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const LABELS = ['BOT MODE','HOST','MT5','FEED','CLOCK','ACCOUNT MODE','SYMBOL','PROTECTION','RECONCILIATION','SNAPSHOT AGE','EXECUTION'];
-  const STATES = new Set(['GREEN','WARN','BLOCKED','STALE','UNKNOWN','WAITING_EXTERNAL','QUERY_REQUIRED']);
+  const STATES = new Set(['GREEN','WARN','BLOCKED','STALE','UNKNOWN','WAITING_EXTERNAL','QUERY_REQUIRED','DISABLED']);
   const el = id => document.getElementById(id);
   const show = value => value === null || value === undefined ? 'UNKNOWN' : typeof value === 'object' ? JSON.stringify(value) : String(value);
   const node = (tag, text, className) => { const n=document.createElement(tag); n.textContent=show(text); if(className)n.className=className; return n; };
@@ -22,6 +22,7 @@
   const validate = v => {
     if(!v||v.schema_version!=='DAXLAB_READONLY_OPERATOR_CONSOLE_V1'||v.execution_capability!=='NONE'||v.order_execution_enabled!==false||v.demo_paper_execution_authorized!==false||v.live_authorized!==false||v.shadow_authorized!==true)throw new Error('invalid safety contract');
     if(!v.system||!LABELS.every(k=>v.system[k]&&STATES.has(v.system[k].state)))throw new Error('invalid system states');
+    if(!['BLOCKED','DISABLED'].includes(v.system.EXECUTION.state))throw new Error('execution display contradiction');
     if(!Array.isArray(v.blockers)||!v.blockers.every(x=>typeof x==='string'))throw new Error('invalid blockers');
     return v;
   };

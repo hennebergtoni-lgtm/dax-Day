@@ -395,3 +395,16 @@ def _observation_age(now: datetime, observed: datetime) -> float:
 
 def _tile(state: str, value: Any) -> dict[str, Any]:
     return {"state": state, "value": value}
+
+
+def validate_operator_console_safety(value: Mapping[str, Any]) -> None:
+    """Independent response guard: a read model can never enable execution."""
+    if (value.get("schema_version") != CONSOLE_SCHEMA
+            or value.get("execution_capability") != "NONE"
+            or value.get("order_execution_enabled") is not False
+            or value.get("shadow_authorized") is not True
+            or value.get("demo_paper_execution_authorized") is not False
+            or value.get("live_authorized") is not False
+            or value.get("system", {}).get("EXECUTION", {}).get("state") not in {"BLOCKED", "DISABLED"}):
+        raise ValueError("operator execution display contradicts disabled safety contract")
+    _assert_credential_free(value)
