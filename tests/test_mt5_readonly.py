@@ -120,3 +120,13 @@ def test_health_green_requires_every_read_only_gate() -> None:
     health = Mt5Health(True, True, True, True, True, True, True)
     assert health.green
     assert not Mt5Health(True, True, True, True, True, False, True).green
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_freshness_watchdog_rejects_non_finite_limit(value):
+    t0 = datetime(2026, 1, 2, 9, 0, tzinfo=timezone.utc)
+    with pytest.raises(ValueError, match="max_age_seconds must be finite and non-negative"):
+        market_data_is_fresh(
+            latest_closed_bar_open=t0, timeframe_minutes=5,
+            observed_at=t0 + timedelta(minutes=6), max_age_seconds=value,
+        )

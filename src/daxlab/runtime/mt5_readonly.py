@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from math import isfinite
 from typing import Iterable
 
 
@@ -169,8 +170,8 @@ def market_data_is_fresh(
     max_age_seconds: float,
 ) -> bool:
     """Fail closed when the latest completed bar is older than the configured watchdog limit."""
-    if max_age_seconds < 0:
-        raise ValueError("max_age_seconds must be non-negative")
+    if not isfinite(max_age_seconds) or max_age_seconds < 0:
+        raise ValueError("max_age_seconds must be finite and non-negative")
     return closed_bar_age_seconds(
         latest_closed_bar_open=latest_closed_bar_open,
         timeframe_minutes=timeframe_minutes,

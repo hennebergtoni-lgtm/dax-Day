@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pytest
+
 from daxlab.runtime.mt5_watchdog import (
     build_mt5_watchdog_snapshot,
     why_no_trade,
@@ -70,3 +72,22 @@ def test_clock_heartbeat_feed_lock_and_execution_blockers() -> None:
     assert "MT5_ORDER_EXECUTION_ENABLED" in snapshot.blockers
     assert not snapshot.read_only_healthy
     assert not snapshot.execution_ready
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("field", [
+    "clock_skew_seconds", "max_clock_skew_seconds", "heartbeat_age_seconds",
+    "max_heartbeat_age_seconds", "feed_age_seconds", "max_feed_age_seconds",
+])
+def test_watchdog_rejects_non_finite_quality_values(value, field):
+    values = {
+        "observed_at": datetime.fromisoformat("2026-09-08T22:00:00+02:00"),
+        "terminal_connected": True, "account_connected": True,
+        "clock_skew_seconds": 0.2, "max_clock_skew_seconds": 2.,
+        "heartbeat_age_seconds": 1., "max_heartbeat_age_seconds": 10.,
+        "feed_age_seconds": 30., "max_feed_age_seconds": 360.,
+        "single_instance_lock_held": True, "order_execution_enabled": False,
+    }
+    values[field] = value
+    with pytest.raises(ValueError, match=f"{field} must be finite and non-negative"):
+        build_mt5_watchdog_snapshot(**values)

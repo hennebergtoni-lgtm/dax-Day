@@ -3,36 +3,11 @@ name: dax-bot-1x-ci
 on:
   push:
     branches: [main]
-    paths:
-      - 'src/daxlab/runtime/candidate_*.py'
-      - 'src/daxlab/runtime/broker_*.py'
-      - 'src/daxlab/runtime/operator_snapshot.py'
-      - 'src/daxlab/runtime/operator_runtime_bridge.py'
-      - 'src/daxlab/strategies/cand001/**'
-      - 'tests/test_candidate*.py'
-      - 'tests/test_broker*.py'
-      - 'tests/test_operator_snapshot*.py'
-      - 'tests/test_operator_runtime_bridge.py'
-      - 'tests/test_nextgen_cand001_strategy_adapter.py'
-      - 'scripts/benchmark_cand001_pipeline.py'
-      - '.github/workflows/dax-bot-1x-ci.yml'
   pull_request:
-    paths:
-      - 'src/daxlab/runtime/candidate_*.py'
-      - 'src/daxlab/runtime/broker_*.py'
-      - 'src/daxlab/runtime/operator_snapshot.py'
-      - 'src/daxlab/runtime/operator_runtime_bridge.py'
-      - 'src/daxlab/strategies/cand001/**'
-      - 'tests/test_candidate*.py'
-      - 'tests/test_broker*.py'
-      - 'tests/test_operator_snapshot*.py'
-      - 'tests/test_operator_runtime_bridge.py'
-      - 'tests/test_nextgen_cand001_strategy_adapter.py'
-      - 'scripts/benchmark_cand001_pipeline.py'
-      - '.github/workflows/dax-bot-1x-ci.yml'
 
 jobs:
   candidate-core:
+    name: dax-bot-1x-ci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

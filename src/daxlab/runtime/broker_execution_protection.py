@@ -100,10 +100,8 @@ class BrokerExecutionProtectionVerdict:
         ):
             if value is not None:
                 _sha(value, field)
-        if self.feed_age_seconds < 0:
-            raise ValueError("feed_age_seconds must be non-negative")
-        if self.observed_spread_points is not None and self.observed_spread_points < 0:
-            raise ValueError("observed_spread_points must be non-negative")
+        _validate_max_age(self.feed_age_seconds, "feed_age_seconds")
+        _validate_optional_age(self.observed_spread_points, "observed_spread_points")
         _validate_optional_age(
             self.loss_observation_age_seconds,
             "loss_observation_age_seconds",
@@ -218,12 +216,10 @@ def evaluate_execution_protection(
 ) -> BrokerExecutionProtectionVerdict:
     """Combine normalized protection evidence; submit and authorize nothing."""
     _sha(client_order_id, "client_order_id")
-    if feed_age_seconds < 0 or max_feed_age_seconds < 0:
-        raise ValueError("feed ages must be non-negative")
-    if max_spread_points < 0:
-        raise ValueError("max_spread_points must be non-negative")
-    if observed_spread_points is not None and observed_spread_points < 0:
-        raise ValueError("observed_spread_points must be non-negative")
+    _validate_max_age(feed_age_seconds, "feed_age_seconds")
+    _validate_max_age(max_feed_age_seconds, "max_feed_age_seconds")
+    _validate_max_age(max_spread_points, "max_spread_points")
+    _validate_optional_age(observed_spread_points, "observed_spread_points")
     for value, field in (
         (sizing_evidence_fingerprint, "sizing_evidence_fingerprint"),
         (risk_policy_fingerprint, "risk_policy_fingerprint"),

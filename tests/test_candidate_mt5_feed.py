@@ -1,5 +1,6 @@
 from dataclasses import replace
 from datetime import datetime, timedelta
+from itertools import combinations
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -8,7 +9,7 @@ from daxlab.runtime.candidate_mt5_feed import (
     mt5_bar_to_candidate_candle,
     validated_mt5_feed_to_candidate_candles,
 )
-from daxlab.runtime.mt5_feed_payload import ClosedM5Feed
+from daxlab.runtime.mt5_feed_payload import ClosedM5Feed, parse_closed_m5_feed
 from daxlab.runtime.mt5_readonly import Mt5Bar
 
 
@@ -120,3 +121,48 @@ def test_broker_symbol_provenance_is_separate_from_candidate_symbol() -> None:
 
     assert candle.symbol == "DE40"
     assert candle.source == "MT5_READ_ONLY:GER40"
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("fields", [
+    fields for size in range(1, 5)
+    for fields in combinations(("open", "high", "low", "close"), size)
+])
+def test_parser_to_candidate_bridge_rejects_non_finite_prices(value, fields):
+    bar = _bar(10, 0)
+    item = {
+        "observed_at": (bar.open_time + timedelta(minutes=5, seconds=2)).isoformat(),
+        "requested_start_pos": 1,
+        "max_age_seconds": 360,
+        "bars": [{
+            "open_time": bar.open_time.isoformat(),
+            "open": bar.open, "high": bar.high, "low": bar.low, "close": bar.close,
+        }],
+    }
+    item["bars"][0].update(dict.fromkeys(fields, value))
+    with pytest.raises(ValueError, match="must be finite"):
+        validated_mt5_feed_to_candidate_candles(
+            parse_closed_m5_feed(item), broker_symbol="DE40",
+        )
+    # An externally constructed feed must also fail at the Runtime Candle boundary.
+    unsafe_bar = replace(bar, **dict.fromkeys(fields, value))
+    with pytest.raises(ValueError, match="OHLC values must be finite"):
+        validated_mt5_feed_to_candidate_candles(_feed(unsafe_bar), broker_symbol="DE40")
+
+
+def test_parser_to_candidate_bridge_preserves_valid_prices():
+    bar = _bar(10, 0)
+    item = {
+        "observed_at": (bar.open_time + timedelta(minutes=5, seconds=2)).isoformat(),
+        "requested_start_pos": 1,
+        "max_age_seconds": 360,
+        "bars": [{
+            "open_time": bar.open_time.isoformat(),
+            "open": bar.open, "high": bar.high, "low": bar.low, "close": bar.close,
+        }],
+    }
+    result, = validated_mt5_feed_to_candidate_candles(
+        parse_closed_m5_feed(item), broker_symbol="DE40",
+    )
+    assert (result.open, result.high, result.low, result.close) == (100., 101., 99., 100.5)
+    assert result.safe_for_decision is True

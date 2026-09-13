@@ -26,15 +26,22 @@ def test_universal_required_check_maps_to_broad_integration_job() -> None:
 
     assert "require the broad GitHub Actions check named `test`" in governance
     assert "jobs:\n  test:" in broad
+    assert "jobs:\n  test:\n    name: research-lab-ci\n" in broad
     assert "pull_request:" in broad
     assert "run: pytest" in broad
 
 
-def test_candidate_core_is_not_safe_as_universal_required_check() -> None:
+def test_candidate_required_check_closes_historical_path_filter_deadlock() -> None:
     governance = _read("docs/STABLE_BRANCH_GOVERNANCE_V1.md")
     focused = _read(".github/workflows/dax-bot-1x-ci.yml")
 
     assert "do not universally require the `candidate-core` check" in governance
-    assert "paths:" in focused
+    # Retain the historical finding; P0-C now publishes a renamed, unfiltered required check.
+    assert "paths:" not in focused
+    assert "paths-ignore:" not in focused
+    assert "  pull_request:\n" in focused
+    assert "jobs:\n  candidate-core:\n    name: dax-bot-1x-ci\n" in focused
     assert "candidate-core:" in focused
     assert "src/daxlab/runtime/candidate_*.py" in focused
+    assert "tests/test_candidate*.py" in focused
+    assert "tests/test_broker*.py" in focused

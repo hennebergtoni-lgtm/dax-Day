@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,22 @@ from daxlab.runtime.broker_reconciliation import reconcile_broker_order
 CLIENT_ID = "a" * 64
 SIZING_FP = "b" * 64
 RISK_FP = "c" * 64
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("field", [
+    "feed_age_seconds", "max_feed_age_seconds", "observed_spread_points", "max_spread_points",
+])
+def test_protection_rejects_non_finite_feed_and_spread_evidence(value, field):
+    with pytest.raises(ValueError, match=f"{field} must be finite and non-negative"):
+        _safe(**{field: value})
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("field", ["feed_age_seconds", "observed_spread_points"])
+def test_protection_verdict_rejects_non_finite_persisted_evidence(value, field):
+    with pytest.raises(ValueError, match=f"{field} must be finite and non-negative"):
+        replace(_safe(), **{field: value})
 
 
 def _safe(**changes):

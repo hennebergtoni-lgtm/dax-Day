@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,3 +66,18 @@ def test_reference_payload_export_remains_hash_verified_reference_owner() -> Non
         "v112-verified-reference-sources",
     ):
         assert required in workflow
+
+
+def test_required_checks_have_exact_job_names_and_unfiltered_pr_triggers() -> None:
+    for filename, job_id, context in (
+        ("ci.yml", "test", "research-lab-ci"),
+        ("dax-bot-1x-ci.yml", "candidate-core", "dax-bot-1x-ci"),
+    ):
+        workflow = _read(WORKFLOWS / filename)
+        trigger, jobs = workflow.split("\njobs:\n", 1)
+        assert re.search(r"^  pull_request:\s*$", trigger, re.MULTILINE)
+        assert not re.search(r"^\s+(paths|paths-ignore|branches-ignore):", trigger, re.MULTILINE)
+        assert re.search(
+            rf"^  {job_id}:\n    name: {context}\n    runs-on:", jobs, re.MULTILINE,
+        )
+        assert not re.search(r"^    if:", jobs, re.MULTILINE)

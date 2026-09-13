@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from math import isfinite
 
 
 class RuntimeMode(StrEnum):
@@ -61,6 +62,10 @@ class Candle:
             raise ValueError("runtime timestamps must be timezone-aware")
         if self.close_time <= self.event_time:
             raise ValueError("close_time must be after event_time")
+        if not all(isfinite(value) for value in (self.open, self.high, self.low, self.close)):
+            raise ValueError("OHLC values must be finite")
+        if self.volume is not None and (not isfinite(self.volume) or self.volume < 0):
+            raise ValueError("volume must be finite and non-negative when provided")
         if self.high < max(self.open, self.close, self.low):
             raise ValueError("high violates OHLC invariants")
         if self.low > min(self.open, self.close, self.high):
