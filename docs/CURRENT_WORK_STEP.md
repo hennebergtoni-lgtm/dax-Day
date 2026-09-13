@@ -8,15 +8,13 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2179**
-- Last formally closed whole-number step: **2180 — INTERRUPTED by explicit user continuity/Masterstand intervention before audit completion**
-- Active whole-number step: **2181**
-- Next step after successful completion: **2182**
-- Active Step 2181 scope: **Refresh the canonical Masterstand for imminent chat handoff. Preserve the main milestone/governance logic, reconcile verified progress through Step 2179 and the interrupted Step-2180 scope, and durably record the recovered Monday operational target corridor: execution boundary -> restart/idempotency -> market-open broker evidence -> full E2E SHADOW -> Demo-PAPER gate -> explicit user authorization -> first demo order. This is continuity/governance work only: the target corridor must not be misread as PAPER/LIVE authorization or proof of broker readiness. Keep the 2250 Masterstand and 2500 Architecture & Learning Review checkpoints intact.**
-- Planned Step 2182 scope after 2181 closes: **Resume the unfinished protected session-consumption commit-boundary audit originating in Step 2180, using fresh repo/head/CI truth and preserving Step-2180 provenance.**
+- Last completed whole-number step: **2181**
+- Active whole-number step: **2182**
+- Next step after successful completion: **2183**
+- Active Step 2182 scope: **Resume and complete the unfinished protected session-consumption commit-boundary audit originating in interrupted Step 2180, using fresh repo/head/CI truth. Determine the safe ordering among typed NextGen protection ALLOW_EVIDENCE, deterministic session-consumption transition, atomic SessionAdmissionGuardCheckpoint persistence, existing lifecycle/idempotency owners and any future external submission boundary. Explicitly identify consume-before-failure and submit-before-consume crash windows, classify existing owners as REUSE / ADAPT / DEFER, and define the minimal next product composition. Audit only unless the audit yields one unambiguous evidence-neutral composition step; do not submit broker orders, authorize PAPER/LIVE, derive session resets, mutate CAND-001 defaults or create a second lifecycle/storage stack.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
-- Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137**
+- Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137 / 2180**
 - Next mandatory 250-step Masterstand checkpoint: **2250**
 - Next mandatory 500-step full audit: **2500**
 - Next mandatory 500-step Architecture & Learning Review: **2500**
@@ -39,17 +37,19 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2177 | Session ledger/freshness crash-coherence audit. | **COMPLETED.** Final tested head `812564f2a5520764c2297b423a3049ecfca9b1aa`; CI #529/#1313 GREEN. |
 | 2178 | Combined atomic SessionAdmissionGuardCheckpoint. | **COMPLETED.** Final tested head `47e9f9d2c887820f674cc52767afebae8063006f`; CI #534/#1318 GREEN. |
 | 2179 | Authoritative session guard in typed NextGen protection. | **COMPLETED.** Typed protection now derives session observation from the atomic guard, verifies guard policy identity and canonical decision parity, uses guard observed_at for freshness/future-date validation, and binds the guard fingerprint into verdict provenance while generic compatibility remains intact. Final tested head `fcfdeea8816beca4a3294bfd0beff3b8cd6bbf51`; `dax-bot-1x-ci` #538 GREEN and `research-lab-ci` #1322 GREEN. |
-| 2180 | Protected session-consumption commit-boundary audit. | **INTERRUPTED.** Explicit user continuity/Masterstand intervention occurred before the audit was completed or committed. Owner inspection had begun; no 2180 technical conclusion is claimed. Unfinished scope is carried forward to planned Step 2182. |
-| 2181 | Masterstand + Monday-target continuity reconciliation. | **IN PROGRESS.** Reconcile durable handoff truth before the imminent chat switch; no trading authorization change. |
+| 2180 | Protected session-consumption commit-boundary audit. | **INTERRUPTED.** Explicit user continuity/Masterstand intervention occurred before the audit was completed or committed. Owner inspection had begun; no 2180 technical conclusion is claimed. Unfinished scope is carried forward to Step 2182. |
+| 2181 | Masterstand + Monday-target continuity reconciliation. | **COMPLETED.** Repository-backed handoff truth and Monday target corridor were refreshed without changing trading authorization. Final tested head `b6422ea5874b9399e7a41f518d0ff7197cbdb36c`; `dax-bot-1x-ci` #541 GREEN and `research-lab-ci` #1325 GREEN. |
+| 2182 | Resume protected session-consumption commit-boundary audit. | **IN PROGRESS.** Continue Step-2180 provenance on fresh repository truth and finish the crash-boundary decision. |
 
-## Step 2179 closeout truth
+## Step 2181 closeout truth
 
-Step 2179 makes the Step-2178 atomic SessionAdmissionGuardCheckpoint the authoritative session evidence for the typed NextGen protection path. Independent typed session observation/checkpoint inputs are no longer accepted. The generic normalized protection API and observation-only checkpoint remain available for compatibility/diagnostics. No broker submission or execution authorization was added.
+Step 2181 refreshed `docs/MASTERSTAND.md` for durable chat handoff, reconciled verified progress through Step 2179, preserved the truthful Step-2180 interruption, and recorded the Monday operational target corridor: execution boundary -> restart/idempotency -> market-open broker evidence -> complete E2E SHADOW -> Demo-PAPER gate -> explicit user authorization -> first demo order. This continuity work did not authorize broker submission, PAPER or LIVE.
 
-## Step 2180 interruption truth
+## Step 2182 active work
 
-Step 2180 was interrupted by an explicit user request to secure the recent Monday-target discussion and milestone logic into the repository before continuing technical work. The audit was not completed, no crash-boundary decision was promoted, and no implementation was added. The unfinished questions remain:
+**Step 2182 — IN PROGRESS:** resume the interrupted Step-2180 audit of the exact commit boundary for consuming one canonical session slot after typed NextGen protection returns ALLOW_EVIDENCE.
 
+Required audit questions:
 1. what event proves a slot has been consumed rather than merely signaled or protected;
 2. whether consumption must occur before or after a future external submission attempt;
 3. how to eliminate consume-before-failure and submit-before-consume restart windows;
@@ -60,19 +60,6 @@ Step 2180 was interrupted by an explicit user request to secure the recent Monda
 8. no second lifecycle, journal or storage stack;
 9. no session reset/date/timezone derivation and no CAND-001 mutation;
 10. no broker order submission, PAPER or LIVE authorization.
-
-## Step 2181 active work
-
-**Step 2181 — IN PROGRESS:** refresh repository-backed handoff truth and capture the operational Monday target corridor without turning a target into authorization.
-
-Required continuity points:
-1. current verified technical sequence through 2179 and truthful 2180 interruption;
-2. target corridor: execution boundary -> restart/idempotency -> market-open broker evidence -> complete E2E SHADOW -> Demo-PAPER gate -> explicit user authorization -> first demo order;
-3. repository/test readiness and real broker/host evidence remain separate;
-4. Step-2122 market-open Windows/MT5 evidence remains WAITING_EXTERNAL;
-5. no second execution/lifecycle/storage stack;
-6. 2250 Masterstand checkpoint and 2500 full Architecture & Learning Review remain binding;
-7. current-day priority is the shortest safe path through the core execution/recovery/evidence gates, not documentation churn.
 
 ## Binding numbering and handoff rules
 
