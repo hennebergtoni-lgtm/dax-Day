@@ -148,3 +148,105 @@ def hypothesis_eligible(
 ) -> bool:
     """A conservative research gate, not a strategy-promotion decision."""
     return observations >= minimum_observations and distinct_periods >= minimum_periods
+
+
+def empirical_distribution(values: list[float]) -> dict[str, object]:
+    """Observed linear-interpolated quantiles, never a tail confidence bound."""
+    if any(type(v) not in (int, float) or not isfinite(v) for v in values):
+        raise ValueError('distribution requires finite numeric observations')
+    ordered = sorted(float(v) for v in values)
+
+    def quantile(q: float) -> float | None:
+        if not ordered:
+            return None
+        index = (len(ordered)-1)*q
+        lower = int(index)
+        upper = min(lower+1, len(ordered)-1)
+        return ordered[lower] + (ordered[upper]-ordered[lower])*(index-lower)
+
+    return {'count': len(ordered), 'median': quantile(.5), 'p90': quantile(.9),
+            'p95': quantile(.95), 'p99': quantile(.99),
+            'worst_observed': max(ordered) if ordered else None,
+            'inference_state': 'UNVERIFIED_THRESHOLD' if ordered else 'INSUFFICIENT_SAMPLE',
+            'quantile_method': 'EMPIRICAL_LINEAR_INTERPOLATION_NOT_POPULATION_TAIL_BOUND'}
+
+
+def historical_risk_envelope(preflight) -> dict[str, object]:
+    """Describe strict existing detail rows, keeping each WF/variant independent.
+
+    Source MAE is signed non-positive; the risk distribution uses its magnitude.
+    Normal ledger net-R cannot reveal gross R, stress costs, gaps or slippage.
+    Overlapping positions and cross-WF chains are not invented into one account.
+    """
+    from datetime import datetime, date
+    from daxlab.detail_import import _payload_hash
+    from daxlab.detail_artifact_loader import DetailArtifactPreflight
+    if not isinstance(preflight, DetailArtifactPreflight) or preflight.detail_kind != 'TRADES':
+        raise ValueError('risk envelope requires existing TRADES artifact preflight')
+    rows = preflight.planned_rows
+    if preflight.observed_rows != len(rows):
+        raise ValueError('risk envelope source row-count mismatch')
+    if len({r.source_row_id for r in rows}) != len(rows):
+        raise ValueError('duplicate risk-envelope source identity')
+    groups = defaultdict(list)
+    durations = []
+    for row in rows:
+        if row.detail_kind != 'TRADES' or _payload_hash(row.payload) != row.payload_sha256:
+            raise ValueError('risk envelope mutated/non-trade detail row')
+        p = row.payload
+        if any(type(p[k]) not in (int, float) or not isfinite(p[k]) for k in ('r','mae_r','mfe_r')):
+            raise ValueError('risk envelope non-finite excursion/return')
+        if p['mae_r'] > 0 or p['mfe_r'] < 0:
+            raise ValueError('risk envelope excursion sign mismatch')
+        entry, exit_ = (datetime.fromisoformat(str(p[k])) for k in ('entry_time_utc','exit_time_utc'))
+        if entry.tzinfo is None or exit_.tzinfo is None or entry.utcoffset().total_seconds() != 0 or exit_.utcoffset().total_seconds() != 0 or exit_ < entry:
+            raise ValueError('risk envelope incoherent entry/exit time')
+        durations.append((exit_-entry).total_seconds())
+        groups[(p['wf'],p['variant_index'])].append(p)
+    sequences = []
+    drawdowns = []
+    sessions = defaultdict(list)
+    weeks = defaultdict(list)
+    for (wf, variant), items in sorted(groups.items()):
+        ordered = sorted(items, key=lambda p: (p['entry_time_utc'],p['exit_time_utc']))
+        overlap = any(a['exit_time_utc'] > b['entry_time_utc'] for a,b in zip(ordered,ordered[1:]))
+        if overlap:
+            sequences.append({'wf':wf, 'variant':variant, 'state':'UNKNOWN_OVERLAPPING_TRADES', 'max_loss_streak':None})
+            continue
+        streak = maximum = 0
+        equity = peak = 0.0
+        for p in ordered:
+            streak = streak+1 if p['r'] < 0 else 0
+            maximum = max(maximum,streak)
+            equity += p['r']
+            peak = max(peak,equity)
+            drawdowns.append(peak-equity)
+            sessions[(wf,variant,p['date'])].append(p['r'])
+            week = date.fromisoformat(p['date']).isocalendar()[:2]
+            weeks[(wf,variant,*week)].append(p['r'])
+        sequences.append({'wf':wf, 'variant':variant, 'state':'LOSS_SEQUENCE_OBSERVED', 'max_loss_streak':maximum})
+
+    def strata(items):
+        return {'count':len(items), 'mae_magnitude_r':empirical_distribution([-p['mae_r'] for p in items]),
+                'mfe_r':empirical_distribution([p['mfe_r'] for p in items]),
+                'split_inference':'UNVERIFIED_THRESHOLD'}
+
+    payloads = [r.payload for r in rows]
+    result = {
+        'schema_version':'DAXLAB_HISTORICAL_RISK_ENVELOPE_V1', 'scope':'STATIC_DERIVED_RESEARCH_NOT_RUNTIME_RISK_OR_BROKER_FACT',
+        'source_sha256':preflight.observed_sha256, 'observed_rows':len(rows),
+        'evidence_state':'TAIL_RISK_OBSERVED' if rows else 'INSUFFICIENT_SAMPLE',
+        **strata(payloads), 'duration_seconds':empirical_distribution(durations),
+        'by_side':{side:strata([p for p in payloads if p['side']==side]) for side in ('long','short')},
+        'unavailable_splits':{'regime':'UNKNOWN', 'structure':'UNKNOWN', 'setup':'UNKNOWN', 'OR5_OR15':'UNKNOWN_REQUIRES_PINNED_SELECTED_VARIANT_JOIN'},
+        'loss_sequences':sequences,
+        'max_observed_loss_streak':max((s['max_loss_streak'] for s in sequences if s['max_loss_streak'] is not None),default=None),
+        'loss_chain_scope':'WITHIN_NONOVERLAPPING_WF_VARIANT_ONLY_CROSS_WF_UNKNOWN',
+        'session_loss_chains':[{'wf':k[0],'variant':k[1],'session_date':k[2],'net_r':sum(v),'trades':len(v)} for k,v in sorted(sessions.items())],
+        'weekly_loss_chains':[{'wf':k[0],'variant':k[1],'iso_year':k[2],'iso_week':k[3],'net_r':sum(v),'trades':len(v)} for k,v in sorted(weeks.items())],
+        'drawdown_r':empirical_distribution(drawdowns), 'drawdown_scope':'TRADE_BOUNDARY_NET_R_WITHIN_WF_VARIANT_NOT_CASH_DRAWDOWN',
+        'cost_stress':{'normal':'SOURCE_NORMAL_NET_R_ONLY', 'stress_1_5x':'UNKNOWN_NO_PER_TRADE_COST_EVIDENCE', 'stress_2x':'UNKNOWN_NO_PER_TRADE_COST_EVIDENCE'},
+        'slippage_gap':'UNKNOWN_NOT_DERIVABLE_FROM_MAE_OR_AGGREGATE_NET_R',
+        'survival_verdict':'UNVERIFIED_THRESHOLD', 'execution_capability':'NONE', 'order_execution_enabled':False,
+    }
+    return result
