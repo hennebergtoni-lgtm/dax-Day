@@ -26,7 +26,12 @@ from daxlab.runtime.broker_reconciliation import (
     VENUE_ORDER_OBSERVATION_SCHEMA,
     VenueOrderObservation,
 )
-from daxlab.runtime.demo_transport_attempt_reservation import DemoTransportAttemptReservation
+from daxlab.domain.ports import StateStorePort
+from daxlab.runtime.demo_transport_attempt_reservation import (
+    DemoTransportAttemptReservation,
+    load_reserved_demo_transport_attempt,
+    validate_reserved_demo_transport_query,
+)
 from daxlab.runtime.mt5_demo_account_context import (
     Mt5DemoAccountContextEvidence,
     normalize_mt5_demo_account_context,
@@ -414,6 +419,46 @@ def build_demo_mt5_lookup_request(
         history_to=history_to,
         query_evaluated_at=query_evaluated_at,
     )
+
+
+def validate_reserved_demo_mt5_lookup(
+    *,
+    store: StateStorePort,
+    key: str,
+    expected_reservation_fingerprint: str,
+    request_payload: Mapping[str, Any],
+    bundle_payload: Mapping[str, Any],
+    evaluated_at: datetime,
+) -> DemoMt5LookupRequest:
+    """Bind operational lookup to durable identity and current QUERY scope.
+
+    A history window is not an authorization/freshness window. Reuse the existing
+    reservation/query owner immediately before SDK reads. No state is saved or
+    reset; original preparation/request evidence and codecs remain unchanged.
+    """
+    request = demo_mt5_lookup_request_from_payload(request_payload)
+    reservation = load_reserved_demo_transport_attempt(
+        store=store, key=key,
+        expected_reservation_fingerprint=expected_reservation_fingerprint,
+    )
+    expected_identity = derive_demo_mt5_transport_identity(
+        client_order_id=reservation.prepared.intent.intent_id,
+        symbol=reservation.account_context.symbol,
+    )
+    if (
+        request.reservation_fingerprint != reservation.fingerprint
+        or request.identity != expected_identity
+        or request.account_context != reservation.account_context
+        or request.requested_quantity != reservation.prepared.broker.lifecycle.requested_quantity
+    ):
+        raise ValueError("MT5 reserved lookup request cross-wiring")
+    _aware(evaluated_at, "evaluated_at")
+    if evaluated_at < request.query_evaluated_at or evaluated_at > request.history_to:
+        raise ValueError("MT5 reserved lookup outside request history/evaluation window")
+    validate_reserved_demo_transport_query(
+        reservation=reservation, bundle_payload=bundle_payload, evaluated_at=evaluated_at,
+    )
+    return request
 
 
 def query_mt5_demo_evidence(

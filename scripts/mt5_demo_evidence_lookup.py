@@ -16,9 +16,12 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from daxlab.adapters.file_state_store import AtomicFileStateStore
+from daxlab.domain.ports import StateStorePort
 from daxlab.runtime.mt5_demo_evidence_transport import (
     demo_mt5_lookup_request_from_payload,
     query_mt5_demo_evidence,
+    validate_reserved_demo_mt5_lookup,
 )
 
 
@@ -62,10 +65,39 @@ def execute_readonly_lookup(
     return body | {"sha256": _fingerprint(body)}
 
 
+def execute_reserved_readonly_lookup(
+    *, mt5: Any, store: StateStorePort, attempt_key: str,
+    expected_reservation_fingerprint: str, bundle_payload: Mapping[str, Any],
+    request_payload: Mapping[str, Any], observed_at: datetime,
+) -> dict[str, Any]:
+    """Operational boundary: current reserved QUERY preflight before SDK reads."""
+    validate_reserved_demo_mt5_lookup(
+        store=store, key=attempt_key,
+        expected_reservation_fingerprint=expected_reservation_fingerprint,
+        request_payload=request_payload, bundle_payload=bundle_payload,
+        evaluated_at=observed_at,
+    )
+    body = execute_readonly_lookup(
+        mt5=mt5, request_payload=request_payload, observed_at=observed_at,
+    )
+    body.pop("sha256")
+    body.update(
+        attempt_key=attempt_key,
+        reservation_fingerprint=expected_reservation_fingerprint,
+        current_windows_bundle_fingerprint=bundle_payload["sha256"],
+        query_preflight_evaluated_at=_iso(observed_at),
+    )
+    return body | {"sha256": _fingerprint(body)}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--request", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--state-dir", required=True)
+    parser.add_argument("--attempt-key", required=True)
+    parser.add_argument("--reservation-fingerprint", required=True)
+    parser.add_argument("--bundle", required=True)
     args = parser.parse_args()
 
     request_path = Path(args.request)
@@ -76,6 +108,17 @@ def main() -> int:
     raw = json.loads(request_path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("lookup request file must contain one JSON object")
+    state_dir = Path(args.state_dir)
+    if not state_dir.is_dir():
+        raise ValueError("reserved lookup state directory must already exist")
+    store = AtomicFileStateStore(state_dir)
+    bundle = json.loads(Path(args.bundle).read_text(encoding="utf-8"))
+    validate_reserved_demo_mt5_lookup(
+        store=store, key=args.attempt_key,
+        expected_reservation_fingerprint=args.reservation_fingerprint,
+        request_payload=raw, bundle_payload=bundle,
+        evaluated_at=datetime.now(timezone.utc),
+    )
 
     try:
         import MetaTrader5 as mt5
@@ -87,8 +130,11 @@ def main() -> int:
         raise RuntimeError(f"MT5 initialize failed: {code} {message}")
     try:
         observed_at = datetime.now(timezone.utc)
-        result = execute_readonly_lookup(
+        result = execute_reserved_readonly_lookup(
             mt5=mt5,
+            store=store, attempt_key=args.attempt_key,
+            expected_reservation_fingerprint=args.reservation_fingerprint,
+            bundle_payload=bundle,
             request_payload=raw,
             observed_at=observed_at,
         )
