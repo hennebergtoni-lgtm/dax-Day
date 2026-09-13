@@ -6,6 +6,9 @@ outer exporter may persist it as observation-only telemetry.
 """
 from __future__ import annotations
 
+from datetime import datetime
+from math import isfinite
+import re
 from typing import Any, Mapping
 
 OPERATOR_SCHEMA = "DAX_BOT_OPERATOR_SNAPSHOT_V3"
@@ -21,6 +24,14 @@ _FORBIDDEN_KEYS = frozenset(
         "account_number",
         "api_key",
         "otp",
+        "database_url",
+        "neon_database_url",
+        "dsn",
+        "connection_string",
+        "authorization",
+        "access_token",
+        "refresh_token",
+        "client_secret",
     }
 )
 
@@ -30,8 +41,7 @@ def validate_candidate_operator_snapshot(payload: Mapping[str, Any]) -> None:
     _assert_credential_free(payload)
     if payload.get("schema_version") != OPERATOR_SCHEMA:
         raise ValueError("unsupported Candidate operator snapshot schema")
-    if not isinstance(payload.get("generated_at"), str) or not payload["generated_at"]:
-        raise ValueError("Candidate operator generated_at must be non-empty")
+    generated_at = operator_timestamp(payload.get("generated_at"), "generated_at")
     if not isinstance(payload.get("core_version"), str) or not payload["core_version"].strip():
         raise ValueError("Candidate operator core_version must be non-empty")
     if not isinstance(payload.get("candidate_id"), str) or not payload["candidate_id"].strip():
@@ -54,9 +64,10 @@ def validate_candidate_operator_snapshot(payload: Mapping[str, Any]) -> None:
     freshness_seconds = runtime.get("freshness_seconds")
     if last_bar_id is not None:
         _assert_sha256(last_bar_id, field="runtime.last_bar_id")
-        if not isinstance(last_bar_close_time, str) or not last_bar_close_time:
-            raise ValueError("Candidate operator last_bar_close_time missing")
-        if not isinstance(freshness_seconds, (int, float)) or freshness_seconds < 0:
+        close_time = operator_timestamp(last_bar_close_time, "last_bar_close_time")
+        if close_time > generated_at:
+            raise ValueError("Candidate operator snapshot precedes last_bar_close_time")
+        if type(freshness_seconds) not in (int, float) or not isfinite(freshness_seconds) or freshness_seconds < 0:
             raise ValueError("Candidate operator freshness_seconds invalid")
     elif last_bar_close_time is not None or freshness_seconds is not None:
         raise ValueError("Candidate operator runtime bar context incomplete")
@@ -87,6 +98,13 @@ def _assert_credential_free(value: Any) -> None:
     elif isinstance(value, (list, tuple)):
         for item in value:
             _assert_credential_free(item)
+    elif isinstance(value, str) and re.search(
+        r"(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/|(?:password|api[_-]?key|bearer)\s*[:=]",
+        value, re.IGNORECASE,
+    ):
+        raise ValueError("credential-bearing Candidate telemetry value")
+    elif type(value) in (int, float) and not isfinite(value):
+        raise ValueError("Candidate telemetry numbers must be finite")
 
 
 def _assert_sha256(value: Any, *, field: str) -> None:
@@ -96,3 +114,16 @@ def _assert_sha256(value: Any, *, field: str) -> None:
         int(value, 16)
     except ValueError as exc:
         raise ValueError(f"{field} must be sha256 hex") from exc
+
+
+def operator_timestamp(value: Any, field: str) -> datetime:
+    """Shared aware timestamp parser at the existing telemetry input boundary."""
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"Candidate operator {field} missing")
+    try:
+        result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"Candidate operator {field} invalid timestamp") from exc
+    if result.tzinfo is None or result.utcoffset() is None:
+        raise ValueError(f"Candidate operator {field} must be timezone-aware")
+    return result

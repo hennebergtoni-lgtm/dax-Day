@@ -8,12 +8,12 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2205**
+- Last completed whole-number step: **2207**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2207**
-- Active step state: **ACTIVE — READ-ONLY AUDIT / NO BROKER SIDE EFFECT**
+- Active whole-number step: **2208**
+- Active step state: **ACTIVE — LOCAL READ-ONLY OBSERVABILITY / NO BROKER SIDE EFFECT**
 - Work tranche state: **ACTIVE_LOCAL_OPERATOR_OBSERVABILITY**
-- Next step after successful completion: **2208**
+- Next step after successful completion: **2209**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
@@ -30,7 +30,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Decimal or letter step IDs: **PROHIBITED**
 
 - Step 2206 remains **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**; independent local Work uses Steps 2207 onward under WORK_CONTINUITY_PROTOCOL section 4A.
-- Active Step 2207 scope: **REUSE audit and public-project reconciliation/observability review; preserve all external gates and trading prohibitions.**
+- Active Step 2208 scope: **Finite/time/credential validation in existing operator read contracts; preserve valid snapshot identities.**
 
 ## Ledger archive
 
@@ -76,6 +76,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2204 | Current query authorization/freshness at Windows lookup execution. | **COMPLETED.** Code/evidence head `20504cfed1e9a0aa7af7a67a3852138b778f828d`; 37 focused, 856 relevant, 2389 full passed / six local pwsh skips; Ruff/eight offline gates passed; DAX #618 run 34770097221 and research #1402 run 34770097244 GREEN. Reproduced history-window-only lookup after host age 31s and expired grant at 360s; operational CLI now reuses pinned reservation/shared current QUERY preflight before SDK initialization and reads. Original codecs/technical lookup preserved; zero saves/resubmits/slot releases. |
 | 2205 | Windows pre-DEMO evidence handoff and source-binding conformance. | **COMPLETED.** Tested code/evidence head `f8421bfafa0aa5d96fe8dd003e6e94d845f3d634`; 69 focused tranche/governance, 860 relevant, 2393 full passed / six local pwsh skips; Ruff and eight offline gates passed; DAX #619 run 34770291597 and research #1403 run 34770291609 GREEN. New source conformance preserves existing Risk/Protection fingerprints; Windows evidence/runbook records all real-host/policy/first-order gates without promotion. |
 | 2206 | Independent re-pin and Monday real-host/product-policy evidence review. | **WAITING_EXTERNAL / USER_AUTH.** PLANNED external scope unchanged. Main chat independently re-pins/diff/CI/safety-checks this Work block. Current Windows/MT5/clock/market/broker facts and concrete risk/loss/drawdown-policy review are required. Any first actual DEMO order/active submission adapter requires a separate explicit bounded user authorization. No 2206 technical implementation begun. |
+| 2207 | Local operator tranche unit. | **COMPLETED.** Tested head 524ca487c8ef72e2ff3656474c95e2c021be6f8b; 8 governance and 15 focused passed; full pytest 2393 passed / six unavailable local pwsh tests skipped; dax-bot-1x-ci #623 run 34775060647 GREEN; research-lab-ci #1407 run 34775060642 GREEN. External Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 
 ## Out-of-band Work hardening evidence after Step 2184
 

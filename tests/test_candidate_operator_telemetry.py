@@ -87,3 +87,43 @@ def test_candidate_operator_snapshot_rejects_credentials_anywhere() -> None:
     payload["runtime"]["token"] = "secret"  # type: ignore[index]
     with pytest.raises(ValueError, match="forbidden Candidate telemetry field"):
         validate_candidate_operator_snapshot(payload)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), True])
+def test_nonfinite_or_boolean_freshness_is_rejected(value) -> None:
+    payload = _payload()
+    payload["runtime"]["freshness_seconds"] = value
+    with pytest.raises(ValueError):
+        validate_candidate_operator_snapshot(payload)
+
+
+@pytest.mark.parametrize("field", ["entry", "stop", "target", "reward_risk"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
+def test_nonfinite_proposed_prices_never_reach_operator_consumers(field, value) -> None:
+    payload = _payload()
+    payload["trade_plan"][field] = value
+    with pytest.raises(ValueError, match="finite"):
+        validate_candidate_operator_snapshot(payload)
+
+
+@pytest.mark.parametrize("key", ["NEON_DATABASE_URL", "dsn", "access_token", "client_secret"])
+def test_credential_aliases_are_rejected_recursively(key) -> None:
+    payload = _payload()
+    payload["runtime"]["events"] = [{key: "must-not-reach-browser"}]
+    with pytest.raises(ValueError, match="forbidden"):
+        validate_candidate_operator_snapshot(payload)
+
+
+def test_credential_url_inside_allowed_string_is_rejected() -> None:
+    payload = _payload()
+    payload["signal"]["reason"] = "postgresql://user:secret@database/test"
+    with pytest.raises(ValueError, match="credential-bearing"):
+        validate_candidate_operator_snapshot(payload)
+
+
+@pytest.mark.parametrize("stamp", ["invalid", "2026-09-11T17:00:00", "2026-09-11T16:54:00+00:00"])
+def test_invalid_or_causally_impossible_snapshot_time_is_rejected(stamp) -> None:
+    payload = _payload()
+    payload["generated_at"] = stamp
+    with pytest.raises(ValueError):
+        validate_candidate_operator_snapshot(payload)

@@ -89,3 +89,18 @@ def test_current_read_model_requires_timezone_aware_query_time() -> None:
             _payload(),
             queried_at=datetime(2026, 9, 11, 17, 5),
         )
+
+
+def test_current_read_model_rejects_future_snapshot_even_with_old_valid_bar() -> None:
+    payload = _payload()
+    payload["generated_at"] = "2099-01-01T00:00:00+00:00"
+    with pytest.raises(ValueError, match="generated_at.*future"):
+        build_candidate_operator_current(payload, queried_at=datetime(2026, 9, 13, tzinfo=timezone.utc))
+
+
+def test_valid_query_preserves_original_snapshot_and_fingerprint() -> None:
+    payload = _payload()
+    current = build_candidate_operator_current(payload, queried_at=datetime(2026, 9, 11, 17, tzinfo=timezone.utc))
+    assert current.payload == payload
+    assert current.snapshot_fingerprint == payload["snapshot_fingerprint"]
+    assert current.snapshot_generated_at == payload["generated_at"]

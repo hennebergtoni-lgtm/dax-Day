@@ -8,9 +8,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from math import isfinite
 from typing import Any, Mapping
 
-from daxlab.runtime.candidate_operator_telemetry import validate_candidate_operator_snapshot
+from daxlab.runtime.candidate_operator_telemetry import (
+    operator_timestamp,
+    validate_candidate_operator_snapshot,
+)
 
 _SCHEMA = "DAXLAB_CAND001_OPERATOR_CURRENT_V1"
 
@@ -32,9 +36,11 @@ class CandidateOperatorCurrent:
             raise ValueError("unsupported Candidate current-view schema")
         if self.source != "cand001_operator_current":
             raise ValueError("Candidate current-view source drift")
-        if self.execution_capability != "NONE" or self.order_execution_enabled:
+        if self.execution_capability != "NONE" or self.order_execution_enabled is not False:
             raise ValueError("Candidate current-view cannot authorize execution")
-        if self.current_bar_age_seconds is not None and self.current_bar_age_seconds < 0:
+        if self.current_bar_age_seconds is not None and (
+            not isfinite(self.current_bar_age_seconds) or self.current_bar_age_seconds < 0
+        ):
             raise ValueError("current_bar_age_seconds must be non-negative")
 
     def as_dict(self) -> dict[str, Any]:
@@ -60,6 +66,10 @@ def build_candidate_operator_current(
     if queried_at.tzinfo is None:
         raise ValueError("queried_at must be timezone-aware")
     validate_candidate_operator_snapshot(payload)
+
+    generated_at = operator_timestamp(payload["generated_at"], "generated_at")
+    if generated_at > queried_at:
+        raise ValueError("stored snapshot generated_at is in the future")
 
     runtime = payload["runtime"]
     last_bar_close_time = runtime.get("last_bar_close_time")

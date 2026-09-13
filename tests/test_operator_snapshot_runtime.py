@@ -245,3 +245,23 @@ def test_snapshot_cannot_observe_future_lifecycle_close() -> None:
             lifecycle=lifecycle,
             outcome=outcome,
         )
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), True])
+def test_direct_operator_snapshot_rejects_invalid_freshness(value) -> None:
+    config, signal, plan, admission, decision, lifecycle, outcome, bar = _trade_stack()
+    snapshot = build_operator_snapshot(
+        generated_at=bar.close_time, config=config, signal=signal,
+        proposed_trade_plan=plan, admission=admission, decision=decision,
+        last_bar_id="f" * 64, last_bar_close_time=bar.close_time,
+        freshness_seconds=0.0, lifecycle=lifecycle, outcome=outcome,
+    )
+    with pytest.raises(ValueError):
+        replace(snapshot, freshness_seconds=value)
+    with pytest.raises(ValueError):
+        build_operator_snapshot(
+            generated_at=bar.close_time, config=config, signal=signal,
+            proposed_trade_plan=plan, admission=admission, decision=decision,
+            last_bar_id="f" * 64, last_bar_close_time=bar.close_time,
+            freshness_seconds=value,
+        )

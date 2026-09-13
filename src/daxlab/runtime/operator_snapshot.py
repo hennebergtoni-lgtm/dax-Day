@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from math import isfinite
 from typing import Any
 
 from daxlab.runtime.candidate_admission import AdmissionStatus, Cand001AdmissionResult
@@ -97,7 +98,7 @@ class OperatorSnapshot:
             _sha(self.last_bar_id, "last_bar_id")
             assert self.last_bar_close_time is not None
             assert self.freshness_seconds is not None
-            if self.freshness_seconds < 0:
+            if type(self.freshness_seconds) not in (int, float) or not isfinite(self.freshness_seconds) or self.freshness_seconds < 0:
                 raise ValueError("freshness_seconds cannot be negative")
             if self.generated_at < self.last_bar_close_time:
                 raise ValueError("operator snapshot cannot precede last closed bar")
@@ -332,7 +333,7 @@ def _runtime_fields(
         _sha(last_bar_id, "last_bar_id")
         if last_bar_close_time.tzinfo is None:
             raise ValueError("last_bar_close_time must be timezone-aware")
-        if freshness_seconds < 0:
+        if type(freshness_seconds) not in (int, float) or not isfinite(freshness_seconds) or freshness_seconds < 0:
             raise ValueError("freshness_seconds cannot be negative")
         if generated_at < last_bar_close_time:
             raise ValueError("operator snapshot cannot precede last closed bar")
