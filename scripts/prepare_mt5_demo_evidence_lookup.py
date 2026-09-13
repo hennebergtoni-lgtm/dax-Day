@@ -9,7 +9,6 @@ window and the expected reservation fingerprint.
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -25,9 +24,9 @@ from daxlab.runtime.mt5_demo_evidence_transport import (
 )
 
 
-@dataclass(frozen=True, slots=True)
 class UtcClock:
-    value: datetime
+    def __init__(self, value: datetime) -> None:
+        self.value = value
 
     def now(self) -> datetime:
         return self.value
