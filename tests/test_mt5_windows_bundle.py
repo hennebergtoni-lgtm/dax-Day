@@ -4,6 +4,7 @@ import json
 
 import pytest
 
+from daxlab.runtime.demo_evidence_authorization import DemoAccountMode
 from daxlab.runtime.mt5_windows_bundle import compact_status, parse_windows_mt5_bundle
 
 
@@ -14,7 +15,12 @@ def _seal(payload: dict) -> dict:
     return value
 
 
-def _bundle(*, trade_mode: str = "DISABLED", fresh: bool = True) -> dict:
+def _bundle(
+    *,
+    trade_mode: str = "DISABLED",
+    fresh: bool = True,
+    demo_context: bool = False,
+) -> dict:
     observed = datetime(2026, 9, 9, 6, 30, tzinfo=timezone.utc)
     latest = observed - timedelta(minutes=5 if fresh else 30)
     bars = []
@@ -29,29 +35,42 @@ def _bundle(*, trade_mode: str = "DISABLED", fresh: bool = True) -> dict:
                 "close": 25001.0,
             }
         )
+    host_probe = {
+        "observed_at": observed.isoformat(),
+        "terminal_connected": True,
+        "account_connected": True,
+        "account_trade_allowed": False,
+        "order_execution_enabled": False,
+        "engine_loop_healthy": True,
+        "clock_ok": True,
+        "symbols": [
+            {
+                "name": "DE40",
+                "digits": 2,
+                "point": 0.01,
+                "trade_mode": trade_mode,
+                "contract_size": 1.0,
+                "volume_min": 0.1,
+                "volume_step": 0.1,
+            }
+        ],
+    }
+    if demo_context:
+        host_probe["account_trade_allowed"] = True
+        host_probe["demo_account_context"] = {
+            "schema_version": "DAXLAB_MT5_DEMO_ACCOUNT_CONTEXT_V1",
+            "account_fingerprint": "a" * 64,
+            "server": "Broker-Demo",
+            "symbol": "DE40",
+            "account_mode": "DEMO",
+            "trade_allowed": True,
+            "execution_capability": "NONE",
+            "order_execution_enabled": False,
+        }
     payload = {
         "schema": "DAXLAB_MT5_WINDOWS_BUNDLE_V1",
         "symbol_resolution_state": "AUTO_EXACT_ALIAS_DATA_ONLY",
-        "host_probe": {
-            "observed_at": observed.isoformat(),
-            "terminal_connected": True,
-            "account_connected": True,
-            "account_trade_allowed": False,
-            "order_execution_enabled": False,
-            "engine_loop_healthy": True,
-            "clock_ok": True,
-            "symbols": [
-                {
-                    "name": "DE40",
-                    "digits": 2,
-                    "point": 0.01,
-                    "trade_mode": trade_mode,
-                    "contract_size": 1.0,
-                    "volume_min": 0.1,
-                    "volume_step": 0.1,
-                }
-            ],
-        },
+        "host_probe": host_probe,
         "closed_m5_feed": {
             "observed_at": observed.isoformat(),
             "requested_start_pos": 1,
@@ -66,7 +85,21 @@ def _bundle(*, trade_mode: str = "DISABLED", fresh: bool = True) -> dict:
 def test_data_only_de40_bundle_can_be_green() -> None:
     result = parse_windows_mt5_bundle(_bundle())
     assert result.green
+    assert result.demo_account_context is None
     assert compact_status(result).startswith("GREEN | symbol=DE40")
+
+
+def test_validated_demo_context_is_retained_from_same_bundle() -> None:
+    result = parse_windows_mt5_bundle(_bundle(demo_context=True))
+    assert result.green
+    assert result.demo_account_context is not None
+    assert result.demo_account_context.account_mode is DemoAccountMode.DEMO
+    assert result.demo_account_context.account_fingerprint == "a" * 64
+    assert result.demo_account_context.server == "Broker-Demo"
+    assert result.demo_account_context.symbol == "DE40"
+    assert result.demo_account_context.trade_allowed is True
+    assert result.demo_account_context.execution_capability == "NONE"
+    assert result.demo_account_context.order_execution_enabled is False
 
 
 def test_stale_feed_blocks() -> None:
