@@ -22,8 +22,10 @@ class Cand001AdmissionState:
     trades_admitted: int = 0
 
     def __post_init__(self) -> None:
-        if self.trades_admitted < 0:
+        if type(self.trades_admitted) is int and self.trades_admitted < 0:
             raise ValueError("trades_admitted cannot be negative")
+        if type(self.trades_admitted) is not int or self.trades_admitted not in (0, 1):
+            raise ValueError("trades_admitted must be integer 0 or 1 for CAND-001")
         if self.trades_admitted and self.session_date is None:
             raise ValueError("admitted trades require session_date")
 
@@ -44,7 +46,7 @@ def admit_cand001_trade(
 ) -> Cand001AdmissionResult:
     """Apply the one-trade-per-session rule without hiding later market signals."""
     cfg = config or Cand001Config()
-    session_date = signal.close_time.astimezone(ZoneInfo(cfg.session_timezone)).date().isoformat()
+    session_date = signal.event_time.astimezone(ZoneInfo(cfg.session_timezone)).date().isoformat()
     working = state
     if working.session_date != session_date:
         working = Cand001AdmissionState(session_date=session_date)

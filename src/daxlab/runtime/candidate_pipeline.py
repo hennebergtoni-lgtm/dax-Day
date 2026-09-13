@@ -12,6 +12,7 @@ from daxlab.runtime.bar_identity import closed_bar_identity
 from daxlab.runtime.candidate_admission import (
     Cand001AdmissionResult,
     Cand001AdmissionState,
+    AdmissionStatus,
     admit_cand001_trade,
 )
 from daxlab.runtime.candidate_config import Cand001Config
@@ -33,6 +34,12 @@ from daxlab.runtime.operator_snapshot import OperatorSnapshot, build_operator_sn
 class Cand001PipelineState:
     signal: Cand001SignalState = Cand001SignalState()
     admission: Cand001AdmissionState = Cand001AdmissionState()
+
+    def __post_init__(self) -> None:
+        if self.signal.session_date != self.admission.session_date:
+            raise ValueError("candidate pipeline signal/admission session mismatch")
+        if self.signal.session_date is None and self.signal != Cand001SignalState():
+            raise ValueError("candidate pipeline absent session requires initial signal state")
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,12 +68,24 @@ def process_cand001_candle(
     cfg = config or Cand001Config()
     transition = transition_cand001(state.signal, candle, config=cfg)
     proposed_plan = build_cand001_trade_plan(transition.signal, config=cfg)
-    admission = admit_cand001_trade(
-        state.admission,
-        transition.signal,
-        proposed_plan,
-        config=cfg,
-    )
+    if transition.signal.reason in {
+        SignalReason.DATA_UNSAFE,
+        SignalReason.DUPLICATE_BAR,
+        SignalReason.OUT_OF_ORDER_BAR,
+    }:
+        # Rejected input cannot advance either half of the session state.
+        admission = Cand001AdmissionResult(
+            state=state.admission,
+            status=AdmissionStatus.NO_SIGNAL,
+            admitted_plan=None,
+        )
+    else:
+        admission = admit_cand001_trade(
+            state.admission,
+            transition.signal,
+            proposed_plan,
+            config=cfg,
+        )
     decision = build_cand001_decision(transition.signal, admission, config=cfg)
     last_bar_id = closed_bar_identity(
         canonical_symbol=candle.symbol,

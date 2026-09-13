@@ -4,6 +4,7 @@ import json
 
 import pytest
 
+from daxlab.runtime.candidate_admission import Cand001AdmissionState
 from daxlab.runtime.candidate_pipeline import Cand001PipelineState
 from daxlab.runtime.candidate_signal import Cand001SignalState
 from daxlab.strategies.cand001 import Cand001PipelineStateCodec
@@ -28,7 +29,8 @@ def test_codec_rejects_non_finite_prices_when_encoding(
             or_high=103.0,
             or_low=98.0,
             or_slots=("09:00",),
-        )
+        ),
+        admission=Cand001AdmissionState(session_date="2026-09-11"),
     )
     # Emulate an invalid pre-hardening in-memory object; retain the codec's own guard test.
     object.__setattr__(state.signal, field_name, value)
