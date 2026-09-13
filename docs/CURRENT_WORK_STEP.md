@@ -8,10 +8,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2181**
-- Active whole-number step: **2182**
-- Next step after successful completion: **2183**
-- Active Step 2182 scope: **Resume and complete the unfinished protected session-consumption commit-boundary audit originating in interrupted Step 2180, using fresh repo/head/CI truth. Determine the safe ordering among typed NextGen protection ALLOW_EVIDENCE, deterministic session-consumption transition, atomic SessionAdmissionGuardCheckpoint persistence, existing lifecycle/idempotency owners and any future external submission boundary. Explicitly identify consume-before-failure and submit-before-consume crash windows, classify existing owners as REUSE / ADAPT / DEFER, and define the minimal next product composition. Audit only unless the audit yields one unambiguous evidence-neutral composition step; do not submit broker orders, authorize PAPER/LIVE, derive session resets, mutate CAND-001 defaults or create a second lifecycle/storage stack.**
+- Last completed whole-number step: **2182**
+- Active whole-number step: **2183**
+- Next step after successful completion: **2184**
+- Active Step 2183 scope: **Implement the smallest evidence-neutral atomic local PREPARED checkpoint/composition required by the Step-2182 commit-boundary audit. Reuse canonical `ExecutionIntent.intent_id` as lifecycle `client_order_id` and session `consumption_id`; bind the post-consumption authoritative `SessionAdmissionGuardCheckpoint`, existing REQUESTED lifecycle / broker-execution checkpoint semantics, typed protection provenance and the shared identity into one deterministic tamper-evident payload persisted under one existing `StateStorePort` key. Prove restart/load parity, cross-wiring rejection and retry/idempotency behavior. Do not submit broker orders, authorize PAPER/LIVE, auto-release consumed slots, infer broker acceptance, derive session resets/timezones, mutate CAND-001 defaults or create a second lifecycle/storage/reconciliation stack.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive: **2116 / 2123 / 2131 / 2137 / 2180**
@@ -37,29 +37,30 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2177 | Session ledger/freshness crash-coherence audit. | **COMPLETED.** Final tested head `812564f2a5520764c2297b423a3049ecfca9b1aa`; CI #529/#1313 GREEN. |
 | 2178 | Combined atomic SessionAdmissionGuardCheckpoint. | **COMPLETED.** Final tested head `47e9f9d2c887820f674cc52767afebae8063006f`; CI #534/#1318 GREEN. |
 | 2179 | Authoritative session guard in typed NextGen protection. | **COMPLETED.** Typed protection now derives session observation from the atomic guard, verifies guard policy identity and canonical decision parity, uses guard observed_at for freshness/future-date validation, and binds the guard fingerprint into verdict provenance while generic compatibility remains intact. Final tested head `fcfdeea8816beca4a3294bfd0beff3b8cd6bbf51`; `dax-bot-1x-ci` #538 GREEN and `research-lab-ci` #1322 GREEN. |
-| 2180 | Protected session-consumption commit-boundary audit. | **INTERRUPTED.** Explicit user continuity/Masterstand intervention occurred before the audit was completed or committed. Owner inspection had begun; no 2180 technical conclusion is claimed. Unfinished scope is carried forward to Step 2182. |
+| 2180 | Protected session-consumption commit-boundary audit. | **INTERRUPTED.** Explicit user continuity/Masterstand intervention occurred before the audit was completed or committed. Owner inspection had begun; no 2180 technical conclusion is claimed. Unfinished scope was carried forward to Step 2182. |
 | 2181 | Masterstand + Monday-target continuity reconciliation. | **COMPLETED.** Repository-backed handoff truth and Monday target corridor were refreshed without changing trading authorization. Final tested head `b6422ea5874b9399e7a41f518d0ff7197cbdb36c`; `dax-bot-1x-ci` #541 GREEN and `research-lab-ci` #1325 GREEN. |
-| 2182 | Resume protected session-consumption commit-boundary audit. | **IN PROGRESS.** Continue Step-2180 provenance on fresh repository truth and finish the crash-boundary decision. |
+| 2182 | Protected session-consumption commit-boundary audit continuation. | **COMPLETED.** Audit chose fail-safe local write-ahead PREPARED ordering: protection ALLOW evidence -> deterministic consumption using `intent_id` -> updated atomic session guard + REQUESTED lifecycle/protection provenance in one future local PREPARED payload -> only later may separately authorized submission occur; restart must reconcile before any retry. Existing identity/lifecycle/guard/state-store/reconciliation owners are REUSE; one combined PREPARED checkpoint owner is ADAPT; broker submission/release/retry policy remains DEFER. Final tested head `c73ef3471b8e4c42cb5c095ffe1ecfceb2dedcd1`; `dax-bot-1x-ci` #546 GREEN and `research-lab-ci` #1330 GREEN. |
+| 2183 | Atomic local NextGen PREPARED checkpoint. | **IN PROGRESS.** Implement the Step-2182 minimal composition without external submission capability. |
 
-## Step 2181 closeout truth
+## Step 2182 closeout truth
 
-Step 2181 refreshed `docs/MASTERSTAND.md` for durable chat handoff, reconciled verified progress through Step 2179, preserved the truthful Step-2180 interruption, and recorded the Monday operational target corridor: execution boundary -> restart/idempotency -> market-open broker evidence -> complete E2E SHADOW -> Demo-PAPER gate -> explicit user authorization -> first demo order. This continuity work did not authorize broker submission, PAPER or LIVE.
+Step 2182 completed the interrupted Step-2180 commit-boundary audit and records the binding decision in `docs/NEXTGEN_SESSION_CONSUMPTION_COMMIT_BOUNDARY_AUDIT_V1.md`. The external broker and local store cannot share one transaction, so the product explicitly prefers conservative under-trading over duplicate exposure: local session consumption, authoritative guard, REQUESTED lifecycle and protection provenance must be durably bound before any future external broker attempt. `ExecutionIntent.intent_id`, lifecycle `client_order_id` and session `consumption_id` are one shared deterministic identity. No broker submission, PAPER or LIVE authorization was added.
 
-## Step 2182 active work
+## Step 2183 active work
 
-**Step 2182 — IN PROGRESS:** resume the interrupted Step-2180 audit of the exact commit boundary for consuming one canonical session slot after typed NextGen protection returns ALLOW_EVIDENCE.
+**Step 2183 — IN PROGRESS:** implement one atomic local PREPARED checkpoint owner over the existing Step-2182 REUSE owners.
 
-Required audit questions:
-1. what event proves a slot has been consumed rather than merely signaled or protected;
-2. whether consumption must occur before or after a future external submission attempt;
-3. how to eliminate consume-before-failure and submit-before-consume restart windows;
-4. whether an existing lifecycle/client-order/idempotency identity can be reused as the deterministic consumption ID;
-5. how the updated consumption state and SessionAdmissionGuardCheckpoint are persisted atomically through the existing single-key StateStorePort path;
-6. how retries/restarts recover without double count or silent extra allowance;
-7. which existing runtime/lifecycle/storage owners are REUSE / ADAPT / DEFER;
-8. no second lifecycle, journal or storage stack;
-9. no session reset/date/timezone derivation and no CAND-001 mutation;
-10. no broker order submission, PAPER or LIVE authorization.
+Required properties:
+1. one shared identity: `intent_id == client_order_id == consumption_id`;
+2. bind the post-consumption authoritative `SessionAdmissionGuardCheckpoint`;
+3. bind the existing REQUESTED lifecycle / broker-execution checkpoint semantics without creating a second lifecycle;
+4. bind the typed protection verdict/provenance that authorized local preparation;
+5. deterministic tamper-evident checkpoint identity/fingerprint;
+6. one `StateStorePort` key/payload for local atomic persistence;
+7. load/restart preserves original evidence and never invents broker acceptance or freshness;
+8. cross-wired policy/guard/lifecycle/protection identities fail closed;
+9. retry/replay of the same deterministic attempt remains idempotent at the local preparation boundary;
+10. no broker API/order submission, PAPER/LIVE authorization, automatic slot release, session reset/timezone derivation or CAND-001 mutation.
 
 ## Binding numbering and handoff rules
 
