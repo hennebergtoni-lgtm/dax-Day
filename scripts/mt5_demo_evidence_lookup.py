@@ -33,6 +33,10 @@ def execute_readonly_lookup(
 ) -> dict[str, Any]:
     """Execute only the typed read-only lookup against an initialized MT5 object."""
     request = demo_mt5_lookup_request_from_payload(request_payload)
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise ValueError("observed_at must be timezone-aware")
+    if observed_at > request.history_to:
+        raise ValueError("MT5 DEMO lookup history window expired before execution")
     result = query_mt5_demo_evidence(
         mt5=mt5,
         request=request,
