@@ -8,11 +8,11 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2197**
+- Last completed whole-number step: **2198**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2198**
-- Next step after successful completion: **2199**
-- Active Step 2198 scope: **Compose one deterministic ephemeral read-only QUERY request/operator projection from the pinned same-key reservation, existing ClockPort and shared current-context preflight. Bind the original attempt identity/provenance and current supplied bundle evidence; no new attempt identity, persistent schema/store/journal, query API or broker facts.**
+- Active whole-number step: **2199**
+- Next step after successful completion: **2200**
+- Active Step 2199 scope: **Prove the integrated local restart -> pinned QUERY projection -> supplied venue reconciliation -> existing telemetry path under failure/replay, and document the first external submission boundary. No adapter activation, broker query/order, grant, state repair or slot release.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive/current history: **2116 / 2123 / 2131 / 2137 / 2180 / 2183 / 2185**
@@ -56,7 +56,8 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2195 | DEMO transport-attempt reservation checkpoint. | **COMPLETED.** Restored original five-field legacy SHADOW construction API while retaining strict DEMO-context requirements for reservation. CI failures #593/#1377 were the same mandatory-field constructor regression introduced in `957c925c...`; no tests were weakened. Tested code head `db4a9a513a5b95881ad5bdb37398f07442396016`: 26 focused, 1124 relevant, 2250 full passed / 6 local pwsh skips; Ruff and all eight offline gates passed. `dax-bot-1x-ci` #594 run 34759828189 and `research-lab-ci` #1378 run 34759828202 GREEN. Five PR DB gates and real Windows/MT5 host lane 2122 remain WAITING_EXTERNAL. |
 | 2196 | Reserved-attempt read-only restart ownership. | **COMPLETED.** Existing owner now exposes fingerprint-pinned read-only load and RESERVED/UNKNOWN/QUERY_RECONCILE_REQUIRED operator projection. Nine new crash/restart/collision/file-store tests passed; relevant 1149 passed; full 2259 passed / 6 local pwsh skips; Ruff and eight offline gates passed. Tested code head `f9fa37f4296f46d8ff3398823e896db56e715647`; `dax-bot-1x-ci` #595 run 34759951124 and `research-lab-ci` #1379 run 34759951127 GREEN. No new store/journal, freshness, authority, venue facts or slot release. External host/DB gates remain WAITING_EXTERNAL. |
 | 2197 | Reserved-attempt read-only query-evidence boundary. | **COMPLETED.** Shared pre-query and post-query host/account/feed/time/QUERY-scope veto; existing reconciliation/telemetry/journal owners reused. Missing/UNKNOWN/contradictory venue truth never authorizes repair/resubmit. 29 new query tests, 62 focused tranche tests, 1178 relevant tests, full 2288 passed / 6 local pwsh skips; Ruff and eight offline gates passed. Tested code head `e572257c4f1e15c8340628847b1488e2141c5020`; `dax-bot-1x-ci` #597 run 34760198813 and `research-lab-ci` #1381 run 34760198815 GREEN. Five PR DB gates and real host evidence remain WAITING_EXTERNAL. |
-| 2198 | Pinned read-only query request projection. | **ACTIVE.** Compose existing owners without I/O or new durable architecture. |
+| 2198 | Pinned read-only query request projection. | **COMPLETED.** Deterministic ephemeral QUERY work item binds same store key/client identity, original reservation/PREPARED/auth/account/ordinal and supplied current host/feed bundle. Reused StateStorePort and ClockPort; no new persistence or attempt identity. Eight new projection tests, 70 focused tests, 1186 relevant tests, full 2296 passed / 6 local pwsh skips; Ruff and eight offline gates passed. Tested code head `e951b8416f134a01436cf60fb7d58fd7bf978f6e`; `dax-bot-1x-ci` #598 run 34760332374 and `research-lab-ci` #1382 run 34760332370 GREEN. Five PR DB gates and real host evidence remain WAITING_EXTERNAL; connected Neon availability/read-only checks are separate evidence. |
+| 2199 | Integrated local restart/failure proof and external-boundary audit. | **ACTIVE.** Prove the composed path and stop before broker-facing activation. |
 
 ## Out-of-band Work hardening evidence after Step 2184
 
