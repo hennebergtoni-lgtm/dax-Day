@@ -8,12 +8,11 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2184**
+- Last completed whole-number step: **2186**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2186**
-- Next step after successful completion: **2187**
-- Active Step 2186 scope: **Chat-capacity handoff plus out-of-band WORK/Work evidence reconciliation. Record that Step 2185 was explicitly interrupted before substantive PREPARED-checkpoint implementation; preserve the four verified Work hardening commits landed after the Step-2184 handoff; refresh `WORK_CONTINUITY_PROTOCOL.md`, `MASTERSTAND.md`, handoff/knowledge references and exact PR/CI truth; preserve stale Acceptance as stale; prepare Step 2187 to carry forward the interrupted PREPARED-checkpoint scope. Documentation/governance/continuity only: do not merge PR #109, refresh Acceptance, submit broker orders, authorize PAPER/LIVE, mutate strategy/cost/frozen V11.2 evidence or invent external host evidence.**
-- Planned Step 2187 scope after successful 2186 close: **Carry forward interrupted Steps 2183/2185 and implement the smallest evidence-neutral atomic local PREPARED checkpoint/composition required by the Step-2182 commit-boundary audit, reusing canonical identity/lifecycle/guard/state-store owners and preserving all no-order/PAPER/LIVE safety boundaries.**
+- Active whole-number step: **2187**
+- Next step after successful completion: **2188**
+- Active Step 2187 scope: **Carry forward interrupted Steps 2183/2185 and implement the smallest evidence-neutral atomic local PREPARED checkpoint/composition required by the Step-2182 commit-boundary audit. Reuse canonical `ExecutionIntent.intent_id` as lifecycle `client_order_id` and session `consumption_id`; bind the post-consumption authoritative `SessionAdmissionGuardCheckpoint`, existing REQUESTED lifecycle / broker-execution checkpoint semantics, typed protection provenance and shared identity into one deterministic tamper-evident payload persisted under one existing `StateStorePort` key. Prove restart/load parity, cross-wiring rejection and retry/idempotency behavior. Do not submit broker orders, authorize PAPER/LIVE, auto-release consumed slots, infer broker acceptance, derive session resets/timezones, mutate CAND-001 defaults or create a second lifecycle/storage/reconciliation stack.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive/current history: **2116 / 2123 / 2131 / 2137 / 2180 / 2183 / 2185**
@@ -44,8 +43,9 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2182 | Protected session-consumption commit-boundary audit continuation. | **COMPLETED.** Audit selected fail-safe local write-ahead PREPARED ordering and reuse of existing identity/lifecycle/guard/state-store/reconciliation owners. Final tested head `c73ef3471b8e4c42cb5c095ffe1ecfceb2dedcd1`; `dax-bot-1x-ci` #546 GREEN and `research-lab-ci` #1330 GREEN. |
 | 2183 | Atomic local NextGen PREPARED checkpoint. | **INTERRUPTED.** Explicit user chat-capacity/Masterstand intervention occurred immediately after the prepared-pointer commit. No 2183 implementation conclusion is claimed. Scope was carried forward to Step 2185. |
 | 2184 | Chat-capacity continuity hardening + Masterstand refresh. | **COMPLETED.** Repeated premature-stop incidents were recorded as workflow failures rather than technical blockers; chat-saturation handling, resume alias, no-stop enforcement, session refresher and canonical Masterstand were refreshed. Final tested content head `33f3ea554d45f5807e64d0a31bd4b5030e4d0505`; `dax-bot-1x-ci` #550 GREEN and `research-lab-ci` #1334 GREEN. |
-| 2185 | Atomic local NextGen PREPARED checkpoint continuation. | **INTERRUPTED.** Explicit user chat-capacity/handoff intervention occurred before substantive Step-2185 implementation. Four independent Work hardening commits landed out-of-band on the PR head; they are recorded below and are not relabeled as Step 2185. Scope carries to Step 2187. |
-| 2186 | Chat-capacity + Work evidence handoff reconciliation. | **IN PROGRESS.** Persist Work delegation/credit rules, reconcile out-of-band evidence, refresh Masterstand/handoff truth and prepare a clean next-chat resume. |
+| 2185 | Atomic local NextGen PREPARED checkpoint continuation. | **INTERRUPTED.** Explicit user chat-capacity/handoff intervention occurred before substantive Step-2185 implementation. Four independent Work hardening commits landed out-of-band on the PR head; they are not relabeled as Step 2185. Scope carries to Step 2187. |
+| 2186 | Chat-capacity + Work evidence handoff reconciliation. | **COMPLETED.** Work delegation/model/thinking/credit-budget rules were made binding in `WORK_CONTINUITY_PROTOCOL.md`; out-of-band Work evidence, stale Acceptance, external waits and next-chat recovery were reconciled into pointer/Masterstand/handoff truth. Final tested content head `06643bd410ddbae3ffcbba4578ef9166ea6c721e`; `dax-bot-1x-ci` #559 GREEN and `research-lab-ci` #1343 GREEN; five Neon/DB steps skipped and remain external. |
+| 2187 | Atomic local NextGen PREPARED checkpoint continuation. | **ACTIVE / NOT STARTED IN THIS CHAT.** Reserved for the next chat after explicit user-requested STOP/handoff. |
 
 ## Out-of-band Work hardening evidence after Step 2184
 
@@ -56,26 +56,31 @@ These repository changes are VERIFIED evidence on PR #109 but are not retroactiv
 3. `7281bc489c15a7c75c7a0cb7d2e590a094aaca34` — coherent restored CAND-001 session state and canonical admission count/session behavior; `dax-bot-1x-ci` #554 GREEN, `research-lab-ci` #1338 GREEN.
 4. `76251e0e52567f61d3c6015d22266be4bc977395` — lifecycle temporal coherence plus shared BUY/SELL intent-geometry validation across construction/restore; `dax-bot-1x-ci` #555 GREEN, `research-lab-ci` #1339 GREEN.
 
-At `76251e0e52567f61d3c6015d22266be4bc977395`, PR #109 is OPEN/UNMERGED. Acceptance was deliberately not refreshed by Work. Five Neon/DB gates and real Windows/MT5 host evidence remain external and must not be inferred from Linux CI.
+At Work head `76251e0e52567f61d3c6015d22266be4bc977395`, PR #109 was OPEN/UNMERGED. Acceptance was deliberately not refreshed by Work. Five Neon/DB gates and real Windows/MT5 host evidence remain external and must not be inferred from Linux CI.
 
 ## Step 2182 closeout truth
 
 Step 2182 completed the interrupted Step-2180 commit-boundary audit and records the binding decision in `docs/NEXTGEN_SESSION_CONSUMPTION_COMMIT_BOUNDARY_AUDIT_V1.md`. The external broker and local store cannot share one transaction, so the product explicitly prefers conservative under-trading over duplicate exposure: local session consumption, authoritative guard, REQUESTED lifecycle and protection provenance must be durably bound before any future external broker attempt. `ExecutionIntent.intent_id`, lifecycle `client_order_id` and session `consumption_id` are one shared deterministic identity. No broker submission, PAPER or LIVE authorization was added.
 
-## Step 2186 active work
+## Step 2186 closeout truth
 
-**Step 2186 — IN PROGRESS:** controlled chat-capacity handoff and Work evidence reconciliation.
+Step 2186 reconciled explicit chat-capacity interruption with four out-of-band ChatGPT Work hardening commits without falsifying Step 2185 history. `WORK_CONTINUITY_PROTOCOL.md` is now the canonical Work operating contract: main chat owns architecture/priority/review/Acceptance/merge; Work is a bounded independent audit/Red-Team/implementation workbench. Work orders pin repo/branch/PR/exact head, READ-ONLY vs IMPLEMENTATION scope, forbidden actions, validation and branch-drift behavior; headers state model/configuration, thinking level and estimated LOW/MEDIUM/HIGH credit budget. Work results require main-chat repository/CI verification and skipped external gates remain `WAITING_EXTERNAL`. `MASTERSTAND.md` and `DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md` were refreshed accordingly. Acceptance remains stale relative to current PR head; PR #109 remains unmerged; no trading authorization changed.
+
+## Step 2187 active work
+
+**Step 2187 — ACTIVE / deliberately not started in the handoff chat:** continuation of interrupted Steps 2183/2185, implementing one atomic local PREPARED checkpoint owner over the Step-2182 REUSE owners.
 
 Required properties:
-1. Step 2185 is INTERRUPTED, not completed; no PREPARED-checkpoint implementation may be claimed from it.
-2. Preserve the four out-of-band Work hardening commits and their exact green CI evidence.
-3. Persist the binding Work delegation contract, including main-chat/Work roles, exact-head pinning, READ-ONLY vs IMPLEMENTATION scope, model/thinking header, credit-budget classes, branch-drift handling, validation and Acceptance/merge ownership.
-4. Refresh `MASTERSTAND.md` and handoff/knowledge references from repository truth.
-5. Preserve Acceptance as stale/not refreshed; do not merge PR #109.
-6. Preserve `WAITING_EXTERNAL` for Neon/DB and real Windows/MT5 evidence.
-7. Preserve all execution, strategy, cost, frozen-reference and authorization boundaries.
-8. After green CI, close Step 2186 and open Step 2187 with the carried-forward PREPARED-checkpoint scope.
-9. Then obey the user's explicit chat-switch request and STOP in this conversation.
+1. one shared identity: `intent_id == client_order_id == consumption_id`;
+2. bind the post-consumption authoritative `SessionAdmissionGuardCheckpoint`;
+3. bind existing REQUESTED lifecycle / broker-execution checkpoint semantics without creating a second lifecycle;
+4. bind typed protection verdict/provenance;
+5. deterministic tamper-evident checkpoint identity/fingerprint;
+6. one `StateStorePort` key/payload for local atomic persistence;
+7. load/restart preserves original evidence and never invents broker acceptance or freshness;
+8. cross-wired policy/guard/lifecycle/protection identities fail closed;
+9. retry/replay of the same deterministic attempt remains idempotent at the local preparation boundary;
+10. no broker API/order submission, PAPER/LIVE authorization, automatic slot release, session reset/timezone derivation or CAND-001 mutation.
 
 ## Binding numbering and handoff rules
 
