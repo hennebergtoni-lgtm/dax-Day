@@ -8,15 +8,16 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2201**
+- Last completed whole-number step: **2202**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2202**
+- Active whole-number step: **2203**
 - Active step state: **ACTIVE — LOCAL / READ-ONLY EVIDENCE BINDING / NO BROKER SIDE EFFECT**
 - Work tranche state: **WORK_PRE_DEMO_LOCAL_FORWARD**
-- Next step after successful completion: **2203**
+- Next step after successful completion: **2204**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
-- Active Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
+- Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
+- Active Step 2203 scope: **Narrow provenance adapter beside the existing loss checkpoint, preserving its canonical bytes and fingerprints.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive/current history: **2116 / 2123 / 2131 / 2137 / 2180 / 2183 / 2185**
@@ -64,7 +65,8 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2199 | Integrated local restart/failure proof and external-boundary audit. | **COMPLETED.** Full restart -> pinned QUERY request -> supplied venue reconciliation -> existing telemetry/journal/replay preserves exact same-key reservation, consumed guard and REQUESTED lifecycle under seven cases; AST regression excludes SDK/submission/activation. Eight new integration/safety tests; 78 focused, 1194 relevant; full 2304 passed / 6 local pwsh skips; Ruff and eight offline gates passed. Tested code/evidence head `f8c1198718ae7cad7794f8ec2c48285fa57898c2`; `dax-bot-1x-ci` #599 run 34760537484 and `research-lab-ci` #1383 run 34760537471 GREEN. Boundary audit recorded in `DEMO_EVIDENCE_LOCAL_FORWARD_BOUNDARY_V1.md`; no first order/adapter activation/Acceptance. |
 | 2200 | Technical DEMO transport identity and read-only MT5 lookup boundary. | **COMPLETED.** Explicit user authorization covered technical transport/lookup implementation and tests only; first actual DEMO order remained separately gated. Added deterministic local MT5 correlation metadata (`magic` + shortened comment tag while retaining full canonical client identity), non-executable transport draft, strict fingerprinted lookup request/result codecs, account recheck, open-order + order-history + deal-history read-only reconciliation, fail-closed zero/ambiguous/error/quantity/fill handling, credential-free Windows lookup runner and file-state request-preparation script. No `order_send`, order check/cancel/modify, executable MqlTradeRequest, broker order, PAPER/LIVE grant, retry or slot release. Tested implementation head `4c5f88645d428c30c55eef4a0d56f201f232c24a`; `dax-bot-1x-ci` #612 GREEN and `research-lab-ci` #1396 GREEN with Ruff, **2334 tests passed**, eight offline gates GREEN and five DB steps skipped. Static safety remained `Paper/Live BLOCKED | NO_ORDER`; Linux/fixture results are not real broker evidence. |
 | 2201 | Read-only first-DEMO-order readiness composition audit. | **COMPLETED.** Audit anchor `52e2aa0942f20909641be66ddc71845237f5424b`; audit head `7317bf1ec5936945c3b9e180fc4880a5c8cf743c`; 48 focused / 2328 full tests passed, six local pwsh skips; Ruff and eight offline gates passed; DAX #615 run 34769458072 and research #1399 run 34769458105 GREEN. Matrix and narrow follow-up bindings in `PRE_DEMO_READINESS_COMPOSITION_AUDIT_V1.md`. External host/broker facts and numeric policy authorization remain separate. |
-| 2202 | Exact-source Windows broker economics observation binding. | **ACTIVE.** Bind the existing conversion to pinned bundle/account/time and independent review provenance; no risk values or execution authorization. |
+| 2202 | Exact-source Windows broker economics observation binding. | **COMPLETED.** Code/evidence head `1130b1423dddaeddf08a2265683c2738656f7f8a`; 28 focused, 815 relevant, 2348 full passed / six local pwsh skips; Ruff and eight offline gates passed; DAX #616 run 34769628908 and research #1400 run 34769628919 GREEN. Legacy Risk V1 binding remains equal; review digest does not authenticate origin/approval or set readiness. |
+| 2203 | Loss checkpoint account/source/period provenance. | **ACTIVE.** Bind existing typed observation checkpoint and policy to explicit source evidence and periods; no PnL/reset calculator or numeric product policy. |
 
 ## Out-of-band Work hardening evidence after Step 2184
 
