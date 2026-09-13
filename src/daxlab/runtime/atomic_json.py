@@ -34,7 +34,23 @@ def atomic_write_json(path: Path, payload: Mapping[str, Any]) -> None:
 
 
 def read_json_object(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
+    value = json.loads(
+        path.read_text(encoding="utf-8"), object_pairs_hook=_unique_pairs,
+        parse_constant=_reject_constant,
+    )
     if not isinstance(value, dict):
         raise ValueError(f"JSON object required: {path}")
     return value
+
+
+def _unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON object key")
+        result[key] = value
+    return result
+
+
+def _reject_constant(value: str) -> None:
+    raise ValueError("nonfinite JSON constant")
