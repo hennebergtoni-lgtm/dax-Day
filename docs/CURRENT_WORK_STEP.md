@@ -8,11 +8,11 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2187**
+- Last completed whole-number step: **2188**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2188**
-- Next step after successful completion: **2189**
-- Active Step 2188 scope: **PAPER Readiness Evidence Ownership Audit for the Monday demo target. Map every PAPER gate in `ReadinessSnapshot` to its canonical evidence owner and classify it as REUSE / ADAPT / EXTERNAL / USER_AUTH. Prove which gates already have typed evidence, which remain external real-host/broker evidence, and which still permit evidence-less boolean promotion. Select the smallest next implementation only after this ownership audit. Audit/documentation only: do not submit broker orders, authorize PAPER/LIVE, invent broker/host evidence, promote unverified risk numbers, mutate CAND-001/frozen V11.2/cost assumptions or create duplicate owners.**
+- Active whole-number step: **2189**
+- Next step after successful completion: **2190**
+- Active Step 2189 scope: **Connected Neon database migration/integrity closure for the Monday demo target. Product Neon is real-connection VERIFIED but currently has migrations 0001–0007 only; repository migrations 0008 `cand001_operator_telemetry` and 0009 `cand001_operator_current_view` are missing. Reuse the already prepared isolated Neon migration proof, obtain explicit approval before any production schema mutation, then apply only the exact repository migrations, rerun connection/migration/integrity evidence and handle the isolated restore/detail-import drills without altering frozen V11.2/reference evidence. No broker submission, PAPER/LIVE authorization, strategy/cost mutation or invented DB evidence.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive/current history: **2116 / 2123 / 2131 / 2137 / 2180 / 2183 / 2185**
@@ -46,7 +46,8 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2185 | Atomic local NextGen PREPARED checkpoint continuation. | **INTERRUPTED.** Explicit user chat-capacity/handoff intervention occurred before substantive Step-2185 implementation. Four independent Work hardening commits landed out-of-band on the PR head; they are not relabeled as Step 2185. Scope carries to Step 2187. |
 | 2186 | Chat-capacity + Work evidence handoff reconciliation. | **COMPLETED.** Work delegation/model/thinking/credit-budget rules were made binding in `WORK_CONTINUITY_PROTOCOL.md`; out-of-band Work evidence, stale Acceptance, external waits and next-chat recovery were reconciled into pointer/Masterstand/handoff truth. Final tested content head `06643bd410ddbae3ffcbba4578ef9166ea6c721e`; `dax-bot-1x-ci` #559 GREEN and `research-lab-ci` #1343 GREEN; five Neon/DB steps skipped and remain external. |
 | 2187 | Atomic local NextGen PREPARED checkpoint continuation. | **COMPLETED.** Final tested implementation/evidence head `59b7c3f69500c5060431cc5b8fe494ec0c2e9cc7`; 30 focused tests, 392 relevant NextGen/broker tests; local full pytest 2189 passed / 6 pwsh skips; Ruff and eight offline gates passed. `dax-bot-1x-ci` #561 and `research-lab-ci` #1345 GREEN. Five Neon/DB gates and real Windows/MT5 evidence remain WAITING_EXTERNAL. |
-| 2188 | PAPER Readiness evidence ownership audit. | **ACTIVE.** Map every PAPER gate to canonical evidence ownership and classify REUSE / ADAPT / EXTERNAL / USER_AUTH; identify evidence-less boolean promotion risks and the smallest Monday-demo implementation gap. Audit/documentation only; no broker capability or authorization change. |
+| 2188 | PAPER Readiness evidence ownership audit. | **COMPLETED.** Evidence ownership mapped as REUSE / ADAPT / EXTERNAL / USER_AUTH in `PAPER_READINESS_GAP_MATRIX_V1.md`; no generic readiness composer justified. Final audit/test head `f5cabf8f63048f6c2266a13d492cb63da88cd389`; `dax-bot-1x-ci` #566 and `research-lab-ci` #1350 GREEN. Connected Neon check VERIFIED real project access; production schema has 0001–0007 but lacks 0008/0009. Exact 0008/0009 migration succeeded on an isolated temporary Neon branch with safety constraints present; V11.2 engine/dataset/active-reference/detail-source evidence remained exact. Production migration not applied; isolated restore/detail-import drills not promoted from repository CI. |
+| 2189 | Connected Neon database migration/integrity closure. | **ACTIVE.** Apply only prevalidated 0008/0009 after explicit production-schema approval, then verify migration/integrity and isolated DB drills. |
 
 ## Out-of-band Work hardening evidence after Step 2184
 
@@ -69,7 +70,7 @@ Step 2186 reconciled explicit chat-capacity interruption with four out-of-band C
 
 ## Step 2187 completed work
 
-**Step 2187 — COMPLETED:** continued interrupted Steps 2183/2185 with `runtime/nextgen_prepared_checkpoint.py`, one evidence-neutral atomic local PREPARED owner over the Step-2182 REUSE owners. Existing semantic owners were not changed. Step 2188 is a pointer only and has not technically begun.
+**Step 2187 — COMPLETED:** continued interrupted Steps 2183/2185 with `runtime/nextgen_prepared_checkpoint.py`, one evidence-neutral atomic local PREPARED owner over the Step-2182 REUSE owners. Existing semantic owners were not changed.
 
 Required properties:
 1. one shared identity: `intent_id == client_order_id == consumption_id`;
@@ -96,7 +97,12 @@ Required properties:
 - External **WAITING_EXTERNAL**: Neon connection, DB migration, DB integrity, isolated DB restore and isolated detail-import gates were skipped on the PR run. Current real Windows/MT5 host/clock/GREEN/restart evidence remains external; Linux CI PowerShell tests do not establish real-host verification.
 - One key/payload binds canonical intent identity, original pre-consumption guard, post-consumption authoritative guard, original admission decision, existing REQUESTED broker checkpoint and full typed protection verdict. Exact serial retries do not consume, begin another lifecycle or save again. Concurrent writers must serialize access to the same key; the existing port is atomic replacement, not compare-and-swap.
 - PREPARED proves local preparation only: no venue acceptance, venue order ID or fill, no fresh clock/session/reset evidence, no slot release, no submission API, no PAPER/LIVE authorization. Frozen REF-V11.2, CAND-001 parameters and cost assumptions remain unchanged.
-- This documentation-only closeout follows the tested implementation/evidence head above; its own final commit SHA and CI results are reported in the Work completion result rather than falsely attributed to the earlier code runs. No Acceptance was refreshed and PR #109 remains unmerged.
+
+## Step 2188 completed work
+
+**Step 2188 — COMPLETED:** audited every PAPER readiness boolean against its canonical evidence owner and the Monday demo path. Existing broker-neutral owners are sufficient; readiness booleans remain summaries rather than substitutes for evidence, so a generic second composer was rejected as overengineering. Risk-profile and loss-cap promotion remain explicit ADAPT lanes; current-host/broker-specific gates remain EXTERNAL; `paper_user_authorized` remains an independent USER_AUTH STOP-gate.
+
+Connected read-only Neon evidence then exposed the smallest concrete current blocker: project `dax-research-lab` is reachable, but the production database migration registry currently contains 0001 through 0007 only. Repository migrations 0008/0009 are missing. The exact migration SQL was applied only to an isolated temporary Neon branch and verified there: both migration records, `cand001_operator_snapshots`, `cand001_operator_current`, and the `execution_capability='NONE'` / `order_execution_enabled=false` safety constraints exist. V11.2 engine SHA/frozen state, audited dataset SHA/counts, active-reference aggregate, detail registry and reproduced detail-source verification remained exact. No production schema mutation was performed in Step 2188.
 
 ## Binding numbering and handoff rules
 
