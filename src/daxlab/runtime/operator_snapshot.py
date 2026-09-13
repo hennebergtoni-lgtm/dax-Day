@@ -519,4 +519,3 @@ def parse_operator_snapshot_payload(payload: Mapping[str, Any]) -> OperatorSnaps
     if stable_fingerprint(original) != snapshot.snapshot_fingerprint:
         raise ValueError("operator snapshot original fingerprint mismatch")
     return snapshot
-

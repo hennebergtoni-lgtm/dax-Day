@@ -9,12 +9,14 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from math import isfinite
+from hashlib import sha256
 from typing import Any, Mapping
 
 from daxlab.runtime.candidate_operator_telemetry import (
     _assert_credential_free,
     operator_timestamp,
     validate_candidate_operator_snapshot,
+    browser_operator_snapshot,
 )
 
 from daxlab.runtime.decision import stable_fingerprint
@@ -127,6 +129,7 @@ def build_operator_console_projection(
     now = queried_at.astimezone(timezone.utc)
     snapshot = parse_operator_snapshot_payload(snapshot_payload) if snapshot_payload is not None else None
     current = build_candidate_operator_current(snapshot.as_dict(), queried_at=now) if snapshot else None
+    display_snapshot = browser_operator_snapshot(snapshot.as_dict()) if snapshot else None
     for value in (bundle_payload, heartbeat_payload):
         if value is not None:
             _assert_credential_free(value)
@@ -149,7 +152,7 @@ def build_operator_console_projection(
     if heartbeat_payload is not None and "build_observation" in heartbeat_payload:
         build = parse_supervisor_build_observation(heartbeat_payload["build_observation"])
         _observation_age(now, operator_timestamp(build["observed_at"], "build observed_at"))
-    blockers = list(snapshot.blockers) if snapshot else ["CANDIDATE_SNAPSHOT_MISSING"]
+    blockers = list(display_snapshot["decision"]["blockers"]) if snapshot else ["CANDIDATE_SNAPSHOT_MISSING"]
     if heartbeat_payload is None:
         blockers.append("SUPERVISOR_HEARTBEAT_MISSING")
     elif heartbeat_payload["status"] != "GREEN":
@@ -227,7 +230,7 @@ def build_operator_console_projection(
         "queried_at_utc": now.isoformat(),
         "state": "BLOCKED", "source": "existing_local_supervisor_artifacts",
         "system": tiles, "blockers": list(dict.fromkeys(blockers)),
-        "candidate": snapshot.as_dict() if snapshot else None,
+        "candidate": display_snapshot,
         "timestamps": {
             "snapshot_generated_at": snapshot.generated_at.isoformat() if snapshot else None,
             "snapshot_age_seconds": _observation_age(now, snapshot.generated_at) if snapshot else None,
@@ -270,9 +273,9 @@ def build_operator_console_projection(
             "resubmit_allowed": False, "session_slot_release_allowed": False,
         },
         "recovery": {
-            "state": "UNKNOWN", "candidate_observed_state": snapshot.recovery_state if snapshot else None,
+            "state": "UNKNOWN", "candidate_observed_state": display_snapshot["runtime"]["recovery_state"] if snapshot else None,
             "candidate_reconciliation_scope": "LOCAL_SHADOW_ONLY",
-            "candidate_observed_reconciliation": snapshot.reconciliation_state if snapshot else None,
+            "candidate_observed_reconciliation": display_snapshot["runtime"]["reconciliation_state"] if snapshot else None,
         },
         "build_identity": {
             "state": build["state"] if build else "UNKNOWN",
@@ -283,6 +286,7 @@ def build_operator_console_projection(
             "snapshot_fingerprint": snapshot.snapshot_fingerprint if snapshot else None,
             "bundle_fingerprint": bundle.fingerprint if bundle else None,
             "evidence_kind": "OBSERVATION_ONLY_NOT_EXECUTION_AUTHORIZATION",
+            "candidate_display_redacted": True,
             "candidate_cycle_binding": "BOUND" if heartbeat_payload is not None and "candidate_snapshot_fingerprint" in heartbeat_payload and "HEARTBEAT_CANDIDATE_SNAPSHOT_MISMATCH" not in blockers else "LEGACY_UNBOUND_OR_MISMATCH",
         },
         "execution_capability": "NONE", "order_execution_enabled": False,
@@ -365,6 +369,16 @@ def build_operator_console_projection(
             projection["system"]["ACCOUNT MODE"] = _tile("BLOCKED", "reserved/current context mismatch")
             projection["reconciliation"]["state"] = "BLOCKED"
             projection["system"]["RECONCILIATION"] = _tile("BLOCKED", "account context mismatch")
+    # Preserve every blocker identity while refusing arbitrary provider text.
+    # Canonical bundle blockers are computed by existing typed owners, not raw
+    # exception strings. Unknown heartbeat codes retain a digest for incidents.
+    known = set(bundle.blockers) if bundle else set()
+    known.update({"PROBE_OR_CYCLE_FAILED", "RESUME_OR_BUNDLE_STATE_INVALID"})
+    known.update(projection["blockers"] if heartbeat_payload is None else
+                 [v for v in projection["blockers"] if v not in heartbeat_payload["blockers"]])
+    projection["blockers"] = [v if v in known else
+                              "UNKNOWN_SOURCE_BLOCKER:" + sha256(v.encode()).hexdigest()
+                              for v in projection["blockers"]]
     _assert_credential_free(projection)
     projection["console_fingerprint"] = stable_fingerprint(projection)
     return projection

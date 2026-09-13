@@ -92,14 +92,20 @@ def _section(payload: Mapping[str, Any], name: str) -> Mapping[str, Any]:
 def _assert_credential_free(value: Any) -> None:
     if isinstance(value, Mapping):
         for key, item in value.items():
-            if str(key).lower() in _FORBIDDEN_KEYS:
+            normalized = re.sub(r"[^a-z0-9]", "", str(key).casefold())
+            forbidden = {re.sub(r"[^a-z0-9]", "", k) for k in _FORBIDDEN_KEYS}
+            if normalized in forbidden or normalized in {"apitoken", "privatekey", "secretkey"}:
                 raise ValueError(f"forbidden Candidate telemetry field: {key}")
             _assert_credential_free(item)
     elif isinstance(value, (list, tuple)):
         for item in value:
             _assert_credential_free(item)
     elif isinstance(value, str) and re.search(
-        r"(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/|(?:password|api[_-]?key|bearer)\s*[:=]",
+        r"(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/"
+        r"|https?:\/\/[^\s/]*@"
+        r"|\bbearer\s+\S+"
+        r"|(?:password|api[\s_-]?(?:key|token)|(?:access|refresh)[\s_-]?token|secret)\s*[:=]"
+        r"|-----BEGIN [A-Z ]*PRIVATE KEY-----",
         value, re.IGNORECASE,
     ):
         raise ValueError("credential-bearing Candidate telemetry value")
@@ -127,3 +133,54 @@ def operator_timestamp(value: Any, field: str) -> datetime:
     if result.tzinfo is None or result.utcoffset() is None:
         raise ValueError(f"Candidate operator {field} must be timezone-aware")
     return result
+
+
+def browser_operator_snapshot(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Display a validated V3 snapshot without passing arbitrary source text.
+
+    Original snapshot/fingerprint remain source evidence. This DTO is a redacted
+    display, not a new strategy owner or a persisted snapshot. Unknown text is
+    suppressed structurally even when it has no recognizable secret pattern.
+    """
+    from copy import deepcopy
+    from daxlab.runtime.candidate_config import Cand001Config
+    from daxlab.runtime.candidate_signal import SignalReason, SignalDirection
+    from daxlab.runtime.candidate_admission import AdmissionStatus
+
+    validate_candidate_operator_snapshot(payload)
+    display = deepcopy(dict(payload))
+    cfg = Cand001Config()
+    closed = {
+        "strategy": {"regime": {cfg.regime_policy.value},
+                     "structure": {f"{cfg.structure_rule.value}/OR{cfg.or_minutes}"},
+                     "setup": {v.value for v in SignalReason}},
+        "signal": {"direction": {v.value for v in SignalDirection},
+                   "reason": {v.value for v in SignalReason}},
+        "admission": {"status": {v.value for v in AdmissionStatus}},
+        "decision": {"action": {"TRADE", "NO_TRADE"},
+                     "risk_result": {"ADMITTED", "SESSION_LIMIT", "NOT_APPLICABLE"}},
+        "runtime": {"health_state": {"GREEN", "YELLOW", "RED"},
+                    "health_source": {"MT5_SHADOW_HOST", "CAND001_PIPELINE"},
+                    "recovery_state": {"FRESH_START", "RESUME_ANCHOR_RECONCILED", "RESUME_ANCHOR_NOT_FOUND"},
+                    "reconciliation_state": {"IN_SYNC", "REPLAY_GAP_SAFE_TO_RESUME", "REPLAY_GAP_BLOCKED"}},
+        "virtual_position": {"status": {"PENDING", "OPEN", "CLOSED"},
+                             "side": {"BUY", "SELL", "LONG", "SHORT"},
+                             "exit_reason": {"STOP", "TARGET", "SESSION_END", "STOP_LOSS", "TAKE_PROFIT"}},
+    }
+    for section, fields in closed.items():
+        for name, allowed in fields.items():
+            value = display[section][name]
+            if value is not None and value not in allowed:
+                display[section][name] = "REDACTED_UNRECOGNIZED_TEXT"
+    if (display["candidate_id"] != cfg.candidate_id
+            or display["core_version"] != cfg.product_identity().core_version):
+        raise ValueError("unsupported browser Candidate identity")
+    codes = {v.value for v in SignalReason} | {
+        "SESSION_TRADE_LIMIT", "DATA_UNSAFE", "INTENT_PUBLICATION_ADMITTED",
+        "OUTCOME_PUBLICATION_ADMITTED", "OUTCOME_PUBLICATION_DUPLICATE_SUPPRESSED",
+        "RESTART_CATCHUP", "PRIOR_ANCHOR_BARS_FILTERED", "REPLAY_GAP_DETECTED",
+    }
+    for section, name in (("runtime", "events"), ("decision", "blockers")):
+        display[section][name] = [v if v in codes else "REDACTED_UNRECOGNIZED_TEXT"
+                                 for v in display[section][name]]
+    return display
