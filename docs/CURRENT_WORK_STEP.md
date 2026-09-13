@@ -8,12 +8,12 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2228**
+- Last completed whole-number step: **2230**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2229**
-- Active step state: **ACTIVE — LOCAL READ-ONLY OBSERVABILITY / NO BROKER SIDE EFFECT**
-- Work tranche state: **ACTIVE_LOCAL_OPERATOR_OBSERVABILITY**
-- Next step after successful completion: **2230**
+- Active whole-number step: **2231**
+- Active step state: **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**
+- Work tranche state: **COMPLETED_LOCAL_OPERATOR_HARDENING_2 — EXTERNAL_GATES_REMAIN**
+- Next step after successful completion: **2232**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
@@ -30,7 +30,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Decimal or letter step IDs: **PROHIBITED**
 
 - Step 2206 remains **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**; independent local Work uses Steps 2207 onward under WORK_CONTINUITY_PROTOCOL section 4A.
-- Active Step 2229 scope: **Bounded malformed-source HTTP failures, credential-filter alerts and canonical display-enum regressions before final full safety validation.**
+- Active Step 2231 scope: **Next independent tranche re-pin/review and real-host/policy handoff only; no repository-local implementation pending in this read-only mandate; Step 2206 is not replaced.**
 
 ## Ledger archive
 
@@ -43,6 +43,8 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
+| 2230 | Final full-regression/safety/CI source validation. | **COMPLETED.** Tested code head 2d8b7f14165586337f5cab5237fd46aba06511dd; 119 focused and 2619 full passed / six local pwsh skips; full Ruff, JS and eight offline gates GREEN; DAX #648 run 34779991786 and research #1432 run 34779992010 GREEN. Final pointer/publication-head CI is verified separately after publication. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
+| 2229 | Malformed-source/credential-alert HTTP hardening. | **COMPLETED.** Code head 2d8b7f14165586337f5cab5237fd46aba06511dd; 85 focused malformed/credential/telemetry/HTTP/DOM/reconciliation tests passed; Ruff/JS passed; canonical PENDING_ENTRY and CANDIDATE_INPUT preserved; CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2228 | Executable mobile DOM/failure contracts. | **COMPLETED.** Code/evidence head dcaec617ac75d349e55db9b5116cc2b0abe6d06f; 26 UI/DOM/execution/credential tests passed; Ruff/JS passed; Chromium absent, actual browser/device rendering UNVERIFIED; CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2227 | Primary public-project / research-backlog review. | **COMPLETED.** Code/evidence head 4380d2be8c47d2d90033be728eaa6f8eaf06e9b3; primary sources reviewed and 24 threat cases mapped; 14 related tests passed; Ruff passed; ADOPT/ALREADY_HAVE/RESEARCH/REJECT separated; CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2226 | Historical empirical risk envelope. | **COMPLETED.** Code head a72b6e6f3e03c0328f74dbf95ebdf428c16c4f5d; 27 analysis/detail tests passed; full Ruff passed; no actual pinned trade source supplied, quantiles unavailable rather than fabricated; CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
@@ -53,7 +55,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2221 | Pinned broker inventory console projection. | **COMPLETED.** Code head cde947a718aee390edafedd87b5406606d69b271; 147 inventory/transport/socket/credential/UI tests passed; strict result/envelope roundtrip and context pins preserved; Ruff/JS passed; CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2220 | Heartbeat veto preservation / health dimensions. | **COMPLETED.** Code head d5919a9bfc507823e25b644de0066c47bf7bb350; focused projection/socket/credential/execution tests passed; Ruff passed; required CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2219 | Execution display contradiction guard. | **COMPLETED.** Code head 7b20f85abcc44187413c1fcf8c81ba03324ace78; focused socket/credential/UI tests and Node validator passed; Ruff/JS syntax passed; required CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
-| 2218 | Credential-free HTTP boundary. | **COMPLETED.** Code head 2d02b26dc8c29e3a488931c9b6d00268f2fef34e; 95 focused tests passed, Ruff passed; DAX #637 run 34779069609 and research #1421 run 34779069590 GREEN. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
+| 2218 | Credential-free HTTP boundary. | **COMPLETED.** Code head 2d02b26dc8c29e3a488931c9b6d00268f2fef34e; 78 focused tests passed, Ruff passed; DAX #637 run 34779069609 and research #1421 run 34779069590 GREEN. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2217 | Full-account read-only inventory consolidation. | **COMPLETED.** User explicitly granted exclusive write-lane takeover. Original code head ff7f22540d7dee37b0bf2d61e10a339cea90d8cf: 76 inventory/transport/reserved-query tests passed; Ruff passed; DAX #635 and research #1419 GREEN. Existing typed collector/envelope preserved; no broker reads or side effects executed. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2174 | Canonical session-admission consumption transition audit. | **COMPLETED.** Final tested head `04197891c069570d277bbb03af611d86f39fd154`; CI #515/#1299 GREEN. |
 | 2175 | Canonical deterministic session-admission consumption state/transition. | **COMPLETED.** Final tested head `b45891633d401dce6e585b2f02afead451df0381`; CI #521/#1305 GREEN. |

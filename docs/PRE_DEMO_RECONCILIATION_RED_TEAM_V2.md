@@ -10,7 +10,7 @@ QUERY / RECONCILE; no ASSUME / RETRY / RELEASE. Existing owners remain authorita
 | 3 manual order | `test_operator_console_inventory`: foreign symbol/tag visible; BLOCKED. |
 | 4 manual position | same: full-account POSITION row; no ownership claim. |
 | 5 reservation, venue unknown | `test_demo_transport_query`, `test_operator_console_reconciliation`: QUERY_REQUIRED; original state unchanged. |
-| 6 hypothetical disconnect after future transport / before ACK | `test_demo_transport_attempt_reservation`, `test_demo_transport_restart_integration`: durable reservation survives; no submission is performed. |
+| 6 hypothetical disconnect after future transport / before ACK | `test_demo_transport_attempt_reservation`, `test_demo_transport_restart`: durable reservation survives; no submission is performed. |
 | 7 reconnect fill, local fill missing | `test_reconnect_fill_observed_but_unapplied_local_checkpoint_is_contradiction`: actual fixture report separate from local REQUESTED; CONTRADICTION. |
 | 8 partial fill | same parametrized test; existing unique-deal lookup checks partial quantities. |
 | 9 duplicate reports | transport suite duplicate-half-fill test; no fabricated complete fill. |
