@@ -7,10 +7,8 @@ import pytest
 from daxlab.runtime.candidate_shadow_host_cycle import run_cand001_shadow_host_cycle
 from daxlab.runtime.mt5_shadow_supervisor import process_mt5_shadow_cycle
 from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
-from daxlab.runtime.operator_snapshot import (
-    build_operator_console_projection,
-    parse_operator_snapshot_payload,
-)
+from daxlab.runtime.candidate_operator_query import build_operator_console_projection
+from daxlab.runtime.operator_snapshot import parse_operator_snapshot_payload
 from test_candidate_shadow_host_cycle import _bars
 from test_mt5_windows_bundle import _bundle, _seal
 

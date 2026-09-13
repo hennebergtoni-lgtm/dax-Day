@@ -102,3 +102,13 @@ observation remain parseable and display UNKNOWN.
 
 Execution remains NONE / disabled. SHADOW only is authorized. DEMO/PAPER/LIVE are
 not authorized. V11.2, CAND-001 strategy, costs, Acceptance and main are unchanged.
+
+## Step 2210 boundary correction from new regression evidence
+
+The initial placement preference above was tested against
+`tests/test_candidate_hot_path_boundary.py`: operator_snapshot is a protected
+Candidate hot-path owner and cannot import MT5 evidence modules. The outer
+projection therefore belongs to the ALREADY EXISTING candidate_operator_query
+read-model. operator_snapshot only reconstructs/verifies its own V3 contract.
+No boundary test is weakened, no second read-model/MT5 connection is introduced.
+This prospective decision follows new evidence and preserves historical results.
