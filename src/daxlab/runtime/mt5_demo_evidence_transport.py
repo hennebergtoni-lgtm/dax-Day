@@ -477,16 +477,7 @@ def query_mt5_demo_evidence(
     if account is None:
         return _blocked(request, observed_at, "MT5_ACCOUNT_INFO_UNAVAILABLE")
     try:
-        current_account = normalize_mt5_demo_account_context(
-            raw_login=getattr(account, "login", None),
-            raw_server=getattr(account, "server", None),
-            raw_trade_mode=getattr(account, "trade_mode", None),
-            trade_allowed=getattr(account, "trade_allowed", None),
-            resolved_symbol=request.identity.symbol,
-            demo_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_DEMO", None),
-            contest_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_CONTEST", None),
-            real_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_REAL", None),
-        )
+        current_account = _normalized_account(mt5, account, request.identity.symbol)
     except (TypeError, ValueError):
         return _blocked(request, observed_at, "MT5_ACCOUNT_CONTEXT_INVALID")
     if current_account != request.account_context:
@@ -513,6 +504,18 @@ def query_mt5_demo_evidence(
     )
     if history_deals is _QUERY_ERROR:
         return _blocked(request, observed_at, "MT5_DEAL_HISTORY_QUERY_FAILED")
+
+    # SDK queries are not a broker transaction. Never label another account's
+    # rows with the initially observed DEMO context after a terminal switch.
+    after = _query(mt5, "account_info")
+    if after is _QUERY_ERROR:
+        return _blocked(request, observed_at, "MT5_ACCOUNT_RECHECK_UNAVAILABLE")
+    try:
+        final_account = _normalized_account(mt5, after, request.identity.symbol)
+    except (TypeError, ValueError):
+        return _blocked(request, observed_at, "MT5_ACCOUNT_RECHECK_INVALID")
+    if final_account != current_account:
+        return _blocked(request, observed_at, "MT5_ACCOUNT_CONTEXT_CHANGED_DURING_QUERY")
 
     open_rows = tuple(open_orders)
     history_rows = tuple(history_orders)
@@ -785,6 +788,19 @@ def demo_mt5_lookup_request_from_payload(payload: Mapping[str, Any]) -> DemoMt5L
 
 
 _QUERY_ERROR = object()
+
+
+def _normalized_account(mt5: Any, account: Any, symbol: str) -> Mt5DemoAccountContextEvidence:
+    return normalize_mt5_demo_account_context(
+        raw_login=getattr(account, "login", None),
+        raw_server=getattr(account, "server", None),
+        raw_trade_mode=getattr(account, "trade_mode", None),
+        trade_allowed=getattr(account, "trade_allowed", None),
+        resolved_symbol=symbol,
+        demo_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_DEMO", None),
+        contest_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_CONTEST", None),
+        real_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_REAL", None),
+    )
 
 
 def _query(mt5: Any, name: str, *args: Any, **kwargs: Any) -> Any:

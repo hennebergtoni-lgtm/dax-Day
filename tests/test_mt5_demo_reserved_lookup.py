@@ -55,7 +55,7 @@ def test_valid_reserved_lookup_and_restart_leave_exact_state_unchanged(prepared_
         mt5 = evidence.FakeMt5()
         results.append(run(args, mt5))
         assert [call[0] for call in mt5.calls] == [
-            "account_info", "orders_get", "history_orders_get", "history_deals_get",
+            "account_info", "orders_get", "history_orders_get", "history_deals_get", "account_info",
         ]
     assert results[0] == results[1]
     assert results[0]["result"]["status"] == "NOT_FOUND"

@@ -208,6 +208,7 @@ def test_not_found_checks_open_history_and_deals_but_never_allows_retry(prepared
         "orders_get",
         "history_orders_get",
         "history_deals_get",
+        "account_info",  # Context must still match after all reads.
     ]
 
 
@@ -460,3 +461,43 @@ def test_matched_deal_without_stable_ticket_fails_closed(prepared_attempt, ticke
     result = owner.query_mt5_demo_evidence(mt5=mt5, request=request, observed_at=request.query_evaluated_at)
     assert result.blockers == ('MT5_MATCHED_DEAL_TICKET_INVALID',)
     assert result.venue_observation is None
+
+
+@pytest.mark.parametrize('field,value', [('trade_mode', FakeMt5.ACCOUNT_TRADE_MODE_REAL), ('login', LOGIN + 1), ('server', 'Other-Demo'), ('trade_allowed', False)])
+@pytest.mark.parametrize('has_match', [True, False])
+def test_account_switch_during_query_never_labels_rows_as_original_demo(prepared_attempt, field, value, has_match):
+    *_, request = _lookup(prepared_attempt)
+
+    class SwitchingMt5(FakeMt5):
+        def history_deals_get(self, *args, **kwargs):
+            result = super().history_deals_get(*args, **kwargs)
+            setattr(self.account, field, value)
+            return result
+
+    mt5 = SwitchingMt5()
+    if has_match:
+        mt5.open_orders = (_order(request, mt5),)
+    result = owner.query_mt5_demo_evidence(mt5=mt5, request=request, observed_at=request.query_evaluated_at)
+    assert result.status is owner.DemoMt5LookupStatus.BLOCKED
+    assert result.blockers == ('MT5_ACCOUNT_CONTEXT_CHANGED_DURING_QUERY',)
+    assert result.venue_observation is None
+    assert result.matching_order_tickets == ()
+
+
+@pytest.mark.parametrize('final', [None, SimpleNamespace(login=True), 'error'])
+def test_failed_account_recheck_never_becomes_empty_account_or_matched(prepared_attempt, final):
+    *_, request = _lookup(prepared_attempt)
+
+    class FailedRecheck(FakeMt5):
+        def account_info(self):
+            if self.calls:
+                if final == 'error':
+                    raise RuntimeError('password=never-print')
+                return final
+            return super().account_info()
+
+    mt5 = FailedRecheck()
+    result = owner.query_mt5_demo_evidence(mt5=mt5, request=request, observed_at=request.query_evaluated_at)
+    assert result.status is owner.DemoMt5LookupStatus.BLOCKED
+    assert result.venue_observation is None
+    assert 'never-print' not in str(result.to_payload())

@@ -53,6 +53,7 @@ def test_execute_readonly_lookup_emits_fail_closed_credential_free_envelope(prep
         "orders_get",
         "history_orders_get",
         "history_deals_get",
+        "account_info",  # Context must still match after all reads.
     ]
 
 
