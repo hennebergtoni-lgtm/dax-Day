@@ -64,3 +64,28 @@ IDs and fills may never be inferred from PREPARED/reservation/local tags. No
 automatic PAPER/LIVE promotion, slot release, retry or refreshed original evidence.
 Five main-only PR DB gates and host lane 2122 remain WAITING_EXTERNAL; earlier
 VERIFIED Neon evidence is not discarded and is not relabeled as a current full run.
+
+## Forward closure of the local bindings
+
+The matrix above is the original Step-2201 audit at its stated anchor; it is not
+silently relabeled as present-day external evidence. Step 2202 at `1130b142...`
+implements the exact Windows bundle/account/time/explicit-timezone/review binding
+in the existing economics bridge. Step 2203 at `e5980f0e...` implements the narrow
+Runtime-owned loss provenance adapter over the unchanged canonical State owner.
+Step 2204 at `20504cfe...` binds the operational Windows lookup to the existing
+pinned reservation/current QUERY validator immediately before SDK reads.
+
+Current source-binding software: IMPLEMENTED, contract regressions VERIFIED by
+local tests and required CIs recorded in CURRENT_WORK_STEP. Independent broker
+origin/review authentication, real collection, actual drawdown calculation/scope
+definition and product numeric approval remain WAITING_EXTERNAL / USER_AUTH.
+There is no new loss producer, risk owner or readiness orchestrator. Step 2166's
+deliberately deferred calculation/reset semantics are preserved, not guessed.
+Step 2205 supplies conformance through existing canonical Risk/Loss/Protection
+and readiness, and `PRE_DEMO_WINDOWS_EVIDENCE_RUNBOOK_V1.md` supplies Monday's
+real-host evidence handoff. Complete source-shaped fixtures cannot authorize PAPER.
+
+No further independent local gap was demonstrated under the approved semantics.
+The natural next gate is current real-host/market/broker evidence plus concrete
+policy review; any first actual DEMO order/active submission adapter is separately
+USER_AUTH. Additional framework work cannot replace those facts or approvals.
