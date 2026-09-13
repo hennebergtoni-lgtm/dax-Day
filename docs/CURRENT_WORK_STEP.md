@@ -8,18 +8,19 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2204**
+- Last completed whole-number step: **2205**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2205**
-- Active step state: **ACTIVE — LOCAL / READ-ONLY EVIDENCE BINDING / NO BROKER SIDE EFFECT**
-- Work tranche state: **WORK_PRE_DEMO_LOCAL_FORWARD**
-- Next step after successful completion: **2206**
+- Active whole-number step: **2206**
+- Active step state: **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**
+- Work tranche state: **COMPLETED_AT_EXTERNAL_POLICY_AUTH_BOUNDARY**
+- Next step after successful completion: **2207**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
 - Historical Step 2203 scope: **Narrow provenance adapter beside the existing loss checkpoint, preserving its canonical bytes and fingerprints.**
 - Historical Step 2204 scope: **Close the reproduced history-window-only preflight gap without order APIs, new evidence owners or persistence.**
-- Active Step 2205 scope: **Read-only Windows evidence instructions and composition conformance only; no new readiness/risk/lifecycle owner.**
+- Historical Step 2205 scope: **Read-only Windows evidence instructions and composition conformance only; no new readiness/risk/lifecycle owner.**
+- Active Step 2206 scope: **Independent review and actual host/policy evidence only. No first-order or submission authorization is implied by this pointer.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive/current history: **2116 / 2123 / 2131 / 2137 / 2180 / 2183 / 2185**
@@ -70,7 +71,8 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2202 | Exact-source Windows broker economics observation binding. | **COMPLETED.** Code/evidence head `1130b1423dddaeddf08a2265683c2738656f7f8a`; 28 focused, 815 relevant, 2348 full passed / six local pwsh skips; Ruff and eight offline gates passed; DAX #616 run 34769628908 and research #1400 run 34769628919 GREEN. Legacy Risk V1 binding remains equal; review digest does not authenticate origin/approval or set readiness. |
 | 2203 | Loss checkpoint account/source/period provenance. | **COMPLETED.** Code/evidence head `e5980f0e728b74d6248f36881449249cfd50aeb2`; 34 focused incl. isolation, 840 relevant, 2373 full passed / six local pwsh skips; Ruff/eight offline gates passed; DAX #617 run 34769875662 and research #1401 run 34769875687 GREEN. First local placement failed the unchanged runtime-backflow isolation gate and was corrected before publication: composition is Runtime-owned, original loss State owner unchanged. No PnL/reset policy or numeric promotion. |
 | 2204 | Current query authorization/freshness at Windows lookup execution. | **COMPLETED.** Code/evidence head `20504cfed1e9a0aa7af7a67a3852138b778f828d`; 37 focused, 856 relevant, 2389 full passed / six local pwsh skips; Ruff/eight offline gates passed; DAX #618 run 34770097221 and research #1402 run 34770097244 GREEN. Reproduced history-window-only lookup after host age 31s and expired grant at 360s; operational CLI now reuses pinned reservation/shared current QUERY preflight before SDK initialization and reads. Original codecs/technical lookup preserved; zero saves/resubmits/slot releases. |
-| 2205 | Windows pre-DEMO evidence handoff and source-binding conformance. | **ACTIVE.** Document exact-head Monday evidence collection, policy review and first-side-effect stop; exercise source bindings through existing canonical Risk/Loss/Protection/readiness contracts. |
+| 2205 | Windows pre-DEMO evidence handoff and source-binding conformance. | **COMPLETED.** Tested code/evidence head `f8421bfafa0aa5d96fe8dd003e6e94d845f3d634`; 69 focused tranche/governance, 860 relevant, 2393 full passed / six local pwsh skips; Ruff and eight offline gates passed; DAX #619 run 34770291597 and research #1403 run 34770291609 GREEN. New source conformance preserves existing Risk/Protection fingerprints; Windows evidence/runbook records all real-host/policy/first-order gates without promotion. |
+| 2206 | Independent re-pin and Monday real-host/product-policy evidence review. | **PLANNED — WAITING_EXTERNAL / USER_AUTH.** Main chat independently re-pins/diff/CI/safety-checks this Work block. Current Windows/MT5/clock/market/broker facts and concrete risk/loss/drawdown-policy review are required. Any first actual DEMO order/active submission adapter requires a separate explicit bounded user authorization. No 2206 technical implementation begun. |
 
 ## Out-of-band Work hardening evidence after Step 2184
 
@@ -163,3 +165,38 @@ Start head: `9a07f679f10a4cae29083456b2930aba967fb919`. All five whole-number st
 Safety scan: no broker submission call sites or literal order_execution_enabled=True in src/scripts; no work diff in frozen REF-V11.2, reference owners, strategy files, historical data, cost assumptions, workflows/rulesets or Acceptance. Frozen reference tree remains `e61a59f9bdc6ba9d108cfae0ea518bd7b990dedc`. Offline V11.2 fixture replay and synthetic SHADOW soak are not broker/profitability evidence.
 
 Separate connected-Neon read-only SELECT verified production `neondb`, migrations 0001–0009, Candidate current view, zero unsafe Candidate rows and unchanged frozen reference engine SHA. This limited snapshot does not claim the full DB gate ran. No DB writes were made. Five main-only PR CI DB gates, fresh full DB restore/import validation, real Windows/MT5 host lane 2122, broker clock/timezone/identity lookup, economics, risk/loss promotion and real broker lifecycle evidence remain WAITING_EXTERNAL or require separate explicit review/authorization. Existing Step-2189 VERIFIED history remains intact.
+
+
+## Pre-DEMO Work tranche — Steps 2201 through 2205
+
+Start head `52e2aa0942f20909641be66ddc71845237f5424b` matched PR #109 exactly.
+The whole-number units above each closed after both required CIs were GREEN.
+This final pointer is documentation-only over the tested Step-2205 code/evidence
+head; no self-referential final-document SHA is claimed. No Acceptance refreshed.
+
+Two source bindings were added without replacing economics, Risk V1, loss admission,
+checkpoint, protection, readiness, lifecycle, reconciliation or persistence owners.
+The loss State owner remains byte-for-byte unchanged; the Runtime adapter adds no
+loss calculation/store/journal. A history-window-only operational lookup gap was
+reproduced and closed using the existing current QUERY validator before SDK reads.
+The low-level injected lookup and original reservation/request codecs are retained.
+
+Full local result: **2393 passed / six PowerShell skips**, **860 relevant passed**,
+**69 focused tranche/governance passed**; Ruff and eight offline gates GREEN.
+Required GitHub CI on the tested code/evidence head: DAX #619 and research #1403
+GREEN. Five main-only DB gates were skipped, not executed; historical Neon VERIFIED
+evidence is retained. No Linux test establishes real Windows/MT5/broker evidence.
+
+Natural STOP: source-shaped software evidence is ready for independent review;
+remaining factual gates require actual Windows/MT5/market/broker observations,
+concrete policy/calculation/scope review and separately authorized first DEMO
+submission. No default risk values, drawdown/reset production or broker evidence
+were invented. Further local framework work cannot replace these missing facts
+or user decisions. Host lane 2122 stays WAITING_EXTERNAL. Step 2206 is only a pointer.
+
+Safety: main unchanged; PR #109 unmerged; no Acceptance, frozen/reference data,
+CAND-001 strategy parameters, costs, workflows/rulesets or settings changed. Frozen
+reference tree `e61a59f9bdc6ba9d108cfae0ea518bd7b990dedc` unchanged. Production AST
+scan: zero trading submission/check/cancel/modify callsites and zero literal
+order_execution_enabled=True. SHADOW remains authorized; DEMO/PAPER execution and
+LIVE remain not authorized; execution_capability=NONE; order_execution_enabled=false.
