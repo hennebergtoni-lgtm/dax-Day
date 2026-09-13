@@ -27,9 +27,10 @@ Mandatory recovery sequence:
 4. Read `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`.
 5. Read `docs/MASTERSTAND.md`.
 6. Read `docs/PROJECT_KNOWLEDGE_INDEX.md`.
-7. Read the problem/solution registry and only the topic-specific code/docs/tests required for the active step.
-8. Reconcile any `WAITING_EXTERNAL`, `INTERRUPTED` or `BLOCKED` lane separately from independent safe work.
-9. Continue the next concrete whole-number work unit automatically only after the current pointer and Step-Close-Gate are consistent. A recovered status report is not a stop.
+7. Read `docs/WORK_CONTINUITY_PROTOCOL.md`; its Work-delegation, model/thinking, credit-budget and out-of-band Work-reconciliation sections are binding.
+8. Read the problem/solution registry and only the topic-specific code/docs/tests required for the active step.
+9. Reconcile any `WAITING_EXTERNAL`, `INTERRUPTED`, `BLOCKED` lane and any out-of-band ChatGPT Work commits separately from independent safe work.
+10. Continue the next concrete whole-number work unit automatically only after the current pointer and Step-Close-Gate are consistent. A recovered status report is not a stop.
 
 Repository truth overrides chat recollection. Exact code, tests, hashes, evidence and fresh runtime telemetry override prose summaries if they disagree.
 
@@ -47,12 +48,14 @@ When used, update `docs/MASTERSTAND.md` to the current repository truth and ensu
 - current DAX-BOT/CAND candidate architecture and evidence maturity;
 - completed milestone summary since the prior masterstand;
 - unresolved `WAITING_EXTERNAL`, `INTERRUPTED` and `BLOCKED` lanes;
+- any out-of-band ChatGPT Work evidence since the prior handoff and its exact classification;
 - current official step pointer and exact next work;
 - current CI/evidence truth without claiming a newer head green before it is verified;
+- current Acceptance/merge freshness rather than assuming CI implies Acceptance;
 - required workflow-integrity / no-stop / integer-step / repository-first resume rules;
 - current chat-capacity/handoff state when the command is used because the conversation is approaching or has reached a platform length limit.
 
-Also update `docs/PROJECT_KNOWLEDGE_INDEX.md` and `docs/CURRENT_WORK_STEP.md` if their navigation/pointer truth changed materially.
+Also update `docs/PROJECT_KNOWLEDGE_INDEX.md`, `docs/WORK_CONTINUITY_PROTOCOL.md` and `docs/CURRENT_WORK_STEP.md` when their navigation/pointer/Work truth changed materially.
 
 ## 3. Scheduled masterstand checkpoints
 
@@ -65,7 +68,7 @@ Current next scheduled checkpoint: **2250**.
 At each checkpoint:
 
 1. refresh `docs/MASTERSTAND.md`;
-2. verify `CURRENT_WORK_STEP.md`, workflow-integrity gate and Knowledge Index consistency;
+2. verify `CURRENT_WORK_STEP.md`, workflow-integrity gate, Work protocol and Knowledge Index consistency;
 3. record fresh PR/head/CI truth;
 4. summarize new durable findings, solved problems and remaining lanes;
 5. preserve safety/authorization boundaries;
@@ -89,13 +92,13 @@ When saturation is detected while the current chat can still execute actions:
 2. pin fresh repository/head/CI/pointer truth;
 3. truthfully close or mark the current technical step `INTERRUPTED` if its evidence is incomplete;
 4. start a dedicated continuity/Masterstand work unit under the next unused whole integer;
-5. refresh `docs/MASTERSTAND.md`, this protocol and any materially changed navigation/pointer truth;
-6. preserve the unfinished technical scope explicitly for the next unused integer;
+5. refresh `docs/MASTERSTAND.md`, this protocol, `WORK_CONTINUITY_PROTOCOL.md` when relevant, and any materially changed navigation/pointer truth;
+6. preserve unfinished technical scope explicitly for the next unused integer;
 7. provide the user the resume codeword and open the new chat.
 
 If the platform hard-stops the old chat before these writes can happen, the **new chat** must perform the same reconciliation first: re-pin repository truth, inspect whether the previously active step actually completed, mark it truthfully, then continue under monotonic whole-number numbering. Never invent completion from chat memory.
 
-Chat saturation is therefore treated like a controlled handoff event. It must not erase goals, architecture decisions, evidence status, safety boundaries or working-style agreements.
+Chat saturation is therefore treated like a controlled handoff event. It must not erase goals, architecture decisions, evidence status, Work delegation rules, safety boundaries or working-style agreements.
 
 ## 5. Step-number discipline
 
@@ -107,6 +110,7 @@ Chat saturation is therefore treated like a controlled handoff event. It must no
 - **Step-Close-Gate:** a new independent step starts only after the previous step is explicitly `COMPLETED`, `INTERRUPTED`, `WAITING_EXTERNAL` or `BLOCKED`, with the reason/evidence and pointer synchronized;
 - **pointer-before-next-step:** `docs/CURRENT_WORK_STEP.md` must name the new active step before its first substantive action;
 - visible numbering is monotonic: an older still-open lane is never resumed under its old step number after a higher number has started; preserve its provenance and resume its unfinished scope under the next unused integer;
+- out-of-band Work commits are never retroactively relabeled as the unfinished official step; reconcile them under the next unused continuity step and carry unfinished technical scope prospectively;
 - the old wording `Fortsetzung Schritt N` must not be used as the current official number after later steps have begun;
 - intermediate reports inside the active step are labeled simply `Zwischenstand` and must not introduce a different official step number.
 
@@ -147,6 +151,19 @@ Before starting the governance/review work:
 5. start the governance/review under the next unused integer;
 6. resume unfinished technical scope later only under another new integer.
 
-## 8. Safety boundary
+## 8. ChatGPT Work handoff reconciliation
+
+`docs/WORK_CONTINUITY_PROTOCOL.md` is the canonical Work operating contract. It defines main-chat versus Work ownership, Work-order headers, model/thinking selection, credit classes, branch drift, Acceptance/merge ownership and external-evidence rules.
+
+On resume, if Work commits exist beyond the last numbered project evidence:
+1. pin the exact Work commit chain and CI;
+2. inspect what actually changed;
+3. classify skipped external gates separately;
+4. do not auto-accept Work prose or relabel out-of-band commits as an unrelated active numbered step;
+5. reconcile them through the next unused whole-number continuity step;
+6. carry interrupted technical work prospectively;
+7. keep Acceptance and merge ownership in the main chat unless explicitly delegated.
+
+## 9. Safety boundary
 
 This protocol changes only continuity/navigation and visible reporting. It never authorizes PAPER or LIVE trading, never changes VERIFIED evidence, never changes strategy semantics, and never bypasses explicit execution-authorization gates.
