@@ -17,7 +17,7 @@ import json
 from math import isfinite
 from typing import Any, Mapping
 
-from daxlab.domain.ports import StateStorePort
+from daxlab.domain.ports import ClockPort, StateStorePort
 from daxlab.runtime.broker_reconciliation import (
     BrokerReconciliationVerdict,
     VenueOrderObservation,
@@ -354,6 +354,54 @@ def validate_reserved_demo_transport_query(
         reservation=reservation, bundle_payload=bundle_payload, evaluated_at=evaluated_at,
     )
     return scope
+
+
+def build_reserved_demo_transport_query_request(
+    *,
+    store: StateStorePort,
+    key: str,
+    expected_reservation_fingerprint: str,
+    bundle_payload: Mapping[str, Any],
+    clock: ClockPort,
+) -> dict[str, Any]:
+    """Project a pinned QUERY work item without performing or persisting it.
+
+    This ephemeral read model is not a new attempt, lifecycle or checkpoint.
+    Its environment clock is explicit; it never upgrades supplied host evidence
+    or rewrites original reservation timestamps. The future read-only adapter
+    must retain this exact identity/account scope and provide actual observations.
+    """
+    reservation = load_reserved_demo_transport_attempt(
+        store=store, key=key,
+        expected_reservation_fingerprint=expected_reservation_fingerprint,
+    )
+    evaluated_at = clock.now()
+    bundle, scope = _reserved_demo_query_context(
+        reservation=reservation, bundle_payload=bundle_payload, evaluated_at=evaluated_at,
+    )
+    payload = {
+        "attempt_key": key,
+        "client_order_id": reservation.prepared.intent.intent_id,
+        "requested_action": scope.requested_action.value,
+        "reservation_fingerprint": reservation.fingerprint,
+        "prepared_fingerprint": reservation.prepared_fingerprint,
+        "authorization_fingerprint": scope.authorization_fingerprint,
+        "account_context": reservation.account_context.to_payload(),
+        "account_context_fingerprint": reservation.account_context_fingerprint,
+        "bundle_fingerprint": bundle.fingerprint,
+        "host_observed_at": _iso(bundle.host.observed_at),
+        "feed_observed_at": _iso(bundle.feed.observed_at),
+        "feed_latest_closed_fingerprint": bundle.feed.latest_closed_fingerprint,
+        "query_evaluated_at": _iso(evaluated_at),
+        "original_reservation_evaluated_at": _iso(reservation.evaluated_at),
+        "submission_ordinal": reservation.submission_ordinal,
+        "venue_state": "UNKNOWN",
+        "resubmit_allowed": False,
+        "session_slot_release_allowed": False,
+        "execution_capability": "NONE",
+        "order_execution_enabled": False,
+    }
+    return payload | {"query_request_fingerprint": _fingerprint(payload)}
 
 
 def _reserved_demo_query_context(
