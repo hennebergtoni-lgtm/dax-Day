@@ -48,3 +48,22 @@ def test_repository_ci_never_counts_as_broker_checkpoint_evidence() -> None:
     assert "broker_execution_checkpoint_verified" in text
     assert "repository CI alone cannot satisfy it" in text
     assert "CI success without the specific real broker evidence" in text
+
+
+def test_step_2188_maps_evidence_ownership_without_inventing_a_composer() -> None:
+    text = MATRIX.read_text(encoding="utf-8")
+    for required in (
+        "Step 2188 PAPER readiness evidence ownership reassessment",
+        "**REUSE**",
+        "**ADAPT**",
+        "**EXTERNAL**",
+        "**USER_AUTH**",
+        "`database_verified`",
+        "five Neon/DB gates",
+        "Smallest Monday-demo path",
+        "**DO NOT BUILD** a generic readiness composer",
+        "`paper_user_authorized`",
+    ):
+        assert required in text
+    assert "naked caller-supplied `True`" in text
+    assert "do not invent values to clear the gate" in text
