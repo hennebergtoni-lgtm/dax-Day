@@ -421,6 +421,22 @@ def build_operator_console_projection(
         )
         if ctx != reservation.account_context:
             projection["reconciliation"]["state"] = "BLOCKED"
+        from daxlab.runtime.demo_transport_attempt_reservation import validate_reserved_demo_transport_query
+        try:
+            validate_reserved_demo_transport_query(reservation=reservation, bundle_payload=bundle_payload, evaluated_at=now)
+        except (ValueError, TypeError, KeyError):
+            projection["reconciliation"]["current_query_preflight"] = "QUERY_REQUIRED"
+            projection["blockers"].append("CURRENT_QUERY_SCOPE_OR_HOST_EVIDENCE_UNAVAILABLE")
+        else:
+            projection["reconciliation"]["current_query_preflight"] = "VALID_READ_ONLY_NOT_EXECUTION"
+        if result.venue_observation is not None:
+            from daxlab.runtime.broker_reconciliation import reconcile_broker_order
+            verdict = reconcile_broker_order(local=reservation.prepared.broker.lifecycle, venue=result.venue_observation)
+            projection["reconciliation"]["local_venue_comparison"] = {"status": verdict.status.value,
+                                                                      "blockers": list(verdict.blockers), "fingerprint": verdict.fingerprint}
+            if verdict.blockers:
+                projection["reconciliation"]["state"] = "CONTRADICTION" if same_bundle else "STALE"
+                projection["blockers"].extend(verdict.blockers)
         if inventory is not None:
             _observation_age(now, inventory.collection_completed_at)
             inv_state = "BLOCKED" if inventory.status == "BLOCKED" or inventory.rows or ctx != inventory.account_context else "UNKNOWN"
@@ -441,10 +457,22 @@ def build_operator_console_projection(
                                           for v in inventory.blockers)
             if inventory.rows:
                 projection["blockers"].append("UNEXPECTED_BROKER_INVENTORY_REVIEW_REQUIRED")
+            if host and host.symbols and host.symbols[0].volume_step is not None and host.symbols[0].digits is not None:
+                from decimal import Decimal
+                metadata = host.symbols[0]
+                step = Decimal(str(metadata.volume_step))
+                price_unit = Decimal(1).scaleb(-metadata.digits)
+                for row in inventory.rows:
+                    if row.symbol == metadata.name and (
+                            Decimal(str(row.native_volume)) % step != 0
+                            or Decimal(str(row.observed_open_price)) % price_unit != 0):
+                        projection["blockers"].append("BROKER_INVENTORY_NATIVE_PRECISION_MISMATCH")
+                        projection["broker_inventory"]["state"] = "BLOCKED"
+                        projection["reconciliation"]["state"] = "CONTRADICTION"
         if not same_bundle:
             projection["blockers"].append("BROKER_EVIDENCE_CURRENT_BUNDLE_MISMATCH")
         projection["provenance"]["broker_evidence_fingerprint"] = expected_broker_evidence_fingerprint
-        projection["system"]["RECONCILIATION"] = _tile(projection["reconciliation"]["state"], "observed report; local state unchanged")
+        projection["system"]["RECONCILIATION"] = _tile("BLOCKED" if projection["reconciliation"]["state"] == "CONTRADICTION" else projection["reconciliation"]["state"], "observed report; local state unchanged")
         projection["health_dimensions"]["readiness"]["blockers"] = list(projection["blockers"])
     projection["system"]["CODE"] = _tile("UNKNOWN", projection["build_identity"]["runtime_commit"])
     projection["system"]["SESSION"] = _tile("WAITING_EXTERNAL", "timezone/session review required")
