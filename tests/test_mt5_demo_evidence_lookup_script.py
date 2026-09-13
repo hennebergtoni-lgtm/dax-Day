@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import ast
 import importlib.util
 import json
@@ -86,6 +86,23 @@ def test_runner_rejects_tampered_request_before_mt5_query(prepared_attempt):
         assert "fingerprint" in str(exc)
     else:
         raise AssertionError("tampered request unexpectedly accepted")
+    assert mt5.calls == []
+
+
+def test_runner_rejects_expired_history_window_before_mt5_query(prepared_attempt):
+    script = _load_script()
+    request = _request(prepared_attempt)
+    mt5 = evidence.FakeMt5()
+    try:
+        script.execute_readonly_lookup(
+            mt5=mt5,
+            request_payload=owner.demo_mt5_lookup_request_to_payload(request),
+            observed_at=request.history_to + timedelta(microseconds=1),
+        )
+    except ValueError as exc:
+        assert "history window expired" in str(exc)
+    else:
+        raise AssertionError("expired lookup window unexpectedly accepted")
     assert mt5.calls == []
 
 
