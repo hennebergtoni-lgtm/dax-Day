@@ -41,6 +41,7 @@ _ASSETS = {
 def read_local_operator_projection(
     state_dir: Path, *, queried_at: datetime, attempt_store: StateStorePort | None = None,
     attempt_key: str | None = None, reservation_fingerprint: str | None = None,
+    broker_evidence_path: Path | None = None, broker_evidence_fingerprint: str | None = None,
 ) -> dict[str, Any]:
     """Read the sole existing source, with heartbeat read-before/read-after parity.
 
@@ -66,6 +67,11 @@ def read_local_operator_projection(
     reserved = load_reserved_demo_transport_attempt(
         store=attempt_store, key=attempt_key, expected_reservation_fingerprint=reservation_fingerprint,
     ) if attempt_store is not None else None
+    broker_evidence = None
+    if broker_evidence_path is not None:
+        if broker_evidence_path.stat().st_size > 4 * 1024 * 1024:
+            raise ValueError('broker evidence exceeds read resource bound')
+        broker_evidence = read_json_object(broker_evidence_path)
     after = heartbeat_path.read_bytes() if heartbeat_path.exists() else None
     if before != after:
         raise ValueError("operator source changed during read")
@@ -74,6 +80,7 @@ def read_local_operator_projection(
         heartbeat_payload=heartbeat, queried_at=queried_at,
         candidate_checkpoint_payload=checkpoint, reservation=reserved,
         expected_reservation_fingerprint=reservation_fingerprint,
+        broker_evidence_payload=broker_evidence, expected_broker_evidence_fingerprint=broker_evidence_fingerprint,
     )
     view["source_available"] = all(v is not None for v in (heartbeat, bundle, snapshot))
     # This is a response projection, not another checkpoint/persistence digest.
@@ -87,7 +94,7 @@ def source_unavailable_projection() -> dict[str, Any]:
     """Fixed bounded errors: no exception strings, filesystem paths or DSNs."""
     labels = (
         "BOT MODE", "HOST", "MT5", "FEED", "CLOCK", "ACCOUNT MODE", "SYMBOL",
-        "PROTECTION", "RECONCILIATION", "SNAPSHOT AGE", "EXECUTION",
+        "PROTECTION", "RECONCILIATION", "SNAPSHOT AGE", "EXECUTION", "CODE", "SESSION", "INVENTORY",
     )
     return {
         "schema_version": CONSOLE_SCHEMA, "state": "UNKNOWN", "source_available": False,
@@ -106,10 +113,15 @@ class OperatorReadServer(HTTPServer):
     def __init__(
         self, *, state_dir: Path, port: int = 8765, attempt_store: StateStorePort | None = None,
         attempt_key: str | None = None, reservation_fingerprint: str | None = None,
+    broker_evidence_path: Path | None = None, broker_evidence_fingerprint: str | None = None,
     ):
         values = (attempt_store, attempt_key, reservation_fingerprint)
         if any(v is not None for v in values) and any(v is None for v in values):
             raise ValueError("reserved console requires store/key/original fingerprint pin")
+        if (broker_evidence_path is None) != (broker_evidence_fingerprint is None):
+            raise ValueError("broker evidence requires source path and original fingerprint pin")
+        self.broker_evidence_path = broker_evidence_path
+        self.broker_evidence_fingerprint = broker_evidence_fingerprint
         self.attempt_store = attempt_store
         self.attempt_key = attempt_key
         self.reservation_fingerprint = reservation_fingerprint
@@ -175,6 +187,8 @@ class OperatorReadHandler(BaseHTTPRequestHandler):
                     self.server.state_dir, queried_at=datetime.now(timezone.utc),
                     attempt_store=self.server.attempt_store, attempt_key=self.server.attempt_key,
                     reservation_fingerprint=self.server.reservation_fingerprint,
+                    broker_evidence_path=self.server.broker_evidence_path,
+                    broker_evidence_fingerprint=self.server.broker_evidence_fingerprint,
                 )
                 validate_operator_console_safety(view)
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
@@ -219,11 +233,15 @@ def main() -> None:
     parser.add_argument("--attempt-state-dir")
     parser.add_argument("--attempt-key")
     parser.add_argument("--reservation-fingerprint")
+    parser.add_argument("--broker-evidence")
+    parser.add_argument("--broker-evidence-fingerprint")
     args = parser.parse_args()
     with OperatorReadServer(
         state_dir=Path(args.state_dir), port=args.port,
         attempt_store=AtomicFileStateStore(Path(args.attempt_state_dir)) if args.attempt_state_dir else None,
         attempt_key=args.attempt_key, reservation_fingerprint=args.reservation_fingerprint,
+        broker_evidence_path=Path(args.broker_evidence) if args.broker_evidence else None,
+        broker_evidence_fingerprint=args.broker_evidence_fingerprint,
     ) as server:
         print("Read-only operator console: http://127.0.0.1:" + str(server.server_address[1]))
         server.serve_forever()

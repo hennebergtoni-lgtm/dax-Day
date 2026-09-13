@@ -8,12 +8,12 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2219**
+- Last completed whole-number step: **2220**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2220**
+- Active whole-number step: **2221**
 - Active step state: **ACTIVE — LOCAL READ-ONLY OBSERVABILITY / NO BROKER SIDE EFFECT**
 - Work tranche state: **ACTIVE_LOCAL_OPERATOR_OBSERVABILITY**
-- Next step after successful completion: **2221**
+- Next step after successful completion: **2222**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
@@ -30,7 +30,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Decimal or letter step IDs: **PROHIBITED**
 
 - Step 2206 remains **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**; independent local Work uses Steps 2207 onward under WORK_CONTINUITY_PROTOCOL section 4A.
-- Active Step 2220 scope: **Preserve all heartbeat blockers and separate liveness, readiness, safety and broker truth.**
+- Active Step 2221 scope: **Read-only projection of the existing pinned reserved lookup envelope and full-account inventory; no new MT5 connection, store or reconciliation engine.**
 
 ## Ledger archive
 
@@ -43,6 +43,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
+| 2220 | Heartbeat veto preservation / health dimensions. | **COMPLETED.** Code head d5919a9bfc507823e25b644de0066c47bf7bb350; focused projection/socket/credential/execution tests passed; Ruff passed; required CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2219 | Execution display contradiction guard. | **COMPLETED.** Code head 7b20f85abcc44187413c1fcf8c81ba03324ace78; focused socket/credential/UI tests and Node validator passed; Ruff/JS syntax passed; required CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2218 | Credential-free HTTP boundary. | **COMPLETED.** Code head 2d02b26dc8c29e3a488931c9b6d00268f2fef34e; 95 focused tests passed, Ruff passed; DAX #637 run 34779069609 and research #1421 run 34779069590 GREEN. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2217 | Full-account read-only inventory consolidation. | **COMPLETED.** User explicitly granted exclusive write-lane takeover. Original code head ff7f22540d7dee37b0bf2d61e10a339cea90d8cf: 76 inventory/transport/reserved-query tests passed; Ruff passed; DAX #635 and research #1419 GREEN. Existing typed collector/envelope preserved; no broker reads or side effects executed. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |

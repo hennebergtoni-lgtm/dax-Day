@@ -117,6 +117,8 @@ def build_operator_console_projection(
     candidate_checkpoint_payload: Mapping[str, Any] | None = None,
     reservation: DemoTransportAttemptReservation | None = None,
     expected_reservation_fingerprint: str | None = None,
+    broker_evidence_payload: Mapping[str, Any] | None = None,
+    expected_broker_evidence_fingerprint: str | None = None,
 ) -> dict[str, Any]:
     """Project canonical observations; NEVER evaluate readiness or grant execution.
 
@@ -388,6 +390,64 @@ def build_operator_console_projection(
         "safety": {"state": "BLOCKED", "execution_capability": "NONE", "order_execution_enabled": False},
         "broker_truth": {"state": "UNKNOWN", "history_completeness": "UNKNOWN"},
     }
+    if (broker_evidence_payload is None) != (expected_broker_evidence_fingerprint is None):
+        raise ValueError("broker evidence requires original envelope fingerprint pin")
+    projection["broker_inventory"] = {"state": "UNKNOWN", "rows": None, "observed_at": None,
+                                      "freshness_threshold": "UNVERIFIED_THRESHOLD"}
+    if broker_evidence_payload is not None:
+        if reservation is None:
+            raise ValueError("broker lookup requires original local reservation context")
+        from daxlab.runtime.mt5_demo_evidence_transport import parse_reserved_demo_lookup_envelope
+        _assert_credential_free(broker_evidence_payload)
+        result, inventory = parse_reserved_demo_lookup_envelope(
+            broker_evidence_payload, expected_fingerprint=expected_broker_evidence_fingerprint,
+            reservation=reservation,
+        )
+        _observation_age(now, result.observed_at)
+        same_bundle = bundle is not None and broker_evidence_payload["current_windows_bundle_fingerprint"] == bundle.fingerprint
+        projection["broker_lifecycle"]["observed_lookup"] = result.to_payload()
+        projection["broker_lifecycle"]["observed_lookup"]["blockers"] = [
+            "LOOKUP_BLOCKER:" + sha256(v.encode()).hexdigest() for v in result.blockers]
+        # Reports remain broker observations; never overwrite the local lifecycle.
+        if result.venue_observation is not None:
+            venue = result.to_payload()["venue_observation"]
+            projection["broker_lifecycle"].update(venue_state=venue["venue_state"],
+                                                 venue_order_id=venue["venue_order_id"], fill_evidence=venue)
+        projection["reconciliation"].update(
+            state="QUERY_REQUIRED" if same_bundle else "STALE", history_completeness="UNKNOWN",
+            scope="OBSERVED_LOOKUP_NOT_APPLIED_LOCAL_OR_FULL_ACCOUNT_RECONCILIATION",
+            observed_at=result.observed_at.isoformat(), freshness_threshold="UNVERIFIED_THRESHOLD",
+        )
+        if ctx != reservation.account_context:
+            projection["reconciliation"]["state"] = "BLOCKED"
+        if inventory is not None:
+            _observation_age(now, inventory.collection_completed_at)
+            inv_state = "BLOCKED" if inventory.status == "BLOCKED" or inventory.rows or ctx != inventory.account_context else "UNKNOWN"
+            if not same_bundle:
+                inv_state = "STALE"
+            projection["broker_inventory"] = {
+                "state": inv_state, "rows": [r.to_payload() for r in inventory.rows] if inventory.status == "OBSERVED" else None,
+                "observed_at": inventory.collection_completed_at.isoformat(),
+                "collection_started_at": inventory.collection_started_at.isoformat(),
+                "time_source": "LOCAL_OBSERVATION_CLOCK_NOT_BROKER_CLOCK", "collection_is_atomic": False,
+                "open_queries_completed": inventory.status == "OBSERVED",
+                "freshness_threshold": "UNVERIFIED_THRESHOLD", "account_context": inventory.account_context.to_payload(),
+                "observation_fingerprint": inventory.to_payload()["observation_fingerprint"],
+                "broker_reconciliation_complete": False,
+            }
+            projection["blockers"].extend(v if v in {"ACCOUNT_HAS_OPEN_ORDERS", "ACCOUNT_HAS_OPEN_POSITIONS"}
+                                          else "INVENTORY_BLOCKER:" + sha256(v.encode()).hexdigest()
+                                          for v in inventory.blockers)
+            if inventory.rows:
+                projection["blockers"].append("UNEXPECTED_BROKER_INVENTORY_REVIEW_REQUIRED")
+        if not same_bundle:
+            projection["blockers"].append("BROKER_EVIDENCE_CURRENT_BUNDLE_MISMATCH")
+        projection["provenance"]["broker_evidence_fingerprint"] = expected_broker_evidence_fingerprint
+        projection["system"]["RECONCILIATION"] = _tile(projection["reconciliation"]["state"], "observed report; local state unchanged")
+        projection["health_dimensions"]["readiness"]["blockers"] = list(projection["blockers"])
+    projection["system"]["CODE"] = _tile("UNKNOWN", projection["build_identity"]["runtime_commit"])
+    projection["system"]["SESSION"] = _tile("WAITING_EXTERNAL", "timezone/session review required")
+    projection["system"]["INVENTORY"] = _tile(projection["broker_inventory"]["state"], "broker-observed; no repair authority")
     _assert_credential_free(projection)
     projection["console_fingerprint"] = stable_fingerprint(projection)
     return projection

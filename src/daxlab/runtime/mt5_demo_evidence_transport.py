@@ -1174,3 +1174,85 @@ def _inventory_side(mt5: Any, row: Any, kind: str) -> str:
     if value not in constants:
         raise ValueError('inventory side unsupported')
     return 'BUY' if names[constants.index(value)].startswith('BUY') else 'SELL'
+
+
+def demo_mt5_lookup_result_from_payload(payload: Mapping[str, Any]) -> DemoMt5LookupResult:
+    """Strict inverse of the existing result DTO; never infer missing fills."""
+    if not isinstance(payload, Mapping):
+        raise ValueError('lookup result must be mapping')
+    raw = dict(payload)
+    for flag in ('resubmit_allowed', 'session_slot_release_allowed', 'order_execution_enabled'):
+        if raw.get(flag) is not False:
+            raise ValueError('lookup result safety flag invalid')
+    try:
+        venue = raw['venue_observation']
+        result = DemoMt5LookupResult(
+            **(raw | {
+                'status': DemoMt5LookupStatus(raw['status']),
+                'blockers': tuple(raw['blockers']),
+                'observed_at': _timestamp(raw['observed_at'], 'lookup observed_at'),
+                'matching_order_tickets': tuple(raw['matching_order_tickets']),
+                'matching_deal_tickets': tuple(raw['matching_deal_tickets']),
+                'venue_observation': None if venue is None else VenueOrderObservation(
+                    **(venue | {'observed_at': _timestamp(venue['observed_at'], 'venue observed_at')})
+                ),
+            })
+        )
+    except (KeyError, TypeError) as exc:
+        raise ValueError('lookup result contract invalid') from exc
+    if result.to_payload() != dict(payload):
+        raise ValueError('lookup result canonical roundtrip mismatch')
+    for ticket in (*result.matching_order_tickets, *result.matching_deal_tickets):
+        if not isinstance(ticket, str) or not ticket.isascii() or not ticket.isdecimal() or int(ticket) <= 0:
+            raise ValueError('lookup ticket must be positive venue identifier')
+    if result.venue_observation is not None and (
+            result.venue_observation.venue_order_id != result.matching_order_tickets[0]
+            or result.venue_observation.observed_at != result.observed_at):
+        raise ValueError('lookup venue report identity/time mismatch')
+    return result
+
+
+def parse_reserved_demo_lookup_envelope(
+    payload: Mapping[str, Any], *, expected_fingerprint: str,
+    reservation: DemoTransportAttemptReservation,
+) -> tuple[DemoMt5LookupResult, DemoMt5OpenInventoryObservation | None]:
+    """Read existing operational export with exact immutable provenance pins."""
+    required = {'schema_version', 'request_fingerprint', 'result', 'result_fingerprint',
+                'observed_at', 'notes', 'execution_capability', 'order_execution_enabled',
+                'attempt_key', 'reservation_fingerprint', 'current_windows_bundle_fingerprint',
+                'query_preflight_evaluated_at', 'sha256'}
+    if set(payload) not in (required, required | {'account_open_inventory'}):
+        raise ValueError('reserved lookup envelope fields invalid')
+    body = dict(payload)
+    digest = body.pop('sha256')
+    _sha(expected_fingerprint, 'lookup envelope pin')
+    _sha(payload['current_windows_bundle_fingerprint'], 'lookup bundle provenance')
+    if digest != expected_fingerprint or digest != _fingerprint(body):
+        raise ValueError('reserved lookup envelope fingerprint mismatch')
+    if (payload['schema_version'] != 'DAXLAB_MT5_DEMO_LOOKUP_ENVELOPE_V1'
+            or payload['execution_capability'] != 'NONE'
+            or payload['order_execution_enabled'] is not False
+            or payload['reservation_fingerprint'] != reservation.fingerprint
+            or payload['notes'] != ['READ_ONLY', 'NO_CREDENTIALS', 'NO_ORDER_API',
+                                   'NO_RESUBMIT_AUTHORITY', 'NO_SLOT_RELEASE_AUTHORITY',
+                                   'DEMO_EVIDENCE_LOOKUP_ONLY']):
+        raise ValueError('reserved lookup envelope provenance/safety mismatch')
+    result = demo_mt5_lookup_result_from_payload(payload['result'])
+    if (result.fingerprint != payload['result_fingerprint']
+            or result.request_fingerprint != payload['request_fingerprint']
+            or _timestamp(payload['observed_at'], 'envelope observed_at') != result.observed_at
+            or _timestamp(payload['query_preflight_evaluated_at'], 'preflight observed_at') != result.observed_at
+            or result.observed_at < reservation.evaluated_at):
+        raise ValueError('reserved lookup result provenance mismatch')
+    if result.venue_observation is not None and (
+            result.venue_observation.client_order_id != reservation.prepared.intent.intent_id
+            or result.venue_observation.requested_quantity != reservation.prepared.broker.lifecycle.requested_quantity):
+        raise ValueError('reserved lookup venue identity/quantity mismatch')
+    inventory = parse_demo_mt5_open_inventory(payload['account_open_inventory']) if 'account_open_inventory' in payload else None
+    if inventory is not None and (
+            inventory.request_fingerprint != result.request_fingerprint
+            or inventory.client_order_id != reservation.prepared.intent.intent_id
+            or inventory.account_context != reservation.account_context
+            or inventory.collection_started_at < result.observed_at):
+        raise ValueError('reserved lookup inventory provenance mismatch')
+    return result, inventory
