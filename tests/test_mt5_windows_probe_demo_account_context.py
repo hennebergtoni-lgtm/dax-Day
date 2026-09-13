@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import importlib.util
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
-from scripts.mt5_windows_probe import collect_probe
 
+_SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "mt5_windows_probe.py"
+_SPEC = importlib.util.spec_from_file_location("daxlab_mt5_windows_probe_test", _SCRIPT_PATH)
+if _SPEC is None or _SPEC.loader is None:  # pragma: no cover
+    raise RuntimeError("unable to load mt5_windows_probe.py for test")
+_MODULE = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_MODULE)
+collect_probe = _MODULE.collect_probe
 
 LOGIN = 25115284
 
