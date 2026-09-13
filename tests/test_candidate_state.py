@@ -1,13 +1,16 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
+import json
 from zoneinfo import ZoneInfo
 
 import pytest
 
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object
 from daxlab.runtime.candidate_pipeline import Cand001PipelineState, process_cand001_candle
+from daxlab.runtime.candidate_signal import Cand001SignalState
 from daxlab.runtime.candidate_state import candidate_state_payload, parse_candidate_state_payload
 from daxlab.runtime.contracts import Candle
+from daxlab.runtime.decision import stable_fingerprint
 
 
 BERLIN = ZoneInfo("Europe/Berlin")
@@ -108,3 +111,73 @@ def test_restart_after_admitted_trade_keeps_session_limit():
     assert second.decision.final_action.value == "NO_TRADE"
     assert second.decision.blockers == ("SESSION_TRADE_LIMIT",)
     assert second.state.admission.trades_admitted == 1
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("fields", [("or_high",), ("or_low",), ("or_high", "or_low")])
+def test_signal_state_rejects_non_finite_or_at_construction(value, fields):
+    values = {"or_high": 103.0, "or_low": 98.0}
+    values.update(dict.fromkeys(fields, value))
+    with pytest.raises(ValueError, match=rf"signal\.{fields[0]} must be finite"):
+        Cand001SignalState(**values)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("fields", [("or_high",), ("or_low",), ("or_high", "or_low")])
+def test_state_parser_rejects_non_finite_or_with_valid_fingerprint(value, fields):
+    payload = candidate_state_payload(opening_range_state())
+    payload["state"]["signal"].update(dict.fromkeys(fields, value))
+    payload.pop("payload_fingerprint")
+    payload["payload_fingerprint"] = stable_fingerprint(payload)
+    with pytest.raises(ValueError, match=rf"signal\.{fields[0]} must be finite"):
+        parse_candidate_state_payload(json.loads(json.dumps(payload)))
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("fields", [("or_high",), ("or_low",), ("or_high", "or_low")])
+def test_state_writer_rejects_preexisting_invalid_or_before_hashing(value, fields, monkeypatch):
+    state = opening_range_state()
+    # Older processes could create these objects before the constructor was hardened.
+    for field in fields:
+        object.__setattr__(state.signal, field, value)
+
+    def no_invalid_fingerprint(_payload):
+        pytest.fail("invalid state reached fingerprinting")
+
+    monkeypatch.setattr("daxlab.runtime.candidate_state.stable_fingerprint", no_invalid_fingerprint)
+    with pytest.raises(ValueError, match=rf"signal\.{fields[0]} must be finite"):
+        candidate_state_payload(state)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_state_writer_and_parser_reject_non_finite_admission_count(value):
+    state = opening_range_state()
+    payload = candidate_state_payload(state)
+    payload["state"]["admission"]["trades_admitted"] = value
+    payload.pop("payload_fingerprint")
+    payload["payload_fingerprint"] = stable_fingerprint(payload)
+    with pytest.raises(ValueError, match="trades_admitted must be integer"):
+        parse_candidate_state_payload(json.loads(json.dumps(payload)))
+    object.__setattr__(state.admission, "trades_admitted", value)
+    with pytest.raises(ValueError, match="trades_admitted must be integer"):
+        candidate_state_payload(state)
+
+
+@pytest.mark.parametrize("token", ["1e999", "-1e999"])
+def test_state_parser_rejects_json_numeric_overflow(token):
+    value = float(token)
+    payload = candidate_state_payload(opening_range_state())
+    payload["state"]["signal"].update(or_high=value, or_low=value)
+    payload.pop("payload_fingerprint")
+    payload["payload_fingerprint"] = stable_fingerprint(payload)
+    wire = json.dumps(payload).replace("-Infinity" if value < 0 else "Infinity", token)
+    with pytest.raises(ValueError, match="signal.or_high must be finite"):
+        parse_candidate_state_payload(json.loads(wire))
+
+
+def test_empty_and_valid_state_remain_strict_json_roundtrip_compatible():
+    for state in (Cand001PipelineState(), opening_range_state()):
+        payload = candidate_state_payload(state)
+        restored = parse_candidate_state_payload(json.loads(json.dumps(payload, allow_nan=False)))
+        assert restored == state
+        assert candidate_state_payload(restored) == payload

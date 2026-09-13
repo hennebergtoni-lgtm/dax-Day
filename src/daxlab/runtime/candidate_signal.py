@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from enum import StrEnum
+from math import isfinite
 from zoneinfo import ZoneInfo
 
 from daxlab.runtime.candidate_config import Cand001Config
@@ -52,6 +53,9 @@ class Cand001SignalState:
             object.__setattr__(self, "or_high", float(self.or_high))
         if self.or_low is not None:
             object.__setattr__(self, "or_low", float(self.or_low))
+        for name, value in (("or_high", self.or_high), ("or_low", self.or_low)):
+            if value is not None and not isfinite(value):
+                raise ValueError(f"signal.{name} must be finite")
         if (self.or_high is None) != (self.or_low is None):
             raise ValueError("or_high and or_low must both be set or both be absent")
         if self.or_high is not None and self.or_low is not None and self.or_high < self.or_low:

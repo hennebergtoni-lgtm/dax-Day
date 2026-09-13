@@ -1,5 +1,7 @@
 from copy import deepcopy
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+import json
 
 import pytest
 
@@ -15,7 +17,7 @@ from daxlab.runtime.candidate_virtual_lifecycle import (
 )
 from daxlab.runtime.candidate_virtual_outcome import build_cand001_virtual_outcome
 from daxlab.runtime.contracts import Candle
-from daxlab.runtime.decision import DecisionRecord, FinalAction
+from daxlab.runtime.decision import DecisionRecord, FinalAction, stable_fingerprint
 from daxlab.runtime.paper_contracts import ExecutionIntent, Side
 
 
@@ -159,3 +161,50 @@ def test_virtual_state_execution_escalation_fails_closed() -> None:
 
     with pytest.raises(ValueError, match="execution capability"):
         parse_candidate_virtual_lifecycle_payload(tampered)
+
+
+def _closed_state():
+    _, first, opened = _opened_state()
+    return advance_cand001_virtual_lifecycle(
+        opened, _bar(first.close_time, open_=103., high=111., low=99., close=108.),
+    )
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("field", [
+    "quantity", "requested_price", "stop_price", "target_price", "filled_price", "exit_price",
+])
+def test_virtual_parser_rejects_non_finite_numeric_fields(value, field):
+    payload = candidate_virtual_lifecycle_payload(_closed_state())
+    payload["lifecycle"][field] = value
+    payload.pop("payload_fingerprint")
+    payload["payload_fingerprint"] = stable_fingerprint(payload)
+    with pytest.raises(ValueError, match=rf"{field} must be finite"):
+        parse_candidate_virtual_lifecycle_payload(json.loads(json.dumps(payload)))
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("field", [
+    "quantity", "requested_price", "stop_price", "target_price", "filled_price", "exit_price",
+])
+def test_virtual_writer_rejects_non_finite_numeric_fields_before_hashing(value, field, monkeypatch):
+    state = replace(_closed_state(), **{field: value})
+
+    def no_invalid_fingerprint(_payload):
+        pytest.fail("invalid lifecycle reached fingerprinting")
+
+    monkeypatch.setattr("daxlab.runtime.candidate_state.stable_fingerprint", no_invalid_fingerprint)
+    with pytest.raises(ValueError, match=rf"{field} must be finite"):
+        candidate_virtual_lifecycle_payload(state)
+
+
+def test_finite_virtual_serialization_preserves_integer_representation():
+    # Validation must not normalize previously valid numeric JSON or change its hash.
+    state = replace(_closed_state(), quantity=1, requested_price=100, filled_price=100)
+    payload = candidate_virtual_lifecycle_payload(state)
+    assert type(payload["lifecycle"]["quantity"]) is int
+    assert type(payload["lifecycle"]["requested_price"]) is int
+    assert type(payload["lifecycle"]["filled_price"]) is int
+    assert parse_candidate_virtual_lifecycle_payload(
+        json.loads(json.dumps(payload, allow_nan=False))
+    ) == state

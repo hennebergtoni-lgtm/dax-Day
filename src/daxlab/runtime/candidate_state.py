@@ -8,6 +8,7 @@ they share the same persistence owner.
 from __future__ import annotations
 
 from datetime import datetime
+from math import isfinite
 from typing import Any, Mapping
 
 from daxlab.core.execution import ExitReason
@@ -159,7 +160,7 @@ def parse_candidate_virtual_lifecycle_payload(
 
 
 def _state_to_json(state: Cand001PipelineState) -> dict[str, Any]:
-    return {
+    payload = {
         "signal": {
             "session_date": state.signal.session_date,
             "or_high": state.signal.or_high,
@@ -176,6 +177,9 @@ def _state_to_json(state: Cand001PipelineState) -> dict[str, Any]:
             "trades_admitted": state.admission.trades_admitted,
         },
     }
+    # Reuse restore validation before fingerprinting; preserve valid payload bytes.
+    _state_from_json(payload)
+    return payload
 
 
 def _state_from_json(raw: Mapping[str, Any]) -> Cand001PipelineState:
@@ -226,7 +230,7 @@ def _state_from_json(raw: Mapping[str, Any]) -> Cand001PipelineState:
 
 
 def _virtual_lifecycle_to_json(state: Cand001VirtualLifecycleState) -> dict[str, Any]:
-    return {
+    payload = {
         "schema_version": state.schema_version,
         "lifecycle_id": state.lifecycle_id,
         "client_order_id": state.client_order_id,
@@ -253,6 +257,9 @@ def _virtual_lifecycle_to_json(state: Cand001VirtualLifecycleState) -> dict[str,
         "execution_capability": state.execution_capability,
         "order_execution_enabled": state.order_execution_enabled,
     }
+    # Includes quantity, requested/stop/target prices and optional fill/exit prices.
+    _virtual_lifecycle_from_json(payload)
+    return payload
 
 
 def _virtual_lifecycle_from_json(raw: Mapping[str, Any]) -> Cand001VirtualLifecycleState:
@@ -399,4 +406,7 @@ def _optional_number(value: Any, field: str) -> float | None:
         return None
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise ValueError(f"{field} must be numeric or null")
-    return float(value)
+    parsed = float(value)
+    if not isfinite(parsed):
+        raise ValueError(f"{field} must be finite")
+    return parsed

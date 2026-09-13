@@ -25,11 +25,13 @@ def test_codec_rejects_non_finite_prices_when_encoding(
     state = Cand001PipelineState(
         signal=Cand001SignalState(
             session_date="2026-09-11",
-            or_high=value if field_name == "or_high" else 103.0,
-            or_low=value if field_name == "or_low" else 98.0,
+            or_high=103.0,
+            or_low=98.0,
             or_slots=("09:00",),
         )
     )
+    # Emulate an invalid pre-hardening in-memory object; retain the codec's own guard test.
+    object.__setattr__(state.signal, field_name, value)
 
     with pytest.raises(ValueError, match=rf"signal\.{field_name} must be finite"):
         codec.encode(state)
