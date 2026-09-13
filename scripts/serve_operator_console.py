@@ -21,6 +21,7 @@ from daxlab.domain.ports import StateStorePort
 from daxlab.runtime.demo_transport_attempt_reservation import load_reserved_demo_transport_attempt
 
 from daxlab.runtime.atomic_json import read_json_object
+from daxlab.runtime.candidate_operator_telemetry import CredentialEvidenceError
 from daxlab.runtime.candidate_operator_query import (
     CONSOLE_SCHEMA,
     build_operator_console_projection,
@@ -49,6 +50,8 @@ def read_local_operator_projection(
     canonical cross-bindings and stable heartbeat are checked, with no retry loop.
     """
     heartbeat_path = state_dir / "heartbeat.json"
+    if heartbeat_path.exists() and heartbeat_path.stat().st_size > 4 * 1024 * 1024:
+        raise ValueError("operator heartbeat exceeds read resource bound")
     before = heartbeat_path.read_bytes() if heartbeat_path.exists() else None
 
     def read(name: str):
@@ -74,6 +77,8 @@ def read_local_operator_projection(
         if broker_evidence_path.stat().st_size > 4 * 1024 * 1024:
             raise ValueError('broker evidence exceeds read resource bound')
         broker_evidence = read_json_object(broker_evidence_path)
+    if heartbeat_path.exists() and heartbeat_path.stat().st_size > 4 * 1024 * 1024:
+        raise ValueError("operator heartbeat exceeds read resource bound")
     after = heartbeat_path.read_bytes() if heartbeat_path.exists() else None
     if before != after:
         raise ValueError("operator source changed during read")
@@ -195,7 +200,11 @@ class OperatorReadHandler(BaseHTTPRequestHandler):
                     broker_evidence_fingerprint=self.server.broker_evidence_fingerprint,
                 )
                 validate_operator_console_safety(view)
-            except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
+            except CredentialEvidenceError:
+                view = source_unavailable_projection()
+                view["blockers"].append("CREDENTIAL_FILTERING_FAILURE")
+                view["alerts"] = [{"code": "CREDENTIAL_FILTERING_FAILURE", "state": "BLOCKED", "action": "OBSERVE_REVIEW_NO_REPAIR"}]
+            except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError, RecursionError):
                 view = source_unavailable_projection()
             code = 200 if view["source_available"] else 503
             if self.path == "/healthz":

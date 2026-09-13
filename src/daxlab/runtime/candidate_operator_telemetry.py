@@ -89,13 +89,17 @@ def _section(payload: Mapping[str, Any], name: str) -> Mapping[str, Any]:
     return section
 
 
+class CredentialEvidenceError(ValueError):
+    """Bounded failure category; consumers must never publish raw evidence."""
+
+
 def _assert_credential_free(value: Any) -> None:
     if isinstance(value, Mapping):
         for key, item in value.items():
             normalized = re.sub(r"[^a-z0-9]", "", str(key).casefold())
             forbidden = {re.sub(r"[^a-z0-9]", "", k) for k in _FORBIDDEN_KEYS}
             if normalized in forbidden or normalized in {"apitoken", "privatekey", "secretkey"}:
-                raise ValueError(f"forbidden Candidate telemetry field: {key}")
+                raise CredentialEvidenceError("forbidden Candidate telemetry field")
             _assert_credential_free(item)
     elif isinstance(value, (list, tuple)):
         for item in value:
@@ -108,7 +112,7 @@ def _assert_credential_free(value: Any) -> None:
         r"|-----BEGIN [A-Z ]*PRIVATE KEY-----",
         value, re.IGNORECASE,
     ):
-        raise ValueError("credential-bearing Candidate telemetry value")
+        raise CredentialEvidenceError("credential-bearing Candidate telemetry value")
     elif type(value) in (int, float) and not isfinite(value):
         raise ValueError("Candidate telemetry numbers must be finite")
 
@@ -146,6 +150,7 @@ def browser_operator_snapshot(payload: Mapping[str, Any]) -> dict[str, Any]:
     from daxlab.runtime.candidate_config import Cand001Config
     from daxlab.runtime.candidate_signal import SignalReason, SignalDirection
     from daxlab.runtime.candidate_admission import AdmissionStatus
+    from daxlab.runtime.candidate_virtual_lifecycle import VirtualPositionStatus
 
     validate_candidate_operator_snapshot(payload)
     display = deepcopy(dict(payload))
@@ -160,10 +165,10 @@ def browser_operator_snapshot(payload: Mapping[str, Any]) -> dict[str, Any]:
         "decision": {"action": {"TRADE", "NO_TRADE"},
                      "risk_result": {"ADMITTED", "SESSION_LIMIT", "NOT_APPLICABLE"}},
         "runtime": {"health_state": {"GREEN", "YELLOW", "RED"},
-                    "health_source": {"MT5_SHADOW_HOST", "CAND001_PIPELINE"},
+                    "health_source": {"MT5_SHADOW_HOST", "CANDIDATE_INPUT"},
                     "recovery_state": {"FRESH_START", "RESUME_ANCHOR_RECONCILED", "RESUME_ANCHOR_NOT_FOUND"},
                     "reconciliation_state": {"IN_SYNC", "REPLAY_GAP_SAFE_TO_RESUME", "REPLAY_GAP_BLOCKED"}},
-        "virtual_position": {"status": {"PENDING", "OPEN", "CLOSED"},
+        "virtual_position": {"status": {v.value for v in VirtualPositionStatus},
                              "side": {"BUY", "SELL", "LONG", "SHORT"},
                              "exit_reason": {"STOP", "TARGET", "SESSION_END", "STOP_LOSS", "TAKE_PROFIT"}},
     }

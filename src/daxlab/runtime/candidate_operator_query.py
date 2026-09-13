@@ -564,6 +564,8 @@ def build_operator_console_projection(
     }
     projection["blockers"] = list(dict.fromkeys(projection["blockers"]))
     projection["health_dimensions"]["readiness"]["blockers"] = list(projection["blockers"])
+    projection["alerts"] = [{"code": code, "state": "BLOCKED", "action": "OBSERVE_REVIEW_NO_REPAIR"}
+                            for code in projection["blockers"]]
     _assert_credential_free(projection)
     projection["console_fingerprint"] = stable_fingerprint(projection)
     return projection

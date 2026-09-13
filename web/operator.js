@@ -70,7 +70,10 @@
       const response=await fetch('/api/operator',{method:'GET',cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)});
       const value=await response.json();
       if(attempt!==sequence)return;
-      if(!response.ok||value.source_available!==true)throw new Error('source unavailable');
+      if(!response.ok||value.source_available!==true){
+        const reason=Array.isArray(value.alerts)&&value.alerts.some(a=>a?.code==='CREDENTIAL_FILTERING_FAILURE')?'CREDENTIAL_FILTERING_FAILURE':'RUNTIME_SOURCE_UNAVAILABLE_OR_INVALID';
+        clear(reason);return;
+      }
       render(value);
       el('fetch-time').textContent=`Browser-Abruf: ${new Date().toISOString()} · erneuert keine Runtime-Evidenz`;
     }catch{
