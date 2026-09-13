@@ -1,9 +1,9 @@
 # DAX-BOT Chat Handoff Protocol V1
 
 Status: BINDING
-Updated: 2026-09-12
+Updated: 2026-09-13
 
-Purpose: make chat/context handovers deterministic and repository-based so the DAX-BOT project can resume without copy/pasting a large masterstand into every new chat.
+Purpose: make chat/context handovers deterministic and repository-based so the DAX-BOT project can resume without copy/pasting a large masterstand into every new chat, including after platform conversation-length saturation.
 
 The binding step-closure and workflow-integrity rules are defined in `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`. If older wording conflicts with that gate on step closure, pointer synchronization, interrupted-lane numbering or claims about ongoing work, the workflow-integrity gate controls.
 
@@ -13,7 +13,11 @@ The canonical resume phrase is:
 
 `Weiter mit dem DAXBot`
 
-When this phrase is used in a new or existing chat, treat it as an instruction to recover and continue the DAX Daytrading Bot project automatically. Do not ask the user to paste the prior masterstand or repeat already-known project facts if the repository is available.
+Accepted user-friendly alias:
+
+`Weiter mit DAXbot`
+
+When either phrase is used in a new or existing chat, treat it as an instruction to recover the DAX Daytrading Bot project automatically from repository truth. Do not ask the user to paste the prior masterstand or repeat already-known project facts if the repository is available.
 
 Mandatory recovery sequence:
 
@@ -45,7 +49,8 @@ When used, update `docs/MASTERSTAND.md` to the current repository truth and ensu
 - unresolved `WAITING_EXTERNAL`, `INTERRUPTED` and `BLOCKED` lanes;
 - current official step pointer and exact next work;
 - current CI/evidence truth without claiming a newer head green before it is verified;
-- required workflow-integrity / no-stop / integer-step / repository-first resume rules.
+- required workflow-integrity / no-stop / integer-step / repository-first resume rules;
+- current chat-capacity/handoff state when the command is used because the conversation is approaching or has reached a platform length limit.
 
 Also update `docs/PROJECT_KNOWLEDGE_INDEX.md` and `docs/CURRENT_WORK_STEP.md` if their navigation/pointer truth changed materially.
 
@@ -70,9 +75,27 @@ The existing full architecture/LEAN audit remains every 500 steps. Therefore eve
 
 ## 4. Chat memory boundary
 
-Conversation memory may help orientation, but it is not sufficient evidence for current project truth. The handoff system is deliberately repository-backed so it still works after chat truncation, a new chat, compaction or incomplete conversational memory.
+Conversation memory may help orientation, but it is not sufficient evidence for current project truth. The handoff system is deliberately repository-backed so it still works after chat truncation, a new chat, compaction, incomplete conversational memory or an explicit platform message that the conversation is too long to continue.
 
 Do not promise autonomous work while no model turn is running. A final/turn-ending response ends the active work turn. If the app/network/platform interrupts execution, do not claim that work continued invisibly; resume at the next available turn by re-pinning repo/branch/head/CI and the current pointer first.
+
+### Chat-capacity saturation rule — BINDING
+
+A platform message such as `Dieses Gespräch ist zu lang, um fortzufahren` is a **conversation-capacity interruption**, not evidence that the repository/project is technically blocked.
+
+When saturation is detected while the current chat can still execute actions:
+
+1. stop new substantive technical work;
+2. pin fresh repository/head/CI/pointer truth;
+3. truthfully close or mark the current technical step `INTERRUPTED` if its evidence is incomplete;
+4. start a dedicated continuity/Masterstand work unit under the next unused whole integer;
+5. refresh `docs/MASTERSTAND.md`, this protocol and any materially changed navigation/pointer truth;
+6. preserve the unfinished technical scope explicitly for the next unused integer;
+7. provide the user the resume codeword and open the new chat.
+
+If the platform hard-stops the old chat before these writes can happen, the **new chat** must perform the same reconciliation first: re-pin repository truth, inspect whether the previously active step actually completed, mark it truthfully, then continue under monotonic whole-number numbering. Never invent completion from chat memory.
+
+Chat saturation is therefore treated like a controlled handoff event. It must not erase goals, architecture decisions, evidence status, safety boundaries or working-style agreements.
 
 ## 5. Step-number discipline
 
@@ -83,7 +106,7 @@ Do not promise autonomous work while no model turn is running. A final/turn-endi
 - after any handoff, continue from repository truth without inventing skipped work;
 - **Step-Close-Gate:** a new independent step starts only after the previous step is explicitly `COMPLETED`, `INTERRUPTED`, `WAITING_EXTERNAL` or `BLOCKED`, with the reason/evidence and pointer synchronized;
 - **pointer-before-next-step:** `docs/CURRENT_WORK_STEP.md` must name the new active step before its first substantive action;
-- visible numbering is monotonic: an older still-open lane is never resumed under its old step number after a higher number has started; preserve its provenance and resume its unfinished scope under the next unused integer, e.g. `Step 2140 — continuation of the lane originating in Step 2122`;
+- visible numbering is monotonic: an older still-open lane is never resumed under its old step number after a higher number has started; preserve its provenance and resume its unfinished scope under the next unused integer;
 - the old wording `Fortsetzung Schritt N` must not be used as the current official number after later steps have begun;
 - intermediate reports inside the active step are labeled simply `Zwischenstand` and must not introduce a different official step number.
 
@@ -97,15 +120,24 @@ Tool activity/status lines shown by the interface do **not** count as the visibl
 
 **Compact-reporting rule:** intermediate reports should normally be only **1–2 short sentences** containing the result/status and the immediate next action. Do not repeat the full project context, safety baseline, prior findings, long rationale or already-known repository facts unless they materially changed or are required to explain an error. Prefer concise `✅/⚠️/❌` progress markers so the chat remains usable over long project runs.
 
-A visible intermediate report is a visibility point, not a stop. After reporting, continue immediately when the next safe action is known. Stop only for a real blocker, required user action/decision, explicit user intervention, milestone stop, or safety-relevant issue.
+A visible intermediate report is a visibility point, not a stop. After reporting, continue immediately when the next safe action is known. Stop only for a real blocker, required user action/decision, explicit user intervention, milestone stop, safety-relevant issue or a platform-enforced conversation-capacity handoff.
 
 **No-prompt continuation enforcement:** if the next safe action can be executed with the currently available repository, tools, files, or read-only diagnostics, the assistant must execute it in the same running turn after the intermediate report. The intermediate report must not terminate the work turn merely to wait for another user message, acknowledgement, or `Weiter`. A user reply is required only when the next action genuinely needs user-side execution, missing information, explicit authorization/decision, unavailable access, safety gate, or the user explicitly stopped/reviewed the sequence. If one method stalls or repeats without new evidence, switch to another safe method instead of waiting for the user to restart progress.
 
-**Active-turn final-response prohibition:** while executable safe work remains in the current turn, the assistant must not send a final/turn-ending response that merely says work will continue. Progress updates must be emitted as non-final intermediate text, followed immediately by the next tool/action in the same turn. A final response is permitted only when the current work unit is complete, a genuine blocker has been reached, user-side action/decision is actually required, or the user explicitly instructed a stop/review. Never write phrases such as `läuft automatisch weiter` in a final response unless a real scheduled automation/background mechanism has actually been created.
+**Active-turn final-response prohibition:** while executable safe work remains in the current turn, the assistant must not send a final/turn-ending response that merely says work will continue. Progress updates must be emitted as non-final intermediate text, followed immediately by the next tool/action in the same turn. A final response is permitted only when the current work unit is complete, a genuine blocker has been reached, user-side action/decision is actually required, the user explicitly instructed a stop/review, or a controlled chat-capacity handoff has been completed. Never write phrases such as `läuft automatisch weiter` in a final response unless a real scheduled automation/background mechanism has actually been created.
+
+### Repeated premature-stop incident — 2026-09-13
+
+During the long engineering chat, the assistant repeatedly produced final/status responses even though the next safe repository action was already known. This was **workflow failure, not technical project blocking**. The durable correction is:
+
+- progress text never substitutes for the next action;
+- a successful sub-check, CI wait/poll point, found file or partial audit is not a valid turn-ending condition;
+- before finalizing, apply the end-of-turn guard from `SESSION_EXECUTION_REFRESHER.md`;
+- if the platform itself is approaching/hitting capacity, transition deliberately through the chat-capacity saturation rule rather than silently stopping mid-step.
 
 ## 7. User intervention / governance correction
 
-An explicit user instruction to stop, audit, review or correct the workflow is a valid sequence interruption.
+An explicit user instruction to stop, audit, review, create a Masterstand or correct the workflow is a valid sequence interruption.
 
 Before starting the governance/review work:
 1. stop substantive work on the active technical step;
@@ -113,7 +145,7 @@ Before starting the governance/review work:
 3. mark it truthfully `COMPLETED`, `INTERRUPTED`, `WAITING_EXTERNAL` or `BLOCKED`;
 4. synchronize `CURRENT_WORK_STEP.md`;
 5. start the governance/review under the next unused integer;
-6. resume unfinished technical scope later only under a later unused integer.
+6. resume unfinished technical scope later only under another new integer.
 
 ## 8. Safety boundary
 
