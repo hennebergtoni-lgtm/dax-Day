@@ -1,14 +1,14 @@
 """Technical MT5 DEMO-evidence transport/lookup boundary with no submission API.
 
-The module derives a deterministic broker-facing tag from the canonical full
-client identity, projects an immutable transport draft and performs read-only
-lookup through an injected MetaTrader5-compatible object. It never imports the
-MetaTrader5 package and never submits, changes or cancels an order.
+This module derives deterministic local correlation metadata from the canonical
+client identity, projects a non-executable transport draft, and performs only
+read-only lookup through an injected MetaTrader5-compatible object. It never
+imports MetaTrader5 and never submits, changes or cancels an order.
 
-A transport tag is local correlation metadata, not broker proof. The real DEMO
-host must still verify that its venue preserves enough metadata for exact lookup.
-Zero, ambiguous, incomplete or failed lookup always remains fail-closed and never
-permits retry, resubmit or session-slot release.
+The shortened MT5 tag is local correlation metadata, not broker proof. A real
+DEMO host still has to prove that the venue preserves enough metadata for exact
+lookup. Zero, ambiguous, incomplete or failed lookup always stays fail-closed and
+never permits retry, resubmit or session-slot release.
 """
 
 from __future__ import annotations
@@ -38,10 +38,10 @@ MT5_DEMO_TRANSPORT_IDENTITY_SCHEMA = "DAXLAB_MT5_DEMO_TRANSPORT_IDENTITY_V1"
 MT5_DEMO_TRANSPORT_DRAFT_SCHEMA = "DAXLAB_MT5_DEMO_TRANSPORT_DRAFT_V1"
 MT5_DEMO_LOOKUP_REQUEST_SCHEMA = "DAXLAB_MT5_DEMO_LOOKUP_REQUEST_V1"
 MT5_DEMO_LOOKUP_RESULT_SCHEMA = "DAXLAB_MT5_DEMO_LOOKUP_RESULT_V1"
-_TRANSPORT_MAGIC_NAMESPACE = "DAXLAB:MT5:DEMO:MAGIC:V1"
-_TRANSPORT_COMMENT_NAMESPACE = "DAXLAB:MT5:DEMO:COMMENT:V1"
-_TRANSPORT_COMMENT_PREFIX = "DXE1-"
-_TRANSPORT_COMMENT_HEX_CHARS = 20
+_MAGIC_NAMESPACE = "DAXLAB:MT5:DEMO:MAGIC:V1"
+_COMMENT_NAMESPACE = "DAXLAB:MT5:DEMO:COMMENT:V1"
+_COMMENT_PREFIX = "DXE1-"
+_COMMENT_HEX_CHARS = 20
 _MAX_MAGIC = 2_147_483_647
 
 
@@ -68,27 +68,12 @@ class DemoMt5TransportIdentity:
         _sha(self.client_order_id, "client_order_id")
         _nonempty(self.symbol, "symbol")
         if type(self.magic) is not int or not 1 <= self.magic <= _MAX_MAGIC:
-            raise ValueError("MT5 DEMO transport magic must be a positive signed-31-bit integer")
-        if not isinstance(self.comment, str) or not self.comment.startswith(
-            _TRANSPORT_COMMENT_PREFIX
-        ):
-            raise ValueError("MT5 DEMO transport comment tag mismatch")
-        if len(self.comment) != len(_TRANSPORT_COMMENT_PREFIX) + _TRANSPORT_COMMENT_HEX_CHARS:
-            raise ValueError("MT5 DEMO transport comment tag length mismatch")
-        suffix = self.comment[len(_TRANSPORT_COMMENT_PREFIX) :]
-        try:
-            int(suffix, 16)
-        except ValueError as exc:
-            raise ValueError("MT5 DEMO transport comment tag must be hexadecimal") from exc
+            raise ValueError("MT5 DEMO transport magic must be positive signed-31-bit")
+        expected_magic, expected_comment = _derive_tag(self.client_order_id)
+        if self.magic != expected_magic or self.comment != expected_comment:
+            raise ValueError("MT5 DEMO transport identity derivation mismatch")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("MT5 DEMO transport identity cannot grant execution")
-        expected = derive_demo_mt5_transport_identity(
-            client_order_id=self.client_order_id,
-            symbol=self.symbol,
-            _validate=False,
-        )
-        if self.magic != expected.magic or self.comment != expected.comment:
-            raise ValueError("MT5 DEMO transport identity derivation mismatch")
 
     @property
     def fingerprint(self) -> str:
@@ -136,20 +121,20 @@ class DemoMt5TransportDraft:
         ):
             _sha(value, field)
         if type(self.submission_ordinal) is not int or self.submission_ordinal < 1:
-            raise ValueError("submission_ordinal must be an integer >= 1")
+            raise ValueError("submission_ordinal must be integer >= 1")
         if self.side not in {"BUY", "SELL"}:
             raise ValueError("MT5 DEMO transport draft side must be BUY or SELL")
         if not _positive(self.quantity):
-            raise ValueError("MT5 DEMO transport draft quantity must be finite and positive")
+            raise ValueError("MT5 DEMO transport draft quantity must be positive")
         for value, field in (
             (self.requested_price, "requested_price"),
             (self.stop_price, "stop_price"),
             (self.target_price, "target_price"),
         ):
             if not _positive(value):
-                raise ValueError(f"MT5 DEMO transport draft {field} must be finite and positive")
+                raise ValueError(f"MT5 DEMO transport draft {field} must be positive")
         if self.broker_submission_authorized:
-            raise ValueError("Step 2200 transport draft cannot authorize broker submission")
+            raise ValueError("Step 2200 transport draft cannot authorize submission")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("MT5 DEMO transport draft cannot grant execution")
 
@@ -204,11 +189,11 @@ class DemoMt5LookupRequest:
         ):
             _sha(value, field)
         if self.account_context.fingerprint != self.account_context_fingerprint:
-            raise ValueError("MT5 DEMO lookup account-context fingerprint mismatch")
+            raise ValueError("MT5 DEMO lookup account fingerprint mismatch")
         if self.account_context.symbol != self.identity.symbol:
             raise ValueError("MT5 DEMO lookup symbol cross-wiring")
         if not _positive(self.requested_quantity):
-            raise ValueError("MT5 DEMO lookup requested quantity must be finite and positive")
+            raise ValueError("MT5 DEMO lookup requested quantity must be positive")
         _aware(self.history_from, "history_from")
         _aware(self.history_to, "history_to")
         _aware(self.query_evaluated_at, "query_evaluated_at")
@@ -262,26 +247,27 @@ class DemoMt5LookupResult:
         if self.schema_version != MT5_DEMO_LOOKUP_RESULT_SCHEMA:
             raise ValueError("MT5 DEMO lookup result schema mismatch")
         if not isinstance(self.status, DemoMt5LookupStatus):
-            raise ValueError("MT5 DEMO lookup result status mismatch")
+            raise ValueError("MT5 DEMO lookup status mismatch")
         _sha(self.request_fingerprint, "request_fingerprint")
         _aware(self.observed_at, "observed_at")
-        if any(type(value) is not int or value < 0 for value in (
+        counts = (
             self.open_order_count,
             self.history_order_count,
             self.history_deal_count,
-        )):
+        )
+        if any(type(value) is not int or value < 0 for value in counts):
             raise ValueError("MT5 DEMO lookup source counts must be non-negative integers")
         if self.status is DemoMt5LookupStatus.MATCHED:
             if self.blockers or self.venue_observation is None:
-                raise ValueError("matched MT5 DEMO lookup requires one clean venue observation")
+                raise ValueError("matched lookup requires one clean venue observation")
             if len(self.matching_order_tickets) != 1:
-                raise ValueError("matched MT5 DEMO lookup requires exactly one order ticket")
+                raise ValueError("matched lookup requires exactly one order ticket")
         elif not self.blockers or self.venue_observation is not None:
-            raise ValueError("non-matched MT5 DEMO lookup must be blocked without venue truth")
+            raise ValueError("non-matched lookup must be blocked without venue truth")
         if self.venue_observation is not None:
             self.venue_observation.__post_init__()
         if self.resubmit_allowed or self.session_slot_release_allowed:
-            raise ValueError("MT5 DEMO lookup can never authorize retry or slot release")
+            raise ValueError("MT5 DEMO lookup cannot authorize retry or slot release")
         if self.execution_capability != "NONE" or self.order_execution_enabled:
             raise ValueError("MT5 DEMO lookup result cannot grant execution")
 
@@ -326,44 +312,25 @@ class DemoMt5LookupResult:
 
 
 def derive_demo_mt5_transport_identity(
-    *,
-    client_order_id: str,
-    symbol: str,
-    _validate: bool = True,
+    *, client_order_id: str, symbol: str
 ) -> DemoMt5TransportIdentity:
-    """Derive stable local MT5 correlation metadata from the full canonical identity.
-
-    The shorter transport tag is deliberately not treated as globally unique venue
-    proof. Lookup requires the combined magic/comment/symbol tuple and blocks if it
-    maps to anything other than one venue order.
-    """
+    """Derive stable local MT5 correlation metadata from the full identity."""
     _sha(client_order_id, "client_order_id")
     symbol = _nonempty(symbol, "symbol")
-    magic_digest = sha256(
-        f"{_TRANSPORT_MAGIC_NAMESPACE}:{client_order_id}".encode("utf-8")
-    ).digest()
-    magic = int.from_bytes(magic_digest[:4], "big") & _MAX_MAGIC
-    if magic == 0:
-        magic = 1
-    comment_digest = sha256(
-        f"{_TRANSPORT_COMMENT_NAMESPACE}:{client_order_id}".encode("utf-8")
-    ).hexdigest()
-    identity = DemoMt5TransportIdentity(
+    magic, comment = _derive_tag(client_order_id)
+    return DemoMt5TransportIdentity(
         schema_version=MT5_DEMO_TRANSPORT_IDENTITY_SCHEMA,
         client_order_id=client_order_id,
         symbol=symbol,
         magic=magic,
-        comment=_TRANSPORT_COMMENT_PREFIX + comment_digest[:_TRANSPORT_COMMENT_HEX_CHARS],
+        comment=comment,
     )
-    if _validate:
-        identity.__post_init__()
-    return identity
 
 
 def build_demo_mt5_transport_draft(
     reservation: DemoTransportAttemptReservation,
 ) -> DemoMt5TransportDraft:
-    """Project technical submission metadata without producing an executable MT5 request."""
+    """Project technical metadata without producing an executable MT5 request."""
     reservation.__post_init__()
     intent = reservation.prepared.intent
     identity = derive_demo_mt5_transport_identity(
@@ -393,16 +360,18 @@ def build_demo_mt5_lookup_request(
     history_from: datetime,
     history_to: datetime,
 ) -> DemoMt5LookupRequest:
-    """Bind the Step-2198 pinned query projection to an explicit MT5 history window."""
+    """Bind the pinned Step-2198 query projection to an explicit history window."""
     reservation.__post_init__()
     if not isinstance(query_request, Mapping):
         raise ValueError("query_request must be a mapping")
-    expected = dict(query_request)
-    observed_fingerprint = expected.pop("query_request_fingerprint", None)
-    if not isinstance(observed_fingerprint, str) or observed_fingerprint != _fingerprint(expected):
+    unsigned = dict(query_request)
+    observed_fingerprint = unsigned.pop("query_request_fingerprint", None)
+    if not isinstance(observed_fingerprint, str) or observed_fingerprint != _fingerprint(
+        unsigned
+    ):
         raise ValueError("MT5 DEMO lookup query request fingerprint mismatch")
     if query_request.get("requested_action") != "QUERY_EVIDENCE_ORDER":
-        raise ValueError("MT5 DEMO lookup requires QUERY_EVIDENCE_ORDER scope")
+        raise ValueError("MT5 DEMO lookup requires QUERY_EVIDENCE_ORDER")
     if query_request.get("execution_capability") != "NONE" or query_request.get(
         "order_execution_enabled"
     ) is not False:
@@ -410,21 +379,21 @@ def build_demo_mt5_lookup_request(
     if query_request.get("resubmit_allowed") is not False or query_request.get(
         "session_slot_release_allowed"
     ) is not False:
-        raise ValueError("MT5 DEMO lookup query request cannot grant retry or slot release")
-    if query_request.get("reservation_fingerprint") != reservation.fingerprint:
-        raise ValueError("MT5 DEMO lookup reservation cross-wiring")
-    if query_request.get("prepared_fingerprint") != reservation.prepared_fingerprint:
-        raise ValueError("MT5 DEMO lookup PREPARED cross-wiring")
-    if query_request.get("authorization_fingerprint") != reservation.authorization_fingerprint:
-        raise ValueError("MT5 DEMO lookup authorization cross-wiring")
-    if query_request.get("account_context_fingerprint") != reservation.account_context_fingerprint:
-        raise ValueError("MT5 DEMO lookup account cross-wiring")
-    if query_request.get("client_order_id") != reservation.prepared.intent.intent_id:
-        raise ValueError("MT5 DEMO lookup client identity cross-wiring")
-    if query_request.get("submission_ordinal") != reservation.submission_ordinal:
-        raise ValueError("MT5 DEMO lookup submission ordinal cross-wiring")
-    account_payload = query_request.get("account_context")
-    account_context = parse_mt5_demo_account_context_payload(account_payload)
+        raise ValueError("MT5 DEMO lookup cannot grant retry or slot release")
+    checks = (
+        ("reservation_fingerprint", reservation.fingerprint),
+        ("prepared_fingerprint", reservation.prepared_fingerprint),
+        ("authorization_fingerprint", reservation.authorization_fingerprint),
+        ("account_context_fingerprint", reservation.account_context_fingerprint),
+        ("client_order_id", reservation.prepared.intent.intent_id),
+        ("submission_ordinal", reservation.submission_ordinal),
+    )
+    for field, expected in checks:
+        if query_request.get(field) != expected:
+            raise ValueError(f"MT5 DEMO lookup {field} cross-wiring")
+    account_context = parse_mt5_demo_account_context_payload(
+        query_request.get("account_context")
+    )
     if account_context != reservation.account_context:
         raise ValueError("MT5 DEMO lookup account payload cross-wiring")
     query_evaluated_at = _timestamp(
@@ -448,28 +417,20 @@ def build_demo_mt5_lookup_request(
 
 
 def query_mt5_demo_evidence(
-    *,
-    mt5: Any,
-    request: DemoMt5LookupRequest,
-    observed_at: datetime,
+    *, mt5: Any, request: DemoMt5LookupRequest, observed_at: datetime
 ) -> DemoMt5LookupResult:
-    """Perform only read-only MT5 account/order/history/deal queries.
-
-    The injected object is the real MetaTrader5 module on Windows or a fake in
-    tests. No method that mutates broker state is referenced by this function.
-    """
+    """Call only read-only MT5 account/order/history/deal query methods."""
     request.__post_init__()
     _aware(observed_at, "observed_at")
     if observed_at < request.query_evaluated_at:
-        return _blocked_result(request, observed_at, "LOOKUP_PRECEDES_QUERY_EVALUATION")
+        return _blocked(request, observed_at, "LOOKUP_PRECEDES_QUERY_EVALUATION")
 
     try:
         account = mt5.account_info()
     except Exception:
-        return _blocked_result(request, observed_at, "MT5_ACCOUNT_INFO_QUERY_FAILED")
+        return _blocked(request, observed_at, "MT5_ACCOUNT_INFO_QUERY_FAILED")
     if account is None:
-        return _blocked_result(request, observed_at, "MT5_ACCOUNT_INFO_UNAVAILABLE")
-
+        return _blocked(request, observed_at, "MT5_ACCOUNT_INFO_UNAVAILABLE")
     try:
         current_account = normalize_mt5_demo_account_context(
             raw_login=getattr(account, "login", None),
@@ -482,70 +443,60 @@ def query_mt5_demo_evidence(
             real_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_REAL", None),
         )
     except (TypeError, ValueError):
-        return _blocked_result(request, observed_at, "MT5_ACCOUNT_CONTEXT_INVALID")
+        return _blocked(request, observed_at, "MT5_ACCOUNT_CONTEXT_INVALID")
     if current_account != request.account_context:
-        return _blocked_result(request, observed_at, "MT5_ACCOUNT_CONTEXT_MISMATCH")
+        return _blocked(request, observed_at, "MT5_ACCOUNT_CONTEXT_MISMATCH")
 
-    try:
-        open_orders = mt5.orders_get(symbol=request.identity.symbol)
-    except Exception:
-        return _blocked_result(request, observed_at, "MT5_OPEN_ORDERS_QUERY_FAILED")
-    if open_orders is None:
-        return _blocked_result(request, observed_at, "MT5_OPEN_ORDERS_QUERY_UNAVAILABLE")
-
-    try:
-        history_orders = mt5.history_orders_get(
-            request.history_from,
-            request.history_to,
-            group=request.identity.symbol,
-        )
-    except Exception:
-        return _blocked_result(request, observed_at, "MT5_ORDER_HISTORY_QUERY_FAILED")
-    if history_orders is None:
-        return _blocked_result(request, observed_at, "MT5_ORDER_HISTORY_QUERY_UNAVAILABLE")
-
-    try:
-        history_deals = mt5.history_deals_get(
-            request.history_from,
-            request.history_to,
-            group=request.identity.symbol,
-        )
-    except Exception:
-        return _blocked_result(request, observed_at, "MT5_DEAL_HISTORY_QUERY_FAILED")
-    if history_deals is None:
-        return _blocked_result(request, observed_at, "MT5_DEAL_HISTORY_QUERY_UNAVAILABLE")
+    open_orders = _query(mt5, "orders_get", symbol=request.identity.symbol)
+    if open_orders is _QUERY_ERROR:
+        return _blocked(request, observed_at, "MT5_OPEN_ORDERS_QUERY_FAILED")
+    history_orders = _query(
+        mt5,
+        "history_orders_get",
+        request.history_from,
+        request.history_to,
+        group=request.identity.symbol,
+    )
+    if history_orders is _QUERY_ERROR:
+        return _blocked(request, observed_at, "MT5_ORDER_HISTORY_QUERY_FAILED")
+    history_deals = _query(
+        mt5,
+        "history_deals_get",
+        request.history_from,
+        request.history_to,
+        group=request.identity.symbol,
+    )
+    if history_deals is _QUERY_ERROR:
+        return _blocked(request, observed_at, "MT5_DEAL_HISTORY_QUERY_FAILED")
 
     open_rows = tuple(open_orders)
     history_rows = tuple(history_orders)
     deal_rows = tuple(history_deals)
-    matched_by_ticket: dict[str, Any] = {}
+    matched: dict[str, Any] = {}
     for row in open_rows + history_rows:
         if not _matches_identity(row, request.identity):
             continue
         ticket = _positive_ticket(row, "ticket")
         if ticket is None:
-            return _blocked_result(
+            return _blocked(
                 request,
                 observed_at,
                 "MT5_MATCHED_ORDER_TICKET_INVALID",
-                open_count=len(open_rows),
-                history_order_count=len(history_rows),
-                history_deal_count=len(deal_rows),
+                counts=(len(open_rows), len(history_rows), len(deal_rows)),
             )
-        existing = matched_by_ticket.get(ticket)
-        if existing is not None and not _same_order_evidence(existing, row):
-            return _blocked_result(
+        previous = matched.get(ticket)
+        if previous is not None and not _same_order_evidence(previous, row):
+            return _blocked(
                 request,
                 observed_at,
                 "MT5_DUPLICATE_ORDER_TICKET_CONTRADICTION",
-                matching_order_tickets=tuple(sorted(matched_by_ticket | {ticket: row})),
-                open_count=len(open_rows),
-                history_order_count=len(history_rows),
-                history_deal_count=len(deal_rows),
+                order_tickets=tuple(sorted(matched | {ticket: row})),
+                counts=(len(open_rows), len(history_rows), len(deal_rows)),
             )
-        matched_by_ticket[ticket] = row
+        matched[ticket] = row
 
-    tickets = tuple(sorted(matched_by_ticket))
+    tickets = tuple(sorted(matched))
+    counts = (len(open_rows), len(history_rows), len(deal_rows))
     if not tickets:
         return DemoMt5LookupResult(
             schema_version=MT5_DEMO_LOOKUP_RESULT_SCHEMA,
@@ -555,9 +506,9 @@ def query_mt5_demo_evidence(
             observed_at=observed_at,
             matching_order_tickets=(),
             matching_deal_tickets=(),
-            open_order_count=len(open_rows),
-            history_order_count=len(history_rows),
-            history_deal_count=len(deal_rows),
+            open_order_count=counts[0],
+            history_order_count=counts[1],
+            history_deal_count=counts[2],
             venue_observation=None,
         )
     if len(tickets) != 1:
@@ -569,67 +520,54 @@ def query_mt5_demo_evidence(
             observed_at=observed_at,
             matching_order_tickets=tickets,
             matching_deal_tickets=(),
-            open_order_count=len(open_rows),
-            history_order_count=len(history_rows),
-            history_deal_count=len(deal_rows),
+            open_order_count=counts[0],
+            history_order_count=counts[1],
+            history_deal_count=counts[2],
             venue_observation=None,
         )
 
     ticket = tickets[0]
-    order = matched_by_ticket[ticket]
+    order = matched[ticket]
     requested_quantity = _float_field(order, "volume_initial")
     if requested_quantity is None or not _positive(requested_quantity):
-        return _blocked_result(
+        return _blocked(
             request,
             observed_at,
             "MT5_MATCHED_ORDER_QUANTITY_INVALID",
-            matching_order_tickets=tickets,
-            open_count=len(open_rows),
-            history_order_count=len(history_rows),
-            history_deal_count=len(deal_rows),
+            order_tickets=tickets,
+            counts=counts,
         )
     if not isclose(
-        requested_quantity,
-        request.requested_quantity,
-        rel_tol=1e-12,
-        abs_tol=1e-12,
+        requested_quantity, request.requested_quantity, rel_tol=1e-12, abs_tol=1e-12
     ):
-        return _blocked_result(
+        return _blocked(
             request,
             observed_at,
             "MT5_MATCHED_ORDER_QUANTITY_MISMATCH",
-            matching_order_tickets=tickets,
-            open_count=len(open_rows),
-            history_order_count=len(history_rows),
-            history_deal_count=len(deal_rows),
+            order_tickets=tickets,
+            counts=counts,
         )
-
-    venue_state = _map_mt5_order_state(mt5, _field(order, "state"))
+    venue_state = _map_state(mt5, _field(order, "state"))
     if venue_state is None:
-        return _blocked_result(
+        return _blocked(
             request,
             observed_at,
             "MT5_ORDER_STATE_UNSUPPORTED",
-            matching_order_tickets=tickets,
-            open_count=len(open_rows),
-            history_order_count=len(history_rows),
-            history_deal_count=len(deal_rows),
+            order_tickets=tickets,
+            counts=counts,
         )
 
     matched_deals: list[Any] = []
     for deal in deal_rows:
-        deal_order = _positive_ticket(deal, "order")
-        if deal_order != ticket:
+        if _positive_ticket(deal, "order") != ticket:
             continue
         if not _deal_identity_compatible(deal, request.identity):
-            return _blocked_result(
+            return _blocked(
                 request,
                 observed_at,
                 "MT5_DEAL_IDENTITY_MISMATCH",
-                matching_order_tickets=tickets,
-                open_count=len(open_rows),
-                history_order_count=len(history_rows),
-                history_deal_count=len(deal_rows),
+                order_tickets=tickets,
+                counts=counts,
             )
         matched_deals.append(deal)
 
@@ -640,101 +578,75 @@ def query_mt5_demo_evidence(
         volume = _float_field(deal, "volume")
         price = _float_field(deal, "price")
         if volume is None or volume < 0:
-            return _blocked_result(
+            return _blocked(
                 request,
                 observed_at,
                 "MT5_DEAL_VOLUME_INVALID",
-                matching_order_tickets=tickets,
-                open_count=len(open_rows),
-                history_order_count=len(history_rows),
-                history_deal_count=len(deal_rows),
+                order_tickets=tickets,
+                counts=counts,
             )
         if volume == 0:
             continue
         if price is None or not _positive(price):
-            return _blocked_result(
+            return _blocked(
                 request,
                 observed_at,
                 "MT5_DEAL_PRICE_INVALID",
-                matching_order_tickets=tickets,
-                open_count=len(open_rows),
-                history_order_count=len(history_rows),
-                history_deal_count=len(deal_rows),
+                order_tickets=tickets,
+                counts=counts,
             )
         cumulative_fill += volume
         weighted_price += volume * price
         deal_ticket = _positive_ticket(deal, "ticket")
         if deal_ticket is not None:
             deal_tickets.append(deal_ticket)
+    deal_ids = tuple(sorted(set(deal_tickets)))
 
     if cumulative_fill > requested_quantity and not isclose(
-        cumulative_fill,
-        requested_quantity,
-        rel_tol=1e-12,
-        abs_tol=1e-12,
+        cumulative_fill, requested_quantity, rel_tol=1e-12, abs_tol=1e-12
     ):
-        return _blocked_result(
+        return _blocked(
             request,
             observed_at,
             "MT5_DEAL_FILL_EXCEEDS_REQUESTED_QUANTITY",
-            matching_order_tickets=tickets,
-            matching_deal_tickets=tuple(sorted(set(deal_tickets))),
-            open_count=len(open_rows),
-            history_order_count=len(history_rows),
-            history_deal_count=len(deal_rows),
+            order_tickets=tickets,
+            deal_tickets=deal_ids,
+            counts=counts,
         )
-
     remaining = _float_field(order, "volume_current")
     if remaining is not None and remaining >= 0:
         implied_fill = requested_quantity - remaining
         if implied_fill < -1e-12 or not isclose(
-            implied_fill,
-            cumulative_fill,
-            rel_tol=1e-9,
-            abs_tol=1e-9,
+            implied_fill, cumulative_fill, rel_tol=1e-9, abs_tol=1e-9
         ):
-            return _blocked_result(
+            return _blocked(
                 request,
                 observed_at,
                 "MT5_ORDER_DEAL_FILL_EVIDENCE_MISMATCH",
-                matching_order_tickets=tickets,
-                matching_deal_tickets=tuple(sorted(set(deal_tickets))),
-                open_count=len(open_rows),
-                history_order_count=len(history_rows),
-                history_deal_count=len(deal_rows),
+                order_tickets=tickets,
+                deal_tickets=deal_ids,
+                counts=counts,
             )
-
     if venue_state is BrokerOrderState.PARTIAL and not 0 < cumulative_fill < requested_quantity:
-        return _blocked_result(
+        return _blocked(
             request,
             observed_at,
             "MT5_PARTIAL_STATE_WITHOUT_PARTIAL_FILL_EVIDENCE",
-            matching_order_tickets=tickets,
-            matching_deal_tickets=tuple(sorted(set(deal_tickets))),
-            open_count=len(open_rows),
-            history_order_count=len(history_rows),
-            history_deal_count=len(deal_rows),
+            order_tickets=tickets,
+            deal_tickets=deal_ids,
+            counts=counts,
         )
     if venue_state is BrokerOrderState.FILLED and not isclose(
-        cumulative_fill,
-        requested_quantity,
-        rel_tol=1e-9,
-        abs_tol=1e-9,
+        cumulative_fill, requested_quantity, rel_tol=1e-9, abs_tol=1e-9
     ):
-        return _blocked_result(
+        return _blocked(
             request,
             observed_at,
             "MT5_FILLED_STATE_WITHOUT_COMPLETE_FILL_EVIDENCE",
-            matching_order_tickets=tickets,
-            matching_deal_tickets=tuple(sorted(set(deal_tickets))),
-            open_count=len(open_rows),
-            history_order_count=len(history_rows),
-            history_deal_count=len(deal_rows),
+            order_tickets=tickets,
+            deal_tickets=deal_ids,
+            counts=counts,
         )
-
-    average_fill_price = None
-    if cumulative_fill > 0:
-        average_fill_price = weighted_price / cumulative_fill
 
     observation = VenueOrderObservation(
         schema_version=VENUE_ORDER_OBSERVATION_SCHEMA,
@@ -744,7 +656,9 @@ def query_mt5_demo_evidence(
         venue_state=venue_state.value,
         requested_quantity=requested_quantity,
         cumulative_filled_quantity=cumulative_fill,
-        average_fill_price=average_fill_price,
+        average_fill_price=(
+            None if cumulative_fill == 0 else weighted_price / cumulative_fill
+        ),
     )
     return DemoMt5LookupResult(
         schema_version=MT5_DEMO_LOOKUP_RESULT_SCHEMA,
@@ -753,10 +667,10 @@ def query_mt5_demo_evidence(
         request_fingerprint=request.fingerprint,
         observed_at=observed_at,
         matching_order_tickets=tickets,
-        matching_deal_tickets=tuple(sorted(set(deal_tickets))),
-        open_order_count=len(open_rows),
-        history_order_count=len(history_rows),
-        history_deal_count=len(deal_rows),
+        matching_deal_tickets=deal_ids,
+        open_order_count=counts[0],
+        history_order_count=counts[1],
+        history_deal_count=counts[2],
         venue_observation=observation,
     )
 
@@ -792,7 +706,7 @@ def demo_mt5_lookup_request_from_payload(payload: Mapping[str, Any]) -> DemoMt5L
         raise ValueError("MT5 DEMO lookup request payload field set mismatch")
     identity_payload = raw["identity"]
     if not isinstance(identity_payload, Mapping):
-        raise ValueError("MT5 DEMO transport identity payload must be a mapping")
+        raise ValueError("MT5 DEMO transport identity payload must be mapping")
     identity = DemoMt5TransportIdentity(
         schema_version=identity_payload.get("schema_version"),
         client_order_id=identity_payload.get("client_order_id"),
@@ -818,6 +732,29 @@ def demo_mt5_lookup_request_from_payload(payload: Mapping[str, Any]) -> DemoMt5L
     )
 
 
+_QUERY_ERROR = object()
+
+
+def _query(mt5: Any, name: str, *args: Any, **kwargs: Any) -> Any:
+    method = getattr(mt5, name, None)
+    if not callable(method):
+        return _QUERY_ERROR
+    try:
+        value = method(*args, **kwargs)
+    except Exception:
+        return _QUERY_ERROR
+    return _QUERY_ERROR if value is None else value
+
+
+def _derive_tag(client_order_id: str) -> tuple[int, str]:
+    magic_bytes = sha256(f"{_MAGIC_NAMESPACE}:{client_order_id}".encode()).digest()
+    magic = int.from_bytes(magic_bytes[:4], "big") & _MAX_MAGIC
+    if magic == 0:
+        magic = 1
+    comment_hex = sha256(f"{_COMMENT_NAMESPACE}:{client_order_id}".encode()).hexdigest()
+    return magic, _COMMENT_PREFIX + comment_hex[:_COMMENT_HEX_CHARS]
+
+
 def _matches_identity(row: Any, identity: DemoMt5TransportIdentity) -> bool:
     return (
         str(_field(row, "symbol") or "") == identity.symbol
@@ -840,11 +777,19 @@ def _deal_identity_compatible(row: Any, identity: DemoMt5TransportIdentity) -> b
 
 
 def _same_order_evidence(left: Any, right: Any) -> bool:
-    fields = ("ticket", "symbol", "magic", "comment", "state", "volume_initial", "volume_current")
+    fields = (
+        "ticket",
+        "symbol",
+        "magic",
+        "comment",
+        "state",
+        "volume_initial",
+        "volume_current",
+    )
     return all(_field(left, field) == _field(right, field) for field in fields)
 
 
-def _map_mt5_order_state(mt5: Any, value: Any) -> BrokerOrderState | None:
+def _map_state(mt5: Any, value: Any) -> BrokerOrderState | None:
     mapping = {
         getattr(mt5, "ORDER_STATE_STARTED", object()): BrokerOrderState.REQUESTED,
         getattr(mt5, "ORDER_STATE_REQUEST_ADD", object()): BrokerOrderState.REQUESTED,
@@ -855,19 +800,16 @@ def _map_mt5_order_state(mt5: Any, value: Any) -> BrokerOrderState | None:
         getattr(mt5, "ORDER_STATE_REJECTED", object()): BrokerOrderState.REJECT,
         getattr(mt5, "ORDER_STATE_EXPIRED", object()): BrokerOrderState.EXPIRED,
     }
-    result = mapping.get(value)
-    return result if isinstance(result, BrokerOrderState) else None
+    return mapping.get(value)
 
 
-def _blocked_result(
+def _blocked(
     request: DemoMt5LookupRequest,
     observed_at: datetime,
     *blockers: str,
-    matching_order_tickets: tuple[str, ...] = (),
-    matching_deal_tickets: tuple[str, ...] = (),
-    open_count: int = 0,
-    history_order_count: int = 0,
-    history_deal_count: int = 0,
+    order_tickets: tuple[str, ...] = (),
+    deal_tickets: tuple[str, ...] = (),
+    counts: tuple[int, int, int] = (0, 0, 0),
 ) -> DemoMt5LookupResult:
     return DemoMt5LookupResult(
         schema_version=MT5_DEMO_LOOKUP_RESULT_SCHEMA,
@@ -875,11 +817,11 @@ def _blocked_result(
         blockers=tuple(blockers),
         request_fingerprint=request.fingerprint,
         observed_at=observed_at,
-        matching_order_tickets=matching_order_tickets,
-        matching_deal_tickets=matching_deal_tickets,
-        open_order_count=open_count,
-        history_order_count=history_order_count,
-        history_deal_count=history_deal_count,
+        matching_order_tickets=order_tickets,
+        matching_deal_tickets=deal_tickets,
+        open_order_count=counts[0],
+        history_order_count=counts[1],
+        history_deal_count=counts[2],
         venue_observation=None,
     )
 
@@ -892,17 +834,15 @@ def _field(row: Any, name: str) -> Any:
 
 def _int_field(row: Any, name: str) -> int | None:
     value = _field(row, name)
-    if type(value) is not int:
-        return None
-    return value
+    return value if type(value) is int else None
 
 
 def _float_field(row: Any, name: str) -> float | None:
     value = _field(row, name)
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    value = float(value)
-    return value if isfinite(value) else None
+    result = float(value)
+    return result if isfinite(result) else None
 
 
 def _positive_ticket(row: Any, name: str) -> str | None:
@@ -945,7 +885,7 @@ def _aware(value: Any, field: str) -> datetime:
 
 def _timestamp(value: Any, field: str) -> datetime:
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be an ISO-8601 string")
+        raise ValueError(f"{field} must be ISO-8601 string")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
