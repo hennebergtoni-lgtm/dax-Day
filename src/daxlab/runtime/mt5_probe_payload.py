@@ -9,6 +9,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Mapping
 
+from daxlab.runtime.demo_evidence_authorization import DemoEvidenceObservedContext
+from daxlab.runtime.mt5_demo_account_context import (
+    parse_mt5_demo_account_context_payload,
+)
 from daxlab.runtime.mt5_host_contract import Mt5HostObservation
 from daxlab.runtime.mt5_readonly import BrokerSymbol
 
@@ -22,7 +26,7 @@ _REQUIRED = {
     "clock_ok",
     "symbols",
 }
-_OPTIONAL = {"broker_timezone"}
+_OPTIONAL = {"broker_timezone", "demo_account_context"}
 _SYMBOL_REQUIRED = {"name", "digits", "point", "trade_mode"}
 _SYMBOL_OPTIONAL = {
     "contract_size",
@@ -57,6 +61,9 @@ def parse_mt5_probe_payload(payload: Mapping[str, Any]) -> Mt5HostObservation:
             not isinstance(broker_timezone, str) or not broker_timezone.strip()
         ):
             raise ValueError("broker_timezone must be a non-empty string or null")
+    if "demo_account_context" in payload:
+        parse_mt5_demo_account_context_payload(payload["demo_account_context"])
+
     symbols_raw = payload["symbols"]
     if not isinstance(symbols_raw, list):
         raise ValueError("symbols must be a list")
@@ -72,6 +79,21 @@ def parse_mt5_probe_payload(payload: Mapping[str, Any]) -> Mt5HostObservation:
         clock_ok=_bool(payload, "clock_ok"),
         symbols=symbols,
     )
+
+
+def parse_mt5_demo_account_context(
+    payload: Mapping[str, Any],
+) -> DemoEvidenceObservedContext | None:
+    """Return redacted DEMO-authorization input when that optional evidence exists.
+
+    Legacy SHADOW payloads without this field remain valid host evidence but return
+    ``None`` here and therefore cannot satisfy DEMO-evidence authorization.
+    """
+
+    if "demo_account_context" not in payload:
+        return None
+    evidence = parse_mt5_demo_account_context_payload(payload["demo_account_context"])
+    return evidence.to_observed_context()
 
 
 def _timestamp(value: Any) -> datetime:
