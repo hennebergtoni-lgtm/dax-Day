@@ -8,12 +8,12 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2212**
+- Last completed whole-number step: **2213**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2213**
+- Active whole-number step: **2214**
 - Active step state: **ACTIVE — LOCAL READ-ONLY OBSERVABILITY / NO BROKER SIDE EFFECT**
 - Work tranche state: **ACTIVE_LOCAL_OPERATOR_OBSERVABILITY**
-- Next step after successful completion: **2214**
+- Next step after successful completion: **2215**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
@@ -30,7 +30,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Decimal or letter step IDs: **PROHIBITED**
 
 - Step 2206 remains **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**; independent local Work uses Steps 2207 onward under WORK_CONTINUITY_PROTOCOL section 4A.
-- Active Step 2213 scope: **Mobile-first read-only browser console separated from static research; DOM-safe rendering and fail-closed fetch failures.**
+- Active Step 2214 scope: **Read-only projection of existing Candidate checkpoint and pinned reserved attempt/protection/guard; no load-time refresh or mutation.**
 
 ## Ledger archive
 
@@ -76,6 +76,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2204 | Current query authorization/freshness at Windows lookup execution. | **COMPLETED.** Code/evidence head `20504cfed1e9a0aa7af7a67a3852138b778f828d`; 37 focused, 856 relevant, 2389 full passed / six local pwsh skips; Ruff/eight offline gates passed; DAX #618 run 34770097221 and research #1402 run 34770097244 GREEN. Reproduced history-window-only lookup after host age 31s and expired grant at 360s; operational CLI now reuses pinned reservation/shared current QUERY preflight before SDK initialization and reads. Original codecs/technical lookup preserved; zero saves/resubmits/slot releases. |
 | 2205 | Windows pre-DEMO evidence handoff and source-binding conformance. | **COMPLETED.** Tested code/evidence head `f8421bfafa0aa5d96fe8dd003e6e94d845f3d634`; 69 focused tranche/governance, 860 relevant, 2393 full passed / six local pwsh skips; Ruff and eight offline gates passed; DAX #619 run 34770291597 and research #1403 run 34770291609 GREEN. New source conformance preserves existing Risk/Protection fingerprints; Windows evidence/runbook records all real-host/policy/first-order gates without promotion. |
 | 2206 | Independent re-pin and Monday real-host/product-policy evidence review. | **WAITING_EXTERNAL / USER_AUTH.** PLANNED external scope unchanged. Main chat independently re-pins/diff/CI/safety-checks this Work block. Current Windows/MT5/clock/market/broker facts and concrete risk/loss/drawdown-policy review are required. Any first actual DEMO order/active submission adapter requires a separate explicit bounded user authorization. No 2206 technical implementation begun. |
+| 2213 | Local operator tranche unit. | **COMPLETED.** Tested head 69d80c6515dac3de3df81df4da3abe6cc37ba3b4; 168 relevant passed; node syntax passed; eight offline gates passed; Chromium browser unavailable after CDN timeout (visual evidence UNVERIFIED); dax-bot-1x-ci #631 run 34776311431 GREEN; research-lab-ci #1415 run 34776311422 GREEN. External Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2212 | Local operator tranche unit. | **COMPLETED.** Tested head 8b6941a119a8c5abc07ae344dc5756f08a9912bb; 28 focused socket contracts / 352 relevant passed; full pytest 2503 passed / six local pwsh skips; Ruff and eight offline gates passed; dax-bot-1x-ci #629 run 34775934863 GREEN; research-lab-ci #1413 run 34775934823 GREEN. External Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2211 | Local operator tranche unit. | **COMPLETED.** Tested head 0851cfb33022e45f2fec5326827ff944737343c8; 47 focused / 558 relevant passed; legacy heartbeat parity preserved; Ruff passed; dax-bot-1x-ci #628 run 34775724245 GREEN; research-lab-ci #1412 run 34775724247 GREEN. External Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2210 | Local operator tranche unit. | **COMPLETED.** Tested head 67db4db7dfc4577d57b60b91c40250d071f6e021; 66 focused / 542 relevant passed; original V3 digest roundtrip parity verified; Ruff passed; hot-path import boundary preserved; dax-bot-1x-ci #627 run 34775582696 GREEN; research-lab-ci #1411 run 34775582692 GREEN. External Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |

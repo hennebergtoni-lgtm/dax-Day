@@ -174,3 +174,36 @@ def test_moving_heartbeat_is_rejected_without_retries_or_persistence(console_ser
     with pytest.raises(ValueError, match="changed during read"):
         module.read_local_operator_projection(root, queried_at=datetime.now().astimezone())
     assert count == 2
+
+
+def test_optional_checkpoint_and_pinned_existing_attempt_read_without_save(console_server, monkeypatch):
+    import test_demo_transport_attempt_reservation as e
+    module, server, root = console_server
+    store, prepared = e.prepared_attempt.__wrapped__(monkeypatch)
+    reserved = e._reserve(store, prepared)
+    _, _, _, now, cycle = console_sources()
+    atomic_write_json(root / 'candidate_checkpoint.json', cycle.checkpoint_payload)
+    saves = store.saves
+    before = {p.name: p.read_bytes() for p in root.iterdir()}
+    server.attempt_store = store
+    server.attempt_key = 'attempt'
+    server.reservation_fingerprint = reserved.fingerprint
+    code, _, body = request(server)
+    assert code == 200
+    view = json.loads(body)
+    assert view['reserved_attempt']['reservation_fingerprint'] == reserved.fingerprint
+    assert view['recovery']['checkpoint_fingerprint'] == cycle.checkpoint_payload['payload_fingerprint']
+    assert store.saves == saves
+    assert {p.name: p.read_bytes() for p in root.iterdir()} == before
+    server.reservation_fingerprint = 'f' * 64
+    code, _, body = request(server)
+    assert code == 503
+    assert json.loads(body)['state'] == 'UNKNOWN'
+    assert b'Demo-Server' not in body
+    assert store.saves == saves
+
+
+def test_partial_reserved_console_configuration_fails_closed(console_server):
+    module, _, root = console_server
+    with pytest.raises(ValueError, match='store/key/original fingerprint'):
+        module.OperatorReadServer(state_dir=root, port=0, attempt_key='attempt')

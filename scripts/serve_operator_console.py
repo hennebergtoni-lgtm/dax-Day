@@ -16,6 +16,10 @@ from pathlib import Path
 import re
 from typing import Any
 
+from daxlab.adapters.file_state_store import AtomicFileStateStore
+from daxlab.domain.ports import StateStorePort
+from daxlab.runtime.demo_transport_attempt_reservation import load_reserved_demo_transport_attempt
+
 from daxlab.runtime.atomic_json import read_json_object
 from daxlab.runtime.candidate_operator_query import (
     CONSOLE_SCHEMA,
@@ -33,7 +37,10 @@ _ASSETS = {
 }
 
 
-def read_local_operator_projection(state_dir: Path, *, queried_at: datetime) -> dict[str, Any]:
+def read_local_operator_projection(
+    state_dir: Path, *, queried_at: datetime, attempt_store: StateStorePort | None = None,
+    attempt_key: str | None = None, reservation_fingerprint: str | None = None,
+) -> dict[str, Any]:
     """Read the sole existing source, with heartbeat read-before/read-after parity.
 
     Source files are individually atomic, not a multi-file transaction. Their
@@ -54,12 +61,18 @@ def read_local_operator_projection(state_dir: Path, *, queried_at: datetime) -> 
     heartbeat = read("heartbeat.json")
     bundle = read("latest_bundle.json")
     snapshot = read("candidate_operator_snapshot.json")
+    checkpoint = read("candidate_checkpoint.json")
+    reserved = load_reserved_demo_transport_attempt(
+        store=attempt_store, key=attempt_key, expected_reservation_fingerprint=reservation_fingerprint,
+    ) if attempt_store is not None else None
     after = heartbeat_path.read_bytes() if heartbeat_path.exists() else None
     if before != after:
         raise ValueError("operator source changed during read")
     view = build_operator_console_projection(
         snapshot_payload=snapshot, bundle_payload=bundle,
         heartbeat_payload=heartbeat, queried_at=queried_at,
+        candidate_checkpoint_payload=checkpoint, reservation=reserved,
+        expected_reservation_fingerprint=reservation_fingerprint,
     )
     view["source_available"] = all(v is not None for v in (heartbeat, bundle, snapshot))
     # This is a response projection, not another checkpoint/persistence digest.
@@ -89,7 +102,16 @@ def source_unavailable_projection() -> dict[str, Any]:
 class OperatorReadServer(HTTPServer):
     """Only a fixed loopback socket and the existing artifact read adapter."""
 
-    def __init__(self, *, state_dir: Path, port: int = 8765):
+    def __init__(
+        self, *, state_dir: Path, port: int = 8765, attempt_store: StateStorePort | None = None,
+        attempt_key: str | None = None, reservation_fingerprint: str | None = None,
+    ):
+        values = (attempt_store, attempt_key, reservation_fingerprint)
+        if any(v is not None for v in values) and any(v is None for v in values):
+            raise ValueError("reserved console requires store/key/original fingerprint pin")
+        self.attempt_store = attempt_store
+        self.attempt_key = attempt_key
+        self.reservation_fingerprint = reservation_fingerprint
         self.state_dir = Path(state_dir).resolve()
         super().__init__(("127.0.0.1", port), OperatorReadHandler)
 
@@ -148,7 +170,11 @@ class OperatorReadHandler(BaseHTTPRequestHandler):
             return
         if self.path in {"/api/operator", "/healthz"}:
             try:
-                view = read_local_operator_projection(self.server.state_dir, queried_at=datetime.now(timezone.utc))
+                view = read_local_operator_projection(
+                    self.server.state_dir, queried_at=datetime.now(timezone.utc),
+                    attempt_store=self.server.attempt_store, attempt_key=self.server.attempt_key,
+                    reservation_fingerprint=self.server.reservation_fingerprint,
+                )
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
                 view = source_unavailable_projection()
             code = 200 if view["source_available"] else 503
@@ -188,8 +214,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state-dir", default=".runtime/mt5_shadow")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--attempt-state-dir")
+    parser.add_argument("--attempt-key")
+    parser.add_argument("--reservation-fingerprint")
     args = parser.parse_args()
-    with OperatorReadServer(state_dir=Path(args.state_dir), port=args.port) as server:
+    with OperatorReadServer(
+        state_dir=Path(args.state_dir), port=args.port,
+        attempt_store=AtomicFileStateStore(Path(args.attempt_state_dir)) if args.attempt_state_dir else None,
+        attempt_key=args.attempt_key, reservation_fingerprint=args.reservation_fingerprint,
+    ) as server:
         print("Read-only operator console: http://127.0.0.1:" + str(server.server_address[1]))
         server.serve_forever()
 

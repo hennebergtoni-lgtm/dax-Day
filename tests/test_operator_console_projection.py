@@ -164,3 +164,55 @@ def test_rehashed_cross_source_mismatches_do_not_produce_green_feed(mutation):
     hb["bundle_sha256"] = raw["sha256"]
     view = project(raw, snapshot, hb, now)
     assert view["system"]["FEED"]["state"] == "BLOCKED"
+
+
+def test_existing_candidate_checkpoint_projects_exact_persisted_admission_and_publication():
+    raw, snapshot, hb, now, cycle = console_sources()
+    view = build_operator_console_projection(
+        bundle_payload=raw, snapshot_payload=snapshot, heartbeat_payload=hb,
+        queried_at=now, candidate_checkpoint_payload=cycle.checkpoint_payload,
+    )
+    assert view['candidate_admission']['trades_admitted'] == cycle.runtime.state.pipeline.admission.trades_admitted
+    assert view['recovery']['checkpoint_fingerprint'] == cycle.checkpoint_payload['payload_fingerprint']
+    assert view['recovery']['checkpoint_validation'] == 'VALID_LOCAL_SHADOW_CHECKPOINT_NOT_BROKER_RECOVERY'
+    assert view['reconciliation']['account_inventory_complete'] is False
+
+
+def test_checkpoint_tampering_is_rejected_by_existing_owner():
+    raw, snapshot, hb, now, cycle = console_sources()
+    bad = deepcopy(cycle.checkpoint_payload)
+    bad['payload_fingerprint'] = 'f' * 64
+    with pytest.raises(ValueError):
+        build_operator_console_projection(
+            bundle_payload=raw, snapshot_payload=snapshot, heartbeat_payload=hb,
+            queried_at=now, candidate_checkpoint_payload=bad,
+        )
+
+
+def test_pinned_reservation_projects_original_evidence_without_saving_or_inventing_venue(monkeypatch):
+    import test_demo_transport_attempt_reservation as e
+    store, prepared = e.prepared_attempt.__wrapped__(monkeypatch)
+    reserved = e._reserve(store, prepared)
+    saves = store.saves
+    raw, snapshot, hb, now, _ = console_sources()
+    view = build_operator_console_projection(
+        bundle_payload=raw, snapshot_payload=snapshot, heartbeat_payload=hb,
+        queried_at=now, reservation=reserved, expected_reservation_fingerprint=reserved.fingerprint,
+    )
+    assert store.saves == saves
+    assert view['reserved_attempt']['prepared_fingerprint'] == prepared.fingerprint
+    assert view['broker_lifecycle']['local_order_state'] == 'REQUESTED'
+    assert view['broker_lifecycle']['venue_order_id'] is None
+    assert view['broker_lifecycle']['fill_evidence'] is None
+    assert view['risk_loss_exposure']['values'] is None
+    assert view['session_guard']['checkpoint_fingerprint'] == prepared.post_guard.checkpoint_fingerprint
+    assert view['session_guard']['trades_admitted'] == 1
+    assert view['reconciliation']['required_next_action'] == 'QUERY_RECONCILE_REQUIRED'
+    assert view['reconciliation']['resubmit_allowed'] is False
+    assert view['execution_capability'] == 'NONE'
+    assert view['order_execution_enabled'] is False
+    with pytest.raises(ValueError, match='pin mismatch'):
+        build_operator_console_projection(
+            bundle_payload=raw, snapshot_payload=snapshot, heartbeat_payload=hb,
+            queried_at=now, reservation=reserved, expected_reservation_fingerprint='f' * 64,
+        )

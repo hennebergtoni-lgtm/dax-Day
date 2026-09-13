@@ -21,6 +21,12 @@ from daxlab.runtime.decision import stable_fingerprint
 from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
 from daxlab.runtime.mt5_shadow_supervisor import parse_supervisor_build_observation
 from daxlab.runtime.operator_snapshot import parse_operator_snapshot_payload
+from daxlab.runtime.candidate_config import Cand001Config
+from daxlab.runtime.candidate_shadow_host_cycle import build_cand001_forward_manifest
+from daxlab.runtime.candidate_shadow_checkpoint import parse_candidate_shadow_checkpoint_payload
+from daxlab.runtime.demo_transport_attempt_reservation import (
+    DemoTransportAttemptReservation, demo_transport_restart_status,
+)
 
 CONSOLE_SCHEMA = "DAXLAB_READONLY_OPERATOR_CONSOLE_V1"
 
@@ -106,6 +112,9 @@ def build_operator_console_projection(
     bundle_payload: Mapping[str, Any] | None,
     heartbeat_payload: Mapping[str, Any] | None,
     queried_at: datetime,
+    candidate_checkpoint_payload: Mapping[str, Any] | None = None,
+    reservation: DemoTransportAttemptReservation | None = None,
+    expected_reservation_fingerprint: str | None = None,
 ) -> dict[str, Any]:
     """Project canonical observations; NEVER evaluate readiness or grant execution.
 
@@ -279,6 +288,83 @@ def build_operator_console_projection(
         "execution_capability": "NONE", "order_execution_enabled": False,
         "shadow_authorized": True, "demo_paper_execution_authorized": False, "live_authorized": False,
     }
+    if candidate_checkpoint_payload is not None:
+        _assert_credential_free(candidate_checkpoint_payload)
+        if bundle is None or not bundle.green or feed is None or not feed.broker_timezone:
+            projection["blockers"].append("CHECKPOINT_CANONICAL_HOST_CONTEXT_UNAVAILABLE")
+        else:
+            manifest = build_cand001_forward_manifest(bundle)
+            state = parse_candidate_shadow_checkpoint_payload(candidate_checkpoint_payload, run_manifest=manifest)
+            if snapshot is None or state.pipeline.signal.last_close_time != snapshot.last_bar_close_time:
+                raise ValueError("Candidate checkpoint/snapshot observation mismatch")
+            if snapshot.config_fingerprint != Cand001Config().product_identity().config_fingerprint:
+                raise ValueError("Candidate checkpoint/snapshot config mismatch")
+            projection["candidate_admission"] = {
+                "state": "UNKNOWN", "scope": "PERSISTED_CAND001_SHADOW_ONLY",
+                "session_date": state.pipeline.admission.session_date,
+                "trades_admitted": state.pipeline.admission.trades_admitted,
+                "max_trades_per_session": Cand001Config().max_trades_per_session,
+                "or_high": state.pipeline.signal.or_high, "or_low": state.pipeline.signal.or_low,
+                "or_slots": list(state.pipeline.signal.or_slots),
+                "last_close_time": state.pipeline.signal.last_close_time.isoformat() if state.pipeline.signal.last_close_time else None,
+            }
+            projection["session_guard"] = projection["candidate_admission"]
+            projection["recovery"].update(
+                checkpoint_validation="VALID_LOCAL_SHADOW_CHECKPOINT_NOT_BROKER_RECOVERY",
+                checkpoint_fingerprint=candidate_checkpoint_payload["payload_fingerprint"],
+                run_manifest_fingerprint=manifest.manifest_fingerprint,
+                published_intent_count=len(state.publication.published_intent_ids),
+                published_outcome_count=len(state.publication.published_outcome_ids),
+            )
+    if (reservation is None) != (expected_reservation_fingerprint is None):
+        raise ValueError("reserved projection requires exact original fingerprint pin")
+    if reservation is not None:
+        reservation.__post_init__()
+        if reservation.fingerprint != expected_reservation_fingerprint:
+            raise ValueError("reserved projection provenance pin mismatch")
+        original = reservation.prepared
+        protection = original.protection
+        projection["reserved_attempt"] = demo_transport_restart_status(reservation)
+        projection["reserved_attempt"].update(
+            original_evaluated_at=reservation.evaluated_at.isoformat(),
+            prepared_fingerprint=original.fingerprint,
+            account_context_fingerprint=reservation.account_context_fingerprint,
+            authorization_fingerprint=reservation.authorization_fingerprint,
+        )
+        projection["broker_lifecycle"] = {
+            "local_order_state": original.broker.lifecycle.state.value,
+            "lifecycle_fingerprint": original.broker.lifecycle.fingerprint,
+            "venue_state": "UNKNOWN", "venue_order_id": None, "fill_evidence": None,
+        }
+        projection["risk_loss_exposure"].update(
+            state="UNKNOWN", scope="ORIGINAL_BOUND_PROTECTION_PROVENANCE_NOT_CURRENT_READINESS",
+            original_protection_status=protection.status.value,
+            protection_fingerprint=protection.fingerprint,
+            risk_policy_fingerprint=protection.risk_policy_fingerprint,
+            sizing_evidence_fingerprint=protection.sizing_evidence_fingerprint,
+            loss_admission_evidence_fingerprint=protection.loss_admission_evidence_fingerprint,
+            loss_observation_checkpoint_fingerprint=protection.loss_observation_checkpoint_fingerprint,
+        )
+        projection["session_guard"] = {
+            "state": "UNKNOWN", "scope": "ORIGINAL_NEXTGEN_POST_CONSUMPTION_GUARD",
+            "session_key": original.post_guard.state.session_key,
+            "trades_admitted": original.post_guard.observation.trades_admitted,
+            "max_trades_per_session": original.policy.max_trades_per_session,
+            "checkpoint_fingerprint": original.post_guard.checkpoint_fingerprint,
+            "observed_at": original.post_guard.observed_at.isoformat(),
+        }
+        projection["reconciliation"].update(
+            state="QUERY_REQUIRED", required_next_action="QUERY_RECONCILE_REQUIRED",
+            scope="LOCAL_RESERVED_ATTEMPT_NOT_VENUE_RECONCILIATION",
+        )
+        projection["system"]["RECONCILIATION"] = _tile("QUERY_REQUIRED", "local reservation; venue unknown")
+        projection["system"]["PROTECTION"] = _tile("UNKNOWN", "original ALLOW_EVIDENCE; no execution authority")
+        projection["blockers"].append("RESERVED_ATTEMPT_VENUE_QUERY_RECONCILIATION_REQUIRED")
+        if ctx != reservation.account_context:
+            projection["blockers"].append("RESERVATION_CURRENT_ACCOUNT_CONTEXT_MISMATCH")
+            projection["system"]["ACCOUNT MODE"] = _tile("BLOCKED", "reserved/current context mismatch")
+            projection["reconciliation"]["state"] = "BLOCKED"
+            projection["system"]["RECONCILIATION"] = _tile("BLOCKED", "account context mismatch")
     _assert_credential_free(projection)
     projection["console_fingerprint"] = stable_fingerprint(projection)
     return projection
