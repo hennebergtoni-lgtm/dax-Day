@@ -19,6 +19,7 @@ from daxlab.runtime.candidate_operator_telemetry import (
 
 from daxlab.runtime.decision import stable_fingerprint
 from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
+from daxlab.runtime.mt5_shadow_supervisor import parse_supervisor_build_observation
 from daxlab.runtime.operator_snapshot import parse_operator_snapshot_payload
 
 CONSOLE_SCHEMA = "DAXLAB_READONLY_OPERATOR_CONSOLE_V1"
@@ -135,11 +136,18 @@ def build_operator_console_projection(
         raw_blockers = heartbeat_payload.get("blockers")
         if not isinstance(raw_blockers, list) or any(not isinstance(v, str) for v in raw_blockers):
             raise ValueError("operator heartbeat blockers invalid")
+    build = None
+    if heartbeat_payload is not None and "build_observation" in heartbeat_payload:
+        build = parse_supervisor_build_observation(heartbeat_payload["build_observation"])
+        _observation_age(now, operator_timestamp(build["observed_at"], "build observed_at"))
     blockers = list(snapshot.blockers) if snapshot else ["CANDIDATE_SNAPSHOT_MISSING"]
     if heartbeat_payload is None:
         blockers.append("SUPERVISOR_HEARTBEAT_MISSING")
     elif heartbeat_payload["status"] != "GREEN":
         blockers.extend(["SUPERVISOR_NOT_GREEN", *heartbeat_payload["blockers"]])
+    if heartbeat_payload is not None and "candidate_snapshot_fingerprint" in heartbeat_payload:
+        if snapshot is None or heartbeat_payload["candidate_snapshot_fingerprint"] != snapshot.snapshot_fingerprint:
+            blockers.append("HEARTBEAT_CANDIDATE_SNAPSHOT_MISMATCH")
     if bundle is None:
         blockers.append("HOST_BUNDLE_MISSING")
     else:
@@ -189,7 +197,9 @@ def build_operator_console_projection(
         "HOST_FEED_TIMEZONE_MISMATCH", "ACCOUNT_SYMBOL_MISMATCH",
     ))):
         feed_state = "BLOCKED"
-    snapshot_state = "STALE" if "CANDIDATE_BEHIND_OR_DIFFERENT_FEED" in blockers else "UNKNOWN"
+    snapshot_state = "STALE" if any(v in blockers for v in (
+        "CANDIDATE_BEHIND_OR_DIFFERENT_FEED", "HEARTBEAT_CANDIDATE_SNAPSHOT_MISMATCH",
+    )) else "UNKNOWN"
     tiles = {
         "BOT MODE": _tile("WARN" if snapshot and heartbeat_payload else "UNKNOWN", "SHADOW observation only"),
         "HOST": _tile("BLOCKED" if host and not host.engine_loop_healthy else "UNKNOWN", "UNVERIFIED_THRESHOLD"),
@@ -255,11 +265,16 @@ def build_operator_console_projection(
             "candidate_reconciliation_scope": "LOCAL_SHADOW_ONLY",
             "candidate_observed_reconciliation": snapshot.reconciliation_state if snapshot else None,
         },
-        "build_identity": {"state": "UNKNOWN", "runtime_commit": None},
+        "build_identity": {
+            "state": build["state"] if build else "UNKNOWN",
+            "runtime_commit": build["commit_sha"] if build else None,
+            "observation": build,
+        },
         "provenance": {
             "snapshot_fingerprint": snapshot.snapshot_fingerprint if snapshot else None,
             "bundle_fingerprint": bundle.fingerprint if bundle else None,
             "evidence_kind": "OBSERVATION_ONLY_NOT_EXECUTION_AUTHORIZATION",
+            "candidate_cycle_binding": "BOUND" if heartbeat_payload is not None and "candidate_snapshot_fingerprint" in heartbeat_payload and "HEARTBEAT_CANDIDATE_SNAPSHOT_MISMATCH" not in blockers else "LEGACY_UNBOUND_OR_MISMATCH",
         },
         "execution_capability": "NONE", "order_execution_enabled": False,
         "shadow_authorized": True, "demo_paper_execution_authorized": False, "live_authorized": False,

@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
+from daxlab.runtime.decision import stable_fingerprint
+
 from daxlab.runtime.mt5_cross_cycle_integrity import evaluate_cross_cycle_integrity
 from daxlab.runtime.mt5_shadow_integration import (
     Mt5ShadowResumeState,
@@ -254,3 +256,47 @@ def _assert_credential_free(payload: Mapping[str, Any]) -> None:
                 walk(item)
 
     walk(payload)
+
+
+BUILD_OBSERVATION_SCHEMA = "DAXLAB_SUPERVISOR_BUILD_OBSERVATION_V1"
+
+def supervisor_build_observation(
+    *, commit_sha: str | None, tracked_checkout_clean: bool | None, observed_at: datetime,
+) -> dict[str, Any]:
+    """Record startup checkout observation, never the console server checkout.
+
+    Missing git/dirty checkout is UNKNOWN. This does not authenticate deployment
+    or prove the current process kept running after the observation.
+    """
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise ValueError("build observation must be timezone-aware")
+    if commit_sha is not None:
+        if not isinstance(commit_sha, str) or len(commit_sha) != 40:
+            raise ValueError("build commit must be 40 hex characters")
+        try:
+            int(commit_sha, 16)
+        except ValueError as exc:
+            raise ValueError("build commit must be hex") from exc
+    if tracked_checkout_clean is not None and type(tracked_checkout_clean) is not bool:
+        raise ValueError("tracked_checkout_clean must be bool or null")
+    body = {
+        "schema_version": BUILD_OBSERVATION_SCHEMA,
+        "identity_kind": "GIT_CHECKOUT_AT_SUPERVISOR_STARTUP",
+        "observed_at": observed_at.astimezone(timezone.utc).isoformat(),
+        "commit_sha": commit_sha, "tracked_checkout_clean": tracked_checkout_clean,
+        "state": "OBSERVED_CLEAN_CHECKOUT" if commit_sha and tracked_checkout_clean is True else "UNKNOWN",
+    }
+    return body | {"build_observation_fingerprint": stable_fingerprint(body)}
+
+
+def parse_supervisor_build_observation(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Strict observation parity; loading never re-queries git or refreshes time."""
+    from daxlab.runtime.candidate_operator_telemetry import operator_timestamp
+    expected = supervisor_build_observation(
+        commit_sha=payload.get("commit_sha"),
+        tracked_checkout_clean=payload.get("tracked_checkout_clean"),
+        observed_at=operator_timestamp(payload.get("observed_at"), "build observed_at"),
+    )
+    if dict(payload) != expected:
+        raise ValueError("supervisor build observation fingerprint/contract mismatch")
+    return expected

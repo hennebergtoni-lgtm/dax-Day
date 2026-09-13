@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 import signal
+import subprocess
 import threading
 from typing import Any, Iterable, Mapping
 
@@ -21,10 +23,13 @@ from daxlab.runtime.atomic_json import atomic_write_json, read_json_object
 from daxlab.runtime.candidate_shadow_host_cycle import run_cand001_shadow_host_cycle
 from daxlab.runtime.candidate_virtual_outcome import Cand001VirtualOutcomeEvidence
 from daxlab.runtime.manifests import RunManifest
+from daxlab.runtime.operator_snapshot import parse_operator_snapshot_payload
 from daxlab.runtime.mt5_heartbeat_history import archive_heartbeat_snapshot
 from daxlab.runtime.mt5_shadow_integration import mt5_shadow_resume_payload
 from daxlab.runtime.mt5_shadow_supervisor import (
     load_mt5_resume_payload,
+    supervisor_build_observation,
+    parse_supervisor_build_observation,
     process_mt5_shadow_cycle,
     supervisor_error_heartbeat,
     supervisor_stopped_heartbeat,
@@ -171,8 +176,15 @@ def _persist_heartbeat(
     heartbeat: Mapping[str, Any],
     *,
     max_history_entries: int,
+    build_observation: Mapping[str, Any] | None = None,
+    candidate_snapshot_fingerprint: str | None = None,
 ) -> dict[str, Any]:
     """Persist current heartbeat and best-effort bounded history with visible status."""
+    heartbeat = dict(heartbeat)
+    if build_observation is not None:
+        heartbeat["build_observation"] = parse_supervisor_build_observation(build_observation)
+    if candidate_snapshot_fingerprint is not None:
+        heartbeat["candidate_snapshot_fingerprint"] = candidate_snapshot_fingerprint
     archived = with_history_archive_status(heartbeat, archived=True)
     try:
         archive_heartbeat_snapshot(
@@ -187,6 +199,36 @@ def _persist_heartbeat(
     atomic_write_json(heartbeat_path, archived)
     return archived
 
+
+
+def _observe_startup_build() -> dict[str, Any]:
+    """Observe only this checkout; suppress git error text and remote URLs."""
+    root = Path(__file__).resolve().parents[1]
+    observed_at = datetime.now(timezone.utc)
+    commit_sha = None
+    clean = None
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=root, check=True,
+            capture_output=True, text=True, timeout=10,
+        )
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=root, check=True, capture_output=True, text=True, timeout=10,
+        )
+        untracked = subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard", "src", "scripts"],
+            cwd=root, check=True, capture_output=True, text=True, timeout=10,
+        )
+        commit_sha = commit.stdout.strip()
+        clean = not status.stdout.strip() and not any(
+            p.endswith(".py") for p in untracked.stdout.splitlines()
+        )
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return supervisor_build_observation(
+        commit_sha=commit_sha, tracked_checkout_clean=clean, observed_at=observed_at,
+    )
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -222,6 +264,8 @@ def main() -> int:
     lock_path = state_dir / "supervisor.lock"
     state_dir.mkdir(parents=True, exist_ok=True)
 
+    build_observation = _observe_startup_build()
+    candidate_snapshot_fingerprint = None
     stop = threading.Event()
 
     def request_stop(signum, frame) -> None:
@@ -245,12 +289,18 @@ def main() -> int:
             resume_state = _load_resume(resume_path)
             previous_bundle_payload = _load_previous_bundle(latest_bundle_path)
             candidate_checkpoint = _load_candidate_checkpoint(candidate_checkpoint_path)
+            if candidate_operator_snapshot_path.exists():
+                candidate_snapshot_fingerprint = parse_operator_snapshot_payload(
+                    read_json_object(candidate_operator_snapshot_path)
+                ).snapshot_fingerprint
         except Exception:
             _persist_heartbeat(
                 heartbeat_path,
                 heartbeat_history_dir,
                 supervisor_error_heartbeat(error_code="RESUME_OR_BUNDLE_STATE_INVALID"),
                 max_history_entries=args.heartbeat_history_max_entries,
+                build_observation=build_observation,
+                candidate_snapshot_fingerprint=candidate_snapshot_fingerprint,
             )
             return 3
 
@@ -309,6 +359,7 @@ def main() -> int:
                     )
                     candidate_checkpoint = candidate_cycle.checkpoint_payload
                     if candidate_cycle.latest_operator_snapshot is not None:
+                        candidate_snapshot_fingerprint = candidate_cycle.latest_operator_snapshot.snapshot_fingerprint
                         atomic_write_json(
                             candidate_operator_snapshot_path,
                             candidate_cycle.latest_operator_snapshot.as_dict(),
@@ -322,6 +373,8 @@ def main() -> int:
                     heartbeat_history_dir,
                     cycle.heartbeat,
                     max_history_entries=args.heartbeat_history_max_entries,
+                    build_observation=build_observation,
+                    candidate_snapshot_fingerprint=candidate_snapshot_fingerprint,
                 )
             except Exception:
                 _persist_heartbeat(
@@ -329,6 +382,8 @@ def main() -> int:
                     heartbeat_history_dir,
                     supervisor_error_heartbeat(error_code="PROBE_OR_CYCLE_FAILED"),
                     max_history_entries=args.heartbeat_history_max_entries,
+                    build_observation=build_observation,
+                    candidate_snapshot_fingerprint=candidate_snapshot_fingerprint,
                 )
                 if args.once:
                     return 2
@@ -344,6 +399,8 @@ def main() -> int:
                 heartbeat_history_dir,
                 supervisor_stopped_heartbeat(),
                 max_history_entries=args.heartbeat_history_max_entries,
+                build_observation=build_observation,
+                candidate_snapshot_fingerprint=candidate_snapshot_fingerprint,
             )
 
     return 0
