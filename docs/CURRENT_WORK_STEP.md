@@ -8,11 +8,12 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2198**
+- Last completed whole-number step: **2199**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2199**
-- Next step after successful completion: **2200**
-- Active Step 2199 scope: **Prove the integrated local restart -> pinned QUERY projection -> supplied venue reconciliation -> existing telemetry path under failure/replay, and document the first external submission boundary. No adapter activation, broker query/order, grant, state repair or slot release.**
+- Active whole-number step: **NONE — STOP_BOUNDARY; no next technical step opened**
+- Next planned whole-number step: **2200 — PLANNED / REQUIRES EXPLICIT AUTHORIZATION**
+- Stop boundary: **The local/read-only/restart-safe DEMO evidence handoff is complete. STOP before activation of a new venue side-effect adapter or the first actual DEMO evidence order. No order/SDK-query API was added or called. Real client-identity lookup/query coverage remains an external prerequisite; empty or unknown venue truth never permits resubmit or slot release.**
+- Planned Step 2200 scope: **Separate main-chat review/explicit authorization of the bounded DEMO transport boundary and real Windows/MT5 identity/query/economics/risk/loss/protection evidence. No technical Step 2200 work, broker order, PAPER/LIVE grant, cap change, slot release or Acceptance refresh is authorized here. See `DEMO_EVIDENCE_LOCAL_FORWARD_BOUNDARY_V1.md`.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
 - Stable-branch governance lane: **2136 — VERIFIED PROTECTED / repository ruleset `Projekt main` is active on `refs/heads/main`; pull request required; strict required checks `dax-bot-1x-ci` + `research-lab-ci`; deletions and non-fast-forward pushes blocked; bypass list empty. Verified 2026-09-12 via GitHub ruleset API.**
 - Historical interrupted scopes retained in archive/current history: **2116 / 2123 / 2131 / 2137 / 2180 / 2183 / 2185**
@@ -57,7 +58,8 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 | 2196 | Reserved-attempt read-only restart ownership. | **COMPLETED.** Existing owner now exposes fingerprint-pinned read-only load and RESERVED/UNKNOWN/QUERY_RECONCILE_REQUIRED operator projection. Nine new crash/restart/collision/file-store tests passed; relevant 1149 passed; full 2259 passed / 6 local pwsh skips; Ruff and eight offline gates passed. Tested code head `f9fa37f4296f46d8ff3398823e896db56e715647`; `dax-bot-1x-ci` #595 run 34759951124 and `research-lab-ci` #1379 run 34759951127 GREEN. No new store/journal, freshness, authority, venue facts or slot release. External host/DB gates remain WAITING_EXTERNAL. |
 | 2197 | Reserved-attempt read-only query-evidence boundary. | **COMPLETED.** Shared pre-query and post-query host/account/feed/time/QUERY-scope veto; existing reconciliation/telemetry/journal owners reused. Missing/UNKNOWN/contradictory venue truth never authorizes repair/resubmit. 29 new query tests, 62 focused tranche tests, 1178 relevant tests, full 2288 passed / 6 local pwsh skips; Ruff and eight offline gates passed. Tested code head `e572257c4f1e15c8340628847b1488e2141c5020`; `dax-bot-1x-ci` #597 run 34760198813 and `research-lab-ci` #1381 run 34760198815 GREEN. Five PR DB gates and real host evidence remain WAITING_EXTERNAL. |
 | 2198 | Pinned read-only query request projection. | **COMPLETED.** Deterministic ephemeral QUERY work item binds same store key/client identity, original reservation/PREPARED/auth/account/ordinal and supplied current host/feed bundle. Reused StateStorePort and ClockPort; no new persistence or attempt identity. Eight new projection tests, 70 focused tests, 1186 relevant tests, full 2296 passed / 6 local pwsh skips; Ruff and eight offline gates passed. Tested code head `e951b8416f134a01436cf60fb7d58fd7bf978f6e`; `dax-bot-1x-ci` #598 run 34760332374 and `research-lab-ci` #1382 run 34760332370 GREEN. Five PR DB gates and real host evidence remain WAITING_EXTERNAL; connected Neon availability/read-only checks are separate evidence. |
-| 2199 | Integrated local restart/failure proof and external-boundary audit. | **ACTIVE.** Prove the composed path and stop before broker-facing activation. |
+| 2199 | Integrated local restart/failure proof and external-boundary audit. | **COMPLETED.** Full restart -> pinned QUERY request -> supplied venue reconciliation -> existing telemetry/journal/replay preserves exact same-key reservation, consumed guard and REQUESTED lifecycle under seven cases; AST regression excludes SDK/submission/activation. Eight new integration/safety tests; 78 focused, 1194 relevant; full 2304 passed / 6 local pwsh skips; Ruff and eight offline gates passed. Tested code/evidence head `f8c1198718ae7cad7794f8ec2c48285fa57898c2`; `dax-bot-1x-ci` #599 run 34760537484 and `research-lab-ci` #1383 run 34760537471 GREEN. Boundary audit recorded in `DEMO_EVIDENCE_LOCAL_FORWARD_BOUNDARY_V1.md`; no first order/adapter activation/Acceptance. |
+| 2200 | Separately authorized DEMO transport boundary / real-host evidence. | **PLANNED / REQUIRES EXPLICIT AUTHORIZATION.** No technical work started. Current grant/capability remains NONE/false; actual DEMO/PAPER execution and LIVE remain unauthorized. |
 
 ## Out-of-band Work hardening evidence after Step 2184
 
@@ -142,3 +144,11 @@ A separate connected Neon branch `step-2189-db-drills` was used for isolated des
 - LIVE not authorized;
 - `NO_STRATEGY_AUTO_PROMOTION` unchanged;
 - frozen V11.2 evidence and verified historical fingerprints remain unchanged.
+
+## Work tranche 2195–2199 closeout
+
+Start head: `9a07f679f10a4cae29083456b2930aba967fb919`. All five whole-number steps above completed only after their required green CIs; the final pointer closeout is documentation-only over the tested Step-2199 code/evidence head. No self-referential final-document SHA is claimed. PR #109 remains open/unmerged and main remains unchanged.
+
+Safety scan: no broker submission call sites or literal order_execution_enabled=True in src/scripts; no work diff in frozen REF-V11.2, reference owners, strategy files, historical data, cost assumptions, workflows/rulesets or Acceptance. Frozen reference tree remains `e61a59f9bdc6ba9d108cfae0ea518bd7b990dedc`. Offline V11.2 fixture replay and synthetic SHADOW soak are not broker/profitability evidence.
+
+Separate connected-Neon read-only SELECT verified production `neondb`, migrations 0001–0009, Candidate current view, zero unsafe Candidate rows and unchanged frozen reference engine SHA. This limited snapshot does not claim the full DB gate ran. No DB writes were made. Five main-only PR CI DB gates, fresh full DB restore/import validation, real Windows/MT5 host lane 2122, broker clock/timezone/identity lookup, economics, risk/loss promotion and real broker lifecycle evidence remain WAITING_EXTERNAL or require separate explicit review/authorization. Existing Step-2189 VERIFIED history remains intact.
