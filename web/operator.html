@@ -16,12 +16,12 @@
   <section id="system" class="system-grid" aria-label="Systemzustand"></section>
   <section class="identity"><span class="eyebrow">SUPERVISOR STARTUP COMMIT</span><code id="commit">UNKNOWN</code><span id="build-note" class="muted">Eine Webserver-Version belegt keinen laufenden Bot-Commit.</span></section>
   <div class="panels">
-    <section class="panel wide"><h2>Monday Pre-DEMO Readiness</h2><dl id="monday"></dl><p class="muted">Einzelne Evidence-Gates · Step 2206 / Host 2122 extern · keine Orderfreigabe.</p></section>
-    <section class="panel"><h2>Independent Health Matrix</h2><dl id="health"></dl></section>
-    <section class="panel"><h2>Freshness Matrix</h2><dl id="freshness"></dl></section>
+    <section class="panel wide"><h2>Blockers</h2><ul id="blockers"><li>RUNTIME_SOURCE_UNKNOWN</li></ul></section>
+    <details class="panel"><summary>Monday Pre-DEMO Readiness</summary><dl id="monday"></dl><p class="muted">Einzelne Evidence-Gates · Step 2206 / Host 2122 extern · keine Orderfreigabe.</p></details>
+    <details class="panel"><summary>Independent Health Matrix</summary><dl id="health"></dl></details>
+    <details class="panel"><summary>Freshness Matrix</summary><dl id="freshness"></dl></details>
     <section class="panel wide"><h2>Current Decision</h2><div id="decision" class="decision">UNKNOWN</div><div id="strategy" class="strategy-grid"></div><dl id="decision-evidence"></dl><p class="muted">Vorschlag am letzten Candidate-Snapshot. TRADE / ALLOWED ist keine Broker-Freigabe.</p></section>
     <section class="panel"><h2>Trade Plan <span class="tag">PROPOSED</span></h2><div id="trade-plan" class="metric-grid"></div></section>
-    <section class="panel"><h2>Blockers</h2><ul id="blockers"><li>RUNTIME_SOURCE_UNKNOWN</li></ul></section>
     <section class="panel wide"><h2>BROKER-OBSERVED Inventory</h2><dl id="inventory"></dl><p class="muted">Offene Orders/Positionen aller Symbole. Transport-Tag ist keine Eigentumszuweisung. Keine automatische Aktion.</p></section>
     <section class="panel"><h2>Risk / Loss / Exposure</h2><dl id="risk"></dl><p class="muted">Cash-Loss-at-Stop ≠ Margin ≠ Notional ≠ Kapitalallokation. Keine erfundenen Policy-Werte.</p></section>
     <section class="panel"><h2>Session Guard</h2><dl id="session"></dl></section>
