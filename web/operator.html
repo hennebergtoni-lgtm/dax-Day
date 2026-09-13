@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>DAX Bot · Operator</title>
+  <link rel="stylesheet" href="operator.css">
+  <script src="operator.js" defer></script>
+</head>
+<body>
+<main>
+  <header><div><div class="eyebrow">DAX DAYTRADING BOT</div><h1>Operator Console</h1><p class="muted">Laufzeitbeobachtung · CAND-001 · kein Steuerkanal</p></div><button id="refresh" type="button">Aktualisieren</button></header>
+  <div class="safety-banner"><strong>SHADOW ONLY</strong><span>DEMO/PAPER und LIVE nicht autorisiert. Keine Order-API.</span></div>
+  <div id="connection" role="status" aria-live="polite">UNKNOWN · Quelle noch nicht gelesen</div>
+  <section id="system" class="system-grid" aria-label="Systemzustand"></section>
+  <section class="identity"><span class="eyebrow">SUPERVISOR STARTUP COMMIT</span><code id="commit">UNKNOWN</code><span id="build-note" class="muted">Eine Webserver-Version belegt keinen laufenden Bot-Commit.</span></section>
+  <div class="panels">
+    <section class="panel wide"><h2>Current Decision</h2><div id="decision" class="decision">UNKNOWN</div><div id="strategy" class="strategy-grid"></div><dl id="decision-evidence"></dl><p class="muted">Vorschlag am letzten Candidate-Snapshot. TRADE / ALLOWED ist keine Broker-Freigabe.</p></section>
+    <section class="panel"><h2>Trade Plan <span class="tag">PROPOSED</span></h2><div id="trade-plan" class="metric-grid"></div></section>
+    <section class="panel"><h2>Blockers</h2><ul id="blockers"><li>RUNTIME_SOURCE_UNKNOWN</li></ul></section>
+    <section class="panel"><h2>Risk / Loss / Exposure</h2><dl id="risk"></dl><p class="muted">Cash-Loss-at-Stop ≠ Margin ≠ Notional ≠ Kapitalallokation. Keine erfundenen Policy-Werte.</p></section>
+    <section class="panel"><h2>Session Guard</h2><dl id="session"></dl></section>
+    <section class="panel"><h2>Reserved Attempt</h2><dl id="reservation"></dl><p class="muted">Reservation beweist keine Broker-Akzeptanz. Query/Reconcile vor jedem weiteren Versuch.</p></section>
+    <section class="panel"><h2>Broker Lifecycle / Reconciliation</h2><dl id="reconciliation"></dl><p class="muted">Ein einzelner Intent-Lookup ist kein vollständiges Account-Inventar.</p></section>
+    <section class="panel"><h2>Virtual Lifecycle <span class="tag">SHADOW</span></h2><dl id="virtual"></dl></section>
+    <section class="panel"><h2>Recovery</h2><dl id="recovery"></dl></section>
+    <section class="panel"><h2>Clock / Account / Economics</h2><dl id="context"></dl></section>
+    <section class="panel"><h2>Last CLOSED-M5 / Freshness</h2><dl id="times"></dl><p class="muted">Browser-Abruf, Snapshot, Host-Beobachtung und Kerzenschluss sind verschiedene Zeiten. UNKNOWN bleibt ohne freigegebenes Limit.</p></section>
+    <section class="panel"><h2>Recent Runtime Events</h2><ul id="events"></ul><p class="muted">Events des letzten Candidate-Snapshots; kein neues Event-Journal.</p></section>
+    <section class="panel"><h2>Evidence / Provenance</h2><dl id="provenance"></dl></section>
+  </div>
+  <section class="research"><h2>Versionierte Research-Evidenz <span class="tag">STATIC ONLY</span></h2><p>Keine Aussage über heutigen Host, Candidate-Ertrag oder Broker-Readiness.</p><a href="research">REF-V11.2 / Research Lab öffnen →</a></section>
+  <footer><span id="fetch-time">Browser-Abruf: UNKNOWN</span><span>GET only · localhost + geschützter Tunnel · keine Credentials im Browser</span></footer>
+</main>
+</body>
+</html>

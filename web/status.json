@@ -6,7 +6,9 @@
   "runtime_boundary": {
     "current_candidate_contract": "docs/CAND001_OPERATOR_TELEMETRY_V1.md",
     "current_candidate_store": "cand001_operator_current",
-    "browser_runtime_endpoint": "NOT_IMPLEMENTED",
+    "browser_runtime_endpoint": "IMPLEMENTED_LOCAL_GET_ONLY",
+    "browser_runtime_path": "/api/operator",
+    "remote_deployment": "WAITING_EXTERNAL_PROTECTED_ACCESS",
     "static_file_must_not_be_used_for_current_health": true
   },
   "active_reference": {"experiment_id":"V112_REFERENCE_V1","strategy":"V11.2","immutable":true,"status":"ACTIVE_REFERENCE"},

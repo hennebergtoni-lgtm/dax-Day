@@ -19,6 +19,7 @@
     .ok { color:#86efac; } .warn { color:#fbbf24; } .block { color:#fca5a5; }
     table { width:100%; border-collapse:collapse; margin-top:12px; }
     th,td { text-align:left; padding:8px 6px; border-bottom:1px solid #272b33; font-size:14px; }
+    .spaced { margin-top:12px; }
     footer { margin-top:24px; color:#6b7280; font-size:12px; }
   </style>
 </head>
@@ -27,16 +28,17 @@
   <h1>DAX Research Lab</h1>
   <div class="sub">Read-only observability surface — keine Orders, keine Strategieänderungen.</div>
   <div id="runtime-notice" class="notice">Statusgrenze wird geprüft …</div>
+  <p class="sub"><a href="operator.html">Lokale read-only Operator-Konsole</a> · benötigt den geschützten lokalen GET-Backend; keine Laufzeitdaten aus dieser Research-Seite.</p>
   <div id="status" class="grid"><div class="card">Status wird geladen …</div></div>
-  <div class="card" style="margin-top:12px">
+  <div class="card spaced">
     <div class="label">Research Families</div>
     <table><thead><tr><th>Familie</th><th>Status</th><th>Evidence</th></tr></thead><tbody id="families"></tbody></table>
   </div>
-  <div class="card" style="margin-top:12px">
+  <div class="card spaced">
     <div class="label">Detail Evidence</div>
     <table><thead><tr><th>Artefakt</th><th>Status</th></tr></thead><tbody id="details"></tbody></table>
   </div>
-  <div class="card" style="margin-top:12px">
+  <div class="card spaced">
     <div class="label">Reproduction Evidence</div>
     <table><thead><tr><th>Artefakt</th><th>Zeilen</th><th>Hash / Aussage</th></tr></thead><tbody id="repro"></tbody></table>
   </div>

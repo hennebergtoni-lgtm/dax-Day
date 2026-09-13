@@ -41,8 +41,15 @@ def main() -> None:
         raise SystemExit("Candidate runtime telemetry contract drift")
     if boundary.get("current_candidate_store") != "cand001_operator_current":
         raise SystemExit("Candidate current runtime store drift")
-    if boundary.get("browser_runtime_endpoint") != "NOT_IMPLEMENTED":
-        raise SystemExit("static web status must not fabricate a browser runtime endpoint")
+    if boundary.get("browser_runtime_endpoint") != "IMPLEMENTED_LOCAL_GET_ONLY":
+        raise SystemExit("static web status must match implemented local read-only endpoint")
+    if boundary.get("browser_runtime_path") != "/api/operator":
+        raise SystemExit("local read-only operator endpoint path drift")
+    if boundary.get("remote_deployment") != "WAITING_EXTERNAL_PROTECTED_ACCESS":
+        raise SystemExit("static web status must not imply public/real-host deployment")
+    for asset in ("web/operator.html", "web/operator.js", "web/operator.css", "scripts/serve_operator_console.py"):
+        if not (root / asset).is_file():
+            raise SystemExit("implemented local operator surface is missing")
     if boundary.get("static_file_must_not_be_used_for_current_health") is not True:
         raise SystemExit("static web status must explicitly reject current-health usage")
 
