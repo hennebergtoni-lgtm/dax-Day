@@ -1,7 +1,7 @@
 # DAX-BOT MASTERSTAND — NEXT-CHAT HANDOVER
 
 Status: **BINDING HANDOVER / REPOSITORY TRUTH FIRST**  
-Updated: **2026-09-12 — Step 2152 continuity reconciliation**  
+Updated: **2026-09-13 — Step 2181 continuity + Monday-target reconciliation**  
 Repository: `hennebergtoni-lgtm/dax-Day`  
 Working branch: `nextgen-bot-line-v1`  
 Pull request: `#109` -> `main`
@@ -25,7 +25,8 @@ On a new chat, context loss, reconnect, compaction, or `Weiter mit dem DAXBot`:
 5. read this Masterstand;
 6. read `docs/PROJECT_KNOWLEDGE_INDEX.md` and only the topic owners needed for the active step;
 7. read the Problem/Solution registries before inventing a new fix;
-8. continue automatically when the Step-Close-Gate permits safe work.
+8. reconcile WAITING_EXTERNAL / INTERRUPTED / BLOCKED lanes separately;
+9. continue automatically when the Step-Close-Gate permits safe work.
 
 Repository truth overrides chat memory. Tool/interface activity does not replace the required normal-text Zwischenstand.
 
@@ -38,7 +39,8 @@ A Zwischenstand is visibility, not a stop. Do not end a turn merely because a su
 Official step numbers are whole integers only. Visible numbering is monotonic. Interrupted older lanes resume only under a new later integer with provenance preserved.
 
 Next mandatory Masterstand checkpoint: **2250**.  
-Next mandatory full architecture/LEAN audit: **2500**.
+Next mandatory 500-step full audit: **2500**.  
+Next mandatory 500-step Architecture & Learning Review: **2500**.
 
 ## 2. Repository / branch / PR truth at this reconciliation
 
@@ -48,13 +50,13 @@ Fresh PR metadata immediately before this Masterstand write:
 - working branch: `nextgen-bot-line-v1`;
 - PR #109: **OPEN / UNMERGED / MERGEABLE / NOT DRAFT**;
 - PR base SHA: `e0784ebfc11bee28475fd9c3385be661af58a738`;
-- documentation head immediately before this Masterstand commit: `de435cbad67cfd1204c3d7f2789838f8767fec53`;
-- last fully tested technical/cleanup head before Step 2152 documentation work: `4a06038cb62be180e9d17afdc3389daf4b542aab`;
-- on `4a06038c…`: `dax-bot-1x-ci` #416 **GREEN** and `research-lab-ci` #1200 **GREEN**.
+- documentation head immediately before this Masterstand commit: `dcca59601fd24c4b119ea80359af6306f1c9a0e7`;
+- latest fully tested technical head before the Step-2180 interruption: `fcfdeea8816beca4a3294bfd0beff3b8cd6bbf51`;
+- on `fcfdeea…`: `dax-bot-1x-ci` #538 **GREEN** and `research-lab-ci` #1322 **GREEN**.
 
 This Masterstand commit creates a newer documentation head. Every later chat must therefore re-pin HEAD and CI rather than treating any SHA written here as self-referential current truth.
 
-No merge into `main` is authorized by this handover. `main` protection enforcement remains a separate manual GitHub-admin dependency.
+`main` is **VERIFIED PROTECTED** under repository ruleset `Projekt main`: PR required, strict checks `dax-bot-1x-ci` + `research-lab-ci`, deletion/non-fast-forward blocked, bypass list empty. This protection state is governance evidence only; it does not authorize merge, PAPER or LIVE.
 
 ## 3. Safety / authorization — BINDING
 
@@ -165,9 +167,25 @@ Binding rules include:
 
 No specialty gate replaces the broad integration regression.
 
-### Step 2136 — stable-branch governance audit — COMPLETED AUDIT / ENFORCEMENT WAITING_EXTERNAL
+### Step 2136 — stable-branch governance — VERIFIED PROTECTED
 
-Observed `main` state was unprotected with no ruleset. Minimal target protection is documented, but the current integration cannot apply the GitHub-admin setting. Do not claim `main` is protected until fresh admin evidence proves it.
+Repository ruleset `Projekt main` is active on `refs/heads/main`:
+
+- pull request required;
+- strict required checks `dax-bot-1x-ci` + `research-lab-ci`;
+- deletion blocked;
+- non-fast-forward blocked;
+- bypass list empty.
+
+### Step 2161 — 500-step Architecture & Learning Review — BINDING
+
+Every 500 steps, ordinary forward feature construction pauses for a real evidence-driven architecture/learning review. First next checkpoint: **2500**.
+
+The review must inspect at least the preceding 500 steps and inherited assumptions affected by current evidence; compare intended architecture/process with observed failures, repeated fixes/CI friction, runtime/research cost, bottlenecks, duplicated truth, dead paths, coupling, recovery/reconciliation, test quality and operator usability; and explicitly ask: **What do we know now that we did not know when the relevant design was chosen?**
+
+Refresh relevant public/open-source knowledge at that checkpoint. Decisions use: **KEEP / IMPROVE / REFACTOR / RETIRE / DEFER**. KEEP/no-change is valid. The checkpoint does not justify a rewrite by itself. Evidence-supported structural problems discovered before Step 2500 must not be left unfixed merely to wait for the checkpoint.
+
+Any IMPROVE/REFACTOR/RETIRE decision must record the problem/evidence, affected contracts, expected benefit, compatibility/parity, migration sequence, risk/failure mode, rollback, effect on VERIFIED/frozen evidence and dependencies/blockers. The review itself never authorizes PAPER/LIVE or strategy promotion.
 
 ## 8. Architecture intervention — Ferrari, not Golf — BINDING
 
@@ -195,7 +213,7 @@ Public/open-source architecture patterns were checked against LEAN, NautilusTrad
 
 ## 9. Verified NextGen progression — Steps 2139–2151
 
-The following sequence is repository/CI verified. Exact details and hashes remain in `docs/CURRENT_WORK_STEP.md` and topic tests.
+The following sequence is repository/CI verified. Exact details and hashes remain in `docs/CURRENT_WORK_STEP.md`, Git history and topic tests.
 
 ### 2139 — Canonical Domain + Ports — COMPLETED
 
@@ -293,21 +311,134 @@ Final tested/cleaned head `4a06038cb62be180e9d17afdc3389daf4b542aab`; `dax-bot-1
 
 No CAND-001 strategy rule, broker/MT5 behavior, order capability or PAPER/LIVE authorization changed.
 
-## 10. Continuity reconciliation — Step 2152
+## 10. Current NextGen delta — Steps 2152–2181
 
-Step 2152 exists only to bring durable navigation/handover prose back in sync with verified repository progress through 2151. It changes no trading/runtime semantics.
+This section is the current handoff delta. For exact implementation details, use the pointer, code/tests, topic docs and Git history rather than reconstructing omitted intermediate steps from prose.
 
-At the time this Masterstand was refreshed, `docs/CURRENT_WORK_STEP.md` named 2152 as active. **Do not infer the current step from this sentence in a later chat.** Always read `CURRENT_WORK_STEP.md`; after Step 2152 closes, the pointer will advance normally.
+### 2152–2154 — continuity, dependency isolation and compatibility audit — COMPLETED
 
-Step-2152 responsibilities:
+- durable Masterstand/Knowledge-Index continuity reconciled;
+- NextGen dependency isolation strengthened;
+- compatibility/retirement audit classified 7/7 inspected owners as `RETAIN_WITH_REASON`, with no deletion-first cleanup.
 
-- reconcile `PROJECT_KNOWLEDGE_INDEX.md` through verified Step 2151;
-- reconcile this Masterstand through verified Step 2151;
-- preserve safety/external-lane truth;
-- run exact-head CI for the documentation reconciliation;
-- only after evidence is green, close 2152 and select/activate 2153 from current Greenfield/backlog truth.
+### 2155 — Canonical Risk Decision V1 — COMPLETED
 
-## 11. External / waiting / interrupted lanes
+Canonical fail-closed fixed-cash sizing owner created with instrument economics, explicit currency and conservative quantity bounds. No strategy quantity, broker API or PAPER/LIVE authority.
+
+Final tested head `9c65949803e1fdf96fddf0eb7903c3545da35bf6`.
+
+### 2156 — Canonical Risk→ExecutionIntent bridge — COMPLETED
+
+Matching `TradePlan + RiskRequest + ALLOW RiskDecision` is required; quantity comes from risk decision and deterministic provenance is preserved. No broker submission.
+
+Final tested head `1f3a5f819ed115501c8c0902c73903b4a2f2e6e2`.
+
+### 2157 — lifecycle / reconciliation / protection reuse — COMPLETED
+
+Existing lifecycle vocabulary/state machine, broker reconciliation and execution protection remain owners. No second lifecycle stack was created.
+
+Final tested head `e65ad2994a6d8e243ef984b75a4724209df1a38a`.
+
+### 2158 — PAPER pre-authorization composition audit — COMPLETED
+
+Do **not** create another pre-submission runtime orchestrator. Existing broker-execution protection evidence plus `evaluate_run_readiness(RunKind.PAPER, snapshot)` is the binding composition. Technical readiness cannot infer explicit user authorization, and user authorization cannot override blocked protection.
+
+Final tested head `8a0052c71a284ab8b94dc5e7dafebf04d10af77a`.
+
+### 2159 — canonical broker economics → Risk Inputs adapter — COMPLETED
+
+Read-only normalized broker economics feed canonical risk inputs only after explicit economics verification and `trade_mode == FULL`; invalid/disabled/partial economics fail closed. Canonical instrument identity stays separate from broker symbol. No order API.
+
+Final tested head `6f782e3d14754a744232ae1094a9b4534f767fcb`.
+
+### 2160 — risk-policy / loss-cap product-promotion audit — COMPLETED
+
+REUSE: explicit cash-at-stop budget, risk currency, conservative step sizing, canonical broker economics. ADAPT later: simple single fixed-cash product policy and separate admission/loss controls. DEFER: BASE/BOOST/HIGH profile names/values, automatic escalation, research loss-cap numbers, balance/equity percentage sizing.
+
+Final tested head `fecff1962ce7e3c7c869dc49cd45b3bfbd5a145a`.
+
+### 2161 — 500-step Architecture & Learning Review governance — COMPLETED
+
+Binding review contract added; first next review Step 2500. Final tested head `fbc04354ef7e5b209bc3759309561b5d5974d5ed`.
+
+### 2162–2173 — subsequent product safety/admission composition — VERIFIED IN REPOSITORY, DETAILS OWNED BY TOPIC FILES/TESTS
+
+Do not recreate this range from chat prose. The important resulting architecture entering Step 2174 is canonical risk/protection/admission composition with no broker submission authority, using existing owners rather than parallel stacks. On resume, inspect exact topic files/tests if a step in this range becomes relevant.
+
+### 2174 — canonical session-admission consumption transition audit — COMPLETED
+
+Final tested head `04197891c069570d277bbb03af611d86f39fd154`; CI #515/#1299 GREEN.
+
+### 2175 — deterministic session-admission consumption state/transition — COMPLETED
+
+Final tested head `b45891633d401dce6e585b2f02afead451df0381`; CI #521/#1305 GREEN.
+
+### 2176 — restart-safe SessionAdmissionConsumptionState persistence — COMPLETED
+
+Final tested head `16fe0ee7935f5f05fe23fc81c9bbe693dafccbfa`; CI #526/#1310 GREEN.
+
+### 2177 — session ledger/freshness crash-coherence audit — COMPLETED
+
+Final tested head `812564f2a5520764c2297b423a3049ecfca9b1aa`; CI #529/#1313 GREEN.
+
+### 2178 — combined atomic SessionAdmissionGuardCheckpoint — COMPLETED
+
+Final tested head `47e9f9d2c887820f674cc52767afebae8063006f`; CI #534/#1318 GREEN.
+
+### 2179 — authoritative session guard in typed NextGen protection — COMPLETED
+
+Typed protection derives session observation from the atomic guard, verifies guard policy identity and canonical decision parity, uses guard `observed_at` for freshness/future-date validation and binds the guard fingerprint into verdict provenance. Generic compatibility remains available. No broker submission or execution authorization was added.
+
+Final tested head `fcfdeea8816beca4a3294bfd0beff3b8cd6bbf51`; `dax-bot-1x-ci` #538 GREEN and `research-lab-ci` #1322 GREEN.
+
+### 2180 — protected session-consumption commit-boundary audit — INTERRUPTED
+
+The user explicitly interrupted this audit to secure the current target/milestone logic before a chat switch. Owner inspection had begun, but **no 2180 technical conclusion or implementation is claimed**. Resume the unfinished work only under the later active integer named by `CURRENT_WORK_STEP.md`, preserving 2180 provenance.
+
+Open technical questions remain:
+
+- what exact event proves the canonical session slot is consumed rather than merely signaled/protected;
+- ordering relative to any future external broker submission attempt;
+- elimination/recovery of `consume-before-failure` and `submit-before-consume` crash windows;
+- whether an existing deterministic lifecycle/client-order/idempotency identity should be the consumption ID;
+- atomic persistence through the existing single-key `StateStorePort` / `SessionAdmissionGuardCheckpoint` path;
+- restart/retry behavior with neither double count nor silent extra allowance;
+- classify existing lifecycle/idempotency/storage owners `REUSE / ADAPT / DEFER` before implementation.
+
+### 2181 — Masterstand + Monday-target continuity reconciliation — IN PROGRESS AT THIS WRITE
+
+This Masterstand refresh is the active continuity intervention. `docs/CURRENT_WORK_STEP.md` is the authority for whether 2181 has since closed and which later integer is active.
+
+## 11. Operational Monday target corridor — 2026-09-13
+
+Status: **TARGET / CONDITIONAL — NOT EXECUTION AUTHORIZATION**.
+
+The operational target recovered from the prior major planning discussion is:
+
+**DAX Bot 1.0 auf Demo loslassen — only if every preceding evidence/authorization gate is GREEN.**
+
+Shortest safe priority chain:
+
+1. **Execution boundary:** close the exact typed-protection → deterministic session-consumption → future external-submission commit boundary;
+2. **Restart / idempotency / reconciliation:** prove crash/retry semantics, especially consume-before-failure and submit-before-consume;
+3. **Market-open broker evidence:** collect fresh current-branch Windows/MT5 evidence on a genuinely open/tradeable DAX demo instrument with verified broker economics and broker clock/session behavior;
+4. **Full E2E SHADOW:** prove the current integrated branch end-to-end with no broker orders;
+5. **Demo-PAPER gate:** evaluate technical PAPER readiness through existing protection/readiness owners;
+6. **Explicit user authorization:** required separately and cannot be inferred from CI or readiness;
+7. **First demo order:** only after all prior gates are GREEN and authorization is explicit.
+
+Binding interpretation:
+
+- this is a target corridor, **not** a promise that a demo order will be sent on Monday regardless of evidence;
+- GREEN CI proves repository/test state, not live broker economics, market-open conditions or user authorization;
+- current Step-2122 Windows/MT5 lane remains **WAITING_EXTERNAL** for market-open clock/GREEN/candidate/restart evidence;
+- no second execution, lifecycle, reconciliation, journal or storage stack;
+- reuse existing deterministic identity/idempotency/lifecycle/reconciliation/checkpoint/`StateStorePort` owners where evidence supports it;
+- no broker submission path may be introduced before the crash boundary is explicitly designed/tested fail-closed;
+- current-day priority is the shortest safe path through core execution/recovery/evidence gates, **not documentation churn**;
+- PAPER/LIVE remain unauthorized until their explicit gates are satisfied.
+
+## 12. External / waiting / interrupted lanes
 
 These lanes remain separate and do not block independent safe NextGen work.
 
@@ -322,7 +453,7 @@ Verified so far:
 - `execution_capability=NONE`;
 - `order_execution_enabled=false`.
 
-Still required in a fresh/open DE40 market window:
+Still required in a fresh/open DAX market window:
 
 - fresh broker clock/timezone proof;
 - GREEN isolated one-shot;
@@ -330,23 +461,27 @@ Still required in a fresh/open DE40 market window:
 - overlap/reconciliation repeat;
 - controlled Scheduled Task reload/restart + runtime health.
 
-`Europe/Helsinki` is configured but remains UNVERIFIED until fresh host evidence proves it.
+`Europe/Helsinki` was previously configured but must not be promoted as current broker-time truth without fresh host evidence.
 
-When this lane is later resumed, use the then-next unused whole-number step; never display 2122 again as the active current step.
+When this lane is later substantively resumed, use the then-next unused whole-number step and preserve Step-2122 provenance.
 
-### Step 2136 enforcement lane — WAITING_EXTERNAL / MANUAL_GITHUB_ADMIN
+### Step 2136 stable-branch governance — VERIFIED PROTECTED
 
-Stable-branch governance target exists, but actual `main` protection/ruleset enforcement requires GitHub-admin action outside the current connector permission.
+`main` protection is now verified as described in Section 7. It is no longer a manual WAITING_EXTERNAL lane.
 
 ### Step 2137 — INTERRUPTED / HISTORICAL
 
 Old Drive/CSV materialization is retained only for historical evidence compatibility. It must not steer NextGen design.
 
+### Step 2180 — INTERRUPTED / CARRIED FORWARD
+
+The unfinished commit-boundary audit is intentionally not marked complete. Its next substantive continuation must use the next current whole integer selected after Step 2181 closes, with explicit provenance back to 2180.
+
 ### PAPER / LIVE
 
 PAPER remains not authorized. LIVE remains not authorized. Do not build/enable broker submission merely because software evidence owners exist.
 
-## 12. Research / product doctrine — BINDING
+## 13. Research / product doctrine — BINDING
 
 Primary objective: build a robust, economically useful DAX daytrading system. Profitability is the goal but **not yet proven**.
 
@@ -360,7 +495,7 @@ Use FAST/vectorized screening for broad idea search and a deterministic shared-s
 
 Public/open-source scans remain mandatory when architecture/recovery/data/execution/research questions arise, especially LEAN, NautilusTrader, Freqtrade, vectorbt and comparable mature systems. Take proven patterns; do not import unnecessary framework bulk or strategies.
 
-## 13. What must NOT be redone or silently changed
+## 14. What must NOT be redone or silently changed
 
 - Do not rewrite or optimize REF-V11.2.
 - Do not use REF-V11.2/V12 metrics as CAND-001 or NextGen evidence.
@@ -368,18 +503,33 @@ Public/open-source scans remain mandatory when architecture/recovery/data/execut
 - Do not make broker symbol `DE40` the canonical instrument identity.
 - Do not mix Strategy output with quantity/risk authorization/execution.
 - Do not rewrite CAND-001 as the NextGen architecture; use explicit compatibility adapters.
-- Do not duplicate existing research/promotion/conformance/state/recovery owners before auditing them.
-- Do not add a second parallel data/session owner when the new canonical owner already exists.
+- Do not duplicate existing research/promotion/conformance/state/recovery/lifecycle/reconciliation owners before auditing them.
+- Do not add a second parallel data/session/lifecycle/storage owner when a canonical owner already exists.
 - Do not introduce PAPER/LIVE/order submission while `NONE/false` and authorization gates remain binding.
+- Do not treat the Monday target as authorization or skip evidence because of the calendar.
 - Do not backfill several step numbers after substantive work; pointer first.
 - Do not call a step complete because partial/general CI is green while its own acceptance work is missing.
 - Do not stop after a normal Zwischenstand when the next safe action is executable.
 - Do not claim work continues after a final response.
 
-## 14. Next-chat one-line resume
+## 15. Milestone logic — BINDING
+
+### Step 2250 — mandatory Masterstand checkpoint
+
+Refresh durable project truth, unresolved blockers, milestone state and next-work priority. This is a continuity checkpoint and must not silently reclassify technical evidence.
+
+### Step 2500 — mandatory full Architecture & Learning Review
+
+Pause normal forward construction and perform the Step-2161 evidence-driven review before opening the next ordinary 500-step block. The review must challenge inherited assumptions and current architecture/process using accumulated evidence; it is not a ceremonial recap and does not force a rewrite.
+
+### Early intervention rule
+
+A known structural problem is not allowed to compound merely because the next 500-step checkpoint has not arrived. Fix or explicitly classify it when evidence makes it material.
+
+## 16. Next-chat one-line resume
 
 Use:
 
 `Weiter mit dem DAXBot`
 
-The next chat must recover from repository truth and continue the **active step named by `docs/CURRENT_WORK_STEP.md`**. Never infer the active step from an older Masterstand section. Re-pin fresh HEAD/CI, preserve all safety/external-lane boundaries, and continue the Greenfield migration from the current verified architecture rather than falling back to legacy constraints. PAPER/LIVE remain unauthorized.
+The next chat must recover from repository truth and continue the **active step named by `docs/CURRENT_WORK_STEP.md`**. Never infer the active step from an older Masterstand section. Re-pin fresh HEAD/CI, reconcile interrupted/waiting lanes separately, preserve all safety boundaries, and prioritize the Monday target corridor without turning a target into authorization. PAPER/LIVE remain unauthorized.
