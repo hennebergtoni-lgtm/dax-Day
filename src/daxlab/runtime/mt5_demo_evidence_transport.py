@@ -602,7 +602,7 @@ def query_mt5_demo_evidence(
             counts=counts,
         )
 
-    matched_deals: list[Any] = []
+    matched_deals: dict[str, Any] = {}
     for deal in deal_rows:
         if _positive_ticket(deal, "order") != ticket:
             continue
@@ -614,12 +614,21 @@ def query_mt5_demo_evidence(
                 order_tickets=tickets,
                 counts=counts,
             )
-        matched_deals.append(deal)
+        deal_ticket = _positive_ticket(deal, "ticket")
+        if deal_ticket is None:
+            return _blocked(request, observed_at, "MT5_MATCHED_DEAL_TICKET_INVALID",
+                            order_tickets=tickets, counts=counts)
+        previous = matched_deals.get(deal_ticket)
+        if previous is not None and not _same_deal_evidence(previous, deal):
+            return _blocked(request, observed_at, "MT5_DUPLICATE_DEAL_TICKET_CONTRADICTION",
+                            order_tickets=tickets, deal_tickets=tuple(sorted(matched_deals)), counts=counts)
+        matched_deals[deal_ticket] = deal
 
     cumulative_fill = 0.0
     weighted_price = 0.0
     deal_tickets: list[str] = []
-    for deal in matched_deals:
+    for deal_ticket in sorted(matched_deals):
+        deal = matched_deals[deal_ticket]
         volume = _float_field(deal, "volume")
         price = _float_field(deal, "price")
         if volume is None or volume < 0:
@@ -642,9 +651,7 @@ def query_mt5_demo_evidence(
             )
         cumulative_fill += volume
         weighted_price += volume * price
-        deal_ticket = _positive_ticket(deal, "ticket")
-        if deal_ticket is not None:
-            deal_tickets.append(deal_ticket)
+        deal_tickets.append(deal_ticket)
     deal_ids = tuple(sorted(set(deal_tickets)))
 
     if cumulative_fill > requested_quantity and not isclose(
@@ -819,6 +826,13 @@ def _deal_identity_compatible(row: Any, identity: DemoMt5TransportIdentity) -> b
     if comment not in (None, "") and str(comment) != identity.comment:
         return False
     return True
+
+
+def _same_deal_evidence(left: Any, right: Any) -> bool:
+    # One immutable venue deal per ticket; transport replays never add fills.
+    fields = ("ticket", "order", "symbol", "magic", "comment", "volume", "price",
+              "time", "time_msc", "type", "entry", "position_id")
+    return all(_field(left, field) == _field(right, field) for field in fields)
 
 
 def _same_order_evidence(left: Any, right: Any) -> bool:

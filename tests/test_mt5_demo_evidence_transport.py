@@ -409,3 +409,54 @@ def test_step_2200_owner_has_no_sdk_import_or_submission_call():
 def test_account_mode_expectation_is_demo_in_fixture(prepared_attempt):
     _, _, reservation = _reservation(prepared_attempt)
     assert reservation.account_context.account_mode is DemoAccountMode.DEMO
+
+
+def test_duplicate_half_fill_cannot_fabricate_complete_fill(prepared_attempt):
+    *_, request = _lookup(prepared_attempt)
+    mt5 = FakeMt5()
+    deal = _deal(request, volume=request.requested_quantity / 2)
+    mt5.history_orders = (_order(request, mt5, state=mt5.ORDER_STATE_FILLED, volume_current=0),)
+    mt5.history_deals = (deal, deal)
+    result = owner.query_mt5_demo_evidence(mt5=mt5, request=request, observed_at=request.query_evaluated_at)
+    assert result.status is owner.DemoMt5LookupStatus.BLOCKED
+    assert result.blockers == ('MT5_ORDER_DEAL_FILL_EVIDENCE_MISMATCH',)
+    assert result.venue_observation is None
+
+
+def test_duplicate_and_reordered_deals_preserve_original_unique_venue_evidence(prepared_attempt):
+    *_, request = _lookup(prepared_attempt)
+    mt5 = FakeMt5()
+    mt5.history_orders = (_order(request, mt5, state=mt5.ORDER_STATE_FILLED, volume_current=0),)
+    a = _deal(request, ticket=501, volume=1, price=25000)
+    b = _deal(request, ticket=502, volume=1.5, price=25001)
+    mt5.history_deals = (a, b)
+    original = owner.query_mt5_demo_evidence(mt5=mt5, request=request, observed_at=request.query_evaluated_at)
+    mt5.history_deals = (b, a, b, a)
+    replay = owner.query_mt5_demo_evidence(mt5=mt5, request=request, observed_at=request.query_evaluated_at)
+    assert replay.status is owner.DemoMt5LookupStatus.MATCHED
+    assert replay.venue_observation == original.venue_observation
+    assert replay.venue_observation.fingerprint == original.venue_observation.fingerprint
+    assert replay.matching_deal_tickets == ('501', '502')
+    assert replay.history_deal_count == 4
+
+
+@pytest.mark.parametrize('field,value', [('volume', 2), ('price', 25002), ('time_msc', 1), ('type', 1), ('position_id', 123)])
+def test_contradictory_duplicate_deal_ticket_fails_closed(prepared_attempt, field, value):
+    *_, request = _lookup(prepared_attempt)
+    mt5 = FakeMt5()
+    mt5.history_orders = (_order(request, mt5, state=mt5.ORDER_STATE_FILLED, volume_current=0),)
+    mt5.history_deals = (_deal(request, volume=2.5), _deal(request, **({'volume': 2.5} | {field: value})))
+    result = owner.query_mt5_demo_evidence(mt5=mt5, request=request, observed_at=request.query_evaluated_at)
+    assert result.blockers == ('MT5_DUPLICATE_DEAL_TICKET_CONTRADICTION',)
+    assert result.venue_observation is None
+
+
+@pytest.mark.parametrize('ticket', [None, 0, -1, True])
+def test_matched_deal_without_stable_ticket_fails_closed(prepared_attempt, ticket):
+    *_, request = _lookup(prepared_attempt)
+    mt5 = FakeMt5()
+    mt5.history_orders = (_order(request, mt5, state=mt5.ORDER_STATE_FILLED, volume_current=0),)
+    mt5.history_deals = (_deal(request, ticket=ticket, volume=2.5),)
+    result = owner.query_mt5_demo_evidence(mt5=mt5, request=request, observed_at=request.query_evaluated_at)
+    assert result.blockers == ('MT5_MATCHED_DEAL_TICKET_INVALID',)
+    assert result.venue_observation is None

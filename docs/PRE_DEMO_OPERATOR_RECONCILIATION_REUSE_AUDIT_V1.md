@@ -112,3 +112,27 @@ projection therefore belongs to the ALREADY EXISTING candidate_operator_query
 read-model. operator_snapshot only reconstructs/verifies its own V3 contract.
 No boundary test is weakened, no second read-model/MT5 connection is introduced.
 This prospective decision follows new evidence and preserves historical results.
+
+## Additional red-team evidence — Steps 2215 / 2216
+
+Read-only in-memory SDK fixtures at `d7854e47cbc00c2843971760f1db72397bff4007`:
+
+- VERIFIED P1: `mt5_demo_evidence_transport.query_mt5_demo_evidence` summed
+  duplicate deal rows before deduplicating ticket IDs. Requested quantity 2.5,
+  one unique ticket 501 with volume 1.25 delivered twice, history order FILLED
+  with remaining 0: actual MATCHED / fill 2.5. Expected BLOCKED because unique
+  fill evidence is only 1.25. Step 2215 deduplicates immutable deal evidence by
+  positive ticket before deterministic aggregation; conflicting duplicate ticket
+  fields and missing ticket fail closed. Existing unique fill/venue fingerprints
+  remain unchanged; raw transport row counts remain honest. No venue repair.
+- VERIFIED P1: the same owner checked the normalized DEMO account only before
+  the three SDK reads. A fixture changing its account to REAL during deal-history
+  read still returned MATCHED for the bound DEMO request. Expected BLOCKED with
+  no venue observation. Step 2216 must check the normalized context again before
+  interpreting any query results. This cannot make multiple SDK reads an atomic
+  broker snapshot or detect an account switching away and back between checks;
+  exclusive terminal/account operation and real-host evidence remain mandatory.
+
+Neither reproduction sent an order or used a real broker/MT5 connection. The
+existing REQUESTED lifecycle comparison still blocks ACK/fill mismatch. These
+findings therefore concern evidence integrity, not execution authorization.
