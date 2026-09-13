@@ -10,8 +10,10 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 - Last completed whole-number step: **2199**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **NONE — STOP_BOUNDARY; no next technical step opened**
-- Next planned whole-number step: **2200 — PLANNED / REQUIRES EXPLICIT AUTHORIZATION**
+- Active whole-number step: **2200**
+- Active step state: **PLANNED / REQUIRES EXPLICIT AUTHORIZATION — POINTER ONLY; no technical work started**
+- Work tranche state: **STOP_BOUNDARY**
+- Next step after successful completion: **2201**
 - Stop boundary: **The local/read-only/restart-safe DEMO evidence handoff is complete. STOP before activation of a new venue side-effect adapter or the first actual DEMO evidence order. No order/SDK-query API was added or called. Real client-identity lookup/query coverage remains an external prerequisite; empty or unknown venue truth never permits resubmit or slot release.**
 - Planned Step 2200 scope: **Separate main-chat review/explicit authorization of the bounded DEMO transport boundary and real Windows/MT5 identity/query/economics/risk/loss/protection evidence. No technical Step 2200 work, broker order, PAPER/LIVE grant, cap change, slot release or Acceptance refresh is authorized here. See `DEMO_EVIDENCE_LOCAL_FORWARD_BOUNDARY_V1.md`.**
 - Active host-verification lane: **2122 — WAITING_EXTERNAL / current-branch CAND-001 Windows/MT5 SHADOW real-host verification; host wiring/parity/fail-closed evidence VERIFIED, market-open clock/GREEN/candidate/restart evidence still WAITING_EXTERNAL**
@@ -147,7 +149,7 @@ A separate connected Neon branch `step-2189-db-drills` was used for isolated des
 
 ## Work tranche 2195–2199 closeout
 
-Start head: `9a07f679f10a4cae29083456b2930aba967fb919`. All five whole-number steps above completed only after their required green CIs; the final pointer closeout is documentation-only over the tested Step-2199 code/evidence head. No self-referential final-document SHA is claimed. PR #109 remains open/unmerged and main remains unchanged.
+Start head: `9a07f679f10a4cae29083456b2930aba967fb919`. All five whole-number steps above completed only after their required green CIs; the final pointer closeout is documentation-only over the tested Step-2199 code/evidence head. The existing integer Active/Next pointer contract is preserved: 2200 is only a PLANNED authorization-gated pointer, not technical work in progress. A closeout attempt using NONE exposed three existing governance-test failures; the canonical numeric shape was restored without weakening those tests. No self-referential final-document SHA is claimed. PR #109 remains open/unmerged and main remains unchanged.
 
 Safety scan: no broker submission call sites or literal order_execution_enabled=True in src/scripts; no work diff in frozen REF-V11.2, reference owners, strategy files, historical data, cost assumptions, workflows/rulesets or Acceptance. Frozen reference tree remains `e61a59f9bdc6ba9d108cfae0ea518bd7b990dedc`. Offline V11.2 fixture replay and synthetic SHADOW soak are not broker/profitability evidence.
 
