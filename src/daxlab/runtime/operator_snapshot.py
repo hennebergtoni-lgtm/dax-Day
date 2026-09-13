@@ -6,10 +6,18 @@ while the current bar legitimately produces a later NO_TRADE decision.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import asdict, dataclass, fields
+from datetime import datetime, timedelta, timezone
 from math import isfinite
-from typing import Any
+from typing import Any, Mapping
+
+from daxlab.runtime.candidate_operator_query import build_candidate_operator_current
+from daxlab.runtime.candidate_operator_telemetry import (
+    _assert_credential_free,
+    operator_timestamp,
+    validate_candidate_operator_snapshot,
+)
+from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
 
 from daxlab.runtime.candidate_admission import AdmissionStatus, Cand001AdmissionResult
 from daxlab.runtime.candidate_config import Cand001Config
@@ -445,3 +453,257 @@ def _sha(value: str, field: str) -> None:
     if len(value) != 64:
         raise ValueError(f"{field} must be sha256 hex")
     int(value, 16)
+
+
+CONSOLE_SCHEMA = "DAXLAB_READONLY_OPERATOR_CONSOLE_V1"
+
+
+def parse_operator_snapshot_payload(payload: Mapping[str, Any]) -> OperatorSnapshot:
+    """Reconstruct the existing V3 contract and verify its ORIGINAL flat digest.
+
+    No new strategy/state schema or fingerprint contract. Unknown fields cannot
+    become a browser-side passthrough. Legacy telemetry validators remain usable.
+    """
+    validate_candidate_operator_snapshot(payload)
+    root_fields = {
+        "schema_version", "generated_at", "core_version", "candidate_id",
+        "config_fingerprint", "snapshot_fingerprint",
+    }
+    sections = {
+        "strategy": {"regime": "regime", "structure": "structure", "setup": "setup"},
+        "signal": {"direction": "signal_direction", "reason": "signal_reason"},
+        "admission": {"status": "admission_status"},
+        "decision": {
+            "action": "decision_action", "decision_id": "decision_id",
+            "blockers": "blockers", "risk_result": "risk_result",
+        },
+        "trade_plan": {
+            "entry": "proposed_entry", "stop": "proposed_stop",
+            "target": "proposed_target", "reward_risk": "proposed_reward_risk",
+        },
+        "runtime": {
+            "last_bar_id": "last_bar_id", "last_bar_close_time": "last_bar_close_time",
+            "freshness_seconds": "freshness_seconds", "health_state": "health_state",
+            "health_source": "health_source", "events": "runtime_events",
+            "recovery_state": "recovery_state", "reconciliation_state": "reconciliation_state",
+        },
+        "virtual_position": {
+            "lifecycle_id": "virtual_lifecycle_id", "origin_decision_id": "virtual_decision_id",
+            "status": "virtual_status", "side": "virtual_side",
+            "filled_at": "virtual_filled_at", "filled_price": "virtual_filled_price",
+            "closed_at": "virtual_closed_at", "exit_price": "virtual_exit_price",
+            "exit_reason": "virtual_exit_reason",
+        },
+        "outcome": {
+            "outcome_id": "outcome_id", "gross_r": "outcome_gross_r",
+            "cost_r": "outcome_cost_r", "net_r": "outcome_net_r",
+        },
+        "safety": {
+            "execution_capability": "execution_capability",
+            "order_execution_enabled": "order_execution_enabled",
+        },
+    }
+    if set(payload) != root_fields | set(sections):
+        raise ValueError("operator snapshot field set mismatch")
+    values = {key: payload[key] for key in root_fields}
+    for section, names in sections.items():
+        raw = payload[section]
+        if not isinstance(raw, Mapping) or set(raw) != set(names):
+            raise ValueError("operator snapshot section field set mismatch")
+        values.update({target: raw[key] for key, target in names.items()})
+    for name in ("generated_at", "last_bar_close_time", "virtual_filled_at", "virtual_closed_at"):
+        if values[name] is not None:
+            values[name] = operator_timestamp(values[name], name)
+    for name in ("blockers", "runtime_events"):
+        if not isinstance(values[name], list) or any(
+            not isinstance(v, str) or not v.strip() for v in values[name]
+        ):
+            raise ValueError("operator event/blocker list invalid")
+        values[name] = tuple(values[name])
+    snapshot = OperatorSnapshot(**values)
+    original = {f.name: getattr(snapshot, f.name) for f in fields(snapshot) if f.name != "snapshot_fingerprint"}
+    if stable_fingerprint(original) != snapshot.snapshot_fingerprint:
+        raise ValueError("operator snapshot original fingerprint mismatch")
+    return snapshot
+
+
+def build_operator_console_projection(
+    *, snapshot_payload: Mapping[str, Any] | None,
+    bundle_payload: Mapping[str, Any] | None,
+    heartbeat_payload: Mapping[str, Any] | None,
+    queried_at: datetime,
+) -> dict[str, Any]:
+    """Project canonical observations; NEVER evaluate readiness or grant execution.
+
+    Feed age uses its source-bound limit. Snapshot/host age has no reviewed maximum
+    here, hence UNKNOWN / UNVERIFIED_THRESHOLD. Fetch time is supplied by the UI
+    separately and cannot renew any source observation.
+    """
+    if queried_at.tzinfo is None or queried_at.utcoffset() is None:
+        raise ValueError("operator queried_at must be timezone-aware")
+    now = queried_at.astimezone(timezone.utc)
+    snapshot = parse_operator_snapshot_payload(snapshot_payload) if snapshot_payload is not None else None
+    current = build_candidate_operator_current(snapshot.as_dict(), queried_at=now) if snapshot else None
+    for value in (bundle_payload, heartbeat_payload):
+        if value is not None:
+            _assert_credential_free(value)
+    bundle = parse_windows_mt5_bundle(bundle_payload) if bundle_payload is not None else None
+    heartbeat_at = None
+    if heartbeat_payload is not None:
+        if (
+            heartbeat_payload.get("schema_version") != "DAXLAB_MT5_SHADOW_HEARTBEAT_V1"
+            or heartbeat_payload.get("status") not in {"GREEN", "BLOCKED", "ERROR", "STOPPED"}
+            or heartbeat_payload.get("execution_capability") != "NONE"
+            or heartbeat_payload.get("order_execution_enabled") is not False
+        ):
+            raise ValueError("operator heartbeat contract invalid")
+        heartbeat_at = operator_timestamp(heartbeat_payload.get("observed_at_utc"), "heartbeat observed_at")
+        _observation_age(now, heartbeat_at)
+        raw_blockers = heartbeat_payload.get("blockers")
+        if not isinstance(raw_blockers, list) or any(not isinstance(v, str) for v in raw_blockers):
+            raise ValueError("operator heartbeat blockers invalid")
+    blockers = list(snapshot.blockers) if snapshot else ["CANDIDATE_SNAPSHOT_MISSING"]
+    if heartbeat_payload is None:
+        blockers.append("SUPERVISOR_HEARTBEAT_MISSING")
+    elif heartbeat_payload["status"] != "GREEN":
+        blockers.extend(["SUPERVISOR_NOT_GREEN", *heartbeat_payload["blockers"]])
+    if bundle is None:
+        blockers.append("HOST_BUNDLE_MISSING")
+    else:
+        blockers.extend(bundle.blockers)
+        if heartbeat_payload is None or heartbeat_payload.get("bundle_sha256") != bundle.fingerprint:
+            blockers.append("HEARTBEAT_BUNDLE_CYCLE_MISMATCH")
+        if heartbeat_payload is not None and bundle.host.symbols and heartbeat_payload.get("symbol") != bundle.host.symbols[0].name:
+            blockers.append("HEARTBEAT_SYMBOL_MISMATCH")
+        _observation_age(now, bundle.host.observed_at)
+    feed = bundle.feed if bundle else None
+    feed_at = feed.observed_at if feed else None
+    close_time = feed.bars[-1].open_time + timedelta(minutes=5) if feed else None
+    feed_age = _observation_age(now, close_time) if close_time else None
+    max_feed_age = bundle_payload["closed_m5_feed"]["max_age_seconds"] if feed else None
+    if feed:
+        _observation_age(now, feed.observed_at)
+        if bundle.host.observed_at != feed.observed_at:
+            blockers.append("HOST_FEED_OBSERVATION_CYCLE_MISMATCH")
+        if feed_age > max_feed_age:
+            blockers.append("MARKET_DATA_STALE_AT_QUERY")
+        if snapshot and snapshot.last_bar_close_time != close_time:
+            blockers.append("CANDIDATE_BEHIND_OR_DIFFERENT_FEED")
+    ctx = bundle.demo_account_context if bundle else None
+    if ctx is None:
+        blockers.append("DEMO_ACCOUNT_CONTEXT_MISSING")
+    elif ctx.account_mode.value != "DEMO":
+        blockers.append("ACCOUNT_MODE_NOT_DEMO")
+    if feed is None or not feed.broker_timezone or feed.timestamp_interpretation != "EXPLICIT_BROKER_WALL_CLOCK":
+        blockers.append("EXPLICIT_BROKER_TIME_CONTEXT_MISSING")
+    elif bundle_payload["host_probe"].get("broker_timezone") != feed.broker_timezone:
+        blockers.append("HOST_FEED_TIMEZONE_MISMATCH")
+    if ctx and bundle.host.symbols and ctx.symbol != bundle.host.symbols[0].name:
+        blockers.append("ACCOUNT_SYMBOL_MISMATCH")
+    # These are evidence boundaries, independent of observed strategy ALLOWED.
+    blockers.extend([
+        "SNAPSHOT_FRESHNESS_THRESHOLD_UNVERIFIED", "HOST_FRESHNESS_THRESHOLD_UNVERIFIED",
+        "ACCOUNT_WIDE_INVENTORY_NOT_VERIFIED", "BROKER_HISTORY_COMPLETENESS_NOT_VERIFIED",
+        "DEMO_PAPER_EXECUTION_NOT_AUTHORIZED",
+    ])
+    host = bundle.host if bundle else None
+    feed_state = "UNKNOWN" if not feed else "GREEN"
+    if feed and feed_age > max_feed_age:
+        feed_state = "STALE"
+    elif feed and (not bundle.green or any(v in blockers for v in (
+        "SUPERVISOR_NOT_GREEN", "HEARTBEAT_BUNDLE_CYCLE_MISMATCH",
+        "HEARTBEAT_SYMBOL_MISMATCH", "HOST_FEED_OBSERVATION_CYCLE_MISMATCH",
+        "HOST_FEED_TIMEZONE_MISMATCH", "ACCOUNT_SYMBOL_MISMATCH",
+    ))):
+        feed_state = "BLOCKED"
+    snapshot_state = "STALE" if "CANDIDATE_BEHIND_OR_DIFFERENT_FEED" in blockers else "UNKNOWN"
+    tiles = {
+        "BOT MODE": _tile("WARN" if snapshot and heartbeat_payload else "UNKNOWN", "SHADOW observation only"),
+        "HOST": _tile("BLOCKED" if host and not host.engine_loop_healthy else "UNKNOWN", "UNVERIFIED_THRESHOLD"),
+        "MT5": _tile("BLOCKED" if host and not host.terminal_connected else "UNKNOWN", "connected observed" if host and host.terminal_connected else "connection unknown/down"),
+        "FEED": _tile(feed_state, "CLOSED-M5" if feed else "MISSING"),
+        "CLOCK": _tile("BLOCKED" if host and not host.clock_ok else "UNKNOWN", feed.broker_timezone if feed else None),
+        "ACCOUNT MODE": _tile("BLOCKED" if ctx and ctx.account_mode.value != "DEMO" else "UNKNOWN", ctx.account_mode.value if ctx else None),
+        "SYMBOL": _tile("UNKNOWN", host.symbols[0].name if host and host.symbols else None),
+        "PROTECTION": _tile("WAITING_EXTERNAL", "no current bound verdict"),
+        "RECONCILIATION": _tile("UNKNOWN", "account-wide venue evidence missing"),
+        "SNAPSHOT AGE": _tile(snapshot_state, "UNVERIFIED_THRESHOLD"),
+        "EXECUTION": _tile("BLOCKED", "NONE / disabled"),
+    }
+    projection = {
+        "schema_version": CONSOLE_SCHEMA,
+        "queried_at_utc": now.isoformat(),
+        "state": "BLOCKED", "source": "existing_local_supervisor_artifacts",
+        "system": tiles, "blockers": list(dict.fromkeys(blockers)),
+        "candidate": snapshot.as_dict() if snapshot else None,
+        "timestamps": {
+            "snapshot_generated_at": snapshot.generated_at.isoformat() if snapshot else None,
+            "snapshot_age_seconds": _observation_age(now, snapshot.generated_at) if snapshot else None,
+            "snapshot_age_threshold": "UNVERIFIED_THRESHOLD",
+            "last_closed_m5_close_time": close_time.isoformat() if close_time else None,
+            "current_feed_age_seconds": feed_age, "source_max_feed_age_seconds": max_feed_age,
+            "snapshot_measured_bar_age_seconds": snapshot.freshness_seconds if snapshot else None,
+            "candidate_current_bar_age_seconds": current.current_bar_age_seconds if current else None,
+            "host_observed_at": host.observed_at.isoformat() if host else None,
+            "host_age_seconds": _observation_age(now, host.observed_at) if host else None,
+            "host_age_threshold": "UNVERIFIED_THRESHOLD",
+            "heartbeat_observed_at": heartbeat_at.isoformat() if heartbeat_at else None,
+            "feed_observed_at": feed_at.isoformat() if feed_at else None,
+            "broker_tick_observed_at": None,
+        },
+        "host_observation": {
+            "terminal_connected": host.terminal_connected if host else None,
+            "account_connected": host.account_connected if host else None,
+            "engine_loop_healthy": host.engine_loop_healthy if host else None,
+            "clock_ok": host.clock_ok if host else None,
+            "heartbeat_status": heartbeat_payload["status"] if heartbeat_payload else None,
+        },
+        "clock": {
+            "broker_timezone": feed.broker_timezone if feed else None,
+            "timestamp_interpretation": feed.timestamp_interpretation if feed else None,
+            "session_review_state": "WAITING_EXTERNAL", "broker_tick_time": None,
+        },
+        "account_context": ctx.to_payload() if ctx else None,
+        "economics": {
+            "state": "UNKNOWN", "verification": "OBSERVATION_IS_NOT_REVIEWED_RISK_BINDING",
+            "observed_symbol_metadata": asdict(host.symbols[0]) if host and host.symbols else None,
+        },
+        "risk_loss_exposure": {"state": "WAITING_EXTERNAL", "values": None},
+        "session_guard": {"state": "UNKNOWN"},
+        "reserved_attempt": None,
+        "broker_lifecycle": {"state": "UNKNOWN", "venue_state": "UNKNOWN"},
+        "reconciliation": {
+            "state": "UNKNOWN", "account_inventory_complete": False,
+            "history_completeness": "UNKNOWN", "targeted_lookup_is_account_inventory": False,
+            "resubmit_allowed": False, "session_slot_release_allowed": False,
+        },
+        "recovery": {
+            "state": "UNKNOWN", "candidate_observed_state": snapshot.recovery_state if snapshot else None,
+            "candidate_reconciliation_scope": "LOCAL_SHADOW_ONLY",
+            "candidate_observed_reconciliation": snapshot.reconciliation_state if snapshot else None,
+        },
+        "build_identity": {"state": "UNKNOWN", "runtime_commit": None},
+        "provenance": {
+            "snapshot_fingerprint": snapshot.snapshot_fingerprint if snapshot else None,
+            "bundle_fingerprint": bundle.fingerprint if bundle else None,
+            "evidence_kind": "OBSERVATION_ONLY_NOT_EXECUTION_AUTHORIZATION",
+        },
+        "execution_capability": "NONE", "order_execution_enabled": False,
+        "shadow_authorized": True, "demo_paper_execution_authorized": False, "live_authorized": False,
+    }
+    _assert_credential_free(projection)
+    projection["console_fingerprint"] = stable_fingerprint(projection)
+    return projection
+
+
+def _observation_age(now: datetime, observed: datetime) -> float:
+    if observed.tzinfo is None or observed.utcoffset() is None:
+        raise ValueError("operator observation must be timezone-aware")
+    age = (now - observed).total_seconds()
+    if age < 0:
+        raise ValueError("operator observation is in the future")
+    return age
+
+
+def _tile(state: str, value: Any) -> dict[str, Any]:
+    return {"state": state, "value": value}
