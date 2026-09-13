@@ -83,6 +83,7 @@ def read_local_operator_projection(
         broker_evidence_payload=broker_evidence, expected_broker_evidence_fingerprint=broker_evidence_fingerprint,
     )
     view["source_available"] = all(v is not None for v in (heartbeat, bundle, snapshot))
+    view["health_matrix"]["web_process_alive"] = {"state": "GREEN", "value": "this HTTP process responding only"}
     # This is a response projection, not another checkpoint/persistence digest.
     view.pop("console_fingerprint")
     from daxlab.runtime.decision import stable_fingerprint

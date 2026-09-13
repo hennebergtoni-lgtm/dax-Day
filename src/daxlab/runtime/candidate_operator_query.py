@@ -448,6 +448,49 @@ def build_operator_console_projection(
     projection["system"]["CODE"] = _tile("UNKNOWN", projection["build_identity"]["runtime_commit"])
     projection["system"]["SESSION"] = _tile("WAITING_EXTERNAL", "timezone/session review required")
     projection["system"]["INVENTORY"] = _tile(projection["broker_inventory"]["state"], "broker-observed; no repair authority")
+    projection["health_matrix"] = {
+        "runtime_backend_alive": _tile("GREEN", "canonical read completed at queried_at; not Candidate liveness"),
+        "candidate_loop_alive": _tile(snapshot_state, "snapshot observation; freshness threshold unverified"),
+        "mt5_connected": tiles["MT5"], "feed_fresh": tiles["FEED"],
+        "closed_m5_fresh": tiles["FEED"], "broker_clock_observed": _tile("UNKNOWN", "no broker tick clock evidence"),
+        "account_context_valid": tiles["ACCOUNT MODE"], "inventory_observed": tiles["INVENTORY"],
+        "reconciliation_current": tiles["RECONCILIATION"], "protection_current": tiles["PROTECTION"],
+        "telemetry_fresh": tiles["SNAPSHOT AGE"],
+    }
+    projection["freshness_matrix"] = {
+        "operator_snapshot": {"observed_at": projection["timestamps"]["snapshot_generated_at"], "state": snapshot_state,
+                              "threshold": "UNVERIFIED_THRESHOLD"},
+        "closed_m5": {"observed_at": projection["timestamps"]["last_closed_m5_close_time"], "state": feed_state,
+                      "threshold_seconds": max_feed_age, "threshold_owner": "SOURCE_CLOSED_M5_FEED"},
+        "mt5_host": {"observed_at": projection["timestamps"]["host_observed_at"], "state": tiles["HOST"]["state"],
+                     "threshold": "UNVERIFIED_THRESHOLD"},
+        "broker_clock": {"observed_at": None, "state": "UNKNOWN", "threshold": "UNVERIFIED_THRESHOLD"},
+        "inventory": {"observed_at": projection["broker_inventory"]["observed_at"], "state": tiles["INVENTORY"]["state"],
+                      "threshold": "UNVERIFIED_THRESHOLD"},
+        "reconciliation": {"observed_at": projection["reconciliation"].get("observed_at"), "state": tiles["RECONCILIATION"]["state"],
+                           "threshold": "UNVERIFIED_THRESHOLD"},
+        "economics": {"observed_at": projection["timestamps"]["host_observed_at"], "state": "UNKNOWN",
+                      "threshold": "UNVERIFIED_THRESHOLD", "scope": "SYMBOL_METADATA_OBSERVATION_NOT_REVIEWED_BINDING"},
+    }
+    gates = {name: "WAITING_EXTERNAL" for name in (
+        "exact_pr_head", "exact_runtime_build", "windows_host", "mt5_connection", "broker_clock",
+        "timezone_session", "demo_account", "server", "symbol", "inventory", "broker_economics",
+        "fixed_cash_risk_review", "loss_exposure_policy_review", "loss_observation_provenance", "protection",
+    )}
+    gates.update(feed="VERIFIED" if feed_state == "GREEN" else "BLOCKED" if feed_state in {"STALE", "BLOCKED"} else "UNKNOWN",
+                 closed_m5="VERIFIED" if feed_state == "GREEN" else "BLOCKED" if feed_state in {"STALE", "BLOCKED"} else "UNKNOWN",
+                 session_guard="UNKNOWN", reservation="BLOCKED" if reservation else "UNKNOWN",
+                 reconciliation="BLOCKED" if reservation else "UNKNOWN", telemetry="BLOCKED" if snapshot_state == "STALE" else "UNKNOWN",
+                 unexpected_broker_inventory="BLOCKED" if projection["broker_inventory"].get("rows") else "UNKNOWN",
+                 execution_disabled="VERIFIED", first_demo_authorization="USER_AUTH")
+    for gate, tile in (("windows_host", "HOST"), ("mt5_connection", "MT5"), ("demo_account", "ACCOUNT MODE"), ("broker_clock", "CLOCK"), ("inventory", "INVENTORY")):
+        if tiles[tile]["state"] in {"BLOCKED", "STALE"}:
+            gates[gate] = "BLOCKED"
+    projection["monday_pre_demo"] = {"state": "BLOCKED", "gates": gates,
+                                     "scope": "OBSERVATION_CHECKLIST_NOT_READINESS_VERDICT_OR_ORDER_AUTHORIZATION",
+                                     "external_step": 2206, "host_lane": 2122}
+    projection["alerts"] = [{"code": code, "state": "BLOCKED", "action": "OBSERVE_REVIEW_NO_REPAIR"}
+                            for code in projection["blockers"]]
     _assert_credential_free(projection)
     projection["console_fingerprint"] = stable_fingerprint(projection)
     return projection

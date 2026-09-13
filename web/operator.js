@@ -15,7 +15,7 @@
     }));
     el('commit').textContent='UNKNOWN';el('build-note').textContent='Laufender Bot-Commit nicht bestätigt.';
     el('decision').textContent='UNKNOWN';el('strategy').replaceChildren();el('trade-plan').replaceChildren();
-    for(const id of ['decision-evidence','risk','session','reservation','reconciliation','virtual','recovery','context','times','provenance','inventory']) rows(id,[['Quelle','UNKNOWN']]);
+    for(const id of ['decision-evidence','risk','session','reservation','reconciliation','virtual','recovery','context','times','provenance','inventory','monday','health','freshness']) rows(id,[['Quelle','UNKNOWN']]);
     list('blockers',[reason,'EXECUTION_SAFETY_UNCONFIRMED']);list('events',[]);
     el('connection').textContent='UNKNOWN · Laufzeitdaten fehlen oder sind ungültig';
   };
@@ -41,6 +41,9 @@
     rows('decision-evidence',[['Signal',c?.signal?.direction],['Reason',c?.signal?.reason],['Risk result',c?.decision?.risk_result],['Decision ID',c?.decision?.decision_id],['Snapshot',c?.generated_at]]);
     metrics('trade-plan',[['Entry',p.entry],['Stop',p.stop],['Target',p.target],['RR',p.reward_risk]]);
     list('blockers',v.blockers);
+    rows('monday',Object.entries(v.monday_pre_demo?.gates||{state:'UNKNOWN'}));
+    rows('health',Object.entries(v.health_matrix||{state:'UNKNOWN'}));
+    rows('freshness',Object.entries(v.freshness_matrix||{state:'UNKNOWN'}));
     rows('inventory',[['State',v.broker_inventory?.state],['Observed at',v.broker_inventory?.observed_at],['Threshold',v.broker_inventory?.freshness_threshold],['BROKER OBSERVED rows',v.broker_inventory?.rows],['Account context',v.broker_inventory?.account_context],['Atomic',v.broker_inventory?.collection_is_atomic]]);
     rows('risk',[['State',risk.state],['Risk policy',risk.risk_policy_fingerprint],['Sizing evidence',risk.sizing_evidence_fingerprint],['Loss admission',risk.loss_admission_evidence_fingerprint],['Loss observation',risk.loss_observation_checkpoint_fingerprint],['Konkrete Werte',risk.values]]);
     const sg=v.session_guard||{};
