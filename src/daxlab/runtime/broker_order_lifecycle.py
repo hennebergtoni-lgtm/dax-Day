@@ -12,6 +12,7 @@ from datetime import datetime
 from enum import StrEnum
 from hashlib import sha256
 import json
+from math import isfinite
 from typing import Any, Mapping
 
 from daxlab.runtime.paper_contracts import ExecutionIntent, PaperLifecycleState
@@ -146,6 +147,10 @@ class BrokerOrderEvent:
             raise ValueError("venue_event_time must be timezone-aware")
         if self.sequence < 0:
             raise ValueError("sequence must be non-negative")
+        for name in ("cumulative_filled_quantity", "last_fill_quantity"):
+            _number(getattr(self, name), name)
+        if self.last_fill_price is not None:
+            _number(self.last_fill_price, "last_fill_price")
         if self.cumulative_filled_quantity < 0 or self.last_fill_quantity < 0:
             raise ValueError("fill quantities must be non-negative")
         if self.last_fill_price is not None and self.last_fill_price <= 0:
@@ -203,6 +208,10 @@ class BrokerOrderLifecycle:
         _sha(self.last_event_fingerprint, "last_event_fingerprint")
         if not isinstance(self.state, BrokerOrderState):
             raise TypeError("state must be BrokerOrderState")
+        for name in ("requested_quantity", "cumulative_filled_quantity"):
+            _number(getattr(self, name), name)
+        if self.average_fill_price is not None:
+            _number(self.average_fill_price, "average_fill_price")
         if self.requested_quantity <= 0:
             raise ValueError("requested_quantity must be positive")
         if self.cumulative_filled_quantity < 0:
@@ -445,8 +454,10 @@ def apply_order_event(
     next_cumulative = (
         lifecycle.cumulative_filled_quantity
         if cumulative_filled_quantity is None
-        else float(cumulative_filled_quantity)
+        else _number(cumulative_filled_quantity, "cumulative_filled_quantity")
     )
+    if last_fill_price is not None:
+        _number(last_fill_price, "last_fill_price")
     if next_cumulative < lifecycle.cumulative_filled_quantity:
         raise ValueError("cumulative filled quantity cannot decrease")
     if next_cumulative > lifecycle.requested_quantity:
@@ -557,4 +568,7 @@ def _build_event(
 def _number(value: Any, field: str) -> float:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise ValueError(f"{field} must be numeric")
-    return float(value)
+    parsed = float(value)
+    if not isfinite(parsed):
+        raise ValueError(f"{field} must be finite")
+    return parsed

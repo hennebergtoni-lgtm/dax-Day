@@ -17,6 +17,7 @@ from typing import Any
 from daxlab.runtime.broker_order_lifecycle import (
     BrokerOrderLifecycle,
     BrokerOrderState,
+    _number,
 )
 
 
@@ -53,6 +54,10 @@ class VenueOrderObservation:
             raise ValueError("client_order_id must be non-empty")
         if not isinstance(self.venue_state, str) or not self.venue_state.strip():
             raise ValueError("venue_state must be non-empty")
+        for name in ("requested_quantity", "cumulative_filled_quantity"):
+            _number(getattr(self, name), name)
+        if self.average_fill_price is not None:
+            _number(self.average_fill_price, "average_fill_price")
         if self.requested_quantity <= 0:
             raise ValueError("requested_quantity must be positive")
         if self.cumulative_filled_quantity < 0:

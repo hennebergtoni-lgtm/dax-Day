@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from dataclasses import replace
+
+import pytest
 
 from daxlab.runtime.broker_order_lifecycle import (
     BrokerOrderState,
+    broker_order_lifecycle_state_payload,
+    parse_broker_order_lifecycle_state_payload,
+    _fingerprint,
     apply_order_event,
     begin_order_lifecycle,
 )
@@ -165,3 +171,41 @@ def test_reconciliation_does_not_mutate_local_lifecycle() -> None:
     before = local.fingerprint
     reconcile_broker_order(local=local, venue=_venue_for(local))
     assert local.fingerprint == before
+
+
+# A malformed direct observation must fail at the canonical contract, even when
+# local and venue values would compare equal (notably +Inf == +Inf).
+
+@pytest.mark.parametrize("field", ["requested_quantity", "cumulative_filled_quantity", "average_fill_price"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), True])
+def test_nonfinite_broker_and_venue_evidence_rejects_before_reconciliation(field, value) -> None:
+    local = _acked_local()
+    with pytest.raises(ValueError):
+        replace(local, **{field: value})
+    with pytest.raises(ValueError):
+        _venue_for(local, **{field: value})
+
+
+@pytest.mark.parametrize("field", ["requested_quantity", "cumulative_filled_quantity", "average_fill_price"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
+def test_rehashed_nonfinite_lifecycle_payload_is_rejected(field, value) -> None:
+    payload = broker_order_lifecycle_state_payload(_acked_local())
+    payload[field] = value
+    inner = {k: v for k, v in payload.items() if k not in {
+        "state_schema_version", "lifecycle_fingerprint", "payload_fingerprint",
+    }}
+    inner["schema_version"] = inner.pop("lifecycle_schema_version")
+    payload["lifecycle_fingerprint"] = _fingerprint(inner)
+    payload["payload_fingerprint"] = _fingerprint({k: v for k, v in payload.items() if k != "payload_fingerprint"})
+    with pytest.raises(ValueError, match="finite"):
+        parse_broker_order_lifecycle_state_payload(payload)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
+def test_nonfinite_event_prices_cannot_poison_lifecycle(value) -> None:
+    with pytest.raises(ValueError, match="finite"):
+        apply_order_event(
+            lifecycle=_acked_local(), state=BrokerOrderState.PARTIAL,
+            venue_event_time=T0 + timedelta(seconds=2),
+            cumulative_filled_quantity=0.5, last_fill_price=value,
+        )
