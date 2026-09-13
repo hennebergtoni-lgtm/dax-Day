@@ -1,7 +1,7 @@
 # Project Knowledge Index — DAX Daytrading Bot
 
 Status: BINDING NAVIGATION CONTRACT
-Updated: 2026-09-12
+Updated: 2026-09-13
 
 Purpose: make important project knowledge discoverable by topic so context loss never forces rediscovery from memory. This file is a navigation layer, not a replacement for evidence, code, tests or historical documents.
 
@@ -24,7 +24,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 
 | Topic | Authoritative/current source(s) | Status / usage | Historical / secondary sources |
 |---|---|---|---|
-| Overall project state | `docs/MASTERSTAND.md` | Primary durable handover/source-of-truth below exact repo/code/evidence; Step 2152 reconciliation refreshes it through verified Step 2151 | Older Masterstand revisions remain available through Git history |
+| Overall project state | `docs/MASTERSTAND.md` | Primary durable handover/source-of-truth below exact repo/code/evidence; Step 2181 refresh records current verified progress through Step 2179, truthful Step-2180 interruption, Monday target corridor and milestone logic | Older Masterstand revisions remain available through Git history |
 | Current work-step numbering | `docs/CURRENT_WORK_STEP.md` | Binding numbering pointer and reconstructed whole-number ledger; numbering only, never overrides code/evidence/safety | Commit history is reconstruction evidence when the pointer is inconsistent |
 | Workflow integrity / step close | `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`, `docs/DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md`, `tests/test_workflow_integrity_gate.py` | Binding Step-Close-Gate, pointer-before-next-step, monotonic interrupted-lane carry-forward, visible-progress and no-background-work truth | `WORK_CONTINUITY_PROTOCOL.md` remains detailed continuity policy |
 | Session execution refresher | `docs/SESSION_EXECUTION_REFRESHER.md` | Mandatory first read on resume/continue; compact enforcement reminder before substantive work | Detailed rules remain in workflow-integrity/handoff/continuity contracts |
@@ -32,7 +32,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 | Previously solved problems | `docs/PROBLEM_SOLUTION_REGISTRY.md`, `docs/PROBLEM_SOLUTION_REGISTRY_ADDENDUM_V1.md` | Mandatory pre-design lookup; addendum includes `PSR-018` workflow-drift protection | Local issue-specific docs remain evidence |
 | Step-2000 migration backlog | `docs/DAX_BOT_1X_MIGRATION_BACKLOG_STEP_2000.md`, `docs/DAX_BOT_1X_BACKLOG_RECONCILIATION_2134.md` | Step-2000 remains historical audit snapshot; Step-2134 reconciliation records current resolved/open/external status and selects CI ownership as the next safe repo gap | Future full audit at Step 2500 supersedes when completed |
 | CI ownership / responsibility | `docs/CI_OWNERSHIP_CONTRACT_V1.md`, `tests/test_ci_ownership_contract.py`, `.github/workflows/ci.yml`, `.github/workflows/dax-bot-1x-ci.yml`, `.github/workflows/reference-payload-export.yml` | Hybrid CI contract: broad repository integration/regression owner + focused Candidate/broker-safety owner + immutable legacy-reference owner; focused gates do not replace aggregate regression and CI never grants PAPER/LIVE authorization | Step-2000 CI-mixing observation and Step-2134 public comparison are provenance |
-| Stable branch governance | `docs/STABLE_BRANCH_GOVERNANCE_V1.md`, `tests/test_stable_branch_governance.py` | `main` is currently observed unprotected with no rulesets; minimum target is PR-only changes + universal broad `test` check + no force-push/delete. Enforcement remains `WAITING_EXTERNAL / MANUAL_GITHUB_ADMIN` until fresh GitHub evidence proves protection is active. | Step-2000 branch-protection observation is provenance |
+| Stable branch governance | `docs/STABLE_BRANCH_GOVERNANCE_V1.md`, `tests/test_stable_branch_governance.py`, `docs/CURRENT_WORK_STEP.md` | `main` is VERIFIED PROTECTED by ruleset `Projekt main`: PR required, strict required checks `dax-bot-1x-ci` + `research-lab-ci`, deletion and non-fast-forward blocked, bypass list empty. Protection is governance evidence only and never trading authorization. | Earlier unprotected / WAITING_EXTERNAL observations remain historical provenance |
 | DAX-BOT 1.x migration safety | `docs/DAX_BOT_1X_MIGRATION_SAFETY_GATE.md` | Binding migration constraints | Older V10/V11 reviews are context only |
 | DAX-BOT 1.x alpha acceptance | `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_GATE.md`, `docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_STATUS.md`, `docs/DAX_BOT_1_0_CLOSEOUT_FINAL.md` | Repository-side 1.0-alpha accepted; real Windows-host Candidate verification remains a separate `WAITING_EXTERNAL` lane | Candidate tests/code remain executable proof |
 | NextGen Greenfield architecture | `docs/NEXTGEN_GREENFIELD_ARCHITECTURE_V1.md`, `docs/MASTERSTAND.md` | Step 2138 completed the First-Principles reset: legacy/V11.2/CSV/MT5/CAND-001 are evidence/adapters, not the NextGen chassis; two-speed research/product architecture with shared semantics and strangler migration is binding | Step 2137 old-data materialization remains historical compatibility provenance only |
@@ -72,7 +72,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 | R/cash research ledger | `src/daxlab/research/shadow_cash_ledger.py`, `tests/test_shadow_cash_ledger.py` | Simulated R→EUR research translation; not broker balance | Risk observation remains descriptive only |
 | Forward performance | `src/daxlab/research/forward_shadow_performance.py`, relevant tests | Aggregate signal/trade/R/cash evidence; remains simulation/research evidence | Weekly/rolling attribution views are downstream |
 | Web/operator surface | `docs/WEB_INTERFACE_CONTRACT_V2.md`, `src/daxlab/runtime/operator_snapshot.py`, `docs/CAND001_OPERATOR_TELEMETRY_V1.md`, `web/status.json` | V2 is current: static dashboard uses `DAXLAB_WEB_STATIC_STATUS_V2`; fresh runtime source is separate Candidate telemetry and browser endpoint is post-alpha/non-blocking | `WEB_INTERFACE_CONTRACT_V1.md` and static V1 runtime/pre-host assertions are historical/superseded |
-| Architecture hygiene / LEAN | `docs/LEAN_500_STEP_AUDIT_POLICY.md`, `docs/DAX_BOT_1X_BACKLOG_RECONCILIATION_2134.md` | Full audit mandatory every 500 steps; next full audit remains Step 2500. Step-2134 reconciliation prevents redoing already-solved Step-2000 cleanup. | Step-2000 backlog remains historical audit snapshot |
+| Architecture hygiene / LEAN | `docs/FIVE_HUNDRED_STEP_ARCHITECTURE_LEARNING_REVIEW_V1.md`, `docs/LEAN_500_STEP_AUDIT_POLICY.md`, `docs/DAX_BOT_1X_BACKLOG_RECONCILIATION_2134.md` | Step-2161 Architecture & Learning Review contract is binding; next mandatory full review remains Step 2500 and may conclude KEEP/no-change. Known structural problems should not wait merely for the checkpoint. | Step-2000 backlog and older audit policy remain provenance where compatible |
 
 ## Public donor precedence
 
