@@ -23,10 +23,10 @@ _FORBIDDEN_KEYS = {"login", "password", "token", "secret", "email", "phone", "ac
 class WindowsMt5Bundle:
     host: Mt5HostObservation
     feed: ClosedM5Feed | None
-    demo_account_context: Mt5DemoAccountContextEvidence | None
     symbol_resolution_state: str
     fingerprint: str
     blockers: tuple[str, ...]
+    demo_account_context: Mt5DemoAccountContextEvidence | None = None
 
     @property
     def green(self) -> bool:
