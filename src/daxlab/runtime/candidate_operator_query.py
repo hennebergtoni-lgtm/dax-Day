@@ -155,8 +155,10 @@ def build_operator_console_projection(
     blockers = list(display_snapshot["decision"]["blockers"]) if snapshot else ["CANDIDATE_SNAPSHOT_MISSING"]
     if heartbeat_payload is None:
         blockers.append("SUPERVISOR_HEARTBEAT_MISSING")
-    elif heartbeat_payload["status"] != "GREEN":
-        blockers.extend(["SUPERVISOR_NOT_GREEN", *heartbeat_payload["blockers"]])
+    else:
+        blockers.extend(heartbeat_payload["blockers"])
+        if heartbeat_payload["status"] != "GREEN" or heartbeat_payload["blockers"]:
+            blockers.append("SUPERVISOR_NOT_GREEN")
     if heartbeat_payload is not None and "candidate_snapshot_fingerprint" in heartbeat_payload:
         if snapshot is None or heartbeat_payload["candidate_snapshot_fingerprint"] != snapshot.snapshot_fingerprint:
             blockers.append("HEARTBEAT_CANDIDATE_SNAPSHOT_MISMATCH")
@@ -373,12 +375,19 @@ def build_operator_console_projection(
     # Canonical bundle blockers are computed by existing typed owners, not raw
     # exception strings. Unknown heartbeat codes retain a digest for incidents.
     known = set(bundle.blockers) if bundle else set()
-    known.update({"PROBE_OR_CYCLE_FAILED", "RESUME_OR_BUNDLE_STATE_INVALID"})
+    known.update({"PROBE_OR_CYCLE_FAILED", "RESUME_OR_BUNDLE_STATE_INVALID", "CLOCK_NOT_SAFE"})
     known.update(projection["blockers"] if heartbeat_payload is None else
                  [v for v in projection["blockers"] if v not in heartbeat_payload["blockers"]])
     projection["blockers"] = [v if v in known else
                               "UNKNOWN_SOURCE_BLOCKER:" + sha256(v.encode()).hexdigest()
                               for v in projection["blockers"]]
+    projection["health_dimensions"] = {
+        "liveness": {"state": "GREEN" if heartbeat_payload and heartbeat_payload["status"] != "STOPPED" else "UNKNOWN",
+                     "scope": "PROCESS_OBSERVED_NOT_CURRENT_FRESHNESS", "observed_at": heartbeat_at.isoformat() if heartbeat_at else None},
+        "readiness": {"state": "BLOCKED", "blockers": list(projection["blockers"]), "execution_authorization": False},
+        "safety": {"state": "BLOCKED", "execution_capability": "NONE", "order_execution_enabled": False},
+        "broker_truth": {"state": "UNKNOWN", "history_completeness": "UNKNOWN"},
+    }
     _assert_credential_free(projection)
     projection["console_fingerprint"] = stable_fingerprint(projection)
     return projection
