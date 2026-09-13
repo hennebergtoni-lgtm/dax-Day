@@ -251,6 +251,54 @@ def demo_transport_attempt_reservation_to_bytes(
     return _bytes(payload | {"reservation_fingerprint": _fingerprint(payload)})
 
 
+def load_reserved_demo_transport_attempt(
+    *,
+    store: StateStorePort,
+    key: str,
+    expected_reservation_fingerprint: str,
+) -> DemoTransportAttemptReservation:
+    """Load a pinned attempt without reserving, refreshing or writing anything.
+
+    The caller retains the original fingerprint as its attempt/provenance pin.
+    Missing, PREPARED, corrupt and differently wired keys all fail closed. An
+    expired original scope remains historical evidence, never current authority.
+    """
+    _sha(expected_reservation_fingerprint, "expected_reservation_fingerprint")
+    payload = store.load(key)
+    if payload is None:
+        raise ValueError("reserved demo transport attempt is missing")
+    reservation = demo_transport_attempt_reservation_from_bytes(payload)
+    if reservation.fingerprint != expected_reservation_fingerprint:
+        raise ValueError("reserved demo transport attempt/provenance collision")
+    return reservation
+
+
+def demo_transport_restart_status(
+    reservation: DemoTransportAttemptReservation,
+) -> dict[str, Any]:
+    """Project local operator evidence; do not fabricate venue or fill truth.
+
+    This is a read model of the existing checkpoint, not another journal. Even a
+    reservation created immediately before a crash cannot prove whether a later
+    transport call reached the venue. No projection permits retry or slot release.
+    """
+    reservation.__post_init__()
+    return {
+        "status": reservation.status,
+        "reservation_fingerprint": reservation.fingerprint,
+        "intent_id": reservation.prepared.intent.intent_id,
+        "client_order_id": reservation.prepared.broker.lifecycle.client_order_id,
+        "submission_ordinal": reservation.submission_ordinal,
+        "local_order_state": reservation.prepared.broker.lifecycle.state.value,
+        "venue_state": "UNKNOWN",
+        "required_next_action": "QUERY_RECONCILE_REQUIRED",
+        "resubmit_allowed": False,
+        "session_slot_release_allowed": False,
+        "execution_capability": "NONE",
+        "order_execution_enabled": False,
+    }
+
+
 def demo_transport_attempt_reservation_from_bytes(
     payload: bytes,
 ) -> DemoTransportAttemptReservation:
