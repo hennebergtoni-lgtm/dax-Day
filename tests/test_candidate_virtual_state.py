@@ -188,7 +188,9 @@ def test_virtual_parser_rejects_non_finite_numeric_fields(value, field):
     "quantity", "requested_price", "stop_price", "target_price", "filled_price", "exit_price",
 ])
 def test_virtual_writer_rejects_non_finite_numeric_fields_before_hashing(value, field, monkeypatch):
-    state = replace(_closed_state(), **{field: value})
+    state = _closed_state()
+    # Emulate a pre-hardening invalid object to retain the writer boundary test.
+    object.__setattr__(state, field, value)
 
     def no_invalid_fingerprint(_payload):
         pytest.fail("invalid lifecycle reached fingerprinting")

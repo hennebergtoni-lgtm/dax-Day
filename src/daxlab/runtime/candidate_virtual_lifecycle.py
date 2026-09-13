@@ -88,6 +88,17 @@ class Cand001VirtualLifecycleState:
             if self.exit_reason is ExitReason.NONE:
                 raise ValueError("closed lifecycle requires STOP or TARGET")
 
+        _validate_intent_geometry(self)
+        if self.filled_at is not None and self.filled_at < self.requested_at:
+            raise ValueError("filled_at cannot precede requested_at")
+        if self.closed_at is not None and self.filled_at is not None and self.closed_at < self.filled_at:
+            raise ValueError("closed_at cannot precede filled_at")
+        if self.last_close_time is not None:
+            if self.status is VirtualPositionStatus.OPEN and self.filled_at is not None and self.last_close_time < self.filled_at:
+                raise ValueError("last_close_time cannot precede filled_at for OPEN lifecycle")
+            if self.status is VirtualPositionStatus.CLOSED and self.closed_at is not None and self.last_close_time < self.closed_at:
+                raise ValueError("last_close_time cannot precede closed_at for CLOSED lifecycle")
+
 
 def start_cand001_virtual_lifecycle(
     intent: ExecutionIntent,
@@ -242,7 +253,7 @@ def _gap_exit_reason(
     return ExitReason.NONE
 
 
-def _validate_intent_geometry(intent: ExecutionIntent) -> None:
+def _validate_intent_geometry(intent: ExecutionIntent | Cand001VirtualLifecycleState) -> None:
     if intent.side is Side.BUY and not (
         intent.stop_price < intent.requested_price < intent.target_price
     ):

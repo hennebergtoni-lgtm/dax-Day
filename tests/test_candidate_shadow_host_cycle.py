@@ -197,7 +197,9 @@ def test_complete_checkpoint_rejects_non_finite_lifecycle_fields(value, field, m
         )
     strategy.assert_not_called()
 
-    bad_state = replace(state, active_trade=replace(active, lifecycle=replace(closed, **{field: value})))
+    invalid = replace(closed)
+    object.__setattr__(invalid, field, value)
+    bad_state = replace(state, active_trade=replace(active, lifecycle=invalid))
     with pytest.raises(ValueError, match=rf"{field} must be finite"):
         candidate_shadow_checkpoint_payload(bad_state, run_manifest=first.manifest)
 
