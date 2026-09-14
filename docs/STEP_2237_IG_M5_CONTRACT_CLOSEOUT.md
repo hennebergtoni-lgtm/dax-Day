@@ -1,5 +1,37 @@
 # Step2237 — final IG M5 original-evidence review
 
+## Step2237 Windows exact-head deployment hardening — authoritative overlay
+
+The real Windows attempt on
+`236ea841d3d9e9d30532b08270995cc4925abaa5` stopped fail-closed with
+`DETACHED_CHECKOUT_FAILED` before WAIT, Python, IG login or any market-data
+request. Existing evidence remained intact; execution stayed NONE/false. Because
+the former wrapper deliberately suppressed Git stderr, the precise Windows Git
+sub-error is **UNKNOWN** and is not invented. The repository-side design defect is
+verified: deployment depended on mutating `checkout --detach` inside the
+existing host checkout.
+
+The corrected owner no longer switches, cleans or requires a clean existing
+checkout. It verifies the configured origin, fetches only the branch, requires
+the published branch head to equal `ExpectedHead`, verifies ancestry from the
+previous accepted Step2237 head, and materializes that immutable commit in a
+unique temporary detached Git worktree. Candidate code runs only from that clean
+exact-head worktree. Durable State/Evidence remains under the caller-owned host
+runtime root in the new exclusive attempt02 namespace, outside the ephemeral
+deployment.
+
+After the one-session Fresh Start → next true M5 close → Resume → Operator flow,
+the wrapper verifies that its own worktree is clean and removes it without
+`--force`. It removes only its uniquely created empty parent. If safe cleanup
+cannot be proven, it retains the deployment and emits a fixed credential-free
+cleanup error instead of deleting blindly. There is no merge, reset, stash,
+in-place checkout, clean, force-push, dealing route, relogin or retry.
+
+Step2233/2237 remain **IMPLEMENTED / WAITING_EXTERNAL** until this corrected
+single-command real Windows run succeeds. `execution_capability=NONE`,
+`order_execution_enabled=false`; no DEMO order; LIVE prohibited.
+
+
 Status: **IMPLEMENTED / REAL WINDOWS CLOSEOUT WAITING_EXTERNAL**  
 Historical Attempt03 evidence head: `2a99f96e06f7ce1f311c767dec43d236bb63eedd`  
 Original export runtime head: `7728453c3c4f8fcd2cf6f8189b0f94562ccfa04f`  

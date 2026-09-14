@@ -1,5 +1,17 @@
 # DAX Major Acceleration Program — 2026-09-14 closeout
 
+## Step2237 Windows deployment correction
+
+The first final-contract bootstrap reached START but failed
+`DETACHED_CHECKOUT_FAILED` before Python/login/GET. Exact Git stderr was
+suppressed, so the leaf cause remains UNKNOWN. The in-place checkout dependency
+is retired. The corrected wrapper uses a unique temporary exact-head worktree,
+keeps durable runtime/evidence in the existing caller-owned root, and cleans only
+the verified-clean worktree it created. Existing checkout/evidence is never
+switched, cleaned, reset or stashed. Step2233/2237 remain WAITING_EXTERNAL;
+NONE/false, no order and hard LIVE prohibition are unchanged.
+
+
 ## Step2237 final IG M5 contract — authoritative overlay
 
 The original Attempt03 bundle is now received as binding source evidence:

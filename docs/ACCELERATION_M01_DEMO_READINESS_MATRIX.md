@@ -1,6 +1,6 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
-Step2237 V2 review promotes the original Attempt03 structure to the canonical operational INTERVAL_START contract. The historical OTHER_UNKNOWN review remains preserved. Current effective execution NONE/false. One small first bounded diagnostic IG DEMO order is conditionally user-authorized; LIVE unauthorized. Matrix statuses describe actual current evidence, with local software scope explicit. Old MT5 terminal/retcode/session/MQL owner details cannot substitute for native IG truth. Full details and limits: ACCELERATION_PROGRAM_FINAL_2026_09_14.md.
+Step2237 V2 review promotes the original Attempt03 structure to the canonical operational INTERVAL_START contract. The first Windows bootstrap then failed before Python with DETACHED_CHECKOUT_FAILED; isolated exact-head worktree deployment is now implemented, while the corrected host result remains WAITING_EXTERNAL. The historical OTHER_UNKNOWN review remains preserved. Current effective execution NONE/false. One small first bounded diagnostic IG DEMO order is conditionally user-authorized; LIVE unauthorized. Matrix statuses describe actual current evidence, with local software scope explicit. Old MT5 terminal/retcode/session/MQL owner details cannot substitute for native IG truth. Full details and limits: ACCELERATION_PROGRAM_FINAL_2026_09_14.md.
 
 ## M01
 
