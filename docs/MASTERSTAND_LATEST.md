@@ -1,5 +1,16 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Current binding user authorization — 2026-09-14 acceleration mandate
+
+The user explicitly authorizes one first bounded, small diagnostic **IG DEMO** evidence order after all 27 Pre-DEMO readiness gates are VERIFIED. This supersedes older DEMO NOT AUTHORIZED text only for that bounded IG DEMO scope. LIVE, real money, live-account switching, cash transfers and automatic DEMO-to-LIVE promotion remain unauthorized. Cancel/modify is limited to a separately verified lifecycle design. No blind retry/resubmit, unknown transport replay or autonomous slot release.
+
+Current effective capability remains **NONE / order_execution_enabled=false**. No readiness promotion has occurred; the IG read-only client remains read-only. Target DEMO_ONLY must be scoped to the bounded transport after real account/instrument/economics/policy/protection/reconciliation/restart evidence and final market-data contract are VERIFIED. Continuous DEMO remains gated by M07 and is not enabled by this mandate.
+
+Attempt03 at exact head2a99f96e06f7ce1f311c767dec43d236bb63eedd is **SUCCESS / VERIFIED AS SUPPLIED**: one login, A/B/C, cleanup, AB/BC successful; Candidate false, NONE/false. Original A/B/C/AB/BC/SUMMARY bytes are still WAITING_EXTERNAL. Acquisition success is not interval semantics or provider finality proof. Use scripts/export_ig_raw_truth_2233.ps1 for exact-head deployment plus one offline hash-bound ZIP export; never repeat capture03 or overwrite prior evidence.
+
+The acceleration mandate activates independent Post-DEMO A–J preparation/research/failure work when dependencies permit. Original rescue reports remain historical read-only artifacts. No Acceptance refresh, merge or force push is authorized.
+
+
 **Latest2233 session update:** attempts01/02 user-reported A success/B401 abort; original evidence preserved. One read-only in-memory IG session now owns A/B/C: one login, three PricesV3 GETs on success, one cleanup before local AB/BC. No relogin/refresh/retry; any session loss or cleanup failure aborts. Default unused namespace .runtime/ig_raw_m5_truth_2233_v2_attempt_03; one Windows PS1/CMD start with exact final -ExpectedHead. Attempt-summary V2 records session lifecycle; RAW timestamp/evidence V2 and Candidate/state/overlap contracts unchanged. Precise host401 root cause UNKNOWN. See current session section in STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md; earlier per-capture subprocess procedure is historical. UNVERIFIED / WAITING_EXTERNAL; NONE/false, no Candidate or broker mutation, no later step activated. Local execution unavailable; exact-head mandatory CI required.
 
 
