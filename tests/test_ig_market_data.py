@@ -152,6 +152,21 @@ def test_ig_source_rejects_duplicate_or_out_of_order_rows() -> None:
         source.next_candle()
 
 
+def test_ig_source_rejects_m5_continuity_gap() -> None:
+    gap = _feed(
+        _row("2026-09-14T09:55:00"),
+        _row("2026-09-14T10:05:00", open_bid=25_510.0),
+    )
+    source = IgClosedM5CandleSource(
+        feed_provider=lambda: gap,
+        epic=EPIC,
+        instrument_id=INSTRUMENT,
+    )
+
+    with pytest.raises(ValueError, match="continuous M5 bars"):
+        source.next_candle()
+
+
 def test_ig_source_rejects_crossed_bid_ask() -> None:
     row = _row("2026-09-14T10:00:00")
     row["openPrice"] = {"bid": 25_502.0, "ask": 25_501.0, "lastTraded": None}
