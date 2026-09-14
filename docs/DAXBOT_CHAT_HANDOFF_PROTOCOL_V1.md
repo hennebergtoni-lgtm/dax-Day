@@ -1,7 +1,7 @@
 # DAX-BOT Chat Handoff Protocol V1
 
 Status: **BINDING**  
-Updated: **2026-09-14 — Step 2231 supplied Windows closeout / Step 2232 SHADOW E2E continuity**
+Updated: **2026-09-14 — Step2232 real Windows closeout / Step2233 finalization-contract rerun continuity**
 
 Purpose: make chat/context handovers deterministic and repository-backed so the DAX-BOT project resumes without asking the user to reconstruct long chats, including after conversation-length saturation. Repository truth and source Work artifacts are preferred over chat memory.
 
@@ -82,7 +82,7 @@ Recovery rule:
 
 ## 4. Current milestone recovery — BINDING
 
-Current IG continuation: first load `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md`, pin the fresh PR head/main/required CI and `CURRENT_WORK_STEP.md`. Step 2231 is COMPLETED / VERIFIED AS SUPPLIED for the corrected real Windows IG feed slice, with original JSON/time/hash values not supplied to Work; see `STEP_2231_REAL_HOST_CLOSEOUT.md`. Protection/reconciliation UNKNOWN, broader M01 incomplete. Step 2232 is IMPLEMENTED_LOCAL / real Windows SHADOW E2E WAITING_EXTERNAL. Next action is the single IG/CAND-001 invocation and bound operator read in `STEP_2232_IG_REAL_HOST_SHADOW_E2E.md`; no blind MT5 supervisor startup or fabricated MT5 bundle. Step 2206 / USER_AUTH and MT5 lane 2122 stay independent. Next 2233 only after real 2232 source review; no order authorization is implied.
+Current IG continuation: first load `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md`, pin the fresh PR head/main/required CI and `CURRENT_WORK_STEP.md`. Step 2231 is COMPLETED / VERIFIED AS SUPPLIED for the corrected real Windows IG feed slice, with original JSON/time/hash values not supplied to Work; see `STEP_2231_REAL_HOST_CLOSEOUT.md`. Protection/reconciliation UNKNOWN, broader M01 incomplete. Step2232 is COMPLETED / VERIFIED on actual Windows under the user-supplied binding2233 mandate (live/operator0, GREEN/FRESH, NO_TRADE/NONE/OR_INCOMPLETE/NO_SIGNAL, raw40/closed40, NONE/false/fingerprint). Subsequent provider revision correctly blocked overlap. Active2233 is IMPLEMENTED_LOCAL / real fresh-start+resume WAITING_EXTERNAL; run `STEP_2233_IG_M5_FINALIZATION_HANDOFF.md` with grace60 in Candidate-only input, unchanged600s/strict overlap, new V2 manifest/evidence and new namespace preserving2232 files. Legacy state blocks migration before collection. No rapid auth retries, MT5 supervisor or invented bundle.2206/2122 independent; next2234 only after real2233 proof. No order authorization implied.
 
 As of the 2026-09-14 continuity update, the latest masterstand records the durable roadmap:
 

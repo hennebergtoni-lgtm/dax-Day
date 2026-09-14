@@ -11,7 +11,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Last completed whole-number step: **2232**
 - Last interrupted whole-number step: **2185**
 - Active whole-number step: **2233**
-- Active step state: **PLANNED / IG M5 PROVIDER-FINALIZATION GRACE / NO BROKER SIDE EFFECT**
+- Active step state: **IMPLEMENTED_LOCAL / REAL WINDOWS FINALIZATION FRESH-START + RESUME WAITING_EXTERNAL / NO BROKER SIDE EFFECT**
 - Work tranche state: **COMPLETED_LOCAL_OPERATOR_HARDENING_2 — EXTERNAL_GATES_REMAIN**
 - Next step after successful completion: **2234**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
@@ -47,9 +47,11 @@ The user's explicit 2026-09-14 Work mandate supplies a successful corrected prob
 
 A subsequent real-host resume correctly blocked STATE_CHANGED_OVERLAP: IG later changed the already stored close 2026-09-14T11:40:00+00:00 (high approx.25451.3->25465.2, low25447.6->25447.3, close25451.3->25463.8, volume2->121). Another probe at approx.12:05:03 UTC observed nominal close12:05 only approx.3.7s old. NOMINALLY CLOSED is not provider-finalized. The exact overlap guard must remain strict.
 
-Implement a conservative explicit 60-second Candidate admission grace only in scripts/ig_cand001_shadow_e2e.py. Preserve canonical IG closure/paging/probe, 600-second freshness, CAND-001 rules, risk/sizing/costs and all execution owners. Bind grace/eligibility clock in manifest/evidence; reject legacy 2232 state deterministically, preserve its files, use a new 2233 namespace for fresh-start then resume. No retry/login-spam policy; sporadic 401 after rapid sessions is a supplied host observation, not a reason to loop authentication.
+The 60s Candidate-only policy is IMPLEMENTED_LOCAL in scripts/ig_cand001_shadow_e2e.py: IG_M5_PROVIDER_FINALIZATION_GRACE_SECONDS=60, eligibility as of PRICE_REQUEST_STARTED_AT_UTC. The probe/nominal closure remain unchanged. Nominal observation and eligible Candidate input are explicitly separate scopes; only eligible rows enter state/Decisions/anchor. Current Candidate age must stay60..600s through processing/export/operator read. The V2 evidence/RunManifest dataset binds exact grace/clock independently of code-head binding; old contract -> STATE_FINALIZATION_CONTRACT_MIGRATION_REQUIRED before collection, manifest mismatch -> STATE_MANIFEST_DRIFT. Old2232 files preserved; new default .runtime/ig_cand001_shadow_e2e_2233. Exact overlap unchanged; no new eligible bar -> STATE_NO_NEW_FINALIZED_M5.401 -> fixed IG_AUTHENTICATION_FAILED_NO_RETRY, no loop/provider text.
 
-2233 cannot close from local tests: it needs one exact-new-head Windows fresh-start, one later new finalized-bar resume, fresh source evidence and hash-bound operator read. Protection/reconciliation UNKNOWN, broader M01 and independent2206/2122 unchanged. Next whole-number step **2234**, only after2233 is VERIFIED. NONE/false, SHADOW only, no order/controls/merge/Acceptance refresh.
+Local validation:102 focused IG/Candidate/checkpoint tests; full2736 passed/6 local PowerShell skips; Ruff/syntax/imports pass. Final-head CI and eight existing offline gates must be inspected before deployment. Synthetic replay of pinned old code reproduces the3.7s admission and verifies unchanged probe evidence with the corrected older Candidate current bar. Real provider immutability after60s is not proven; later changed overlap still blocks.
+
+Runbook/contracts/exact known Windows paths: docs/STEP_2233_IG_M5_FINALIZATION_HANDOFF.md. **2233 IMPLEMENTED_LOCAL / WAITING_EXTERNAL** until one exact-final-head real fresh-start and one subsequent new-finalized-bar resume plus successful hash-bound operator reads/source bundles are reviewed. Protection/reconciliation UNKNOWN; broaderM01 and2206/2122 unchanged. Next exact whole-number step **2234**, not started. No strategy/OR15/risk/sizing/cost/MT5/execution/V11.2 changes, broker orders/controls, merge, force-push or Acceptance refresh.
 
 ## Ledger archive
 

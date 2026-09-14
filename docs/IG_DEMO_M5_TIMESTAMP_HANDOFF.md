@@ -1,6 +1,6 @@
 # IG Demo M5 host handoff — Step 2231 / M01
 
-Updated: 2026-09-14. Local implementation is **IMPLEMENTED**; corrected Windows host evidence is **WAITING_EXTERNAL**. This handoff does not complete M01/2231 or authorize execution.
+Updated:2026-09-14. Canonical IG feed correction:2231 **COMPLETED / VERIFIED AS SUPPLIED**. Initial IG/CAND-001 E2E:2232 **COMPLETED / VERIFIED** under supplied binding host evidence. Current2233 Candidate-finalization fresh-start/resume is **WAITING_EXTERNAL**. Historical sections below are provenance; latest overlay/current pointer controls. No execution authorization or full M01 completion.
 
 ## Repository pin and drift
 
@@ -81,3 +81,8 @@ On exit 2 / STALE_M5_HISTORY / INCOMPLETE_M5_PAGINATION / clock reversal: **BLOC
 ## 2026-09-14 supplied corrected Windows closeout
 
 The user now reports successful fresh corrected real Windows evidence: exit0/new file, raw40/excluded0, FRESH/~231 seconds under600, TRADEABLE, NONE/false, fingerprint present. **Step2231 COMPLETED / VERIFIED AS SUPPLIED** for this IG feed scope. Exact original UTC times/digest were not supplied in this Work turn; no independent rerun is claimed. Protection/reconciliation UNKNOWN; M01 overall and lanes2206/2122 remain open. This overlay supersedes the earlier pending-rerun statements above for Step2231 only. See `STEP_2231_REAL_HOST_CLOSEOUT.md`. The next task is Step2232 live IG -> unchanged generic CAND-001 SHADOW -> fresh validated operator evidence.
+
+
+## 2026-09-14 — nominal closure retained / Candidate finalization2233
+
+The supplied2232 initial real Windows E2E passed; later nominal11:40UTC OHLC/volume revision correctly blocked exact overlap. Canonical IG CLOSED-M5 interval-end/UTC/paging/probe behavior is not redefined. Only scripts/ig_cand001_shadow_e2e.py delays Candidate admission by explicit60s at price-request start, with existing600s max age and exact overlap. New V2 policy-bound manifest/evidence/default2233 namespace rejects legacy state and preserves2232 files. No retries after supplied sporadic401. Active2233 IMPLEMENTED_LOCAL / real fresh-start+resume+operator/source review WAITING_EXTERNAL; runbook STEP_2233_IG_M5_FINALIZATION_HANDOFF.md. Next2234 after VERIFIED, protection/reconciliation UNKNOWN and2206/2122 independent. Known external credentials remain C:\Users\Mandy\ig_demo.env; no credential setup or execution enablement is requested.
