@@ -1,9 +1,10 @@
 """Minimal fail-closed IG Demo REST client with no dealing capability.
 
 This adapter intentionally exposes only read operations needed by the SHADOW
-broker lane: session authentication, account inventory, market detail, M5 price
-history and session logout. It has no order/position mutation method and hard
-reports ``execution_capability=NONE`` / ``order_execution_enabled=False``.
+broker lane: session authentication, account/position/working-order inventory,
+market detail, M5 price history and session logout. It has no order/position
+mutation method and hard reports ``execution_capability=NONE`` /
+``order_execution_enabled=False``.
 
 The default transport uses only the Python standard library. Tests can inject a
 transport without network access.
@@ -157,6 +158,12 @@ class IgDemoReadOnlyClient:
 
     def accounts(self) -> Mapping[str, object]:
         return self._get_json("/accounts", version="1")
+
+    def positions(self) -> Mapping[str, object]:
+        return self._get_json("/positions", version="2")
+
+    def working_orders(self) -> Mapping[str, object]:
+        return self._get_json("/workingorders", version="2")
 
     def market(self, epic: str) -> Mapping[str, object]:
         clean_epic = _clean_epic(epic)
