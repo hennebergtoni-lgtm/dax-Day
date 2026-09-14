@@ -1,169 +1,272 @@
 # DAX-BOT Chat Handoff Protocol V1
 
-Status: BINDING
-Updated: 2026-09-13
+Status: **BINDING**  
+Updated: **2026-09-14 — Research Factory 3.0 / Step 2231 continuity**
 
-Purpose: make chat/context handovers deterministic and repository-based so the DAX-BOT project can resume without copy/pasting a large masterstand into every new chat, including after platform conversation-length saturation.
+Purpose: make chat/context handovers deterministic and repository-backed so the DAX-BOT project resumes without asking the user to reconstruct long chats, including after conversation-length saturation. Repository truth and source Work artifacts are preferred over chat memory.
 
-The binding step-closure and workflow-integrity rules are defined in `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`. If older wording conflicts with that gate on step closure, pointer synchronization, interrupted-lane numbering or claims about ongoing work, the workflow-integrity gate controls.
+The binding step-closure/workflow-integrity rules remain defined in `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`. If this protocol conflicts with that gate on official step closure, pointer synchronization, interrupted-lane numbering, or claims about ongoing work, the workflow-integrity gate controls.
 
-## 1. Resume codeword
+---
 
-The canonical resume phrase is:
+## 1. Resume codewords — BINDING
+
+Canonical phrase:
 
 `Weiter mit dem DAXBot`
 
-Accepted user-friendly alias:
+Accepted aliases include:
+
+`Weiter mit DAX Bot`
 
 `Weiter mit DAXbot`
 
-When either phrase is used in a new or existing chat, treat it as an instruction to recover the DAX Daytrading Bot project automatically from repository truth. Do not ask the user to paste the prior masterstand or repeat already-known project facts if the repository is available.
+`Weiter DAX Bot`
 
-Mandatory recovery sequence:
+When one of these phrases is used in a new or existing chat, treat it as an instruction to recover the DAX Daytrading Bot automatically. Do not ask the user to paste the prior masterstand, repeat known project facts, or manually re-upload Work artifacts when repository/File Library access is available.
 
-1. Read `docs/SESSION_EXECUTION_REFRESHER.md`.
-2. Pin repository `hennebergtoni-lgtm/dax-Day`, working branch, PR, fresh exact head SHA and current CI state.
-3. Read `docs/CURRENT_WORK_STEP.md`; official numbering comes from this file, never from chat-memory inference.
-4. Read `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`.
-5. Read `docs/MASTERSTAND.md`.
-6. Read `docs/PROJECT_KNOWLEDGE_INDEX.md`.
-7. Read `docs/WORK_CONTINUITY_PROTOCOL.md`; its Work-delegation, model/thinking, credit-budget and out-of-band Work-reconciliation sections are binding.
-8. Read the problem/solution registry and only the topic-specific code/docs/tests required for the active step.
-9. Reconcile any `WAITING_EXTERNAL`, `INTERRUPTED`, `BLOCKED` lane and any out-of-band ChatGPT Work commits separately from independent safe work.
-10. Continue the next concrete whole-number work unit automatically only after the current pointer and Step-Close-Gate are consistent. A recovered status report is not a stop.
+---
 
-Repository truth overrides chat recollection. Exact code, tests, hashes, evidence and fresh runtime telemetry override prose summaries if they disagree.
+## 2. Mandatory recovery sequence — BINDING
 
-## 2. Explicit masterstand command
+Before substantive work or any repository write:
 
-The canonical handover-preparation phrase is:
+1. read `docs/SESSION_EXECUTION_REFRESHER.md` as needed for active-turn rules;
+2. pin repository `hennebergtoni-lgtm/dax-Day`, PR #109, working branch, fresh exact head SHA, base/main SHA, PR state and current required CI;
+3. read `docs/CURRENT_WORK_STEP.md`; official whole-number numbering comes from this file, never chat inference;
+4. read **`docs/MASTERSTAND_LATEST.md`**; it is the canonical latest handover overlay;
+5. read `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`;
+6. read `docs/WORK_CONTINUITY_PROTOCOL.md` for Work delegation/model/thinking/credit-budget/out-of-band reconciliation rules;
+7. read `docs/PROJECT_KNOWLEDGE_INDEX.md` and older `docs/MASTERSTAND.md` only when historical context is needed;
+8. if ChatGPT File Library is available, search and load the Work rescue anchors in section 3 when their details are relevant;
+9. reconcile branch drift, out-of-band Work results, WAITING_EXTERNAL/USER_AUTH/BLOCKED/INTERRUPTED lanes and CI before writing;
+10. inspect only the active-step owners/code/tests/evidence plus directly relevant predecessor evidence;
+11. continue the next safe action automatically after recovery; a recovered status report is not a stop.
+
+Truth precedence:
+
+1. fresh code/tests/machine/runtime/broker evidence;
+2. `docs/CURRENT_WORK_STEP.md`;
+3. binding safety/authorization/governance contracts;
+4. `docs/MASTERSTAND_LATEST.md`;
+5. original Work/File Library source artifacts;
+6. historical repository docs;
+7. chat memory.
+
+If File Library is unavailable, continue from repository truth and explicitly state that source Work artifacts could not be reopened. Never invent their missing detail.
+
+---
+
+## 3. Work/File-Library rescue anchors — MUST SEARCH WHEN AVAILABLE
+
+The following exact artifacts contain the original high-value Work results and must be treated as recovery sources, not disposable chat attachments:
+
+1. `DAX_PRE_DEMO_DRIFT_REVIEW_2026-09-13.md`
+2. `DAX_PRE_DEMO_HARDENING_2_FINAL_2026-09-13.md`
+3. `DAX_RESEARCH_FACTORY_3_FINAL.md`
+4. `DAX_POST_DEMO_NEXT_WORK.md`
+
+Recovery rule:
+
+- search File Library by exact filename first;
+- read the relevant source file before relying on detailed Work claims;
+- do not ask the user to upload it again unless File Library search genuinely cannot locate it;
+- repository truth overrides Work prose where they disagree;
+- Work summaries do not create broker evidence or authorization.
+
+`DAX_RESEARCH_FACTORY_3_FINAL.md` is the canonical original source for the read-only Research Factory 3.0 output, including its 66 source entries, 40 falsifiable hypotheses, 100 deduplicated failure scenarios (not 100 independently observed incidents), 24 architecture/operations learnings, source-quality matrix and M01–M12 roadmap.
+
+`DAX_POST_DEMO_NEXT_WORK.md` is **PLANNED / NOT EXECUTED** and must not be started merely because it exists.
+
+---
+
+## 4. Current milestone recovery — BINDING
+
+As of the 2026-09-14 continuity update, the latest masterstand records the durable roadmap:
+
+- M01 Real-host evidence
+- M02 First bounded DEMO evidence — separately authorized only
+- M03 Broker lifecycle truth
+- M04 Expected vs Observed
+- M05 TCA / latency / cost attribution
+- M06 Data / clock parity
+- M07 Continuous-DEMO safety / release operations
+- M08 Tail / risk survival
+- M09 Strategy robustness
+- M10 Parameter plateau / multiple testing
+- M11 New filters / research efficiency
+- M12 Capital scaling / PRE-LIVE
+
+This roadmap does not replace official whole-number governance. On recovery, the active official pointer remains authoritative. At the Research Factory anchor the active pointer was Step 2231, WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT. Re-pin rather than assume that is still current.
+
+---
+
+## 5. Safety boundary — BINDING
+
+This continuity protocol never grants execution.
+
+Unless fresh authorized evidence says otherwise:
+
+- SHADOW only is authorized under no-order contracts;
+- first actual bounded DEMO evidence order requires separate explicit authorization;
+- continuous DEMO/PAPER is not authorized;
+- LIVE is not authorized;
+- `execution_capability=NONE`;
+- `order_execution_enabled=false`;
+- no `mt5.order_send`;
+- no cancel/modify;
+- no automatic consumed-slot release;
+- no blind retry/resubmit after ambiguous transport/restart;
+- Linux/fixture/SHADOW/synthetic evidence never becomes broker truth by inference.
+
+Do not weaken safety to satisfy a date or restore progress after a chat switch.
+
+---
+
+## 6. Durable Research Factory 3.0 rules to recover
+
+A new chat should not rediscover these from scratch:
+
+- broker connection != broker truth;
+- negative evidence != proof of no execution/flatness;
+- `tick_size != digits`;
+- native order-price semantics != position average-price semantics;
+- correct MT5 executable/data path/build/runtime owner is part of host identity;
+- broker/UTC/session/DST/time semantics require real evidence;
+- `order_check()` success is preflight, not execution guarantee;
+- `order_calc_margin()` is not account exposure;
+- quote session != trade session;
+- deterministic rejects must not become blind retry;
+- partial fill requires reconciliation;
+- requote/price change requires revalidation;
+- timeout/transport ambiguity -> UNKNOWN/QUERY_REQUIRED;
+- PTC is independent from strategy risk;
+- emergency/kill authority is separate from strategy and from the current read-only console;
+- same-terminal MT5 history is not independent drop-copy;
+- Expected-vs-Observed and TCA precede strong interpretation of forward/live drift;
+- trade-R drawdown != real account-equity drawdown;
+- dependent/block/regime/cluster simulation extends existing IID research;
+- parameter plateaus/neighbourhood stability matter more than one best parameter;
+- rollback != state reset;
+- more architecture without added broker/risk/profit evidence should be rejected.
+
+Research decision order remains:
+
+**REGIME -> STRUCTURE -> ENTRY**
+
+V11.2 remains frozen; CAND-001 is a product candidate, not a profitability proof.
+
+---
+
+## 7. Explicit masterstand command
+
+Canonical phrase:
 
 `Erstelle einen Masterstand`
 
-When used, update `docs/MASTERSTAND.md` to the current repository truth and ensure it contains at least:
+When used, refresh `docs/MASTERSTAND_LATEST.md` to current repository truth and update other continuity/navigation files when their truth changed materially. Do not wait for the scheduled checkpoint if chat saturation, a major Work tranche, a major Research handoff, or a material execution/governance transition creates new durable knowledge.
+
+The masterstand must preserve at least:
 
 - repository/branch/PR and fresh-head guidance;
+- current official pointer;
 - current safety/authorization state;
-- frozen reference facts that must not be rewritten;
-- current DAX-BOT/CAND candidate architecture and evidence maturity;
-- completed milestone summary since the prior masterstand;
-- unresolved `WAITING_EXTERNAL`, `INTERRUPTED` and `BLOCKED` lanes;
-- any out-of-band ChatGPT Work evidence since the prior handoff and its exact classification;
-- current official step pointer and exact next work;
-- current CI/evidence truth without claiming a newer head green before it is verified;
-- current Acceptance/merge freshness rather than assuming CI implies Acceptance;
-- required workflow-integrity / no-stop / integer-step / repository-first resume rules;
-- current chat-capacity/handoff state when the command is used because the conversation is approaching or has reached a platform length limit.
+- frozen reference facts;
+- current CAND/product evidence maturity;
+- important completed milestones since the prior handoff;
+- unresolved external/auth/blocker lanes;
+- Work/File-Library rescue anchors;
+- current M01–M12 or successor roadmap;
+- current CI/evidence truth without claiming a newer head green before verified;
+- exact next safe action;
+- chat/workflow/no-stop/integer-step rules.
 
-Also update `docs/PROJECT_KNOWLEDGE_INDEX.md`, `docs/WORK_CONTINUITY_PROTOCOL.md` and `docs/CURRENT_WORK_STEP.md` when their navigation/pointer/Work truth changed materially.
+---
 
-## 3. Scheduled masterstand checkpoints
+## 8. Scheduled masterstand checkpoints
 
-A masterstand checkpoint is mandatory every 250 official whole-number work steps.
-
-Checkpoint numbers are multiples of 250: `2250`, `2500`, `2750`, ...
-
-Current next scheduled checkpoint: **2250**.
+A masterstand checkpoint remains mandatory every 250 official whole-number work steps: 2250, 2500, 2750, ...
 
 At each checkpoint:
 
-1. refresh `docs/MASTERSTAND.md`;
-2. verify `CURRENT_WORK_STEP.md`, workflow-integrity gate, Work protocol and Knowledge Index consistency;
+1. refresh `docs/MASTERSTAND_LATEST.md`;
+2. verify pointer/workflow/Work-protocol/Knowledge-Index consistency;
 3. record fresh PR/head/CI truth;
 4. summarize new durable findings, solved problems and remaining lanes;
 5. preserve safety/authorization boundaries;
-6. continue work after the checkpoint unless a real global stop exists.
+6. continue after the checkpoint unless a real global stop exists.
 
-The existing full architecture/LEAN audit remains every 500 steps. Therefore every second 250-step checkpoint (e.g. `2500`, `3000`) includes both the masterstand refresh and the full 500-step audit.
+Every 500 steps, perform the full Architecture & Learning Review as already governed.
 
-## 4. Chat memory boundary
+---
 
-Conversation memory may help orientation, but it is not sufficient evidence for current project truth. The handoff system is deliberately repository-backed so it still works after chat truncation, a new chat, compaction, incomplete conversational memory or an explicit platform message that the conversation is too long to continue.
+## 9. Chat-capacity saturation rule — BINDING
 
-Do not promise autonomous work while no model turn is running. A final/turn-ending response ends the active work turn. If the app/network/platform interrupts execution, do not claim that work continued invisibly; resume at the next available turn by re-pinning repo/branch/head/CI and the current pointer first.
+A platform message that the conversation is too long is a continuity interruption, not a DAX-BOT technical failure.
 
-### Chat-capacity saturation rule — BINDING
+If saturation is approaching while actions still work:
 
-A platform message such as `Dieses Gespräch ist zu lang, um fortzufahren` is a **conversation-capacity interruption**, not evidence that the repository/project is technically blocked.
+1. stop starting new high-risk substantive work;
+2. pin fresh repo/head/CI/pointer;
+3. truthfully classify incomplete technical work;
+4. refresh `docs/MASTERSTAND_LATEST.md` and continuity navigation if material knowledge changed;
+5. ensure Work rescue anchors and exact next action are named;
+6. tell the user to open a new chat and use `Weiter mit DAX Bot`.
 
-When saturation is detected while the current chat can still execute actions:
+If the old chat hard-stops first, the new chat performs the mandatory recovery sequence in section 2. Never infer completion from chat memory.
 
-1. stop new substantive technical work;
-2. pin fresh repository/head/CI/pointer truth;
-3. truthfully close or mark the current technical step `INTERRUPTED` if its evidence is incomplete;
-4. start a dedicated continuity/Masterstand work unit under the next unused whole integer;
-5. refresh `docs/MASTERSTAND.md`, this protocol, `WORK_CONTINUITY_PROTOCOL.md` when relevant, and any materially changed navigation/pointer truth;
-6. preserve unfinished technical scope explicitly for the next unused integer;
-7. provide the user the resume codeword and open the new chat.
+---
 
-If the platform hard-stops the old chat before these writes can happen, the **new chat** must perform the same reconciliation first: re-pin repository truth, inspect whether the previously active step actually completed, mark it truthfully, then continue under monotonic whole-number numbering. Never invent completion from chat memory.
-
-Chat saturation is therefore treated like a controlled handoff event. It must not erase goals, architecture decisions, evidence status, Work delegation rules, safety boundaries or working-style agreements.
-
-## 5. Step-number discipline
+## 10. Whole-number / step discipline
 
 - official steps are integers only;
-- no `.1`, letter suffix or nested official step number;
-- a masterstand refresh at a scheduled checkpoint is itself part of that official whole-number work unit;
-- `WAITING_EXTERNAL` blocks only its lane and does not prevent later independent whole-number steps;
-- after any handoff, continue from repository truth without inventing skipped work;
-- **Step-Close-Gate:** a new independent step starts only after the previous step is explicitly `COMPLETED`, `INTERRUPTED`, `WAITING_EXTERNAL` or `BLOCKED`, with the reason/evidence and pointer synchronized;
-- **pointer-before-next-step:** `docs/CURRENT_WORK_STEP.md` must name the new active step before its first substantive action;
-- visible numbering is monotonic: an older still-open lane is never resumed under its old step number after a higher number has started; preserve its provenance and resume its unfinished scope under the next unused integer;
-- out-of-band Work commits are never retroactively relabeled as the unfinished official step; reconcile them under the next unused continuity step and carry unfinished technical scope prospectively;
-- the old wording `Fortsetzung Schritt N` must not be used as the current official number after later steps have begun;
-- intermediate reports inside the active step are labeled simply `Zwischenstand` and must not introduce a different official step number.
+- no decimal or letter suffixes;
+- `WAITING_EXTERNAL` blocks only its lane unless it is the actual critical path;
+- new independent steps require the previous active step to be truthfully classified and pointer synchronized;
+- out-of-band Work commits are not retroactively relabeled as an unrelated unfinished step;
+- chat audit blocks inside an active step are not new official step numbers;
+- a documentation continuity refresh must not fake technical step completion.
 
-## 6. Visible work / progress-reporting contract
+---
 
-For ongoing multi-step project work, the required visible cadence is binding:
+## 11. Visible work / no-premature-stop contract
 
-**Step N -> short activity -> visible intermediate report in normal assistant text -> status marker (`✅`, `⚠️`, or `❌`) -> actual next tool/action.**
+Preferred cadence:
 
-Tool activity/status lines shown by the interface do **not** count as the visible intermediate report. Do not run a long chain of meaningful tool calls without a normal-text progress report between meaningful checks. The user must be able to see what was checked, the current result, and what will actually happen next.
+`Schritt N -> Tätigkeit -> kurzer Zwischenstand -> ✅ / ⚠️ / ❌ -> tatsächliche nächste Aktion`
 
-**Compact-reporting rule:** intermediate reports should normally be only **1–2 short sentences** containing the result/status and the immediate next action. Do not repeat the full project context, safety baseline, prior findings, long rationale or already-known repository facts unless they materially changed or are required to explain an error. Prefer concise `✅/⚠️/❌` progress markers so the chat remains usable over long project runs.
+A status update is a visibility point, not a stop. If the next safe action can be executed with available tools/files/read-only diagnostics, execute it in the same active turn. Stop only for a real blocker, required user-side action/authorization, explicit user stop/review, milestone handoff, safety issue, or platform limit.
 
-A visible intermediate report is a visibility point, not a stop. After reporting, continue immediately when the next safe action is known. Stop only for a real blocker, required user action/decision, explicit user intervention, milestone stop, safety-relevant issue or a platform-enforced conversation-capacity handoff.
+Do not claim autonomous background work unless an actual automation/background mechanism exists.
 
-**No-prompt continuation enforcement:** if the next safe action can be executed with the currently available repository, tools, files, or read-only diagnostics, the assistant must execute it in the same running turn after the intermediate report. The intermediate report must not terminate the work turn merely to wait for another user message, acknowledgement, or `Weiter`. A user reply is required only when the next action genuinely needs user-side execution, missing information, explicit authorization/decision, unavailable access, safety gate, or the user explicitly stopped/reviewed the sequence. If one method stalls or repeats without new evidence, switch to another safe method instead of waiting for the user to restart progress.
+---
 
-**Active-turn final-response prohibition:** while executable safe work remains in the current turn, the assistant must not send a final/turn-ending response that merely says work will continue. Progress updates must be emitted as non-final intermediate text, followed immediately by the next tool/action in the same turn. A final response is permitted only when the current work unit is complete, a genuine blocker has been reached, user-side action/decision is actually required, the user explicitly instructed a stop/review, or a controlled chat-capacity handoff has been completed. Never write phrases such as `läuft automatisch weiter` in a final response unless a real scheduled automation/background mechanism has actually been created.
+## 12. ChatGPT Work handoff reconciliation
 
-### Repeated premature-stop incident — 2026-09-13
+`docs/WORK_CONTINUITY_PROTOCOL.md` remains the canonical Work operating contract.
 
-During the long engineering chat, the assistant repeatedly produced final/status responses even though the next safe repository action was already known. This was **workflow failure, not technical project blocking**. The durable correction is:
+On resume, if Work commits/results exist beyond the last numbered evidence:
 
-- progress text never substitutes for the next action;
-- a successful sub-check, CI wait/poll point, found file or partial audit is not a valid turn-ending condition;
-- before finalizing, apply the end-of-turn guard from `SESSION_EXECUTION_REFRESHER.md`;
-- if the platform itself is approaching/hitting capacity, transition deliberately through the chat-capacity saturation rule rather than silently stopping mid-step.
+1. pin exact Work commit chain/head/CI;
+2. inspect actual changes/results;
+3. separate skipped external gates;
+4. do not auto-accept Work prose;
+5. reconcile out-of-band results without corrupting official numbering;
+6. preserve main-chat ownership of independent verification, Acceptance and merge unless explicitly delegated;
+7. when source Work artifacts exist in File Library, read them rather than relying on a chat summary.
 
-## 7. User intervention / governance correction
+When Work is actively writing the branch, main chat must not concurrently write that branch.
 
-An explicit user instruction to stop, audit, review, create a Masterstand or correct the workflow is a valid sequence interruption.
+---
 
-Before starting the governance/review work:
-1. stop substantive work on the active technical step;
-2. inspect its actual repo/CI/evidence state;
-3. mark it truthfully `COMPLETED`, `INTERRUPTED`, `WAITING_EXTERNAL` or `BLOCKED`;
-4. synchronize `CURRENT_WORK_STEP.md`;
-5. start the governance/review under the next unused integer;
-6. resume unfinished technical scope later only under another new integer.
+## 13. End-of-recovery rule
 
-## 8. ChatGPT Work handoff reconciliation
+A successful new-chat recovery should end its orientation phase with:
 
-`docs/WORK_CONTINUITY_PROTOCOL.md` is the canonical Work operating contract. It defines main-chat versus Work ownership, Work-order headers, model/thinking selection, credit classes, branch drift, Acceptance/merge ownership and external-evidence rules.
+- fresh head/main/CI;
+- official active step and external/auth lanes;
+- whether Work artifacts were successfully rehydrated;
+- current safety state;
+- exact next action.
 
-On resume, if Work commits exist beyond the last numbered project evidence:
-1. pin the exact Work commit chain and CI;
-2. inspect what actually changed;
-3. classify skipped external gates separately;
-4. do not auto-accept Work prose or relabel out-of-band commits as an unrelated active numbered step;
-5. reconcile them through the next unused whole-number continuity step;
-6. carry interrupted technical work prospectively;
-7. keep Acceptance and merge ownership in the main chat unless explicitly delegated.
-
-## 9. Safety boundary
-
-This protocol changes only continuity/navigation and visible reporting. It never authorizes PAPER or LIVE trading, never changes VERIFIED evidence, never changes strategy semantics, and never bypasses explicit execution-authorization gates.
+Then perform that next safe action if tools/evidence permit. Do not make the user prove that the previous work existed.
