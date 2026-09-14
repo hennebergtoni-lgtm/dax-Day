@@ -1,5 +1,10 @@
 # DAX Major Acceleration Program — 2026-09-14 closeout
 
+## Step2237 Windows export failure — authoritative update
+
+Attempt at ef24d63470b2d2ec076089d7ee8a39d0dbcae2ec reached START but not WAIT; generic FAIL_CLOSED/RUNNER_FAILED; no ZIP. This localizes failure before Python but the old owner erased the exact Git-gate identity. Do not infer it. Corrected runner now emits one allowlisted credential-free error_code for every Git/deploy/Python/source/filesystem/publication failure and never exception/stderr/payload text. Originals unchanged; no login/broker call. Step2237 remains WAITING_EXTERNAL. See STEP_2237_WINDOWS_EXPORT_FAIL_CLOSED.md and use only the new immutable-head command after exact-head CI.
+
+
 Repository truth is the authority. This report separates implemented local software, supplied host observations, actual broker evidence and future work. Bounded IG DEMO authorization is recorded; effective execution remains NONE/false. No broker order was submitted. LIVE remains unauthorized.
 
 ## A — Repository / drift

@@ -149,3 +149,77 @@ def test_cli_failure_does_not_render_provider_or_secret_text(monkeypatch, capsys
     monkeypatch.setattr(module, "export", fail)
     assert module.main(["--expected-head", "a" * 40]) == 2
     assert "SECRET" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("error", "code"),
+    [
+        (module.ExportBlocked("RAW_EXPORT_MISSING_OR_SYMLINK"), "RAW_EXPORT_MISSING_OR_SYMLINK"),
+        (PermissionError("SECRET"), "RAW_EXPORT_PERMISSION_DENIED"),
+        (FileExistsError("SECRET"), "RAW_EXPORT_OUTPUT_RACE"),
+        (OSError("SECRET"), "RAW_EXPORT_FILESYSTEM_FAILED"),
+        (RuntimeError("Bearer SECRET"), "RAW_EXPORT_UNEXPECTED_FAILURE"),
+        (module.ExportBlocked("Bearer SECRET"), "RAW_EXPORT_UNEXPECTED_FAILURE"),
+    ],
+)
+def test_cli_returns_fixed_credential_free_error_code_for_every_exception(
+    error, code, monkeypatch, capsys
+):
+    def fail(*args, **kwargs):
+        raise error
+    monkeypatch.setattr(module, "export", fail)
+    assert module.main(["--expected-head", "a" * 40]) == 2
+    output = json.loads(capsys.readouterr().out)
+    assert output["status"] == "BLOCKED"
+    assert output["error_code"] == code
+    assert "SECRET" not in str(output)
+    assert output["execution_capability"] == "NONE"
+    assert output["order_execution_enabled"] is False
+
+
+@pytest.mark.parametrize(
+    ("data", "code"),
+    [
+        (b"not-json", "RAW_EXPORT_INVALID_JSON"),
+        (b'{"x":"\\xff"}'.replace(b"\\xff", bytes([255])), "RAW_EXPORT_INVALID_UTF8"),
+    ],
+)
+def test_decode_reports_specific_sanitized_format_code(data, code):
+    with pytest.raises(module.ExportBlocked, match=code):
+        module.decode(data)
+
+
+def test_unexpected_raw_capture_shape_maps_to_source_contract_code():
+    source = originals()
+    payload = json.loads(source["A.json"])
+    del payload["request_started_at_utc"]
+    source["A.json"] = json.dumps(payload).encode()
+    with pytest.raises(module.ExportBlocked, match="RAW_EXPORT_CAPTURE_CONTRACT_INVALID"):
+        module.bundle_bytes(source, runtime_head="a" * 40)
+
+
+@pytest.mark.parametrize(
+    ("link_error", "code"),
+    [
+        (PermissionError("SECRET"), "RAW_EXPORT_PERMISSION_DENIED"),
+        (FileExistsError("SECRET"), "RAW_EXPORT_OUTPUT_RACE"),
+        (OSError("SECRET"), "RAW_EXPORT_PUBLICATION_FAILED"),
+    ],
+)
+def test_publication_failure_is_specific_and_preserves_all_originals(
+    tmp_path, monkeypatch, link_error, code
+):
+    monkeypatch.setattr(module.raw, "check_code", lambda head: head)
+    source = originals()
+    directory = tmp_path / module.NAMESPACE
+    directory.mkdir(parents=True)
+    for name, data in source.items():
+        (directory / name).write_bytes(data)
+    def fail_link(*args, **kwargs):
+        raise link_error
+    monkeypatch.setattr(module.os, "link", fail_link)
+    with pytest.raises(module.ExportBlocked, match=code):
+        module.export("a" * 40, root=tmp_path)
+    assert not (tmp_path / ".runtime/ig_raw_truth_2233_attempt_03_originals.zip").exists()
+    assert not (tmp_path / ".runtime/ig_raw_truth_2233_attempt_03_originals.zip.partial").exists()
+    assert all((directory / name).read_bytes() == data for name, data in source.items())

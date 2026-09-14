@@ -20,6 +20,20 @@ EVIDENCE_HEAD = "2a99f96e06f7ce1f311c767dec43d236bb63eedd"
 NAMESPACE = ".runtime/ig_raw_m5_truth_2233_v2_attempt_03"
 FILES = ("A.json", "B.json", "C.json", "AB.json", "BC.json", "SUMMARY.json")
 MAX_BYTES = 2_000_000
+EXPORT_ERROR_CODES = frozenset({
+    "RAW_EXPORT_DUPLICATE_JSON_KEY", "RAW_EXPORT_RESOURCE_LIMIT",
+    "RAW_EXPORT_INVALID_UTF8", "RAW_EXPORT_INVALID_JSON",
+    "RAW_EXPORT_REQUIRED_FILES", "RAW_EXPORT_RUNTIME_HEAD",
+    "RAW_EXPORT_CAPTURE_CONTRACT_INVALID", "RAW_EXPORT_EVIDENCE_HEAD",
+    "RAW_EXPORT_COMPARE_MISMATCH", "RAW_EXPORT_CLOCK", "RAW_EXPORT_REQUEST_WINDOW",
+    "RAW_EXPORT_SCHEDULE", "RAW_EXPORT_SUMMARY_CONTRACT_OR_HASH",
+    "RAW_EXPORT_SYMLINK", "RAW_EXPORT_OUTPUT_EXISTS",
+    "RAW_EXPORT_MISSING_OR_SYMLINK", "RAW_EXPORT_SOURCE_CHANGED",
+    "RAW_EXPORT_CODE_GATE_BLOCKED", "RAW_EXPORT_CODE_CHANGED",
+    "RAW_EXPORT_LOCK_UNAVAILABLE", "RAW_EXPORT_PERMISSION_DENIED",
+    "RAW_EXPORT_OUTPUT_RACE", "RAW_EXPORT_PUBLICATION_FAILED",
+    "RAW_EXPORT_FILESYSTEM_FAILED", "RAW_EXPORT_UNEXPECTED_FAILURE",
+})
 
 
 class ExportBlocked(RuntimeError):
@@ -27,6 +41,8 @@ class ExportBlocked(RuntimeError):
 
 
 def require(condition, code):
+    if code not in EXPORT_ERROR_CODES:
+        raise RuntimeError("undeclared export error code")
     if not condition:
         raise ExportBlocked(code)
 
@@ -41,12 +57,19 @@ def _pairs(pairs):
 
 def decode(data):
     require(len(data) <= MAX_BYTES, "RAW_EXPORT_RESOURCE_LIMIT")
-    payload = json.loads(data.decode("utf-8"), object_pairs_hook=_pairs)
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise ExportBlocked("RAW_EXPORT_INVALID_UTF8") from None
+    try:
+        payload = json.loads(text, object_pairs_hook=_pairs)
+    except json.JSONDecodeError:
+        raise ExportBlocked("RAW_EXPORT_INVALID_JSON") from None
     require(isinstance(payload, dict), "RAW_EXPORT_INVALID_JSON")
     return payload
 
 
-def validate_attempt(payloads):
+def _validate_attempt(payloads):
     captures = {name: payloads[name + ".json"] for name in ("A", "B", "C")}
     for capture in captures.values():
         raw.validate_snapshot(capture)
@@ -104,6 +127,15 @@ def validate_attempt(payloads):
     return captures
 
 
+def validate_attempt(payloads):
+    try:
+        return _validate_attempt(payloads)
+    except ExportBlocked:
+        raise
+    except Exception:
+        raise ExportBlocked("RAW_EXPORT_CAPTURE_CONTRACT_INVALID") from None
+
+
 def review(payloads):
     captures = validate_attempt(payloads)
     return {
@@ -153,7 +185,10 @@ def bundle_bytes(originals, *, runtime_head):
 
 
 def export(expected_head, *, root=None):
-    head = raw.check_code(expected_head)
+    try:
+        head = raw.check_code(expected_head)
+    except Exception:
+        raise ExportBlocked("RAW_EXPORT_CODE_GATE_BLOCKED") from None
     root = Path(root or Path(__file__).resolve().parents[1]).resolve()
     runtime = root / ".runtime"
     source = root / NAMESPACE
@@ -170,7 +205,12 @@ def export(expected_head, *, root=None):
         with path.open("rb") as stream:
             originals[name] = stream.read(MAX_BYTES + 1)
     content, manifest = bundle_bytes(originals, runtime_head=head)
-    with SingleInstanceLock(runtime / "ig_raw_truth_2233_export.lock", "IG_RAW_EXPORT"):
+    lock = SingleInstanceLock(runtime / "ig_raw_truth_2233_export.lock", "IG_RAW_EXPORT")
+    try:
+        lock.acquire()
+    except Exception:
+        raise ExportBlocked("RAW_EXPORT_LOCK_UNAVAILABLE") from None
+    try:
         created = False
         try:
             with temporary.open("xb") as stream:
@@ -180,11 +220,23 @@ def export(expected_head, *, root=None):
                 os.fsync(stream.fileno())
             require(all((source / name).read_bytes() == data for name, data in originals.items()),
                     "RAW_EXPORT_SOURCE_CHANGED")
-            raw.check_code(head)
-            os.link(temporary, output)  # Exclusive complete publication; never replace/fallback.
+            try:
+                raw.check_code(head)
+            except Exception:
+                raise ExportBlocked("RAW_EXPORT_CODE_CHANGED") from None
+            try:
+                os.link(temporary, output)  # Exclusive complete publication; never replace/fallback.
+            except FileExistsError:
+                raise ExportBlocked("RAW_EXPORT_OUTPUT_RACE") from None
+            except PermissionError:
+                raise ExportBlocked("RAW_EXPORT_PERMISSION_DENIED") from None
+            except OSError:
+                raise ExportBlocked("RAW_EXPORT_PUBLICATION_FAILED") from None
         finally:
             if created and temporary.is_file() and not temporary.is_symlink():
                 temporary.unlink()
+    finally:
+        lock.release()
     return output, manifest
 
 
@@ -199,8 +251,18 @@ def main(argv=None):
                           "classification": "OTHER_UNKNOWN", "broker_side_effects": 0,
                           "execution_capability": "NONE", "order_execution_enabled": False}))
         return 0
-    except Exception:
-        print(json.dumps({"status": "BLOCKED", "error_code": "RAW_EXPORT_FAILED_CLOSED",
+    except Exception as exc:
+        if isinstance(exc, ExportBlocked) and str(exc) in EXPORT_ERROR_CODES:
+            code = str(exc)
+        elif isinstance(exc, PermissionError):
+            code = "RAW_EXPORT_PERMISSION_DENIED"
+        elif isinstance(exc, FileExistsError):
+            code = "RAW_EXPORT_OUTPUT_RACE"
+        elif isinstance(exc, OSError):
+            code = "RAW_EXPORT_FILESYSTEM_FAILED"
+        else:
+            code = "RAW_EXPORT_UNEXPECTED_FAILURE"
+        print(json.dumps({"status": "BLOCKED", "error_code": code,
                           "prior_evidence_is_not_current": True, "broker_side_effects": 0,
                           "execution_capability": "NONE", "order_execution_enabled": False}))
         return 2

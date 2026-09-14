@@ -22,7 +22,7 @@ jobs:
         run: ruff check src tests scripts
       - name: Step 2233 RAW runner regressions and Python syntax
         run: |
-          pytest tests/test_export_ig_raw_truth_2233.py tests/test_run_ig_raw_truth_2233.py tests/test_ig_raw_m5_timestamp_diagnostic.py tests/test_ig_rest_readonly.py tests/test_ig_session_owner.py
+          pytest tests/test_export_ig_raw_truth_2233.py tests/test_export_ig_raw_truth_2233_runner.py tests/test_run_ig_raw_truth_2233.py tests/test_ig_raw_m5_timestamp_diagnostic.py tests/test_ig_rest_readonly.py tests/test_ig_session_owner.py
           python -m py_compile scripts/export_ig_raw_truth_2233.py scripts/run_ig_raw_truth_2233.py scripts/ig_raw_m5_timestamp_diagnostic.py src/daxlab/runtime/atomic_json.py src/daxlab/adapters/ig_rest_readonly.py
       - name: Research Factory source and owner integrity
         run: python scripts/check_acceleration_program.py
@@ -41,6 +41,11 @@ jobs:
           $parseErrors = $null
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/export_ig_raw_truth_2233.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
           if ($parseErrors.Count -ne 0) { throw 'EXPORT_RUNNER_SYNTAX_INVALID' }
+          $result = (& pwsh -NoProfile -File (Join-Path $PWD 'scripts/export_ig_raw_truth_2233.ps1') -ExpectedHead invalid 6>&1 | Out-String)
+          if ($LASTEXITCODE -ne 2 -or $result -notmatch 'error_code=HEAD_INVALID') { throw 'HEAD_ERROR_CONTRACT_INVALID' }
+          $missingRoot = Join-Path $PWD 'definitely-missing-export-root'
+          $result = (& pwsh -NoProfile -File (Join-Path $PWD 'scripts/export_ig_raw_truth_2233.ps1') -ExpectedHead ('a' * 40) -RepoRoot $missingRoot 6>&1 | Out-String)
+          if ($LASTEXITCODE -ne 2 -or $result -notmatch 'error_code=HOST_UNAVAILABLE') { throw 'HOST_ERROR_CONTRACT_INVALID' }
       - name: Tests
         run: pytest
       - name: Recovery reconstruction preflight
