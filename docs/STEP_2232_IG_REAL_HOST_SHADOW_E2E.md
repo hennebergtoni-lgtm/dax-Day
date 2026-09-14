@@ -21,7 +21,7 @@ Only the exact final publication head with both required CI checks green may be 
 | `mt5_shadow_supervisor.py` | Requires Windows MT5 probe/bundle and MT5 host cycle. Do not start it with IG or invent an MT5 bundle. |
 | `windows_mt5_shadow_start.ps1` | MT5 scheduled-task/venv launcher; not the IG test launcher. |
 | `check_windows_mt5_shadow_runtime.ps1` | MT5 tasks/heartbeat; not evidence for this isolated IG invocation. |
-| `check_windows_mt5_shadow_code_parity.ps1` | MT5 parity surface. IG test instead binds exact Git HEAD and rejects tracked/untracked source-code drift before and after processing. Runtime output/cache files are not code drift. |
+| `check_windows_mt5_shadow_code_parity.ps1` | MT5 parity surface. IG test instead binds exact Git HEAD, imports local repo/src explicitly and rejects foreign-worktree module imports plus tracked/untracked source-code drift before and after processing. Runtime output/cache files are not code drift. |
 | `export_mt5_shadow_telemetry.py`, `windows_mt5_shadow_telemetry_export.ps1` | MT5/Neon export; not fed fabricated IG-as-MT5 data. |
 | `read_candidate_operator_runtime.py` | Reads the Neon current projection. This local test does not claim a Neon write/read. |
 | `serve_operator_console.py` | Existing full console consumes MT5 bundle/heartbeat/checkpoint. Its browser/mobile rendering is not verified by this test. |
@@ -80,6 +80,6 @@ Classify actual failure as DATA/CLOCK/ADAPTER/STRATEGY/STATE/RUNTIME/TELEMETRY/O
 
 ## Closeout boundary
 
-Local validation: 70 existing IG regressions and 22 new connection/state/operator/CLI regressions pass; full suite **2711 passed / 6 local PowerShell skips** (2717 collected). Ruff on src/tests/scripts, AST syntax/imports and JavaScript syntax pass. All eight existing offline gates pass: recovery preflight, research registry, hypothesis ledger, web status, static runtime safety, V11.2 probe, V11.2 replay and SHADOW soak. Required CI must still be checked on the actual publication head; prior #671/#1455 results belong only to the 2231 documentation commit.
+Local validation: 70 existing IG regressions and 23 new connection/state/operator/CLI/import-parity regressions pass; full suite **2712 passed / 6 local PowerShell skips** (2718 collected). Ruff on src/tests/scripts, AST syntax/imports and JavaScript syntax pass. All eight existing offline gates pass: recovery preflight, research registry, hypothesis ledger, web status, static runtime safety, V11.2 probe, V11.2 replay and SHADOW soak. Required CI must still be checked on the actual publication head; prior #671/#1455 results belong only to the 2231 documentation commit.
 
 2232 remains WAITING_EXTERNAL until the real bundle is reviewed; next exact whole-number step is **2233**, reserved for the single evidence-driven successor after 2232 passes. 2233 is not started or execution-authorized here. NONE/false, SHADOW only; V11.2/CAND-001 rules and MT5 path remain unchanged. No DEMO/PAPER/LIVE order authorization.

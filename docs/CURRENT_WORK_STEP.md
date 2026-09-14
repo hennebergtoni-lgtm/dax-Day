@@ -43,11 +43,11 @@ M01 remains incomplete beyond its IG feed slice; Step2206 and MT5 host2122 remai
 
 ## Step 2232 local connection / external test
 
-`scripts/ig_cand001_shadow_e2e.py` performs one existing live IG read, explicitly maps the canonical EPIC/M5 bars into DE40/5m runtime candles and reuses the unchanged CAND-001 pipeline, SHADOW orchestrator, complete checkpoint, OS lock, atomic storage and validated V3/browser Operator projection. The MT5-specific supervisor/start/check/export/full-console wrappers are not started or fed invented MT5 evidence. Historical catchup is labelled; only the latest fresh closed bar is CURRENT. Existing state is resumed only with exact code/manifest, unchanged overlap and a present anchor; no new M5, gaps, lock conflicts or drift block without state reset.
+`scripts/ig_cand001_shadow_e2e.py` performs one existing live IG read, explicitly maps the canonical EPIC/M5 bars into DE40/5m runtime candles and reuses the unchanged CAND-001 pipeline, SHADOW orchestrator, complete checkpoint, OS lock, atomic storage and validated V3/browser Operator projection. The MT5-specific supervisor/start/check/export/full-console wrappers are not started or fed invented MT5 evidence. Historical catchup is labelled; only the latest fresh closed bar is CURRENT. Imports are explicitly bound to this repo/src; loaded foreign-worktree daxlab modules block. Existing state is resumed only with exact code/manifest, unchanged overlap and a present anchor; no new M5, gaps, lock conflicts or drift block without state reset.
 
 The narrow ADAPTER gap was reproduced offline (domain Candle lacks runtime `symbol`); there is no strategy rule/config change. Local conformance is implementation evidence, not a real-host pass. Runbook/audit/criteria: `docs/STEP_2232_IG_REAL_HOST_SHADOW_E2E.md`. **2232 WAITING_EXTERNAL**, until both successful exact-head Windows invocation/operator-read outputs and the new complete credential-free bundle are reviewed. Its local operator display scope does not verify Neon export or the MT5 browser console. Next step remains **2233**, not started.
 
-Local validation: 70 existing IG + 22 connection regressions; full suite 2711 passed / 6 PowerShell skips; Ruff, syntax/imports, JavaScript syntax and all eight offline safety/governance gates pass. Required CI is exact-head evidence and must be re-read after publication; earlier green checks cannot close the real-host lane.
+Local validation: 70 existing IG + 23 connection regressions; full suite 2712 passed / 6 PowerShell skips; Ruff, syntax/imports, JavaScript syntax and all eight offline safety/governance gates pass. Required CI is exact-head evidence and must be re-read after publication; earlier green checks cannot close the real-host lane.
 
 ## Ledger archive
 

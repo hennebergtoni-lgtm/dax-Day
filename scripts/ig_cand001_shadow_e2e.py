@@ -17,6 +17,7 @@ import sys
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from ig_demo_readonly_probe import (  # noqa: E402
     DEFAULT_EPIC, DEFAULT_INSTRUMENT_ID, DEFAULT_MAX_AGE, TIMESTAMP_CONTRACT,
     _assert_credential_free, _fingerprint, collect_probe_with_candles,
@@ -84,6 +85,11 @@ def check_code(expected: str) -> str:
     require(not git("status", "--porcelain", "--untracked-files=no"), "GOVERNANCE_TRACKED_DRIFT")
     require(not git("ls-files", "--others", "--exclude-standard", "scripts/*.py", "src/*.py"),
             "GOVERNANCE_UNTRACKED_CODE")
+    for name, module in tuple(sys.modules.items()):
+        source_file = getattr(module, "__file__", None)
+        if name.startswith("daxlab.") and source_file:
+            require(Path(source_file).resolve().is_relative_to(REPO / "src"),
+                    "GOVERNANCE_IMPORT_PARITY")
     return head
 
 

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 import importlib.util
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -210,4 +211,13 @@ def test_code_gate_rejects_parallel_tracked_edit_before_live_read(monkeypatch):
         HEAD if "rev-parse" in cmd else " M src/daxlab/runtime/candidate_signal.py"
     ))
     with pytest.raises(host.HostTestBlocked, match="TRACKED_DRIFT"):
+        host.check_code(HEAD)
+
+
+def test_import_from_other_worktree_blocks_even_with_clean_exact_head(monkeypatch, tmp_path):
+    monkeypatch.setattr(host.subprocess, "check_output", lambda cmd, **_: HEAD if "rev-parse" in cmd else "")
+    monkeypatch.setitem(host.sys.modules, "daxlab.foreign_runtime", SimpleNamespace(
+        __file__=str(tmp_path / "other-worktree" / "runtime.py"),
+    ))
+    with pytest.raises(host.HostTestBlocked, match="IMPORT_PARITY"):
         host.check_code(HEAD)
