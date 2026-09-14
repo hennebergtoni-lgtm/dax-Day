@@ -30,6 +30,15 @@ jobs:
         run: pytest tests/test_acceleration_evidence_analytics.py
       - name: Independent PTC and protection safety regressions
         run: pytest tests/test_independent_pretrade_controls.py tests/test_broker_execution_protection.py tests/test_nextgen_execution_protection_binding.py
+      - name: Causal regime research regressions
+        run: pytest tests/test_causal_hysteresis_regime.py tests/test_atr_regime.py
+      - name: Export runner PowerShell syntax (not Windows runtime evidence)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/export_ig_raw_truth_2233.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -ne 0) { throw 'EXPORT_RUNNER_SYNTAX_INVALID' }
       - name: Tests
         run: pytest
       - name: Recovery reconstruction preflight

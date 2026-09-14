@@ -29,13 +29,8 @@ try {
     $published = Git-Checked @('rev-parse', 'origin/nextgen-bot-line-v1')
     if ($published -ne $ExpectedHead) { throw 'BRANCH_DRIFT' }
     Git-Checked @('merge-base', '--is-ancestor', $head, $ExpectedHead) | Out-Null
-    $branch = Git-Checked @('branch', '--show-current')
     if ($head -ne $ExpectedHead) {
-        if ($branch -eq 'nextgen-bot-line-v1') {
-            Git-Checked @('merge', '--ff-only', $ExpectedHead) | Out-Null
-        } else {
-            Git-Checked @('checkout', '--detach', $ExpectedHead) | Out-Null
-        }
+        Git-Checked @('checkout', '--detach', $ExpectedHead) | Out-Null
     }
     if ((Git-Checked @('rev-parse', 'HEAD')) -ne $ExpectedHead) { throw 'HEAD_MISMATCH' }
     Set-Location -LiteralPath $RepoRoot
