@@ -184,6 +184,12 @@ class IgDemoReadOnlyClient:
             raise
 
     def _request(self, **kwargs) -> JsonResponse:
+        url, method = kwargs.get("url"), kwargs.get("method")
+        if (self.base_url != IG_DEMO_BASE_URL or not isinstance(url, str)
+                or not url.startswith(IG_DEMO_BASE_URL + "/")
+                or method not in ("GET", "POST", "DELETE")
+                or (method != "GET" and url != IG_DEMO_BASE_URL + "/session")):
+            raise IgReadOnlyError("IG hard DEMO/read-only transport boundary blocked")
         try:
             response = self.transport.request(**kwargs)
         except Exception:

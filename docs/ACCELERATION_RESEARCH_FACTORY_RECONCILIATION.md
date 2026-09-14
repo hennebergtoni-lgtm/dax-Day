@@ -1,6 +1,6 @@
 # Research Factory reconciliation — Step2234
 
-All four original rescue anchors were fully read. Source extracted-text SHA256 is recorded in research/acceleration_program_v1.json; this is not a hash of original downloaded bytes. All40 H,100 F and24 learning IDs are retained with original mechanism/detection/reaction and actual existing repository paths. The checker validates cardinality, source IDs, owner existence, referenced test function existence, and bans unreviewed REAL_DEMO_VERIFIED promotion. Coverage is conservatively partial:36 rows point to local tests;64 remain GAP/WAITING_EXTERNAL. No case is represented as real IG broker evidence.
+All four original rescue anchors were fully read. Source extracted-text SHA256 is recorded in research/acceleration_program_v1.json; this is not a hash of original downloaded bytes. All40 H,100 F and24 learning IDs are retained with original mechanism/detection/reaction and actual existing repository paths. The checker validates cardinality, source IDs, owner existence, referenced test function existence, and bans unreviewed REAL_DEMO_VERIFIED promotion. Coverage is conservatively partial:42 rows point to local tests; status53 GAP/38 SYNTHETIC_ONLY/9 WAITING_EXTERNAL. A test reference can cover only one facet while its broader scenario stays GAP. Added PTC/session/identity references do not establish real broker truth. No case is represented as real IG broker evidence.
 
 | Rescue source | Reconciliation |
 | --- | --- |
@@ -197,3 +197,8 @@ Cheap reject validates source identity, UTC/timeframe/session calendar, finalize
 Each trial family uses existing variant_trial_registry.TrialDeclaration and chronology audit; new outcomes cannot retroactively become predeclared. Full provenance: hypothesis/dataset/engine/strategy/risk/cost/session/timezone/adapter/execution-assumptions/parameters/code/results. Coarse exploratory selection has a bounded declared trial budget; all rejected/failed/abandoned trials remain counted. Selected deep tests precede temporal OOS/WF; final holdout is preserved. DSR/PBO/SPA existing owners remain; synchronized complete return matrices are required. Plateaus, neighborhood gradients, count/cost sensitivity, top-trade dependency and WF/forward degradation are separate outputs; no magic optimum or automatic promotion.
 
 There is no valid current CAND-001 pinned trade/path ledger in the repository tree. Targeted Library retrieval found research summaries/notebooks, not a proven cost/path-complete CAND-001 ledger. Real numerical envelope/tail/filter/OOS conclusions remain WAITING_EXTERNAL. Pure diagnostics can be extended offline with hand-calculated fixtures; these do not establish profitability.
+
+
+## Subsequent acceleration coverage update
+
+Current JSON:42 rows with narrow local references;53 GAP,38 SYNTHETIC_ONLY,9 WAITING_EXTERNAL. F033/F050 now SYNTHETIC_ONLY; source/reconnect/equity evidence gaps stay open. Original2234 rows above are historical mapping snapshots; use JSON for current classification.

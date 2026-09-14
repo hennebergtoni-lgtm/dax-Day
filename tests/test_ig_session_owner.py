@@ -117,3 +117,28 @@ def test_remaining_pagination_also_latches_read_owner():
         owner.positions()
     owner.logout()
     assert transport.calls == ["POST", "GET", "DELETE"]
+
+
+def test_demo_pin_is_rechecked_at_transport_after_mutable_client_configuration():
+    transport = Transport([])
+    owner = client(transport)
+    owner.base_url = "https://api.ig.com/gateway/deal"
+    with pytest.raises(IgReadOnlyError, match="hard DEMO"):
+        owner.login()
+    assert transport.calls == []
+    assert owner.session_health["state"] == "QUERY_REQUIRED"
+
+
+@pytest.mark.parametrize("url,method", [
+    ("https://api.ig.com/gateway/deal/accounts", "GET"),
+    ("https://demo-api.ig.com.evil.test/gateway/deal/accounts", "GET"),
+    ("https://demo-api.ig.com/gateway/deal/positions/otc", "POST"),
+    ("https://demo-api.ig.com/gateway/deal/positions/otc/ID", "DELETE"),
+    ("https://demo-api.ig.com/gateway/deal/session", "PUT"),
+])
+def test_internal_transport_boundary_cannot_add_dealing_or_live_route(url, method):
+    transport = Transport([])
+    owner = client(transport)
+    with pytest.raises(IgReadOnlyError, match="hard DEMO"):
+        owner._request(url=url, method=method, headers={})
+    assert transport.calls == []

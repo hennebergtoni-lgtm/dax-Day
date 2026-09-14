@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
       - name: Install lean candidate test surface
         run: |
           python -m pip install --upgrade pip

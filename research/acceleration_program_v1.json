@@ -1,5 +1,5 @@
 {
-  "anchor_code_head": "2a99f96e06f7ce1f311c767dec43d236bb63eedd",
+  "anchor_code_head": "ccf31359e821bfc0c5630e2bc25e6a6cba7f5936",
   "architecture_learnings": [
     {
       "decision": "ALREADY_HAVE",
@@ -229,18 +229,20 @@
       "id": "F001",
       "integration_coverage": "NOT_PROVEN",
       "observability": "EXISTING_OWNER_PROJECTION_OR_GAP_NOT_REAL_BROKER_PROOF",
-      "owner": "src/daxlab/adapters/ig_market_data.py",
+      "owner": "src/daxlab/runtime/broker_execution_protection.py",
       "priority_gate_milestone": "P0 R/C M06",
       "provider_scope": "BROKER_NEUTRAL_ADAPT_TO_IG",
       "real_broker_coverage": "NOT_PROVEN",
       "recovery": "QUERY_OR_BLOCK_PRESERVE_STATE_NO_RESUBMIT",
       "safe_reaction": "Source-age UNKNOWN/block",
-      "source_basis": "S24 D",
+      "source_basis": "S24 D; STALE_PRICE_VETO_ONLY_SOURCE_AGE_PROVENANCE_EXTERNAL",
       "source_owner_and_coverage": "Feed T",
       "status": "GAP",
       "trigger": "Alte Venue-Quote neu empfangen → scheinbar frisch",
-      "unit_coverage": "NOT_PROVEN",
-      "unit_tests": []
+      "unit_coverage": "PARTIAL_SCOPE_LOCAL_TEST",
+      "unit_tests": [
+        "tests/test_independent_pretrade_controls.py::test_each_ptc_veto_is_independent_of_green_strategy_risk"
+      ]
     },
     {
       "category": "MARKET_DATA",
@@ -655,18 +657,20 @@
       "id": "F020",
       "integration_coverage": "NOT_PROVEN",
       "observability": "EXISTING_OWNER_PROJECTION_OR_GAP_NOT_REAL_BROKER_PROOF",
-      "owner": "src/daxlab/runtime/candidate_operator_query.py",
+      "owner": "src/daxlab/adapters/ig_rest_readonly.py",
       "priority_gate_milestone": "P0 C M03",
       "provider_scope": "BROKER_NEUTRAL_ADAPT_TO_IG",
       "real_broker_coverage": "NOT_PROVEN",
       "recovery": "QUERY_OR_BLOCK_PRESERVE_STATE_NO_RESUBMIT",
       "safe_reaction": "Re-observe/resubscribe + reconcile",
-      "source_basis": "S33 D",
+      "source_basis": "S33 D; CONNECTION_HEALTH_NOT_FEED_TRUTH_ONLY_NO_REAL_RECONNECT",
       "source_owner_and_coverage": "Adapter T",
       "status": "GAP",
       "trigger": "Broker reconnect, Daten verloren → connected aber stale",
-      "unit_coverage": "NOT_PROVEN",
-      "unit_tests": []
+      "unit_coverage": "PARTIAL_SCOPE_LOCAL_TEST",
+      "unit_tests": [
+        "tests/test_ig_session_owner.py::test_health_does_not_claim_feed_or_inventory_and_contains_no_credentials"
+      ]
     },
     {
       "category": "BROKER",
@@ -949,18 +953,20 @@
       "id": "F033",
       "integration_coverage": "NOT_PROVEN",
       "observability": "EXISTING_OWNER_PROJECTION_OR_GAP_NOT_REAL_BROKER_PROOF",
-      "owner": "src/daxlab/runtime/demo_transport_attempt_reservation.py",
+      "owner": "src/daxlab/adapters/ig_rest_readonly.py",
       "priority_gate_milestone": "P0 C M07",
       "provider_scope": "BROKER_NEUTRAL_ADAPT_TO_IG",
       "real_broker_coverage": "NOT_PROVEN",
       "recovery": "QUERY_OR_BLOCK_PRESERVE_STATE_NO_RESUBMIT",
       "safe_reaction": "Stop new admission, inspect owner",
-      "source_basis": "S33 D",
+      "source_basis": "S33 D; SINGLE_INSTANCE_DUPLICATE_LOGIN_VETO_ONLY_NO_HOST_EOF_CAUSE",
       "source_owner_and_coverage": "Host T",
-      "status": "GAP",
+      "status": "SYNTHETIC_ONLY",
       "trigger": "Duplicate sessions → EOF/disconnect",
-      "unit_coverage": "NOT_PROVEN",
-      "unit_tests": []
+      "unit_coverage": "PARTIAL_SCOPE_LOCAL_TEST",
+      "unit_tests": [
+        "tests/test_ig_session_owner.py::test_one_owner_consumes_login_once_including_after_logout"
+      ]
     },
     {
       "category": "NETWORK",
@@ -1339,18 +1345,21 @@
       "id": "F050",
       "integration_coverage": "NOT_PROVEN",
       "observability": "EXISTING_OWNER_PROJECTION_OR_GAP_NOT_REAL_BROKER_PROOF",
-      "owner": "src/daxlab/runtime/broker_reconciliation.py",
+      "owner": "src/daxlab/runtime/broker_execution_protection.py",
       "priority_gate_milestone": "P0 B M03",
       "provider_scope": "BROKER_NEUTRAL_ADAPT_TO_IG",
       "real_broker_coverage": "NOT_PROVEN",
       "recovery": "QUERY_OR_BLOCK_PRESERVE_STATE_NO_RESUBMIT",
       "safe_reaction": "Precision block",
-      "source_basis": "S29 D",
+      "source_basis": "S29 D; NATIVE_REQUEST_PRICE_GRID_VETO_AND_OBSERVED_FILL_GRID_ONLY",
       "source_owner_and_coverage": "Economics T",
-      "status": "GAP",
+      "status": "SYNTHETIC_ONLY",
       "trigger": "Native Orderpreis digits-valid, tick-invalid",
-      "unit_coverage": "NOT_PROVEN",
-      "unit_tests": []
+      "unit_coverage": "PARTIAL_SCOPE_LOCAL_TEST",
+      "unit_tests": [
+        "tests/test_independent_pretrade_controls.py::test_each_ptc_veto_is_independent_of_green_strategy_risk",
+        "tests/test_acceleration_evidence_analytics.py::test_native_grid_uses_tick_size_not_decimal_digits"
+      ]
     },
     {
       "category": "ORDER",
@@ -1655,18 +1664,20 @@
       "id": "F064",
       "integration_coverage": "NOT_PROVEN",
       "observability": "EXISTING_OWNER_PROJECTION_OR_GAP_NOT_REAL_BROKER_PROOF",
-      "owner": "src/daxlab/domain/risk_policy.py",
+      "owner": "src/daxlab/runtime/broker_execution_protection.py",
       "priority_gate_milestone": "P0 C M07",
       "provider_scope": "BROKER_NEUTRAL_ADAPT_TO_IG",
       "real_broker_coverage": "NOT_PROVEN",
       "recovery": "QUERY_OR_BLOCK_PRESERVE_STATE_NO_RESUBMIT",
       "safe_reaction": "Aggregate controls before transport",
-      "source_basis": "S40 R/P",
+      "source_basis": "S40 R/P; INDEPENDENT_NOTIONAL_AND_INVENTORY_VETO_NOT_AGGREGATE_ACCOUNT_EQUITY",
       "source_owner_and_coverage": "PTC N",
       "status": "GAP",
       "trigger": "Account Exposure nicht in Routerlimits → Überexposure",
-      "unit_coverage": "NOT_PROVEN",
-      "unit_tests": []
+      "unit_coverage": "PARTIAL_SCOPE_LOCAL_TEST",
+      "unit_tests": [
+        "tests/test_independent_pretrade_controls.py::test_each_ptc_veto_is_independent_of_green_strategy_risk"
+      ]
     },
     {
       "category": "PERSISTENCE",
@@ -2247,18 +2258,20 @@
       "id": "F090",
       "integration_coverage": "NOT_PROVEN",
       "observability": "EXISTING_OWNER_PROJECTION_OR_GAP_NOT_REAL_BROKER_PROOF",
-      "owner": "src/daxlab/runtime/manifests.py",
+      "owner": "src/daxlab/research/conformance.py",
       "priority_gate_milestone": "P0 C M07",
       "provider_scope": "BROKER_NEUTRAL_ADAPT_TO_IG",
       "real_broker_coverage": "NOT_PROVEN",
       "recovery": "QUERY_OR_BLOCK_PRESERVE_STATE_NO_RESUBMIT",
       "safe_reaction": "Specific environment review",
-      "source_basis": "S35 D",
+      "source_basis": "S35 D; DIMENSIONAL_COMPONENT_DRIFT_DIAGNOSTIC_ONLY_NO_RECONNECT_PROMOTION",
       "source_owner_and_coverage": "Release N",
       "status": "GAP",
       "trigger": "Changed precision/reconnect ohne Conformance → hidden drift",
-      "unit_coverage": "NOT_PROVEN",
-      "unit_tests": []
+      "unit_coverage": "PARTIAL_SCOPE_LOCAL_TEST",
+      "unit_tests": [
+        "tests/test_acceleration_evidence_analytics.py::test_each_drift_is_reported_in_its_actual_dimension"
+      ]
     },
     {
       "category": "RELEASE",
@@ -2568,7 +2581,7 @@
       "cost": "L",
       "current_status": "RESEARCH",
       "decision": "PREPARE",
-      "decision_reason": "CAUSAL_FEATURE_TEST_AND_COARSE_SCREEN_PREPARED_PINNED_LEDGER_MISSING",
+      "decision_reason": "CAUSAL_HYSTERESIS_FEATURE_IMPLEMENTED_TESTED_ECONOMIC_OOS_LEDGER_MISSING",
       "dependencies": [
         "PINNED_DATASET",
         "IMMUTABLE_TRIAL_FAMILY",
@@ -2582,7 +2595,7 @@
       "leakage_risk": "ADX nur abgeschlossene Bars",
       "mechanism": "Regime: getrennte Eintritt-/Austrittsschwellen statt Flips",
       "overfit_risk": "M",
-      "owner_capability": "CAUSAL_FEATURE_OR_DIAGNOSTIC_ONLY_NOT_VALIDATED_HYPOTHESIS",
+      "owner_capability": "CAUSAL_HYSTERESIS_FEATURE_ONLY_NOT_VALIDATED_HYPOTHESIS",
       "priority_stage": "REGIME",
       "required_evidence": "B"
     },
@@ -3421,36 +3434,36 @@
   "scope": "REVIEW_BACKLOG_NOT_TRIAL_REGISTRY_OR_EXECUTION_AUTHORITY",
   "sources": [
     {
+      "extracted_text_sha256": "0ddae972af2848814d27dc50256b24101132dc8c0532e3162442f92ec8c8d1bc",
+      "hash_scope": "LIBRARY_EXTRACTED_TEXT_NOT_ORIGINAL_FILE_BYTES",
       "library_file_id": "libfile_f3569b2a2ddc8191bcf32fc58ba2395e",
       "name": "DAX_PRE_DEMO_DRIFT_REVIEW_2026-09-13.md",
       "reconciliation": "ALREADY_HAVE_5_GAPS_HARDENED_IN_2217_2230",
-      "size_bytes": 37516,
-      "extracted_text_sha256": "0ddae972af2848814d27dc50256b24101132dc8c0532e3162442f92ec8c8d1bc",
-      "hash_scope": "LIBRARY_EXTRACTED_TEXT_NOT_ORIGINAL_FILE_BYTES"
+      "size_bytes": 37516
     },
     {
+      "extracted_text_sha256": "69fa223117f0a378ba51777b7886b5ead0a39009bf28790fc4b1134ae94aaaa9",
+      "hash_scope": "LIBRARY_EXTRACTED_TEXT_NOT_ORIGINAL_FILE_BYTES",
       "library_file_id": "libfile_c0362893696081918b05494196b8fe22",
       "name": "DAX_PRE_DEMO_HARDENING_2_FINAL_2026-09-13.md",
       "reconciliation": "ALREADY_HAVE_LOCAL_REAL_RENDERING_AND_LEDGER_EXTERNAL",
-      "size_bytes": 36425,
-      "extracted_text_sha256": "69fa223117f0a378ba51777b7886b5ead0a39009bf28790fc4b1134ae94aaaa9",
-      "hash_scope": "LIBRARY_EXTRACTED_TEXT_NOT_ORIGINAL_FILE_BYTES"
+      "size_bytes": 36425
     },
     {
+      "extracted_text_sha256": "c3d99aef07f98b7856cd88c71bd8e4ad8317edfa1b27b37ff27bad9b7aae0c2f",
+      "hash_scope": "LIBRARY_EXTRACTED_TEXT_NOT_ORIGINAL_FILE_BYTES",
       "library_file_id": "libfile_eb4c899ad7448191b1ba9ce30692dc3d",
       "name": "DAX_RESEARCH_FACTORY_3_FINAL.md",
       "reconciliation": "EXTEND_40_100_24_IMPORTED",
-      "size_bytes": 112182,
-      "extracted_text_sha256": "c3d99aef07f98b7856cd88c71bd8e4ad8317edfa1b27b37ff27bad9b7aae0c2f",
-      "hash_scope": "LIBRARY_EXTRACTED_TEXT_NOT_ORIGINAL_FILE_BYTES"
+      "size_bytes": 112182
     },
     {
+      "extracted_text_sha256": "39cbd77e6c4e61352609107d2b115356a4f59300ae880070dfb0715708976b9a",
+      "hash_scope": "LIBRARY_EXTRACTED_TEXT_NOT_ORIGINAL_FILE_BYTES",
       "library_file_id": "libfile_32252ecfbb348191b8a8b255f8d161d6",
       "name": "DAX_POST_DEMO_NEXT_WORK.md",
       "reconciliation": "IMPLEMENT_INDEPENDENT_A_J_DEPENDENCIES_EXTERNAL",
-      "size_bytes": 6129,
-      "extracted_text_sha256": "39cbd77e6c4e61352609107d2b115356a4f59300ae880070dfb0715708976b9a",
-      "hash_scope": "LIBRARY_EXTRACTED_TEXT_NOT_ORIGINAL_FILE_BYTES"
+      "size_bytes": 6129
     }
   ]
 }
