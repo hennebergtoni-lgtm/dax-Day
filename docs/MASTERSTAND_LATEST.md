@@ -1,487 +1,320 @@
-# DAX-BOT MASTERSTAND LATEST — CHAT HANDOVER
+# DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
 Status: **BINDING LATEST HANDOVER / REPOSITORY TRUTH FIRST**  
-Updated: **2026-09-13 — Step 2201 chat-length handoff**  
+Updated: **2026-09-14 — Step 2231 / Research Factory 3.0 continuity handoff**  
 Repository: `hennebergtoni-lgtm/dax-Day`  
 Working branch: `nextgen-bot-line-v1`  
 Pull request: `#109` -> `main`
 
-This file is the **latest chat-handover overlay** for the DAX Daytrading Bot project. It supersedes stale chronological statements in `docs/MASTERSTAND.md` where that older file still describes the Step-2186 era. It does **not** supersede repository code/tests/machine evidence, `docs/CURRENT_WORK_STEP.md`, safety/governance contracts or fresh runtime evidence.
+This file is the canonical latest handover overlay for the DAX Daytrading Bot. It supersedes stale chronological statements in older masterstand prose. It does not supersede exact code/tests/machine evidence, `docs/CURRENT_WORK_STEP.md`, binding safety contracts, or fresh runtime/broker evidence.
 
 Truth precedence:
-1. exact current code/tests/machine evidence/current runtime telemetry;
+1. exact current code/tests/machine evidence/current runtime and broker evidence;
 2. `docs/CURRENT_WORK_STEP.md` for official whole-number step truth;
 3. binding safety/governance/authorization contracts;
-4. this `MASTERSTAND_LATEST.md`;
-5. older `MASTERSTAND.md` historical context;
-6. chat memory.
+4. this `docs/MASTERSTAND_LATEST.md`;
+5. current Work artifacts / File Library source reports;
+6. older repository masterstands and historical docs;
+7. chat memory.
 
 ---
 
 ## 1. New-chat resume procedure — BINDING
 
-Canonical resume phrase:
+Canonical phrases include:
 
 `Weiter mit dem DAXBot`
 
-On that phrase, the new chat MUST:
-1. fetch PR #109 and pin the **fresh exact head SHA** before any write;
+`Weiter mit DAX Bot`
+
+`Weiter DAX Bot`
+
+On one of these phrases, a new chat MUST recover the project automatically and MUST NOT ask the user to reconstruct the prior chat when repository/File Library access is available.
+
+Mandatory recovery sequence:
+1. fetch PR #109 and pin the **fresh exact head SHA**, base/main SHA, PR state and current required CI before any write;
 2. read `docs/CURRENT_WORK_STEP.md`;
 3. read this `docs/MASTERSTAND_LATEST.md`;
-4. read `docs/SESSION_EXECUTION_REFRESHER.md`, `docs/WORK_CONTINUITY_PROTOCOL.md` and `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md` as needed;
-5. verify current required GitHub CI on the fresh head;
-6. inspect only the active-step owner/code/tests plus directly relevant predecessor evidence;
-7. continue the active step automatically when safe;
-8. do **not** ask the user to reconstruct or paste the prior chat when repository access is available.
+4. read `docs/DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md`, `docs/WORK_CONTINUITY_PROTOCOL.md`, `docs/SESSION_EXECUTION_REFRESHER.md` and `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md` as needed;
+5. if File Library is available, search for and load the four Work rescue anchors listed in section 7 below; do not rely on chat recollection when the source artifacts are available;
+6. reconcile any branch drift and any out-of-band Work results against repository truth;
+7. inspect only the active-step owners/evidence plus directly relevant predecessor evidence;
+8. continue the active safe work automatically; do not stop at a status recap when the next safe action is known.
 
-If the branch head differs from the handoff head below, reconcile the intervening commits before continuing. Repository truth wins.
+If File Library is unavailable, continue from repository truth and this masterstand, explicitly noting that the original Work artifacts could not be re-opened. Never invent their missing details.
 
 ---
 
-## 2. Exact repository truth at this handoff
+## 2. Repository truth at the Research Factory 3.0 anchor
 
-Verified before creating this handoff:
+Immediately before this documentation-only continuity update, main chat independently verified:
 
-- PR #109: **OPEN / UNMERGED**;
+- PR #109: **OPEN / UNMERGED / mergeable**;
 - branch: `nextgen-bot-line-v1`;
-- base: `main`;
-- base SHA: `e0784ebfc11bee28475fd9c3385be661af58a738`;
-- pre-handoff PR head: `2aec07185668ae06f8a0c8a0b5288ffccee36124`;
-- `dax-bot-1x-ci` #613: **GREEN**;
-- `research-lab-ci` #1397: **GREEN**;
-- Acceptance in PR body remains deliberately stale relative to current PR head;
-- no merge authorized;
-- no Acceptance refresh authorized merely because CI is green.
+- base/main SHA: `e0784ebfc11bee28475fd9c3385be661af58a738`;
+- research/hardening anchor head: `0ee0ecac5751cfecdf9cdc59ded356054f6ad2fb`;
+- `dax-bot-1x-ci` #649 / run `34780166146`: **SUCCESS**;
+- `research-lab-ci` #1433 / run `34780166138`: **SUCCESS**;
+- PR Acceptance text remains deliberately stale and MUST NOT be refreshed merely because CI is green;
+- no merge is authorized.
 
-This handoff commit creates a newer branch head. Therefore the next chat MUST re-pin the actual head and CI rather than assuming `2aec0718...` is still final.
+This documentation update creates a newer branch head. Therefore every future chat MUST re-pin the actual head and CI rather than treating `0ee0eca...` as a future drift-gate target. It is a research anchor only.
 
 ---
 
-## 3. Current official work pointer
+## 3. Official work pointer — BINDING
 
-At the verified pre-handoff head, `docs/CURRENT_WORK_STEP.md` states:
+At the pre-update research anchor, `docs/CURRENT_WORK_STEP.md` states:
 
-- last completed whole-number step: **2200**;
-- active whole-number step: **2201**;
-- active state: **ACTIVE — READ-ONLY / NO BROKER SIDE EFFECT**;
-- next successful step: **2202**;
-- host-verification lane: **2122 — WAITING_EXTERNAL**;
-- next mandatory 250-step Masterstand checkpoint: **2250**;
-- next mandatory 500-step full audit / Architecture & Learning Review: **2500**;
-- decimal/letter step IDs prohibited.
+- last completed whole-number step: **2230**;
+- last interrupted step: **2185**;
+- active whole-number step: **2231**;
+- active state: **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**;
+- next after successful completion: **2232**;
+- Step 2206 remains **WAITING_EXTERNAL / USER_AUTH**;
+- active real-host lane 2122 remains **WAITING_EXTERNAL** for market-open clock/GREEN/Candidate/restart evidence;
+- next scheduled Masterstand checkpoint: **2250**;
+- integer-only official step numbering remains mandatory.
 
-Step 2201 scope: audit/compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. **REUSE before BUILD.** No actual DEMO order.
+This masterstand update does **not** advance Step 2231 and does not close Step 2206 or lane 2122.
 
 ---
 
-## 4. Current execution authorization — BINDING
+## 4. Execution authorization — BINDING
 
-User authorization currently permits:
+Current safety state:
 
-- technical DEMO-evidence **transport/lookup implementation and tests**;
-- read-only broker lookup/query preparation;
-- read-only Windows/MT5 account/feed/evidence checks;
-- technical local/restart/reconciliation preparation.
-
-User has explicitly **NOT** authorized:
-
-- the first actual DEMO-evidence broker order;
-- normal PAPER broker execution;
-- LIVE execution.
-
-Binding safety state:
-
-- SHADOW: **AUTHORIZED** inside existing no-order contracts;
-- actual DEMO evidence order: **NOT AUTHORIZED — separate explicit authorization required**;
-- PAPER: **NOT AUTHORIZED**;
+- SHADOW: **AUTHORIZED** under existing no-order contracts;
+- first actual bounded DEMO evidence order: **NOT AUTHORIZED**; separate explicit authorization required;
+- normal/continuous DEMO/PAPER broker execution: **NOT AUTHORIZED**;
 - LIVE: **NOT AUTHORIZED**;
 - `execution_capability=NONE`;
 - `order_execution_enabled=false`;
 - no `mt5.order_send` call is authorized;
-- no cancel/modify broker side effect is authorized;
+- no cancel/modify side effect is authorized;
 - no automatic consumed-slot release;
-- no blind restart retry/resubmit;
-- CI/fixtures/Linux evidence never becomes real broker evidence by inference.
+- no blind retry/resubmit after restart or ambiguous transport outcome;
+- fixture/Linux/SHADOW/synthetic evidence never becomes broker truth by inference.
 
-Do not weaken these gates to satisfy the Monday target.
-
----
-
-## 5. Monday target — current interpretation
-
-Target date: **Monday 2026-09-14**.
-
-The practical target is a safe **DEMO/PAPER-oriented milestone**, not Echtgeld-LIVE. The desired path is:
-
-1. finish all repository-local/read-only DEMO readiness work that can be proven without broker side effects;
-2. obtain fresh real Windows/MT5 market-open evidence;
-3. verify account/server/symbol/clock/feed/broker economics/risk/loss/protection truth;
-4. verify lookup/history/fill support and restart/reconciliation behavior with real read-only provider evidence;
-5. only after all preconditions are green, separately request explicit authorization for the **first actual DEMO-evidence order**;
-6. normal PAPER remains a later separate promotion/readiness decision.
-
-Do not claim Monday success in advance. Prefer a safe blocked state over a calendar-driven safety inversion.
+Do not weaken these gates to meet a calendar target.
 
 ---
 
-## 6. Verified step sequence since prior Masterstand
+## 5. Immediate Monday / first bounded DEMO path
 
-### 2187 — Atomic local NextGen PREPARED checkpoint — COMPLETED
+Research Factory 3.0 found **no new blanket software blocker** that by itself requires postponing one separately authorized, supervised, bounded DEMO evidence order. Pre-first-DEMO status remains **CONDITIONAL**.
 
-- Shared identity: `ExecutionIntent.intent_id == lifecycle client_order_id == session consumption_id`.
-- Local post-consumption guard + REQUESTED lifecycle + typed protection bound into PREPARED before any future transport.
-- Exact retry idempotent; no invented venue/fill evidence; no blind resubmit.
-- Implementation/evidence head: `59b7c3f69500c5060431cc5b8fe494ec0c2e9cc7`.
-- Focused/relevant/full validation and CI GREEN.
+Before such an order can even be considered, real evidence must close the current external chain:
 
-### 2188 — PAPER-readiness evidence ownership audit — COMPLETED
+1. exact Windows checkout/runtime build/Python environment and correct MT5 terminal instance, including executable/data path/build/runtime owner where available;
+2. exact DEMO account/server/symbol and actual account margin-mode semantics (netting/hedging must not be inferred from the word DEMO);
+3. market-open fresh tick and genuinely CLOSED-M5 evidence;
+4. broker/UTC/session/DST/time semantics and local receive/source time consistency;
+5. full-account orders/positions/history inventory and any manual/foreign/unresolved state;
+6. broker symbol/economics contract including tick size, digits, point, volume min/step/max, contract/tick values, trade/execution/filling/order mode, relevant stops/freeze/session semantics;
+7. reviewed Fixed-Cash Risk, Loss/Exposure and Protection evidence with source provenance;
+8. reconciliation of UNKNOWN/partial/delayed/duplicate/out-of-order outcomes;
+9. a separately reviewed active submission capability, if one is to be introduced;
+10. separate explicit user authorization for the exact bounded DEMO evidence action.
 
-- Gates classified REUSE / ADAPT / EXTERNAL / USER_AUTH.
-- No generic readiness composer justified.
-- Found real Neon production migration lag 0008/0009.
-
-### 2189 — Connected Neon migration/integrity closure — COMPLETED
-
-- Exact repository migrations 0008/0009 applied to production Neon after explicit approval.
-- 9/9 migrations, telemetry tables/view and safety constraints verified.
-- Frozen V11.2/dataset/ACTIVE_REFERENCE preserved.
-- Separate `step-2189-db-drills` branch used for isolated restore/detail-import conflict drills.
-- Direct Neon evidence, not inferred from skipped PR CI DB jobs.
-
-### 2190 — Monday-demo critical-path reassessment — COMPLETED
-
-- Main-chat audit + independent Work Red-Team confirmed a real bootstrap gap: normal PAPER required real broker evidence that existing no-order preparation could not itself produce.
-- Missing capability was a narrow separately authorized DEMO-evidence bootstrap path, not a second execution stack.
-
-### 2191 — DEMO-evidence authorization contract — COMPLETED
-
-- Separate DEMO_EVIDENCE authorization from final PAPER authorization.
-- Exact account/server/symbol/time/action/submission scope.
-- REAL/CONTEST/UNKNOWN and cross-wiring fail closed.
-- Still `NONE/false` and non-executable.
-
-### 2192 — Read-only MT5 account observation ownership audit — COMPLETED
-
-- Existing `scripts/mt5_windows_probe.py` reuses the single `mt5.account_info()` observation.
-- No second MT5 account reader justified.
-
-### 2193 — MT5 demo-account context normalization — COMPLETED
-
-- Dependency-free DEMO/CONTEST/REAL/UNKNOWN normalization.
-- Raw login never serialized; deterministic namespaced SHA-256 account identity instead.
-- Runtime constants used; missing/malformed/ambiguous -> UNKNOWN.
-- Legacy SHADOW remains compatible.
-
-### 2194 — DEMO pre-transport composition audit — COMPLETED
-
-- Selected one durable one-way local `TRANSPORT_ATTEMPT_RESERVED` phase before any future venue side effect.
-- Existing PREPARED/auth/account/bundle/store/lifecycle/reconciliation owners reused.
-
-### 2195–2199 — Large Work recovery/forward tranche — COMPLETED
-
-Independent Work repaired the red Step-2195 line and advanced through Step 2199.
-
-Root cause of red CI: `WindowsMt5Bundle.demo_account_context` was accidentally made mandatory and broke legacy SHADOW constructors. Compatibility restored without weakening DEMO reservation requirements.
-
-Work final head for this tranche: `d7cccf6bacc866669134629ff81cdc0491416a33`.
-
-Key results:
-- 2195: restart-safe transport-attempt reservation checkpoint repaired/closed;
-- 2196: fingerprint-pinned restart-load + UNKNOWN operator state;
-- 2197: shared QUERY preflight + reconciliation input boundary;
-- 2198: deterministic local QUERY work-item projection;
-- 2199: integrated restart/failure/replay/safety evidence.
-
-Work validation reported local full `2304 passed / 6 pwsh skipped`; final remote research CI reported `2310 passed`; Ruff + eight offline gates GREEN.
-
-Main chat independently re-pinned and verified the Work result before accepting it.
-
-### 2200 — Technical DEMO-evidence transport/lookup implementation — COMPLETED
-
-User explicitly authorized the technical implementation/tests **without any actual broker order**.
-
-Implemented/verified direction:
-- deterministic local MT5 correlation identity/transport tag from full intent identity;
-- non-executable transport draft/payload preparation;
-- read-only MT5 lookup path using account/open-orders/order-history/deal-history surfaces;
-- identity checks bind symbol + magic/tag/comment semantics conservatively;
-- null result, multiple matches, account mismatch, contradictory quantity/fill, SDK failure or expired history window fail closed;
-- restart/query remains `query/reconcile first`, never blind resubmit;
-- request-preparation path reuses `AtomicFileStateStore` + reservation + current validated Windows bundle;
-- no `mt5.order_send`, cancel or modify path;
-- no execution activation.
-
-Final technical candidate head: `4c5f88645d428c30c55eef4a0d56f201f232c24a`.
-
-Validation:
-- `dax-bot-1x-ci` #612 GREEN;
-- `research-lab-ci` #1396 GREEN;
-- research reported **2334 tests passed**;
-- Ruff GREEN;
-- eight offline/safety gates GREEN;
-- static safety remained `Paper/Live BLOCKED | NO_ORDER`.
-
-Pointer closeout then produced pre-handoff head `2aec07185668ae06f8a0c8a0b5288ffccee36124`, with CI #613/#1397 GREEN.
+Important research rules for this gate:
+- `tick_size != digits`; digits alone do not prove a valid native order-price grid;
+- position average price has different semantics from a native order request price;
+- `order_check()` success is a preflight result, **not an execution guarantee**;
+- `order_calc_margin()` is an isolated operation estimate and **not total account exposure**;
+- quote session and trade session are not interchangeable;
+- negative evidence such as empty open orders or a short history window is not terminal proof of no venue side effect;
+- timeout/transport ambiguity remains `UNKNOWN -> QUERY_REQUIRED`, never blind resubmit.
 
 ---
 
-## 7. Step 2201 partial audit finding at chat handoff
+## 6. Continuous DEMO is a later, stricter gate
 
-Step 2201 is **not completed**. Do not retroactively mark it complete.
+One bounded evidence order is not autonomous/continuous DEMO.
 
-Main-chat analysis before the chat-length handoff found:
+Before continuous DEMO, Research Factory 3.0 prioritizes:
 
-- broker economics already has a canonical owner;
-- fixed-cash risk/sizing already has a canonical owner;
-- loss/exposure admission already has a canonical owner;
-- loss/exposure persistence/restart evidence already has a canonical owner;
-- operator risk-profile/readiness surfaces already exist;
-- execution protection already has a canonical typed owner;
-- a new monolithic “super-risk owner” is **not justified**.
+- startup/reconciliation barrier before strategy execution;
+- independent pre-trade controls (PTC) for price/quantity/notional/message/attempt/duplicate/stale-price constraints with reviewed limits;
+- explicit return-code/recovery taxonomy: deterministic reject, partial/reconcile, requote/revalidate, unknown/query-required;
+- real broker conformance for account mode, symbol precision, session, lifecycle and reconnect;
+- independent/out-of-band submission kill or emergency authority that the strategy cannot self-unlock;
+- real loss/exposure/equity evidence; missing PnL is never zero;
+- semantic/process watchdog and transition-based alerting;
+- immutable release bundle, state-preserving rollback, restart/restore/DR and conformance drills.
 
-The important remaining gap appears to be **authoritative observation production/evidence**, not basic risk math:
-- real current broker time/timezone/session-day/reset semantics;
-- current realized/unrealized PnL semantics where required;
-- current exposure/loss observation provenance;
-- exact broker economics observed on the real DEMO environment;
-- fresh market/open feed evidence;
-- Windows/MT5 identity-bound real lookup/history/fill evidence;
-- promotion of explicit risk/loss/sizing policy values only from evidence — never invented defaults.
+Rollback is **not** state reset: reservations, consumed slots, unresolved attempts, broker positions/orders and historical evidence must survive code/config rollback.
 
-This is a **partial audit conclusion**, not yet a committed Step-2201 closeout. New chat must verify concrete owner files/tests before writing the Step-2201 sign-off.
+Strategy research (new filters, VWAP, M1, similarity, macro, Monte Carlo extensions, parameter plateaus) is not a prerequisite for the first bounded evidence order unless new concrete evidence proves otherwise.
 
 ---
 
-## 8. Public/open-source learning — current use
+## 7. Work rescue anchors — MUST REHYDRATE WHEN AVAILABLE
 
-Public projects remain an active cross-check, not a source of automatic design replacement.
+The following original Work artifacts were found in the user's ChatGPT File Library and are the loss-prevention anchors for the two large Work tranches and Research Factory 3.0:
 
-Primary references:
-- NautilusTrader;
-- Freqtrade;
-- QuantConnect LEAN;
-- vectorbt where research methodology is relevant.
+1. `DAX_PRE_DEMO_DRIFT_REVIEW_2026-09-13.md`
+   - independent pre-hardening drift/contract review and reproduced gaps;
+2. `DAX_PRE_DEMO_HARDENING_2_FINAL_2026-09-13.md`
+   - Steps 2217–2230 hardening result, tests, safety and external gates;
+3. `DAX_RESEARCH_FACTORY_3_FINAL.md`
+   - full read-only Research Factory 3.0 report: 66 source entries, 40 falsifiable hypotheses, 100 deduplicated failure scenarios (not claimed as 100 independently observed incidents), 24 architecture/operations learnings, source-quality matrix and roadmap;
+4. `DAX_POST_DEMO_NEXT_WORK.md`
+   - prepared A–J Post-DEMO Work assignment, status **PLANNED / NOT EXECUTED**.
 
-Current relevant lessons:
-- keep risk management, protections and brokerage/reconciliation as separate owners rather than a monolithic super-owner;
-- preserve client identity across restart/reconciliation;
-- reconciliation/query comes before trading/retry after ambiguous restart states;
-- “not found in open orders” is not proof that no venue side effect occurred;
-- dry-run/simulation is not real broker evidence;
-- provider/broker adapter boundaries should remain thin and explicit.
-
-Use public-project scans periodically and at architecture/recovery/execution boundaries. Do not waste time repeatedly scanning when the next local step is already clear.
+New-chat rule: when File Library access exists, search these exact names and read the relevant source artifact before making claims that depend on its detail. Do not ask the user to upload them again unless File Library search genuinely cannot locate them.
 
 ---
 
-## 9. Chat operating rules — BINDING USER PREFERENCE
+## 8. Research Factory 3.0 — durable outcome
 
-The user has repeatedly and explicitly requested **continuous automatic progression**.
+Research cutoff: 2026-09-13. Read-only; repository unchanged during the Work research itself.
 
-### 9.1 Intermediate status is NOT a stop
+Durable conclusions:
 
-A Zwischenstand, successful subtest, file discovery, warning, CI poll, public-Git finding or partial conclusion does **not** justify ending the turn while safe work remains.
+- no newly demonstrated blanket blocker before the first separately authorized bounded DEMO evidence action;
+- real host/account/clock/inventory/economics/policy evidence and user authorization remain mandatory;
+- broker connection != broker truth;
+- reconnect requires inventory/history/unresolved-outcome/local-checkpoint reconciliation;
+- negative evidence != proof of flatness/non-execution;
+- MT5 event/report ordering/completeness cannot be assumed;
+- PTC is independent from strategy risk;
+- emergency authority is separate from normal strategy and from the current read-only console;
+- same-terminal MT5 history is not an independent drop-copy channel;
+- TCA begins at decision/arrival, not merely at fill-slippage;
+- data/clock parity must remain dimensional rather than hidden behind one magic score;
+- dependent/block/regime/session/cluster-preserving simulation is an extension to existing IID research, not a new runtime risk owner;
+- trade-R drawdown != account-equity drawdown;
+- parameter plateaus/neighbourhood stability matter more than a single best parameter;
+- complete strategy/release identity should bind dataset, engine, costs, risk, session, adapter and execution assumptions;
+- more architecture without added broker/risk/profit evidence should be rejected.
 
-Do not end a turn with only:
-- “Ich mache weiter”;
-- “der nächste Schritt ist klar”;
-- “jetzt prüfe ich X”;
-- a status recap followed by no actual next action.
+Later main-chat research added these durable broker-conformance notes:
 
-If the next safe action is known and tools are available, execute it in the same working sequence.
-
-### 9.2 Automatic continuation / stop rules
-
-Continue automatically through whole-number steps until one of these occurs:
-
-1. **error severity >= 3** under the project’s 1–5 operational error classification;
-2. material branch/PR drift that cannot be safely reconciled before writing;
-3. explicit safety/authorization boundary requiring user approval;
-4. required real external evidence is unavailable and no independent repository work remains;
-5. Step **2250** Masterstand checkpoint;
-6. Step **2500** full audit / Architecture & Learning Review;
-7. a genuinely large/high-risk package is identified where Work gives material leverage;
-8. explicit user STOP/chat-switch request;
-9. product/tool runtime itself times out or the chat reaches a hard platform length limit.
-
-Errors 1–2 are normal fix-and-continue conditions. Do not stop merely because CI is red at levels 1–2; diagnose, fix, rerun and continue.
-
-### 9.3 Reasoning/tool-loop optimization
-
-Recent chat experienced repeated timeouts and unproductive repeated GitHub searches. Corrective rule:
-
-- standard main-chat reasoning effort: **GPT-5.6 Sol MEDIUM** for normal repository inspection, tests, bounded implementation and step progression;
-- use HIGH only for cross-cutting architecture, recovery, execution safety, difficult root-cause analysis or major review;
-- if the same search/tool approach fails twice or returns no useful information, **change method** rather than repeating it;
-- prefer direct exact-file fetch, commit diff, workflow logs, owner docs and known refs over broad repeated searches;
-- re-use already verified current-head evidence instead of re-fetching unchanged facts without reason;
-- repository truth is a checkpoint after platform timeout; resume from the latest verified head rather than reconstructing hours of chat reasoning.
-
-The screenshot-visible “Reasoning fehlgeschlagen / Zeitüberschreitung” was a platform/tool-run failure, not a DAX-BOT technical blocker.
-
-### 9.4 Visibility cadence
-
-Preferred compact cadence while actively working:
-
-`Schritt N: Tätigkeit -> kurzer Zwischenstand -> ✅ / ⚠️ / ❌ -> tatsächliche nächste Aktion`
-
-Visibility should not become a stream of repetitive status-only messages. Prefer meaningful milestones and actual tool/action progress.
+- classify MT5 trade results by recovery semantics rather than a simple success/fail boolean;
+- `DONE_PARTIAL` requires reconciliation;
+- invalid request/volume/stops/no-money is a deterministic reject and not a blind-retry case;
+- requote/price-change requires a freshly revalidated intent, not automatic replay;
+- timeout/ambiguous transport remains UNKNOWN/QUERY_REQUIRED;
+- retain `retcode_external` when present;
+- symbol-spec drift includes trade/execution/filling/order modes, stops/freeze levels, swap/session semantics;
+- an incident-forced overnight position can make swap/financing economically relevant even for an intraday strategy.
 
 ---
 
-## 10. ChatGPT Work strategy — BINDING
+## 9. Binding milestone roadmap M01–M12
 
-Work is valuable and has repeatedly found important errors. It is **not** the default for every 2–3 main-chat steps.
+This is the next-milestone sequence after the current external host gate. It is a roadmap, not an authorization to skip official whole-number governance.
 
-Main chat role:
-- architecture/prioritization;
-- normal repository inspection;
-- small/medium implementation;
-- CI diagnosis/fix;
-- step sequencing;
-- independent verification of Work output;
-- Acceptance/merge decisions.
+- **M01 — Real-host evidence**
+- **M02 — First bounded DEMO evidence** (only separately authorized)
+- **M03 — Broker lifecycle truth**
+- **M04 — Expected vs Observed**
+- **M05 — TCA / latency / cost attribution**
+- **M06 — Data / clock parity**
+- **M07 — Continuous-DEMO safety / release operations**
+- **M08 — Tail / risk survival**
+- **M09 — Strategy robustness**
+- **M10 — Parameter plateau / multiple testing**
+- **M11 — New filters / research efficiency**
+- **M12 — Capital scaling / PRE-LIVE**
 
-Use Work when there is a **real large/high-leverage package**, especially:
-- roughly 10–30 coherent steps or a package that would take ~2–3 hours of main-chat iteration;
-- multi-subsystem execution/recovery/reconciliation work;
-- CI-recovery + broad regression/hardening tranche;
-- pre-DEMO/PAPER Red-Team;
-- persistence/restart/recovery/state integrity;
-- whole-PR or broad safety audit;
-- large multi-file implementation where parallel compute/review materially saves time.
-
-The user is willing to spend additional Work credits/money when the package is genuinely worth it and likely to accelerate progress or improve safety/quality.
-
-Do **not** spend Work on:
-- simple file lookup;
-- single small test fix;
-- routine CI polling;
-- obvious pointer edits;
-- work main chat can complete cheaply and safely.
-
-Preferred Work header:
-
-`👷 WORK-AUFTRAG — MODELL: GPT-5.6 SOL — DENKSTUFE: HOCH — IMPLEMENTIERUNG ERLAUBT — 💳 CREDIT-BUDGET: HOCH`
-
-Adjust thinking/credit downward for smaller bounded work. For a true “Brett” package, HIGH/HIGH is acceptable.
-
-Every Work task must pin repo/branch/PR/exact starting head and include a mandatory drift gate. Main chat must not write the same branch concurrently during a Work implementation run. Work results are never auto-accepted; main chat independently checks head, commits, diff, tests, CI, safety and skipped external gates.
-
-### Unattended / overnight intent
-
-The user wants long stretches of useful progress without having to watch the phone. Main-chat turns cannot be assumed to execute indefinitely in the background. When a coherent multi-hour unattended block is available, prefer packaging it as a bounded Work assignment rather than pretending the normal chat will continue after the turn/platform limit.
+M01 is the immediate operational lane. M02 cannot be inferred from M01 and requires separate user authorization plus reviewed capability. M07 must be complete before autonomous continuous DEMO. M12 is much later and cannot be inferred from a small DEMO sample.
 
 ---
 
-## 11. Work package history / lessons
+## 10. Prepared Post-DEMO Work A–J — PLANNED / DO NOT START YET
 
-The large Work tranche covering Steps 2195–2199 was a successful example:
-- exact head pinned;
-- root cause repaired;
-- multiple coherent forward steps completed;
-- full tests/Ruff/offline gates/remote CI run;
-- stopped before first actual broker-side-effect boundary;
-- main chat independently verified the result.
+The File Library artifact `DAX_POST_DEMO_NEXT_WORK.md` contains the full prepared assignment:
 
-This is the preferred pattern for future large packages.
+A. Broker Execution Evidence  
+B. Expected vs Observed  
+C. TCA / Cost Attribution  
+D. Data / Clock Parity  
+E. Risk Science  
+F. Tail Survival  
+G. Strategy Robustness  
+H. Release / Operations  
+I. Failure Injection  
+J. Research Efficiency
 
-Do not use Work merely because main chat feels slow; first define a coherent scope and leverage case.
-
----
-
-## 12. Neon / database truth
-
-Connected Neon project: `dax-research-lab`.
-
-Production migration 0008/0009 was explicitly approved, applied and verified in Step 2189.
-
-At Step 2189 direct evidence showed:
-- 9/9 migrations;
-- required Candidate telemetry table/view;
-- safety constraints `execution_capability='NONE'` / `order_execution_enabled=false`;
-- frozen V11.2/dataset/ACTIVE_REFERENCE intact;
-- no unintended detail import.
-
-A separate `step-2189-db-drills` branch was used for isolated restore/import conflict tests and may remain visible/idle in Neon. This is expected and is not a second production database.
-
-PR CI often skips five DB jobs because they are main/provider-dependent. A skipped PR DB job is not failure, but it also is not fresh DB evidence. Direct connected-Neon evidence remains separate.
+It is **PLANNED / NOT EXECUTED**. Before starting it, re-pin actual head/main/pointer/Continuity. `0ee0eca...` is only its research anchor, not a future required head. Missing host/broker/user-authorization evidence remains external. V11.2 and CAND-001 trading logic/costs remain frozen. The assignment itself authorizes no broker order, cancel, modify, blind retry, slot release, PAPER or LIVE action.
 
 ---
 
-## 13. GitHub workflow explanation / current governance
+## 11. Research / strategy backlog — durable ordering
 
-The repository exposes separate GitHub Actions workflows. At handoff the important required workflows are:
+Research decision order remains:
 
-- `dax-bot-1x-ci` — product/bot CI;
-- `research-lab-ci` — research/lab/full-regression CI.
+**REGIME -> STRUCTURE -> ENTRY**
 
-`reference-payload-export` is a separate specialized export workflow and is not a third required CI gate for every PR step.
+Important later tracks include:
 
-Workflow run numbers are execution counts, not error counts.
+- ATR compression/expansion and range relative to higher volatility;
+- ADX with hysteresis rather than regime flapping;
+- previous-day structure, opening-gap persistence and breakout quality;
+- first breakout / first retest / late-entry avoidance;
+- rejected-candidate analytics, filter efficiency, overlap and opportunity cost;
+- Strategy Specification Fingerprint and immutable hypothesis/trial families;
+- profit concentration / top-trade removal;
+- Drawdown DNA: depth, duration, recovery, time-under-water;
+- dependent Monte Carlo / tail survival / Risk of Ruin under explicit fixed-cash assumptions;
+- adaptive risk decay/cooldown only as risk reduction, never Martingale/revenge sizing;
+- expected-vs-observed and execution-cost attribution before interpreting forward degradation;
+- FAST staged screening / coarse-to-fine rather than blind brute force.
 
-`main` remains protected by repository governance requiring PR + strict required CI. Governance does not itself authorize merge or broker execution.
-
----
-
-## 14. Frozen scientific/reference truth
-
-V11.2 remains immutable reference evidence and must not be retroactively changed or promoted as proof of NextGen profitability.
-
-Key frozen reference facts remain:
-- 2014–2019;
-- 1,673 valid Berlin-session days;
-- 172,319 M5 session bars;
-- 103 bars/session;
-- 144 variants;
-- 81 WF windows;
-- 856 OOS trades;
-- V11.2 remains frozen reference baseline.
-
-No profitability claim is authorized from this engineering progress.
+No item above silently promotes CAND-001 or mutates V11.2.
 
 ---
 
-## 15. Next-chat immediate action — DO THIS, DO NOT DISCUSS IT FIRST
+## 12. Anti-patterns — binding rejects
 
-After fresh head/CI re-pin, continue **Step 2201** from repository evidence.
+Do not silently adopt:
 
-Immediate sequence:
-
-1. fetch concrete owner files/tests for:
-   - broker economics;
-   - fixed-cash risk/sizing;
-   - loss/exposure admission;
-   - loss/exposure persistence/current observation;
-   - operator risk-profile/readiness;
-   - typed execution protection;
-2. produce a compact REUSE-vs-GAP matrix based on actual symbols/tests, not filenames alone;
-3. determine whether Step 2201 can close as a read-only evidence-owner sign-off or whether one small technical read-only binding is genuinely missing;
-4. if small gap: implement/test/CI in main chat and continue;
-5. if no gap: commit Step-2201 sign-off + pointer to 2202 and continue automatically;
-6. next likely emphasis is authoritative real-host observation/evidence production and Monday readiness, but do not invent reset/timezone/PnL/risk values;
-7. keep first actual DEMO evidence order behind separate explicit authorization.
-
-Do not spend the first new-chat turn recapping this document to the user. **Work from it.**
+- Martingale / doubling after loss;
+- averaging down / unlimited grid / unlimited rescue / hedge escalation;
+- blind retry/resubmit after ambiguous transport;
+- state reset as incident recovery;
+- synthetic evidence promoted to broker truth;
+- one-magic-parameter selection;
+- AI/profit marketing without reproducible evidence;
+- second duplicate store/risk/reconciliation/lifecycle/health framework without a proven owner gap.
 
 ---
 
-## 16. Mandatory no-loss reminders
+## 13. Work / chat operating rules — BINDING
 
-- Repository truth over chat memory.
-- Intermediate status != stop.
-- Fix level-1/2 errors and continue.
-- No endless repeat searches; switch method after two failed attempts.
-- Main chat standard = MEDIUM reasoning; HIGH selectively.
-- Work = large coherent leverage package, not default cadence.
-- Public Git learning remains periodic and targeted.
-- No automatic strategy promotion.
-- No fake external evidence.
-- No first DEMO order without separate explicit user authorization.
-- PAPER/LIVE remain unauthorized.
-- PR #109 remains open/unmerged.
-- Acceptance remains stale until deliberately reconciled.
-- Step 2250 = mandatory Masterstand checkpoint.
-- Step 2500 = mandatory full audit + Architecture & Learning Review.
+- Repository truth > Work prose > chat memory.
+- Work is for large high-leverage packages; main chat independently verifies head/diff/CI/safety/pointer afterward.
+- When Work is actively writing the branch, main chat must not concurrently write that branch.
+- Work orders visibly state model/thinking/credit budget.
+- Before user-visible generated files, run the required preflight.
+- Visible cadence during long work: `Schritt N -> Tätigkeit -> kurzer Zwischenstand -> ✅/⚠️/❌ -> tatsächliche nächste Aktion`.
+- A status update is not a stop. Continue while safe work remains.
+- Official project steps are whole integers only.
+- Do not fabricate background work. Only scheduled automations genuinely run later.
+- Public/open-source scans inform RESEARCH/EXTEND/REJECT decisions but never silently replace VERIFIED local architecture.
 
-End of latest handoff.
+---
+
+## 14. Frozen/reference facts
+
+- V11.2 remains the frozen reference baseline.
+- Historical 2014–2019 baseline: 1,673 Berlin-session days; 09:00–17:30; 172,319 M5 candles; 103 bars/day; 0 OHLC errors.
+- Walk-forward: 81 WFs; Train 45 / OOS 20 / Step 20.
+- Static repository OOS truth for V11.2: 856 trades; total normal-cost R approximately `-31.309210619787684`; 37 positive / 44 negative WFs; median PF approximately `0.905769`.
+- Normal cost assumptions: spread 0.20 / slippage 0.10 / commission 0.10; existing 1.5x / 2x stress retained.
+- CAND-001 is a product candidate, not a profitability proof.
+- Engine reconstruction before every backtest and FAST-screening discipline remain binding.
+
+---
+
+## 15. Exact next action after a new-chat recovery
+
+Unless repository/runtime truth has changed materially, the next technical progression is **M01 / active Step 2231 real-host evidence**, not new strategy coding:
+
+Windows checkout/runtime build -> correct MT5 instance -> DEMO account/server/symbol/account mode -> fresh tick/CLOSED-M5 -> broker/UTC/session clock -> full-account inventory/history -> economics/precision/symbol contract -> risk/loss/protection -> reconciliation/restart evidence.
+
+Only after those real facts are reviewed may the project decide whether conditions exist to prepare/request separate authorization for M02.
+
+No repository prose, Work report or green CI can substitute for those external facts.
