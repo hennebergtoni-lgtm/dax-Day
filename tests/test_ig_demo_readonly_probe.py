@@ -34,20 +34,32 @@ def price_row(close_time: datetime, value: float = 100.0) -> dict[str, object]:
 
 def observed_prices() -> list[dict[str, object]]:
     start = datetime(2026, 9, 14, 8, 20, tzinfo=timezone.utc)
-    # Synthetic OHLC isolates timestamp mapping; only the timestamps came from the host report.
-    return [price_row(start + timedelta(minutes=5 * n), 100.0 + n) for n in range(10)]
+    return [price_row(start + timedelta(minutes=5 * n), 100.0 + n) for n in range(9)]
 
 
-def test_host_report_090259_selects_raw_0900_as_latest_closed_interval() -> None:
+def test_old_future_label_report_is_rejected_under_final_interval_start_contract() -> None:
+    # The prior interval-end fixture is retained as an incompatible historical assumption.
+    rows = [*observed_prices(), price_row(datetime(2026, 9, 14, 9, 5, tzinfo=timezone.utc))]
+    with pytest.raises(ValueError, match="extends beyond the current M5 interval"):
+        probe._closed_candles(
+            {"prices": rows},
+            epic=EPIC,
+            instrument_id="DAX",
+            observed_at=datetime(2026, 9, 14, 9, 2, 59, tzinfo=timezone.utc),
+        )
+
+
+def test_raw_0900_is_active_at_090259_and_excluded() -> None:
     candles = probe._closed_candles(
-        {"prices": observed_prices()}, epic=EPIC, instrument_id="DAX",
+        {"prices": observed_prices()},
+        epic=EPIC,
+        instrument_id="DAX",
         observed_at=datetime(2026, 9, 14, 9, 2, 59, tzinfo=timezone.utc),
     )
-    assert len(candles) == 9
+    assert len(candles) == 8
+    assert candles[-1]["snapshot_time_utc"] == "2026-09-14T08:55:00+00:00"
     assert candles[-1]["event_time"] == "2026-09-14T08:55:00+00:00"
     assert candles[-1]["close_time"] == "2026-09-14T09:00:00+00:00"
-    assert candles[-1]["close"] == 110.0  # raw 09:00, not raw 08:55's prices
-    assert all(c["close_time"] <= "2026-09-14T09:02:59+00:00" for c in candles)
 
 
 def test_history_page_size_is_explicitly_disabled() -> None:
@@ -62,7 +74,7 @@ def test_history_page_size_is_explicitly_disabled() -> None:
 
 
 @pytest.mark.parametrize(("seconds", "expected_count", "latest"), [
-    (-1, 9, "09:00:00"), (0, 10, "09:05:00"), (1, 10, "09:05:00"),
+    (-1, 8, "09:00:00"), (0, 9, "09:05:00"), (1, 9, "09:05:00"),
 ])
 def test_exact_m5_boundary(seconds, expected_count, latest) -> None:
     now = datetime(2026, 9, 14, 9, 5, tzinfo=timezone.utc) + timedelta(seconds=seconds)
@@ -79,7 +91,7 @@ def test_request_crossing_boundary_does_not_relabel_incomplete_response() -> Non
         observed_at=datetime(2026, 9, 14, 9, 5, 1, tzinfo=timezone.utc),
     )
     assert candles[-1]["close_time"] == "2026-09-14T09:00:00+00:00"
-    assert len(candles) == 9
+    assert len(candles) == 8
 
 
 def test_request_clock_reverse_is_blocked() -> None:
@@ -102,7 +114,7 @@ def test_existing_freshness_limit_is_measured_from_interval_end(offset) -> None:
 
 
 def test_full_40_bar_response_avoids_old_first_page_staleness() -> None:
-    end = datetime(2026, 9, 14, 9, 5, tzinfo=timezone.utc)
+    end = datetime(2026, 9, 14, 9, 0, tzinfo=timezone.utc)
     rows = [price_row(end - timedelta(minutes=5*n)) for n in reversed(range(40))]
     now = datetime(2026, 9, 14, 9, 2, 59, tzinfo=timezone.utc)
     with pytest.raises(ValueError, match="fresh M5 data"):
@@ -112,17 +124,17 @@ def test_full_40_bar_response_avoids_old_first_page_staleness() -> None:
     assert candles[-1]["close_time"] == "2026-09-14T09:00:00+00:00"
 
 
-@pytest.mark.parametrize(("wire", "close"), [
+@pytest.mark.parametrize(("wire", "event"), [
     ("2026-03-29T03:00:00+02:00", datetime(2026, 3, 29, 1, tzinfo=timezone.utc)),
     ("2026-10-25T02:00:00+01:00", datetime(2026, 10, 25, 1, tzinfo=timezone.utc)),
     ("2026-09-14T09:00:00", datetime(2026, 9, 14, 9, tzinfo=timezone.utc)),
 ])
-def test_utc_and_dst_are_absolute_intervals(wire, close) -> None:
-    row = price_row(close)
+def test_utc_and_dst_are_absolute_intervals(wire, event) -> None:
+    row = price_row(event)
     row["snapshotTimeUTC"] = wire
     opened, ended = ig_m5_interval(row)
-    assert ended == close
-    assert opened == close - timedelta(minutes=5)
+    assert opened == event
+    assert ended == event + timedelta(minutes=5)
     assert opened.utcoffset() == ended.utcoffset() == timedelta(0)
 
 
@@ -155,7 +167,7 @@ def test_source_itself_filters_the_live_tail_and_never_replays_closed_rows() -> 
     candles = []
     while (candle := source.next_candle()) is not None:
         candles.append(candle)
-    assert len(candles) == 9
+    assert len(candles) == 8
     assert candles[-1].close_time == datetime(2026, 9, 14, 9, tzinfo=timezone.utc)
     assert source.next_candle() is None
 
@@ -207,9 +219,11 @@ def test_probe_reports_full_account_counts_without_claiming_recon_or_protection(
     assert view["inventory_history_complete"] is False and view["inventory_is_atomic"] is False
     assert view["inventory_freshness_threshold"] == "UNVERIFIED_THRESHOLD"
     assert view["market"]["quote_freshness_state"] == "UNKNOWN"
-    assert view["raw_m5_count"] == 10 and view["closed_m5_count"] == 9 and view["not_closed_m5_count"] == 1
+    assert view["raw_m5_count"] == 9 and view["closed_m5_count"] == 8 and view["not_closed_m5_count"] == 1
     assert view["latest_closed_m5_age_seconds"] == 179.0
     assert view["m5_freshness_max_age_seconds"] == 600.0
+    assert view["m5_freshness_basis"] == "TRUE_CLOSE_TIME"
+    assert view["m5_market_data_contract"]["raw_timestamp_semantics"] == "INTERVAL_START"
     digest = view.pop("fingerprint")
     assert digest == probe._fingerprint(view)
     assert [c["method"] for c in transport.calls] == ["POST", "GET", "GET", "GET", "GET", "GET", "DELETE"]

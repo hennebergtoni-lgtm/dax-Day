@@ -18,16 +18,17 @@ from typing import Any, Mapping
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from ig_demo_readonly_probe import (  # noqa: E402
-    DEFAULT_EPIC, DEFAULT_MAX_AGE, TIMESTAMP_CONTRACT,
+    DEFAULT_EPIC, DEFAULT_MAX_AGE,
     _assert_credential_free, _credentials_from_file, _fingerprint,
 )
 from ig_cand001_shadow_e2e import HostTestBlocked, check_code, require, utc  # noqa: E402
-from daxlab.adapters.ig_market_data import ig_m5_interval  # noqa: E402
+from daxlab.adapters.ig_market_data import raw_snapshot_time_utc  # noqa: E402
 from daxlab.adapters.ig_rest_readonly import IgDemoReadOnlyClient, IgReadOnlyError  # noqa: E402
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object  # noqa: E402
 from daxlab.runtime.single_instance import SingleInstanceLock  # noqa: E402
 
 SCHEMA = "DAX_IG_RAW_M5_TIMESTAMP_OBSERVATION_V2"
+HISTORICAL_INTERVAL_END_HYPOTHESIS = "IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_END_V1"
 PRICE_FIELDS = ("openPrice", "highPrice", "lowPrice", "closePrice")
 VOLUME_FIELDS = ("lastTradedVolume", "volume")
 
@@ -45,7 +46,8 @@ def project_row(raw: Mapping[str, object], *, row_index: int = 0,
     require(isinstance(timestamp, str) and re.fullmatch(
         r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\+00:00)?", timestamp
     ) is not None, "RAW_INVALID_TIMESTAMP")
-    event, close = ig_m5_interval(raw)
+    wire_time = raw_snapshot_time_utc(raw)
+    event, close = wire_time - timedelta(minutes=5), wire_time
     selected: dict[str, Any] = {"snapshotTimeUTC": timestamp}
     for field in PRICE_FIELDS:
         quote = raw.get(field)
@@ -81,9 +83,9 @@ def project_row(raw: Mapping[str, object], *, row_index: int = 0,
         "freshness_seconds": None, "freshness_state": "UNKNOWN", "provider_revision_state": "UNKNOWN",
         "normalized_current_adapter_hypothesis": {
             **hypothesis(event, close),
-            "timestamp_contract": TIMESTAMP_CONTRACT,
+            "timestamp_contract": HISTORICAL_INTERVAL_END_HYPOTHESIS,
         },
-        "interval_start_hypothesis": hypothesis(close, close + timedelta(minutes=5)),
+        "interval_start_hypothesis": hypothesis(wire_time, wire_time + timedelta(minutes=5)),
     }
     row["fingerprint"] = _fingerprint(row)
     return row

@@ -23,9 +23,9 @@ END = datetime(2026, 9, 14, 7, 20, tzinfo=timezone.utc)  # Berlin breakout candl
 def live_fixture(end=END, *, breakout=True, age_seconds=231, request_age_seconds=None):
     now = end + timedelta(seconds=age_seconds)
     requested = end + timedelta(seconds=age_seconds if request_age_seconds is None else request_age_seconds)
-    raw = [price_row(end - timedelta(minutes=5*n)) for n in reversed(range(40))]
+    raw = [price_row(end - timedelta(minutes=5 * (n + 1))) for n in reversed(range(40))]
     if breakout:
-        raw[-1] = price_row(end, 110)
+        raw[-1] = price_row(end - timedelta(minutes=5), 110)
     from ig_demo_readonly_probe import _closed_candles
     rows = _closed_candles({"prices": raw}, epic=host.DEFAULT_EPIC,
                           instrument_id=host.DEFAULT_INSTRUMENT_ID, observed_at=now, closed_as_of=requested)
@@ -35,6 +35,8 @@ def live_fixture(end=END, *, breakout=True, age_seconds=231, request_age_seconds
         "raw_m5_count": 40, "closed_m5_count": 40, "not_closed_m5_count": 0,
         "market": {"epic": host.DEFAULT_EPIC}, "execution_capability": "NONE",
         "order_execution_enabled": False, "m5_timestamp_contract": host.TIMESTAMP_CONTRACT,
+        "m5_market_data_contract": host.canonical_ig_m5_contract(),
+        "m5_freshness_basis": "TRUE_CLOSE_TIME",
         "m5_freshness_max_age_seconds": 600.0, "m5_freshness_state": "FRESH",
     }
     probe["fingerprint"] = host._fingerprint(probe)
@@ -228,61 +230,64 @@ def test_import_from_other_worktree_blocks_even_with_clean_exact_head(monkeypatc
         host.check_code(HEAD)
 
 
-@pytest.mark.parametrize("age", [0, 3.7, 59, 59.999999, 60, 60.000001, 231, 600])
-def test_candidate_current_age_boundaries_preserve_complete_nominal_probe(age):
+@pytest.mark.parametrize("age", [0, 3.7, 59, 60, 231, 600])
+def test_true_close_age_boundaries_preserve_complete_nominal_probe(age):
     payload, now = evidence(breakout=False, age_seconds=age)
-    latest = END if age >= 60 else END - timedelta(minutes=5)
     state = host.validate_evidence(payload, head=HEAD, now=now)
-    assert state.pipeline.signal.last_close_time == latest
-    assert payload["operator_snapshot"]["runtime"]["last_bar_close_time"] == latest.isoformat()
-    assert payload["decisions"][-1]["close_time"] == latest.isoformat()
+    assert state.pipeline.signal.last_close_time == END
+    assert payload["operator_snapshot"]["runtime"]["last_bar_close_time"] == END.isoformat()
+    assert payload["decisions"][-1]["close_time"] == END.isoformat()
     assert payload["ig_probe"]["latest_closed_m5"]["close_time"] == END.isoformat()
-    assert payload["ig_probe"]["raw_m5_count"] == payload["ig_probe"]["closed_m5_count"] == 40
-    assert payload["candidate_finalized_m5_count"] == (40 if age >= 60 else 39)
-    assert payload["input_window"][-1]["close_time"] == latest.isoformat()
+    assert payload["candidate_finalized_m5_count"] == 40
+    assert payload["not_finalized_m5_count"] == 0
+    assert payload["input_window"][-1]["close_time"] == END.isoformat()
     assert payload["execution_capability"] == "NONE"
     assert payload["order_execution_enabled"] is False
 
 
-def test_crossing_sixty_seconds_in_transport_or_processing_cannot_promote_early_snapshot():
-    payload, _ = evidence(breakout=False, age_seconds=61, request_age_seconds=59.999)
-    assert payload["latest_finalized_m5"]["close_time"] == (END - timedelta(minutes=5)).isoformat()
-    assert payload["not_finalized_m5_count"] == 1
+def test_additional_sixty_second_grace_is_retired() -> None:
+    payload, _ = evidence(breakout=False, age_seconds=0, request_age_seconds=0)
+    assert payload["latest_finalized_m5"]["close_time"] == END.isoformat()
+    assert payload["not_finalized_m5_count"] == 0
+    contract = payload["provider_finalization_contract"]
+    assert contract["additional_grace_seconds"] == 0
+    assert contract["grace_status"] == "RETIRED_SUPERSEDED_INTERVAL_END_WORKAROUND"
 
 
-@pytest.mark.parametrize("age", [600.000001, 601])
-def test_finalization_does_not_relax_six_hundred_second_processing_limit(age):
-    probe, rows, _ = live_fixture(breakout=False)
-    now = END + timedelta(seconds=age)
-    with pytest.raises(host.HostTestBlocked, match="DATA_STALE_AT_PROCESSING"):
-        host.process_live_window(probe, rows, head=HEAD, observed_at=now)
+def test_candidate_finalization_excludes_future_true_close() -> None:
+    rows = [{"close_time": END.isoformat()}, {
+        "close_time": (END + timedelta(minutes=5)).isoformat(),
+    }]
+    assert host.finalized_rows(rows, END) == rows[:1]
 
 
-def test_no_finalized_bar_has_clear_blocker():
-    probe, rows, now = live_fixture(breakout=False, age_seconds=59.999)
-    with pytest.raises(host.HostTestBlocked, match="NO_NEW_FINALIZED_M5"):
-        host.process_live_window(probe, rows[-1:], head=HEAD, observed_at=now)
+def test_resume_advances_at_new_true_close_without_extra_grace() -> None:
+    prior, _ = evidence(breakout=False, age_seconds=0)
+    probe, rows, now = live_fixture(
+        END + timedelta(minutes=5),
+        breakout=False,
+        age_seconds=0,
+    )
+    payload = host.process_live_window(probe, rows, head=HEAD, observed_at=now, prior=prior)
+    assert payload["recovery_state"] == "RESUME_ANCHOR_RECONCILED"
+    assert payload["decisions"][-1]["close_time"] == (END + timedelta(minutes=5)).isoformat()
 
 
-def test_resume_with_only_new_nominal_bar_inside_grace_does_not_advance_or_mutate_state():
-    prior, _ = evidence(breakout=False, age_seconds=60)
-    before = deepcopy(prior)
-    probe, rows, now = live_fixture(END + timedelta(minutes=5), breakout=False, age_seconds=3.7)
-    with pytest.raises(host.HostTestBlocked, match="NO_NEW_FINALIZED_M5"):
-        host.process_live_window(probe, rows, head=HEAD, observed_at=now, prior=prior)
-    assert prior == before
-
-
-def test_manifest_dataset_binds_finalization_independent_of_code_head(monkeypatch):
+def test_manifest_binds_canonical_contract_and_retired_grace(monkeypatch) -> None:
     base = host.manifest(HEAD)
     dataset = host.stable_fingerprint({
-        "stream": "IG_READ_ONLY", "epic": host.DEFAULT_EPIC, "price": "MID_BID_ASK",
-        "timestamp_contract": host.TIMESTAMP_CONTRACT, "symbol": "DE40", "timeframe": "5m",
+        "stream": "IG_READ_ONLY",
+        "epic": host.DEFAULT_EPIC,
+        "price": "MID_BID_ASK",
+        "timestamp_contract": host.TIMESTAMP_CONTRACT,
+        "symbol": "DE40",
+        "timeframe": "5m",
+        "market_data_contract": host.canonical_ig_m5_contract(),
         "provider_finalization": host.finalization_contract(),
     })
     assert base.dataset_fingerprint == dataset
-    assert host.finalization_contract()["grace_seconds"] == 60
-    monkeypatch.setattr(host, "IG_M5_PROVIDER_FINALIZATION_GRACE_SECONDS", 61)
+    assert host.finalization_contract()["additional_grace_seconds"] == 0
+    monkeypatch.setattr(host, "TIMESTAMP_CONTRACT", "LEGACY_INTERVAL_END")
     changed = host.manifest(HEAD)
     assert changed.dataset_fingerprint != base.dataset_fingerprint
     assert changed.manifest_fingerprint != base.manifest_fingerprint
@@ -290,8 +295,16 @@ def test_manifest_dataset_binds_finalization_independent_of_code_head(monkeypatc
 
 def legacy_evidence():
     payload, now = evidence(breakout=False)
-    payload["schema"] = "DAX_IG_CAND001_REAL_HOST_SHADOW_E2E_V1"
-    payload.pop("provider_finalization_contract")
+    payload["schema"] = "DAX_IG_CAND001_REAL_HOST_SHADOW_E2E_V2"
+    payload.pop("state_contract")
+    payload["provider_finalization_contract"] = {
+        "contract": "IG_M5_CAND001_PROVIDER_FINALIZATION_GRACE_V1",
+        "grace_seconds": 60,
+        "eligibility_clock": "PRICE_REQUEST_STARTED_AT_UTC",
+    }
+    payload["ig_probe"]["m5_timestamp_contract"] = (
+        "IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_END_V1"
+    )
     rehash(payload)
     return payload, now
 
@@ -320,18 +333,17 @@ def test_each_changed_processed_overlap_field_still_blocks_exactly(field):
         host.process_live_window(probe, rows, head=HEAD, observed_at=now, prior=prior)
 
 
-def test_changed_unprocessed_grace_tail_can_enter_only_after_becoming_eligible():
-    prior, _ = evidence(breakout=False, age_seconds=3.7)
-    probe, rows, now = live_fixture(END + timedelta(minutes=5), breakout=False, age_seconds=60)
-    rows[-2]["high"] += 14
-    rows[-2]["low"] -= 0.3
-    rows[-2]["close"] += 12
-    rows[-2]["volume"] = 121.0
+def test_new_true_close_enters_only_after_strict_overlap_reconciliation() -> None:
+    prior, _ = evidence(breakout=False, age_seconds=0)
+    probe, rows, now = live_fixture(
+        END + timedelta(minutes=5),
+        breakout=False,
+        age_seconds=0,
+    )
     payload = host.process_live_window(probe, rows, head=HEAD, observed_at=now, prior=prior)
     assert payload["recovery_state"] == "RESUME_ANCHOR_RECONCILED"
-    assert len(payload["decisions"]) == 2
-    assert payload["decisions"][0]["close_time"] == END.isoformat()
-    assert END.isoformat() not in [r["close_time"] for r in prior["input_window"]]
+    assert len(payload["decisions"]) == 1
+    assert payload["decisions"][0]["close_time"] == (END + timedelta(minutes=5)).isoformat()
     assert payload["checkpoint"]["order_execution_enabled"] is False
 
 
@@ -369,48 +381,21 @@ def test_auth_401_is_one_call_without_retry_or_provider_text(tmp_path, monkeypat
     assert not (tmp_path / "evidence.json").exists()
 
 
-@pytest.mark.parametrize("with_prior", [False, True])
-def test_unknown_provider_contract_blocks_live_fresh_start_and_resume_before_input_or_writes(
-    tmp_path, monkeypatch, capsys, with_prior,
-):
-    path = tmp_path / "evidence.json"
-    if with_prior:
-        prior, _ = evidence(breakout=False)
-        host.atomic_write_json(path, prior)
-    before = path.read_bytes() if path.exists() else None
-    monkeypatch.setattr(host, "check_code", lambda _: HEAD)
-    monkeypatch.setattr(host.platform, "system", lambda: "Windows")
-    def unexpected(*args, **kwargs):
-        pytest.fail("UNKNOWN must not fetch input, process Candidate or publish evidence")
-    monkeypatch.setattr(host, "collect_probe_with_candles", unexpected)
-    monkeypatch.setattr(host, "process_live_window", unexpected)
-    monkeypatch.setattr(host, "atomic_write_json", unexpected)
-    monkeypatch.setattr(host.sys, "argv", ["test", "--expected-head", HEAD,
-                                         "--credentials-file", "must-not-be-read.env", "--state-dir", str(tmp_path)])
-    assert host.main() == 2
-    result = json.loads(capsys.readouterr().out)
-    assert result["error_code"] == "DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED"
-    assert result["prior_evidence_is_not_current"] is True
-    assert result["execution_capability"] == "NONE" and result["order_execution_enabled"] is False
-    assert (path.read_bytes() if path.exists() else None) == before
+def test_verified_provider_contract_gate_has_success_path() -> None:
+    assert host.require_verified_live_provider_contract() is None
 
 
-def test_provider_truth_gate_has_no_success_path():
+def test_provider_truth_gate_blocks_contract_drift(monkeypatch) -> None:
+    monkeypatch.setattr(host, "TIMESTAMP_CONTRACT", "LEGACY_INTERVAL_END")
     with pytest.raises(host.HostTestBlocked, match="DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED"):
         host.require_verified_live_provider_contract()
 
 
-def test_valid_but_unfinalized_decision_cannot_be_inserted_into_historical_evidence():
-    payload, now = evidence(breakout=False, age_seconds=3.7)
-    row = payload["ig_closed_m5_observation"][-1]
-    result = host.process_cand001_shadow_candle(
-        host.Cand001ShadowState(), host.runtime_candles([row], now)[0],
-        observed_at=now, run_manifest=host.manifest(HEAD),
-    )
-    from dataclasses import asdict
-    record = json.loads(json.dumps(asdict(result.pipeline_result.decision), default=lambda x: x.isoformat()))
-    payload["decisions"].insert(0, {"close_time": row["close_time"], "record": record,
-                                     "scope": "HISTORICAL_CATCHUP"})
+def test_future_close_decision_cannot_be_inserted_into_evidence() -> None:
+    payload, now = evidence(breakout=False, age_seconds=0)
+    injected = deepcopy(payload["decisions"][-1])
+    injected["close_time"] = (END + timedelta(minutes=5)).isoformat()
+    payload["decisions"].insert(0, injected)
     rehash(payload)
     with pytest.raises(host.HostTestBlocked, match="RUNTIME_UNFINALIZED_DECISION"):
         host.validate_evidence(payload, head=HEAD, now=now)

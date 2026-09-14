@@ -17,14 +17,19 @@ import re
 from typing import Mapping
 
 from daxlab.adapters.ig_market_data import (
-    DEFAULT_MAX_AGE, TIMESTAMP_CONTRACT, IgClosedM5CandleSource, IgClosedM5Feed,
-    closed_m5_price_rows, ig_m5_interval,
+    DEFAULT_MAX_AGE,
+    TIMESTAMP_CONTRACT,
+    IgClosedM5CandleSource,
+    IgClosedM5Feed,
+    canonical_ig_m5_contract,
+    closed_m5_price_rows,
+    raw_snapshot_time_utc,
 )
 from daxlab.adapters.ig_rest_readonly import IgDemoCredentials, IgDemoReadOnlyClient
 from daxlab.domain.market import InstrumentId
 
 
-SCHEMA = "DAXLAB_IG_DEMO_READONLY_PROBE_V1"
+SCHEMA = "DAXLAB_IG_DEMO_READONLY_PROBE_V2"
 DEFAULT_EPIC = "IX.D.DAX.IFMM.IP"
 DEFAULT_INSTRUMENT_ID = "DAX_CFD_IG_DE40_CASH_1EUR"
 FORBIDDEN_OUTPUT_KEYS = {
@@ -230,7 +235,7 @@ def _closed_candles(
             {
                 "event_time": candle.event_time.isoformat(),
                 "close_time": candle.close_time.isoformat(),
-                "snapshot_time_utc": candle.close_time.isoformat(),
+                "snapshot_time_utc": candle.event_time.isoformat(),
                 "open": candle.open,
                 "high": candle.high,
                 "low": candle.low,
@@ -268,29 +273,25 @@ def _fingerprint(payload: Mapping[str, object]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def collect_probe_with_candles(
+def collect_authenticated_probe(
+    client: IgDemoReadOnlyClient,
     *,
-    credentials_file: Path,
     epic: str,
     instrument_id: str,
     bars: int,
 ) -> tuple[dict[str, object], list[dict[str, object]]]:
-    """One existing live read, returning the SAME validated bars for SHADOW callers."""
-    credentials = _credentials_from_file(credentials_file)
-    client = IgDemoReadOnlyClient(credentials=credentials)
+    """Collect one read-only view through an already authenticated session owner."""
+    if client.execution_capability != "NONE" or client.order_execution_enabled is not False:
+        raise RuntimeError("IG read-only safety capability mismatch")
     collection_started_at = datetime.now(timezone.utc)
-    try:
-        client.login()
-        accounts = client.accounts()
-        positions = client.positions()
-        working_orders = client.working_orders()
-        market = client.market(epic)
-        market_observed_at = datetime.now(timezone.utc)
-        price_request_started_at = datetime.now(timezone.utc)
-        prices = client.m5_prices(epic, max_bars=bars)
-        observed_at = datetime.now(timezone.utc)
-    finally:
-        client.logout()
+    accounts = client.accounts()
+    positions = client.positions()
+    working_orders = client.working_orders()
+    market = client.market(epic)
+    market_observed_at = datetime.now(timezone.utc)
+    price_request_started_at = datetime.now(timezone.utc)
+    prices = client.m5_prices(epic, max_bars=bars)
+    observed_at = datetime.now(timezone.utc)
 
     candles = _closed_candles(
         prices,
@@ -299,6 +300,8 @@ def collect_probe_with_candles(
         observed_at=observed_at,
         closed_as_of=price_request_started_at,
     )
+    raw_prices = _list_field(prices, "prices")
+    contract = canonical_ig_m5_contract()
     evidence: dict[str, object] = {
         "schema": SCHEMA,
         "observed_at_utc": observed_at.isoformat(),
@@ -315,14 +318,18 @@ def collect_probe_with_candles(
         "working_orders_count": _inventory_count(working_orders, "workingOrders"),
         "market": _safe_market(market, expected_epic=epic),
         "closed_m5_count": len(candles),
-        "raw_m5_count": len(_list_field(prices, "prices")),
-        "not_closed_m5_count": len(_list_field(prices, "prices")) - len(candles),
-        "latest_raw_m5_time_utc": ig_m5_interval(_list_field(prices, "prices")[-1])[1].isoformat(),
+        "raw_m5_count": len(raw_prices),
+        "not_closed_m5_count": len(raw_prices) - len(candles),
+        "latest_raw_m5_time_utc": raw_snapshot_time_utc(raw_prices[-1]).isoformat(),
         "latest_closed_m5": None if not candles else candles[-1],
+        "m5_market_data_contract": contract,
         "m5_timestamp_contract": TIMESTAMP_CONTRACT,
         "m5_freshness_state": "FRESH",
+        "m5_freshness_basis": "TRUE_CLOSE_TIME",
         "m5_freshness_max_age_seconds": DEFAULT_MAX_AGE.total_seconds(),
-        "latest_closed_m5_age_seconds": (observed_at - datetime.fromisoformat(candles[-1]["close_time"])).total_seconds(),
+        "latest_closed_m5_age_seconds": (
+            observed_at - datetime.fromisoformat(candles[-1]["close_time"])
+        ).total_seconds(),
         "inventory_is_atomic": False,
         "inventory_history_complete": False,
         "inventory_freshness_state": "UNKNOWN",
@@ -333,6 +340,28 @@ def collect_probe_with_candles(
     _assert_credential_free(evidence)
     evidence["fingerprint"] = _fingerprint(evidence)
     return evidence, candles
+
+
+def collect_probe_with_candles(
+    *,
+    credentials_file: Path,
+    epic: str,
+    instrument_id: str,
+    bars: int,
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    """Own one authenticated session for all reads and one controlled cleanup."""
+    credentials = _credentials_from_file(credentials_file)
+    client = IgDemoReadOnlyClient(credentials=credentials)
+    try:
+        client.login()
+        return collect_authenticated_probe(
+            client,
+            epic=epic,
+            instrument_id=instrument_id,
+            bars=bars,
+        )
+    finally:
+        client.logout()
 
 
 def collect_probe(

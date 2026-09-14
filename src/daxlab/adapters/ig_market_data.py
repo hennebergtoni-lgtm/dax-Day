@@ -1,9 +1,10 @@
-"""Read-only IG CLOSED-M5 adapter for canonical broker-neutral candles.
+"""Canonical IG M5 market-data contract and read-only candle normalization.
 
-The network/session layer is deliberately outside this module. A provider supplies
-already-fetched IG price payloads together with the broker EPIC and observation
-time. This adapter performs deterministic quote-bar normalization only and has no
-credentials, HTTP dependency, dealing endpoint or execution capability.
+Attempt03 original evidence establishes the operational interval mapping. IG's raw
+snapshotTimeUTC is the interval start; canonical close is five minutes later.
+The transport/session owner stays outside this module. This module is the sole
+owner of timestamp semantics, closure, Candidate finalization, freshness and
+normalized provenance. It has no credentials, HTTP dependency or execution path.
 """
 from __future__ import annotations
 
@@ -17,9 +18,41 @@ from daxlab.domain.market import Candle, DataQualityState, InstrumentId
 
 CANONICAL_TIMEFRAME = "M5"
 SOURCE_PREFIX = "IG_READ_ONLY"
-TIMESTAMP_CONTRACT = "IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_END_V1"
+MARKET_DATA_CONTRACT_SCHEMA = "DAXLAB_IG_M5_MARKET_DATA_CONTRACT_V2"
+TIMESTAMP_CONTRACT = "IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_START_V2"
+CANDIDATE_FINALIZATION_CONTRACT = "IG_M5_TRUE_CLOSE_NO_EXTRA_GRACE_V2"
+PROVIDER_TIMESTAMP_SEMANTICS = "INTERVAL_START"
+PROVIDER_REVISION_STATE = "POST_CLOSE_REVISION_BOUND_NOT_ESTABLISHED"
 _TIMEFRAME_DELTA = timedelta(minutes=5)
 DEFAULT_MAX_AGE = timedelta(minutes=10)
+
+_ATTEMPT03_PROVENANCE = {
+    "namespace": ".runtime/ig_raw_m5_truth_2233_v2_attempt_03",
+    "evidence_head": "2a99f96e06f7ce1f311c767dec43d236bb63eedd",
+    "export_runtime_head": "7728453c3c4f8fcd2cf6f8189b0f94562ccfa04f",
+    "original_bundle": "ig_raw_truth_2233_attempt_03_originals.zip",
+    "historical_review": "DAX_IG_RAW_REVIEW_V1:OTHER_UNKNOWN:PRESERVED",
+    "final_review": "DAX_IG_RAW_REVIEW_V2:INTERVAL_START",
+}
+
+
+def canonical_ig_m5_contract() -> dict[str, object]:
+    """Return the immutable, manifest-safe canonical contract projection."""
+    return {
+        "schema": MARKET_DATA_CONTRACT_SCHEMA,
+        "raw_timestamp_field": "snapshotTimeUTC",
+        "raw_timestamp_semantics": PROVIDER_TIMESTAMP_SEMANTICS,
+        "event_time_rule": "event_time=snapshotTimeUTC",
+        "close_time_rule": "close_time=snapshotTimeUTC+PT5M",
+        "closed_rule": "close_time<=price_request_started_at_utc",
+        "candidate_finalized_rule": "closed;no_additional_time_grace",
+        "candidate_finalization_contract": CANDIDATE_FINALIZATION_CONTRACT,
+        "freshness_rule": "age=observation_time-close_time",
+        "freshness_max_age_seconds": DEFAULT_MAX_AGE.total_seconds(),
+        "revision_state": PROVIDER_REVISION_STATE,
+        "raw_provenance": dict(_ATTEMPT03_PROVENANCE),
+        "normalized_provenance": TIMESTAMP_CONTRACT,
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,12 +75,7 @@ FeedProvider = Callable[[], IgClosedM5Feed | None]
 
 @dataclass(slots=True)
 class IgClosedM5CandleSource:
-    """Yield each safe closed IG M5 quote candle at most once.
-
-    IG historical price rows expose bid/ask OHLC independently and may omit
-    ``lastTraded``. The canonical price is therefore the deterministic midpoint
-    of bid and ask for each OHLC component. No last-traded value is fabricated.
-    """
+    """Yield each canonical, true-close IG M5 quote candle at most once."""
 
     feed_provider: FeedProvider
     epic: str
@@ -122,17 +150,8 @@ class IgClosedM5CandleSource:
         )
 
 
-def ig_m5_interval(row: Mapping[str, object]) -> tuple[datetime, datetime]:
-    """Normalize this IG lane's supplied interval-end timestamp convention.
-
-    The supplied IG Demo host sample at 09:02:59 includes a row labelled 09:05.
-    This contract maps its 09:00 predecessor to [08:55, 09:00). IG REST docs
-    call the field "Snapshot time" without formally specifying open versus close;
-    the corrected lane still requires a real-host rerun, not an inferred VERIFIED.
-    IG's wire UTC field may omit an offset; that field alone is assigned UTC.
-    Never fall back to local snapshotTime or apply broker/DST wallclock offsets.
-    See docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md for evidence and documentation limits.
-    """
+def raw_snapshot_time_utc(row: Mapping[str, object]) -> datetime:
+    """Parse only IG's raw UTC field; never use local snapshotTime as fallback."""
     raw = row.get("snapshotTimeUTC")
     if not isinstance(raw, str) or not raw.strip():
         raise ValueError("IG price row requires snapshotTimeUTC")
@@ -142,21 +161,22 @@ def ig_m5_interval(row: Mapping[str, object]) -> tuple[datetime, datetime]:
         raise ValueError("IG snapshotTimeUTC must be ISO-8601") from exc
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
-    close_time = parsed.astimezone(timezone.utc)
-    if close_time.minute % 5 or close_time.second or close_time.microsecond:
+    event_time = parsed.astimezone(timezone.utc)
+    if event_time.minute % 5 or event_time.second or event_time.microsecond:
         raise ValueError("IG snapshotTimeUTC must be aligned to the M5 boundary")
-    return close_time - _TIMEFRAME_DELTA, close_time
+    return event_time
+
+
+def ig_m5_interval(row: Mapping[str, object]) -> tuple[datetime, datetime]:
+    """Map the verified interval-start wire timestamp to [event, event+5m)."""
+    event_time = raw_snapshot_time_utc(row)
+    return event_time, event_time + _TIMEFRAME_DELTA
 
 
 def closed_m5_price_rows(
     prices: Sequence[Mapping[str, object]], *, observed_at: datetime,
 ) -> tuple[Mapping[str, object], ...]:
-    """Validate the full response, then omit its not-yet-closed tail.
-
-    This is the sole IG closure rule used by both the feed and host probe.
-    Even an omitted live row must have a valid chronological timestamp; it
-    cannot hide malformed, duplicated, gapped or implausibly future history.
-    """
+    """Validate the full response and exclude every row whose true close is future."""
     if observed_at.tzinfo is None or observed_at.utcoffset() is None:
         raise ValueError("IG observed_at must be timezone-aware")
     if not prices:
@@ -164,17 +184,22 @@ def closed_m5_price_rows(
     if any(not isinstance(row, Mapping) for row in prices):
         raise ValueError("IG price row must be an object")
     rows = tuple(prices)
-    close_times = tuple(ig_m5_interval(row)[1] for row in rows)
-    if close_times != tuple(sorted(close_times)):
+    intervals = tuple(ig_m5_interval(row) for row in rows)
+    event_times = tuple(interval[0] for interval in intervals)
+    close_times = tuple(interval[1] for interval in intervals)
+    if event_times != tuple(sorted(event_times)):
         raise ValueError("IG price rows must remain chronological")
-    if len(set(close_times)) != len(close_times):
+    if len(set(event_times)) != len(event_times):
         raise ValueError("IG price timestamps must remain unique")
-    if any(b - a != _TIMEFRAME_DELTA for a, b in zip(close_times, close_times[1:])):
+    if any(b - a != _TIMEFRAME_DELTA for a, b in zip(event_times, event_times[1:])):
         raise ValueError("IG price rows must remain continuous M5 bars")
     now = observed_at.astimezone(timezone.utc)
-    next_boundary = now.replace(minute=now.minute - now.minute % 5, second=0,
-                                microsecond=0) + _TIMEFRAME_DELTA
-    if close_times[-1] > next_boundary:
+    current_boundary = now.replace(
+        minute=now.minute - now.minute % 5,
+        second=0,
+        microsecond=0,
+    )
+    if event_times[-1] > current_boundary:
         raise ValueError("IG history extends beyond the current M5 interval")
     closed = tuple(row for row, close in zip(rows, close_times) if close <= now)
     if not closed:

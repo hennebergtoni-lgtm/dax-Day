@@ -4,7 +4,15 @@ from datetime import datetime, timezone
 
 import pytest
 
-from daxlab.adapters.ig_market_data import IgClosedM5CandleSource, IgClosedM5Feed
+from daxlab.adapters.ig_market_data import (
+    CANDIDATE_FINALIZATION_CONTRACT,
+    TIMESTAMP_CONTRACT,
+    IgClosedM5CandleSource,
+    IgClosedM5Feed,
+    canonical_ig_m5_contract,
+    closed_m5_price_rows,
+    ig_m5_interval,
+)
 from daxlab.domain.market import InstrumentId
 
 
@@ -48,8 +56,8 @@ def test_ig_source_maps_bid_ask_midpoint_without_fabricating_last_traded() -> No
     assert candle is not None
     assert candle.instrument_id == INSTRUMENT
     assert candle.timeframe == "M5"
-    assert candle.event_time == datetime(2026, 9, 14, 9, 55, tzinfo=timezone.utc)
-    assert candle.close_time == datetime(2026, 9, 14, 10, 0, tzinfo=timezone.utc)
+    assert candle.event_time == datetime(2026, 9, 14, 10, 0, tzinfo=timezone.utc)
+    assert candle.close_time == datetime(2026, 9, 14, 10, 5, tzinfo=timezone.utc)
     assert candle.open == 25_501.0
     assert candle.high == 25_511.0
     assert candle.low == 25_496.0
@@ -127,7 +135,7 @@ def test_ig_source_rejects_open_or_future_bar() -> None:
         feed_provider=lambda: IgClosedM5Feed(
             epic=EPIC,
             observed_at=datetime(2026, 9, 14, 10, 4, 59, tzinfo=timezone.utc),
-            prices=(_row("2026-09-14T10:05:00"),),
+            prices=(_row("2026-09-14T10:00:00"),),
         ),
         epic=EPIC,
         instrument_id=INSTRUMENT,
@@ -193,3 +201,42 @@ def test_ig_source_rejects_crossed_bid_ask() -> None:
 
     with pytest.raises(ValueError, match="ask must not be below bid"):
         source.next_candle()
+
+
+def test_attempt03_contract_maps_raw_timestamp_to_interval_start_and_true_close() -> None:
+    row = _row("2026-09-14T15:25:00")
+    event_time, close_time = ig_m5_interval(row)
+    assert event_time == datetime(2026, 9, 14, 15, 25, tzinfo=timezone.utc)
+    assert close_time == datetime(2026, 9, 14, 15, 30, tzinfo=timezone.utc)
+    contract = canonical_ig_m5_contract()
+    assert TIMESTAMP_CONTRACT == "IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_START_V2"
+    assert contract["raw_timestamp_semantics"] == "INTERVAL_START"
+    assert contract["candidate_finalization_contract"] == CANDIDATE_FINALIZATION_CONTRACT
+    assert contract["freshness_rule"] == "age=observation_time-close_time"
+
+
+def test_active_tail_is_excluded_and_first_completed_bar_is_included() -> None:
+    rows = (_row("2026-09-14T15:20:00"), _row("2026-09-14T15:25:00"))
+    before_close = closed_m5_price_rows(
+        rows,
+        observed_at=datetime(2026, 9, 14, 15, 29, 59, 999999, tzinfo=timezone.utc),
+    )
+    at_close = closed_m5_price_rows(
+        rows,
+        observed_at=datetime(2026, 9, 14, 15, 30, tzinfo=timezone.utc),
+    )
+    assert before_close == rows[:1]
+    assert at_close == rows
+
+
+def test_freshness_is_measured_from_true_close_not_raw_event_time() -> None:
+    source = IgClosedM5CandleSource(
+        feed_provider=lambda: IgClosedM5Feed(
+            epic=EPIC,
+            observed_at=datetime(2026, 9, 14, 15, 39, 59, tzinfo=timezone.utc),
+            prices=(_row("2026-09-14T15:25:00"),),
+        ),
+        epic=EPIC,
+        instrument_id=INSTRUMENT,
+    )
+    assert source.next_candle() is not None

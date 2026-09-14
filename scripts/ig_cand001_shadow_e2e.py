@@ -23,6 +23,10 @@ from ig_demo_readonly_probe import (  # noqa: E402
     _assert_credential_free, _fingerprint, collect_probe_with_candles,
 )
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object  # noqa: E402
+from daxlab.adapters.ig_market_data import (  # noqa: E402
+    CANDIDATE_FINALIZATION_CONTRACT,
+    canonical_ig_m5_contract,
+)
 from daxlab.adapters.ig_rest_readonly import IgReadOnlyError  # noqa: E402
 from daxlab.runtime.candidate_config import Cand001Config  # noqa: E402
 from daxlab.runtime.candidate_sizing import Cand001SimulationSizingPolicy  # noqa: E402
@@ -42,9 +46,9 @@ from daxlab.runtime.operator_snapshot import parse_operator_snapshot_payload  # 
 from daxlab.runtime.paper_contracts import PaperFillModelConfig  # noqa: E402
 from daxlab.runtime.single_instance import SingleInstanceLock  # noqa: E402
 
-SCHEMA = "DAX_IG_CAND001_REAL_HOST_SHADOW_E2E_V2"
-IG_M5_PROVIDER_FINALIZATION_GRACE_SECONDS = 60
-STATE_DIR = Path(".runtime/ig_cand001_shadow_e2e_2233")
+SCHEMA = "DAX_IG_CAND001_REAL_HOST_SHADOW_E2E_V3"
+STATE_CONTRACT = "DAX_IG_CAND001_STATE_INTERVAL_START_V3"
+STATE_DIR = Path(".runtime/ig_cand001_shadow_e2e_2237_interval_start_v3")
 REPO = Path(__file__).resolve().parents[1]
 
 
@@ -64,17 +68,18 @@ def utc(value: str) -> datetime:
 
 
 def finalization_contract() -> dict[str, Any]:
-    """Candidate eligibility policy, not a guarantee of provider immutability."""
+    """Candidate eligibility uses canonical true close; the 60-second workaround is retired."""
     return {
-        "contract": "IG_M5_CAND001_PROVIDER_FINALIZATION_GRACE_V1",
-        "grace_seconds": IG_M5_PROVIDER_FINALIZATION_GRACE_SECONDS,
+        "contract": CANDIDATE_FINALIZATION_CONTRACT,
+        "grace_status": "RETIRED_SUPERSEDED_INTERVAL_END_WORKAROUND",
+        "additional_grace_seconds": 0,
         "eligibility_clock": "PRICE_REQUEST_STARTED_AT_UTC",
+        "eligibility_rule": "close_time<=price_request_started_at_utc",
     }
 
 
 def finalized_rows(rows: list[dict[str, Any]], as_of: datetime) -> list[dict[str, Any]]:
-    return [row for row in rows if (as_of - utc(row["close_time"])).total_seconds()
-            >= IG_M5_PROVIDER_FINALIZATION_GRACE_SECONDS]
+    return [row for row in rows if utc(row["close_time"]) <= as_of]
 
 
 def manifest(head: str) -> RunManifest:
@@ -82,6 +87,7 @@ def manifest(head: str) -> RunManifest:
         dataset_fingerprint=stable_fingerprint({
             "stream": "IG_READ_ONLY", "epic": DEFAULT_EPIC, "price": "MID_BID_ASK",
             "timestamp_contract": TIMESTAMP_CONTRACT, "symbol": "DE40", "timeframe": "5m",
+            "market_data_contract": canonical_ig_m5_contract(),
             "provider_finalization": finalization_contract(),
         }),
         engine_fingerprint=stable_fingerprint({"exact_code_head": head, "owner": "CAND001_SHADOW",
@@ -139,9 +145,12 @@ def validate_evidence(payload: dict[str, Any], *, head: str, now: datetime,
     unhashed = dict(payload)
     digest = unhashed.pop("fingerprint", None)
     require(digest == _fingerprint(unhashed), "TELEMETRY_FINGERPRINT_MISMATCH")
-    require(payload.get("schema") == SCHEMA
-            and payload.get("provider_finalization_contract") == finalization_contract(),
-            "STATE_FINALIZATION_CONTRACT_MIGRATION_REQUIRED")
+    require(
+        payload.get("schema") == SCHEMA
+        and payload.get("state_contract") == STATE_CONTRACT
+        and payload.get("provider_finalization_contract") == finalization_contract(),
+        "STATE_FINALIZATION_CONTRACT_MIGRATION_REQUIRED",
+    )
     require(payload["exact_code_head"] == head, "STATE_CODE_OR_SCHEMA_DRIFT")
     require(payload["host_platform"] == "Windows" and payload["mode"] == "SHADOW",
             "GOVERNANCE_HOST_OR_MODE")
@@ -158,9 +167,14 @@ def validate_evidence(payload: dict[str, Any], *, head: str, now: datetime,
     require(raw_probe.pop("fingerprint") == _fingerprint(raw_probe), "DATA_PROBE_FINGERPRINT")
     require(probe["execution_capability"] == "NONE" and probe["order_execution_enabled"] is False,
             "GOVERNANCE_PROBE_EXECUTION")
-    require(probe["m5_timestamp_contract"] == TIMESTAMP_CONTRACT
-            and probe["m5_freshness_max_age_seconds"] == DEFAULT_MAX_AGE.total_seconds()
-            and probe["m5_freshness_state"] == "FRESH", "DATA_CONTRACT_DRIFT")
+    require(
+        probe["m5_timestamp_contract"] == TIMESTAMP_CONTRACT
+        and probe["m5_market_data_contract"] == canonical_ig_m5_contract()
+        and probe["m5_freshness_basis"] == "TRUE_CLOSE_TIME"
+        and probe["m5_freshness_max_age_seconds"] == DEFAULT_MAX_AGE.total_seconds()
+        and probe["m5_freshness_state"] == "FRESH",
+        "DATA_CONTRACT_DRIFT",
+    )
     require(probe["market"]["epic"] == DEFAULT_EPIC, "DATA_EPIC_MISMATCH")
     nominal_rows = payload["ig_closed_m5_observation"]
     nominal_candles = runtime_candles(nominal_rows, utc(probe["observed_at_utc"]))
@@ -188,12 +202,15 @@ def validate_evidence(payload: dict[str, Any], *, head: str, now: datetime,
     require(payload["candidate_m5_freshness_state"] == "FRESH"
             and payload["latest_finalized_m5_age_seconds"] == (processed - latest).total_seconds(),
             "DATA_FINALIZED_FRESHNESS_MISMATCH")
-    require(IG_M5_PROVIDER_FINALIZATION_GRACE_SECONDS <= (exported - latest).total_seconds()
-            <= DEFAULT_MAX_AGE.total_seconds(),
-            "DATA_STALE_AT_EXPORT")
+    require(
+        0 <= (exported - latest).total_seconds() <= DEFAULT_MAX_AGE.total_seconds(),
+        "DATA_STALE_AT_EXPORT",
+    )
     if current:
-        require(IG_M5_PROVIDER_FINALIZATION_GRACE_SECONDS <= (now - latest).total_seconds()
-                <= DEFAULT_MAX_AGE.total_seconds(), "TELEMETRY_STALE")
+        require(
+            0 <= (now - latest).total_seconds() <= DEFAULT_MAX_AGE.total_seconds(),
+            "TELEMETRY_STALE",
+        )
     snapshot = payload["operator_snapshot"]
     parse_operator_snapshot_payload(snapshot)
     validate_candidate_operator_snapshot(snapshot)
@@ -247,9 +264,11 @@ def process_live_window(probe: dict[str, Any], rows: list[dict[str, Any]], *, he
     eligible = finalized_rows(rows, requested)
     require(bool(eligible), "STATE_NO_NEW_FINALIZED_M5")
     candles = runtime_candles(eligible, received)
-    require(IG_M5_PROVIDER_FINALIZATION_GRACE_SECONDS <= (observed_at - candles[-1].close_time).total_seconds()
-            <= DEFAULT_MAX_AGE.total_seconds(),
-            "DATA_STALE_AT_PROCESSING")
+    require(
+        0 <= (observed_at - candles[-1].close_time).total_seconds()
+        <= DEFAULT_MAX_AGE.total_seconds(),
+        "DATA_STALE_AT_PROCESSING",
+    )
     run = manifest(head)
     state = Cand001ShadowState()
     pending = candles
@@ -279,7 +298,8 @@ def process_live_window(probe: dict[str, Any], rows: list[dict[str, Any]], *, he
         })
     snapshot = result.operator_snapshot.as_dict()
     payload = {
-        "schema": SCHEMA, "exact_code_head": head, "host_platform": "Windows",
+        "schema": SCHEMA, "state_contract": STATE_CONTRACT,
+        "exact_code_head": head, "host_platform": "Windows",
         "data_source": "IG_READ_ONLY", "epic": DEFAULT_EPIC, "symbol": "DE40", "mode": "SHADOW",
         "candidate_id": Cand001Config().candidate_id,
         "session_date": state.pipeline.signal.session_date,
@@ -328,12 +348,14 @@ def summary(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def require_verified_live_provider_contract() -> None:
-    """Quarantine the disproven60s live policy until RAW semantics is established.
-
-    No CLI override. Historical offline regressions and hash-bound local reads
-    remain available; this is not a replacement timestamp/finalization rule.
-    """
-    raise HostTestBlocked("DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED")
+    """Assert the repository-owned final contract before any authenticated read."""
+    contract = canonical_ig_m5_contract()
+    require(
+        TIMESTAMP_CONTRACT == "IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_START_V2"
+        and contract["raw_timestamp_semantics"] == "INTERVAL_START"
+        and contract["candidate_finalization_contract"] == CANDIDATE_FINALIZATION_CONTRACT,
+        "DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED",
+    )
 
 
 def main() -> int:
