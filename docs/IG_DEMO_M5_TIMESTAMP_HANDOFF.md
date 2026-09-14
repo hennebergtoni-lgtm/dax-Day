@@ -1,6 +1,6 @@
 # IG Demo M5 host handoff — Step 2231 / M01
 
-Updated:2026-09-14. Canonical IG feed correction:2231 **COMPLETED / VERIFIED AS SUPPLIED**. Initial IG/CAND-001 E2E:2232 **COMPLETED / VERIFIED** under supplied binding host evidence. Current2233 is **UNVERIFIED / RAW PROVIDER TRUTH WAITING_EXTERNAL**: later60s-policy overlap failure disproves finality guarantee. Interval-end/start semantics are unresolved; previous normalization is an implemented hypothesis, not an authoritative provider statement. Read `STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md` before another Candidate run. Historical sections below are provenance; latest overlay/current pointer controls. No execution authorization or full M01 completion.
+Updated:2026-09-14. Canonical IG feed correction:2231 **COMPLETED / VERIFIED AS SUPPLIED**. Initial IG/CAND-001 E2E:2232 **COMPLETED / VERIFIED** under supplied binding host evidence. Current2233 is **UNVERIFIED / RAW PROVIDER TRUTH WAITING_EXTERNAL**: later60s-policy overlap failure disproves finality guarantee. Interval-end/start semantics are unresolved; previous normalization is an implemented hypothesis, not an authoritative provider statement. Classification C: OTHER / UNKNOWN; live Candidate entry blocks DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED with no override. Read `STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md` for RAW V2 sampling, not another Candidate run under the disproven policy. Historical sections below are provenance; latest overlay/current pointer controls. No execution authorization or full M01 completion.
 
 ## Repository pin and drift
 

@@ -18,7 +18,8 @@ from typing import Any, Mapping
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from ig_demo_readonly_probe import (  # noqa: E402
-    DEFAULT_EPIC, TIMESTAMP_CONTRACT, _assert_credential_free, _credentials_from_file, _fingerprint,
+    DEFAULT_EPIC, DEFAULT_MAX_AGE, TIMESTAMP_CONTRACT,
+    _assert_credential_free, _credentials_from_file, _fingerprint,
 )
 from ig_cand001_shadow_e2e import HostTestBlocked, check_code, require, utc  # noqa: E402
 from daxlab.adapters.ig_market_data import ig_m5_interval  # noqa: E402
@@ -26,7 +27,7 @@ from daxlab.adapters.ig_rest_readonly import IgDemoReadOnlyClient, IgReadOnlyErr
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object  # noqa: E402
 from daxlab.runtime.single_instance import SingleInstanceLock  # noqa: E402
 
-SCHEMA = "DAX_IG_RAW_M5_TIMESTAMP_OBSERVATION_V1"
+SCHEMA = "DAX_IG_RAW_M5_TIMESTAMP_OBSERVATION_V2"
 PRICE_FIELDS = ("openPrice", "highPrice", "lowPrice", "closePrice")
 VOLUME_FIELDS = ("lastTradedVolume", "volume")
 
@@ -37,7 +38,8 @@ def number(value: object) -> object:
     return value
 
 
-def project_row(raw: Mapping[str, object]) -> dict[str, Any]:
+def project_row(raw: Mapping[str, object], *, row_index: int = 0,
+                requested: datetime | None = None, observed: datetime | None = None) -> dict[str, Any]:
     # No arbitrary provider string, header, payload, account or extra key is copied.
     timestamp = raw.get("snapshotTimeUTC")
     require(isinstance(timestamp, str) and re.fullmatch(
@@ -54,25 +56,45 @@ def project_row(raw: Mapping[str, object]) -> dict[str, Any]:
     for field in VOLUME_FIELDS:
         if field in raw:
             selected[field] = number(raw[field])
-    return {
+    def hypothesis(start: datetime, end: datetime) -> dict[str, Any]:
+        closed = end <= requested if requested is not None else None
+        age = (observed - end).total_seconds() if observed else None
+        freshness = ("UNKNOWN" if closed is None or age is None else "NOT_CLOSED" if not closed
+                     else "FRESH" if age <= DEFAULT_MAX_AGE.total_seconds() else "STALE")
+        return {
+            "event_time": start.isoformat(), "close_time": end.isoformat(),
+            "verification_state": "UNVERIFIED", "is_closed": closed,
+            "closed_state": "UNKNOWN" if closed is None else "CLOSED" if closed else "NOT_CLOSED",
+            "freshness_seconds": age, "freshness_state": freshness,
+            "provider_finalization_state": "UNKNOWN", "candidate_finalized": False,
+        }
+    row = {
+        "raw_row_index": row_index,
         "raw": selected,
+        "raw_timestamp": timestamp,
+        "raw_timestamp_age_at_request_seconds": (requested - close).total_seconds() if requested else None,
+        "raw_timestamp_age_at_response_seconds": (observed - close).total_seconds() if observed else None,
+        # No chosen normalization/closure/freshness while timestamp semantics is unresolved.
+        "normalized_event_time": None, "normalized_close_time": None,
+        "closed_state": "UNKNOWN", "is_closed": None,
+        "provider_finalization_state": "UNKNOWN", "candidate_finalized": False,
+        "freshness_seconds": None, "freshness_state": "UNKNOWN", "provider_revision_state": "UNKNOWN",
         "normalized_current_adapter_hypothesis": {
+            **hypothesis(event, close),
             "timestamp_contract": TIMESTAMP_CONTRACT,
-            "event_time": event.isoformat(), "close_time": close.isoformat(),
-            "verification_state": "UNVERIFIED",
         },
-        "interval_start_hypothesis": {
-            "event_time": close.isoformat(), "close_time": (close + timedelta(minutes=5)).isoformat(),
-            "verification_state": "UNVERIFIED",
-        },
+        "interval_start_hypothesis": hypothesis(close, close + timedelta(minutes=5)),
     }
+    row["fingerprint"] = _fingerprint(row)
+    return row
 
 
 def snapshot(prices: object, *, head: str, requested: datetime,
              observed: datetime) -> dict[str, Any]:
     require(isinstance(prices, list) and len(prices) >= 2, "RAW_INSUFFICIENT_ROWS")
     require(all(isinstance(row, Mapping) for row in prices), "RAW_INVALID_ROWS")
-    rows = [project_row(row) for row in prices]
+    rows = [project_row(row, row_index=index, requested=requested, observed=observed)
+            for index, row in enumerate(prices)]
     times = [utc(row["normalized_current_adapter_hypothesis"]["close_time"]) for row in rows]
     require(all(b - a == timedelta(minutes=5) for a, b in zip(times, times[1:])),
             "RAW_NONCONTIGUOUS_TIMESTAMPS")
@@ -85,6 +107,8 @@ def snapshot(prices: object, *, head: str, requested: datetime,
         "request_started_at_utc": requested.isoformat(),
         "response_observed_at_utc": observed.isoformat(), "raw_m5_count": len(rows), "rows": rows,
         "timestamp_semantics": "UNKNOWN", "provider_finality": "UNKNOWN",
+        "freshness_max_age_seconds": DEFAULT_MAX_AGE.total_seconds(),
+        "provider_semantics_classification": "OTHER_UNKNOWN", "classification_state": "UNVERIFIED",
         "candidate_processing_performed": False,
         "execution_capability": "NONE", "order_execution_enabled": False,
     }
@@ -95,6 +119,7 @@ def snapshot(prices: object, *, head: str, requested: datetime,
 
 def validate_snapshot(payload: dict[str, Any]) -> None:
     _assert_credential_free(payload)
+    require(payload.get("schema") == SCHEMA, "RAW_EVIDENCE_SCHEMA_MISMATCH")
     expected = snapshot([row["raw"] for row in payload["rows"]], head=payload["exact_code_head"],
                         requested=utc(payload["request_started_at_utc"]),
                         observed=utc(payload["response_observed_at_utc"]))
@@ -115,15 +140,43 @@ def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
         if prior is None:
             continue
         changes = {}
+        field_diffs = []
         for field in (*PRICE_FIELDS, *VOLUME_FIELDS):
             # Missing versus explicitly null is a wire difference, not silently normalized.
             if (field in prior["raw"]) != (field in raw) or prior["raw"].get(field) != raw.get(field):
                 changes[field] = {"before_present": field in prior["raw"],
                                   "after_present": field in raw,
                                   "before": prior["raw"].get(field), "after": raw.get(field)}
+            keys = ("bid", "ask", "lastTraded") if field in PRICE_FIELDS else (None,)
+            for key in keys:
+                first = prior["raw"][field] if key is not None else prior["raw"]
+                later = raw[field] if key is not None else raw
+                name = key if key is not None else field
+                first_present, later_present = name in first, name in later
+                first_value, later_value = first.get(name), later.get(name)
+                field_diffs.append({
+                    "field": f"{field}.{key}" if key is not None else field,
+                    "before_present": first_present, "after_present": later_present,
+                    "before": first_value, "after": later_value,
+                    "changed": first_present != later_present or first_value != later_value,
+                })
+        ohlc_changed = any(field in changes for field in PRICE_FIELDS)
+        volume_changed = any(field in changes for field in VOLUME_FIELDS)
+        mutation_type = ("MIXED" if ohlc_changed and volume_changed else "OHLC_ONLY" if ohlc_changed
+                         else "VOLUME_ONLY" if volume_changed else "UNCHANGED")
         timestamp = utc(row["normalized_current_adapter_hypothesis"]["close_time"])
         comparisons.append({
             "snapshotTimeUTC": raw["snapshotTimeUTC"], "changed_fields": changes,
+            "field_diffs": field_diffs, "observed_mutation_type": mutation_type,
+            "first_raw_row_index": prior["raw_row_index"], "later_raw_row_index": row["raw_row_index"],
+            "before_bars_back_from_raw_tail": before["raw_m5_count"] - 1 - prior["raw_row_index"],
+            "after_bars_back_from_raw_tail": after["raw_m5_count"] - 1 - row["raw_row_index"],
+            "first_seen_at": before["response_observed_at_utc"],
+            "later_seen_at": after["response_observed_at_utc"],
+            "seen_time_scope": "THIS_COMPARISON_PAIR",
+            "observation_age_basis": "RAW_TIMESTAMP_NOT_VERIFIED_CLOSE_TIME",
+            "age_at_first_observation_seconds": prior["raw_timestamp_age_at_response_seconds"],
+            "age_at_later_observation_seconds": row["raw_timestamp_age_at_response_seconds"],
             "before_request_age_seconds": (utc(before["request_started_at_utc"]) - timestamp).total_seconds(),
             "after_request_age_seconds": (utc(after["request_started_at_utc"]) - timestamp).total_seconds(),
             "observed_across_next_m5_boundary": (
@@ -133,7 +186,7 @@ def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
         })
     require(len(comparisons) >= 2, "RAW_INSUFFICIENT_COMMON_TIMESTAMPS")
     result = {
-        "schema": "DAX_IG_RAW_M5_COMPARISON_V1", "exact_code_head": before["exact_code_head"],
+        "schema": "DAX_IG_RAW_M5_COMPARISON_V2", "exact_code_head": before["exact_code_head"],
         "before_fingerprint": before["fingerprint"], "after_fingerprint": after["fingerprint"],
         "before_request_started_at_utc": before["request_started_at_utc"],
         "before_response_observed_at_utc": before["response_observed_at_utc"],
@@ -142,7 +195,9 @@ def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
         "common_raw_timestamp_count": len(comparisons),
         "changed_raw_timestamp_count": sum(bool(row["changed_fields"]) for row in comparisons),
         "comparisons": comparisons, "timestamp_semantics": "UNKNOWN",
+        "provider_semantics_classification": "OTHER_UNKNOWN", "classification_state": "UNVERIFIED",
         "historical_closed_bar_revision": "UNKNOWN",
+        "revision_duration_upper_bound_seconds": None,
         "unchanged_observation_is_not_finality_proof": True,
         "execution_capability": "NONE", "order_execution_enabled": False,
     }

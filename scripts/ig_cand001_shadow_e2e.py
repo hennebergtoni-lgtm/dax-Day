@@ -327,6 +327,15 @@ def summary(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def require_verified_live_provider_contract() -> None:
+    """Quarantine the disproven60s live policy until RAW semantics is established.
+
+    No CLI override. Historical offline regressions and hash-bound local reads
+    remain available; this is not a replacement timestamp/finalization rule.
+    """
+    raise HostTestBlocked("DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     source = parser.add_mutually_exclusive_group(required=True)
@@ -354,6 +363,7 @@ def main() -> int:
                 if prior is not None:
                     validate_evidence(prior, head=head, now=datetime.now(timezone.utc), current=False)
                 stage = "DATA"
+                require_verified_live_provider_contract()
                 probe, rows = collect_probe_with_candles(
                     credentials_file=args.credentials_file, epic=DEFAULT_EPIC,
                     instrument_id=DEFAULT_INSTRUMENT_ID, bars=40,

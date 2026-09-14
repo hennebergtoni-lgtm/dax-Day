@@ -50,11 +50,15 @@ def test_current_pointer_keeps_integer_monotonic_contract() -> None:
     active_match = re.search(r"Active whole-number step: \*\*(\d+)\*\*", pointer)
     next_match = re.search(r"Next step after successful completion: \*\*(\d+)\*\*", pointer)
     assert active_match is not None
-    assert next_match is not None
 
     active = int(active_match.group(1))
-    next_step = int(next_match.group(1))
-    assert next_step == active + 1
+    if next_match:
+        assert int(next_match.group(1)) == active + 1
+    else:
+        assert ("- Next step after successful completion: **NOT ACTIVATED** — select only after "
+                "the active step is fully VERIFIED / COMPLETED.") in pointer
+        assert re.search(r"^- Active step state: \*\*[^\n]*(?:UNVERIFIED|WAITING_EXTERNAL|BLOCKED)",
+                         pointer, re.MULTILINE)
 
     assert "Decimal or letter step IDs: **PROHIBITED**" in pointer
     assert "Step-Close-Gate" in pointer

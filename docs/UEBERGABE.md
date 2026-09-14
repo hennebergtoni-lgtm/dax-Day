@@ -1,6 +1,6 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
-**Latest2233:** post60s real-host overlap failure reopens the finalization contract. UNVERIFIED / RAW PROVIDER TRUTH WAITING_EXTERNAL; use `STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md`, not the superseded60s Candidate rerun. Diagnostic collects raw prices only; timestamp hypotheses/provider finality remain UNKNOWN. Strict overlap and old evidence preserved. Remaining user mandate after PHASE2 heading not yet supplied. SHADOW only/NONE/false; next2234 after genuine new-contract host verification.
+**Latest2233:** post60s real-host overlap failure reopens the finalization contract. UNVERIFIED / RAW PROVIDER TRUTH WAITING_EXTERNAL; use `STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md`, not the superseded60s Candidate rerun. Diagnostic collects raw prices only; timestamp hypotheses/provider finality remain UNKNOWN. Strict overlap and old evidence preserved. Full PHASE2–12 mandate received. Classification C: OTHER / UNKNOWN; live Candidate path quarantined with DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED, no override. Use RAW V2 namespace .runtime/ig_raw_m5_truth_2233_v2; no final Candidate contract/schema/namespace is yet proven. SHADOW only/NONE/false; no subsequent step activated.
 
 Status: **BINDING RESUME POINTER / REPOSITORY TRUTH FIRST**
 Updated: **2026-09-14**
@@ -38,7 +38,7 @@ When the user starts or continues a chat with `Übergabe`, recover the DAX Daytr
 - Original MT5 hostcheck worktree remains separate: `C:\Users\Mandy\Documents\dax-Day-nextgen-hostcheck`; do not destabilize it merely to run IG evidence.
 - Credentials remain local in `C:\Users\Mandy\ig_demo.env`; never print or commit them.
 - The corrected read-only IG host probe has passed as supplied by the user; see `docs/STEP_2231_REAL_HOST_CLOSEOUT.md`. Protection/reconciliation remain UNKNOWN and broader M01 is incomplete.
-- The immediate continuation is the exact-head **2233 finalization-contract fresh-start then later resume** in `docs/STEP_2233_IG_M5_FINALIZATION_HANDOFF.md`. Grace60 applies only to Candidate input;600s freshness/exact overlap unchanged. Use the new2233 namespace, preserve old2232 evidence, no silent migration/state reset or rapid login retries. Reuse known Python/external credentials; no MT5 supervisor or fixture-as-host claim. Next2234 only after real2233 verification.
+- Historical continuation before the post60s failure (superseded by RAW truth/live quarantine): the exact-head **2233 finalization-contract fresh-start then later resume** in `docs/STEP_2233_IG_M5_FINALIZATION_HANDOFF.md`. Grace60 applies only to Candidate input;600s freshness/exact overlap unchanged. Use the new2233 namespace, preserve old2232 evidence, no silent migration/state reset or rapid login retries. Reuse known Python/external credentials; no MT5 supervisor or fixture-as-host claim. Next2234 only after real2233 verification.
 
 ## Safety state — binding
 

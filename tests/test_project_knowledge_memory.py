@@ -50,11 +50,18 @@ def test_current_step_pointer_is_integer_sequential_and_keeps_500_audit() -> Non
     ledger = _read("CURRENT_WORK_STEP.md")
     last_completed = _step_value(ledger, "Last completed whole-number step")
     active = _step_value(ledger, "Active whole-number step")
-    next_step = _step_value(ledger, "Next step after successful completion")
+    next_match = re.search(r"^- Next step after successful completion: \*\*(\d+)\*\*$", ledger, re.MULTILINE)
     audit = _step_value(ledger, "Next mandatory 500-step full audit")
 
     assert active > last_completed
-    assert next_step == active + 1
+    if next_match:
+        assert int(next_match.group(1)) == active + 1
+    else:
+        # A pending external closeout may explicitly defer naming the next step.
+        assert ("- Next step after successful completion: **NOT ACTIVATED** — select only after "
+                "the active step is fully VERIFIED / COMPLETED.") in ledger
+        assert re.search(r"^- Active step state: \*\*[^\n]*(?:UNVERIFIED|WAITING_EXTERNAL|BLOCKED)",
+                         ledger, re.MULTILINE)
 
     for skipped in range(last_completed + 1, active):
         paused = re.search(

@@ -155,6 +155,8 @@ def test_stale_reader_cannot_present_previous_success_as_current():
 
 
 def test_cli_exception_does_not_print_provider_text_or_write_success(tmp_path, monkeypatch, capsys):
+    # Exercise the historical plumbing behind a mocked data-contract gate; no live authorization.
+    monkeypatch.setattr(host, "require_verified_live_provider_contract", lambda: None)
     monkeypatch.setattr(host, "check_code", lambda _: HEAD)
     monkeypatch.setattr(host.platform, "system", lambda: "Windows")
     def failure(**kwargs):
@@ -181,6 +183,7 @@ def test_existing_writer_lock_blocks_before_any_network_read(tmp_path, monkeypat
 
 
 def test_cli_atomic_bundle_can_be_read_but_same_bar_cannot_renew_it(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(host, "require_verified_live_provider_contract", lambda: None)
     probe, rows, now = live_fixture(breakout=False)
     monkeypatch.setattr(host, "check_code", lambda _: HEAD)
     monkeypatch.setattr(host.platform, "system", lambda: "Windows")
@@ -348,6 +351,7 @@ def test_legacy_state_blocks_before_network_and_is_preserved(tmp_path, monkeypat
 
 
 def test_auth_401_is_one_call_without_retry_or_provider_text(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(host, "require_verified_live_provider_contract", lambda: None)
     calls = []
     def failed_login(**kwargs):
         calls.append(kwargs)
@@ -363,6 +367,37 @@ def test_auth_401_is_one_call_without_retry_or_provider_text(tmp_path, monkeypat
     assert "SYNTHETIC_SECRET_SENTINEL" not in output
     assert len(calls) == 1
     assert not (tmp_path / "evidence.json").exists()
+
+
+@pytest.mark.parametrize("with_prior", [False, True])
+def test_unknown_provider_contract_blocks_live_fresh_start_and_resume_before_input_or_writes(
+    tmp_path, monkeypatch, capsys, with_prior,
+):
+    path = tmp_path / "evidence.json"
+    if with_prior:
+        prior, _ = evidence(breakout=False)
+        host.atomic_write_json(path, prior)
+    before = path.read_bytes() if path.exists() else None
+    monkeypatch.setattr(host, "check_code", lambda _: HEAD)
+    monkeypatch.setattr(host.platform, "system", lambda: "Windows")
+    def unexpected(*args, **kwargs):
+        pytest.fail("UNKNOWN must not fetch input, process Candidate or publish evidence")
+    monkeypatch.setattr(host, "collect_probe_with_candles", unexpected)
+    monkeypatch.setattr(host, "process_live_window", unexpected)
+    monkeypatch.setattr(host, "atomic_write_json", unexpected)
+    monkeypatch.setattr(host.sys, "argv", ["test", "--expected-head", HEAD,
+                                         "--credentials-file", "must-not-be-read.env", "--state-dir", str(tmp_path)])
+    assert host.main() == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["error_code"] == "DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED"
+    assert result["prior_evidence_is_not_current"] is True
+    assert result["execution_capability"] == "NONE" and result["order_execution_enabled"] is False
+    assert (path.read_bytes() if path.exists() else None) == before
+
+
+def test_provider_truth_gate_has_no_success_path():
+    with pytest.raises(host.HostTestBlocked, match="DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED"):
+        host.require_verified_live_provider_contract()
 
 
 def test_valid_but_unfinalized_decision_cannot_be_inserted_into_historical_evidence():
