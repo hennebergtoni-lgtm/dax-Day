@@ -24,6 +24,8 @@ jobs:
           python -m py_compile scripts/export_ig_raw_truth_2233.py scripts/run_ig_raw_truth_2233.py scripts/ig_raw_m5_timestamp_diagnostic.py src/daxlab/runtime/atomic_json.py src/daxlab/adapters/ig_rest_readonly.py
       - name: Research Factory source and owner integrity
         run: python scripts/check_acceleration_program.py
+      - name: Dependent cash risk and drawdown research regressions
+        run: pytest tests/test_fixed_cash_tail_research.py tests/test_boost001.py tests/test_historical_risk_envelope.py
       - name: Tests
         run: pytest
       - name: Recovery reconstruction preflight

@@ -250,3 +250,61 @@ def historical_risk_envelope(preflight) -> dict[str, object]:
         'survival_verdict':'UNVERIFIED_THRESHOLD', 'execution_capability':'NONE', 'order_execution_enabled':False,
     }
     return result
+
+
+def trade_sequence_dna(r_values: list[float]) -> dict[str, object]:
+    """Additive net-R concentration and drawdown episodes at trade boundaries.
+
+    Duration/underwater counts are trades, not elapsed time or account-equity DD.
+    Unrecovered episodes are right-censored. Removed top trades are sensitivity,
+    not a deployable exit/filter rule and never a percentage of negative net profit.
+    """
+    empirical_distribution(r_values)  # Shared finite numeric validator.
+    equity = peak = 0.0
+    start = None
+    worst = 0.0
+    episodes = []
+    underwater = []
+    streak = max_streak = 0
+    for index, value in enumerate(r_values, start=1):
+        equity += value
+        if not isfinite(equity):
+            raise ValueError("sequence equity overflow")
+        streak = streak + 1 if value < 0 else 0
+        max_streak = max(max_streak, streak)
+        if equity < peak:
+            if start is None:
+                start = index - 1
+            worst = max(worst, peak - equity)
+            underwater.append(index)
+        else:
+            if start is not None:
+                episodes.append({"start_boundary": start, "recovery_boundary": index,
+                                 "duration_trades": index - start, "depth_r": worst,
+                                 "right_censored": False})
+            start = None
+            worst = 0.0
+            peak = equity
+    if start is not None:
+        episodes.append({"start_boundary": start, "recovery_boundary": None,
+                         "duration_trades": len(r_values) - start, "depth_r": worst,
+                         "right_censored": True})
+    winners = sorted((value for value in r_values if value > 0), reverse=True)
+    gross_profit = sum(winners)
+    total = sum(r_values)
+    removed = {}
+    for count in (1, 5, 10):
+        top = sum(winners[:count])
+        removed[str(count)] = {
+            "actual_removed_winners": min(count, len(winners)),
+            "net_r_after_removal": total - top,
+            "gross_profit_share": top / gross_profit if gross_profit else None}
+    return {"schema": "DAX_TRADE_SEQUENCE_DNA_V1", "trades": len(r_values),
+            "net_r": total, "gross_profit_r": gross_profit,
+            "net_profit_concentration_share": None if total <= 0 else winners[0] / total if winners else None,
+            "top_winner_removal": removed, "drawdown_episodes": episodes,
+            "underwater_trade_boundaries": len(underwater), "max_loss_streak": max_streak,
+            "max_drawdown_r": max((e["depth_r"] for e in episodes), default=0.0),
+            "inference_state": "DESCRIPTIVE_ONLY" if r_values else "INSUFFICIENT_SAMPLE",
+            "scope": "NET_R_TRADE_BOUNDARIES_NOT_ACCOUNT_EQUITY",
+            "execution_capability": "NONE", "order_execution_enabled": False}
