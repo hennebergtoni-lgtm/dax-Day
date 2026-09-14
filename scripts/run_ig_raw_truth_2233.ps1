@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$ExpectedHead,
-    [string]$Namespace = '.runtime/ig_raw_m5_truth_2233_v2_attempt_02',
+    [string]$Namespace = '.runtime/ig_raw_m5_truth_2233_v2_attempt_03',
     [string]$CredentialsFile = 'C:\Users\Mandy\ig_demo.env',
     [string]$PythonExecutable = 'python'
 )

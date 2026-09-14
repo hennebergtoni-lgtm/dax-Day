@@ -200,13 +200,13 @@ class IgDemoReadOnlyClient:
     def logout(self) -> None:
         if self._tokens is None:
             return
-        response = self.transport.request(
-            method="DELETE",
-            url=f"{self.base_url}/session",
-            headers=self._auth_headers(version="1"),
-            timeout_seconds=self.timeout_seconds,
-        )
         try:
+            response = self.transport.request(
+                method="DELETE",
+                url=f"{self.base_url}/session",
+                headers=self._auth_headers(version="1"),
+                timeout_seconds=self.timeout_seconds,
+            )
             self._require_success(response, action="session logout")
         finally:
             self._tokens = None

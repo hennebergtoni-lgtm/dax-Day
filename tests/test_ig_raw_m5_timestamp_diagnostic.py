@@ -163,6 +163,7 @@ def test_one_login_one_prices_one_cleanup_no_inventory_or_dealing(tmp_path):
     creds.write_text("IG_USERNAME=user\nIG_PASSWORD=SECRET_PASSWORD\nIG_API_KEY=SECRET_KEY\n")
     calls = []
     class Client:
+        authenticated = True
         execution_capability = "NONE"
         order_execution_enabled = False
         def __init__(self, _): pass

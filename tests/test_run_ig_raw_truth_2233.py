@@ -29,10 +29,46 @@ class Harness:
         self.creds.write_text("NEVER_READ_SECRET")
         self.current = START
         self.calls = []
+        self.session_calls = []
         self.failure = None
+        self.login_failure = False
+        self.cleanup_failure = False
         self.request_offset = 0
         self.check_failure = None
         monkeypatch.setattr(runner.platform, "system", lambda: "Windows")
+        monkeypatch.setattr(runner.diagnostic, "_credentials_from_file", lambda _: None)
+        h = self
+        class Client:
+            execution_capability = "NONE"
+            order_execution_enabled = False
+            authenticated = False
+            def __init__(self, _):
+                self.count = 0
+            def login(self):
+                h.session_calls.append("login")
+                if h.login_failure:
+                    raise runner.diagnostic.IgReadOnlyError("HTTP 401 SECRET_LOGIN")
+                self.authenticated = True
+            def m5_prices(self, epic, *, max_bars):
+                assert self.authenticated and epic == runner.diagnostic.DEFAULT_EPIC
+                assert max_bars == 40
+                name = ("A", "B", "C")[self.count]
+                self.count += 1
+                h.session_calls.append("prices")
+                h.calls.append((name, ["--credentials-file", str(h.creds)]))
+                if h.failure == name:
+                    raise runner.diagnostic.IgReadOnlyError("HTTP 401 SECRET_SESSION")
+                boundary = h.current.replace(second=0, microsecond=0)
+                boundary -= timedelta(minutes=boundary.minute % 5)
+                h.current += timedelta(seconds=2)
+                return {"prices": [price_row(boundary - timedelta(minutes=5*i))
+                                   for i in reversed(range(40))]}
+            def logout(self):
+                h.session_calls.append("cleanup")
+                self.authenticated = False
+                if h.cleanup_failure:
+                    raise runner.diagnostic.IgReadOnlyError("SECRET_CLEANUP")
+        self.client_factory = Client
 
     def check(self, head):
         if self.check_failure:
@@ -43,36 +79,33 @@ class Harness:
     def wait(self, target):
         self.current = target
 
+    def capture(self, client, *, head, clock):
+        return runner.diagnostic.collect_authenticated(
+            client, head=head,
+            clock=lambda: self.current + timedelta(seconds=self.request_offset),
+        )
+
     def execute(self, args):
+        assert "--compare" in args and "--credentials-file" not in args
         output = Path(args[args.index("--output") + 1])
         label = output.stem
         self.calls.append((label, args))
+        assert self.session_calls[-1] == "cleanup"
         if label == self.failure:
-            return 2, "IG_AUTHENTICATION_FAILED_NO_RETRY"
-        if "--compare" in args:
-            index = args.index("--compare")
-            payload = runner.diagnostic.compare(*(
-                json.loads(Path(path).read_text()) for path in args[index + 1:index + 3]
-            ))
-        else:
-            requested = self.current + timedelta(seconds=self.request_offset)
-            boundary = requested.replace(second=0, microsecond=0)
-            boundary -= timedelta(minutes=boundary.minute % 5)
-            payload = runner.diagnostic.snapshot(
-                [price_row(boundary - timedelta(minutes=5 * i))
-                 for i in reversed(range(40))],
-                head=HEAD, requested=requested, observed=requested + timedelta(seconds=1),
-            )
+            return 2, None
+        index = args.index("--compare")
+        payload = runner.diagnostic.compare(*(
+            json.loads(Path(path).read_text()) for path in args[index+1:index+3]
+        ))
         with output.open("x") as stream:
             json.dump(payload, stream)
-        self.current += timedelta(seconds=2)
         return 0, None
 
     def run(self, **kwargs):
         return runner.run(
             HEAD, root=self.root, credentials_file=self.creds,
             clock=lambda: self.current, wait=self.wait, executor=self.execute,
-            check=self.check, **kwargs,
+            check=self.check, client_factory=self.client_factory, capture=self.capture, **kwargs,
         )
 
     def summary(self):
@@ -216,10 +249,10 @@ def test_changed_code_after_wait_blocks_no_session(tmp_path, monkeypatch):
 
 def test_exception_text_and_timeout_no_leak_no_retry(tmp_path, monkeypatch, capsys):
     h = Harness(tmp_path, monkeypatch)
-    def failed(args):
-        h.calls.append(("A", args))
+    def failed(*args, **kwargs):
+        h.calls.append(("A", []))
         raise subprocess.TimeoutExpired("SECRET_PROVIDER_COMMAND", 120)
-    h.execute = failed
+    h.capture = failed
     assert h.run() == 2
     assert len(h.calls) == 1
     assert h.summary()["error_code"] == "RAW_DIAGNOSTIC_TIMEOUT_NO_RETRY"
@@ -237,18 +270,24 @@ def test_executor_one_child_no_shell_same_interpreter_paths_spaces(monkeypatch):
     calls = []
     def child(argv, **kwargs):
         calls.append((argv, kwargs))
-        return subprocess.CompletedProcess(argv, 2,
-            '{"error_code":"IG_AUTHENTICATION_FAILED_NO_RETRY","secret":"SECRET"}', "SECRET")
+        return subprocess.CompletedProcess(argv, 2, "SECRET_CHILD_OUTPUT", "SECRET")
     monkeypatch.setattr(runner.subprocess, "run", child)
-    assert runner.execute(["--credentials-file", r"C:\A B\external.env"]) == (
-        2, "IG_AUTHENTICATION_FAILED_NO_RETRY",
+    assert runner.execute(["--compare", r"C:\A B\A.json", r"C:\A B\B.json"]) == (
+        2, "RAW_COMPARE_FAILED",
     )
     assert len(calls) == 1
     argv, kwargs = calls[0]
     assert argv[0] == sys.executable and argv[1].endswith("ig_raw_m5_timestamp_diagnostic.py")
-    assert argv[-1] == r"C:\A B\external.env"
-    assert kwargs["capture_output"] is True and kwargs["timeout"] == 120
+    assert argv[-1] == r"C:\A B\B.json"
+    assert kwargs["capture_output"] is True and kwargs["timeout"] == 30
     assert "shell" not in kwargs
+
+
+def test_executor_rejects_separate_login_mode_before_child(monkeypatch):
+    monkeypatch.setattr(runner.subprocess, "run",
+                        lambda *a, **kw: pytest.fail("No new RAW/login process"))
+    with pytest.raises(runner.AttemptBlocked, match="RAW_LOCAL_COMPARE_ONLY"):
+        runner.execute(["--credentials-file", "not-read.env"])
 
 
 def test_non_windows_stops(tmp_path, monkeypatch):
@@ -320,7 +359,8 @@ def test_orchestrator_invokes_only_raw_diagnostic():
     assert "ig_cand001_shadow_e2e.py" not in source
     assert "/positions" not in source and "/workingorders" not in source
     assert "order_send" not in source
-    assert "client.login" not in source
+    assert source.count("silent_call(client.login)") == 1
+    assert source.count("silent_call(client.logout)") == 1
 
 
 def test_powershell_launcher_parses_and_propagates_python_exit(tmp_path):
@@ -386,3 +426,145 @@ def test_raw_diagnostic_uses_exclusive_publication(tmp_path, monkeypatch):
     assert raw.main(["--expected-head", HEAD, "--credentials-file", "unused.env",
                      "--output", str(tmp_path / "A.json")]) == 0
     assert calls == [False]
+
+
+def test_one_login_three_prices_one_cleanup_success(tmp_path, monkeypatch):
+    h = Harness(tmp_path, monkeypatch)
+    assert h.run() == 0
+    assert h.session_calls == ["login", "prices", "prices", "prices", "cleanup"]
+    session = h.summary()["session"]
+    assert session == {
+        "model": "ONE_LOGIN_IN_MEMORY_V1", "login_attempted": True, "login_success": True,
+        "cleanup_attempted": True, "cleanup_success": True, "cleanup_error_code": None,
+    }
+
+
+@pytest.mark.parametrize("failed,count", [("A", 1), ("B", 2), ("C", 3)])
+def test_session_failure_cleanup_no_relogin(tmp_path, monkeypatch, failed, count):
+    h = Harness(tmp_path, monkeypatch)
+    h.failure = failed
+    assert h.run() == 2
+    assert h.session_calls == ["login"] + ["prices"] * count + ["cleanup"]
+    assert all(item["status"] == "NOT_RUN" for item in h.summary()["compare"].values())
+
+
+def test_login_failure_cleanup_once_no_prices(tmp_path, monkeypatch, capsys):
+    h = Harness(tmp_path, monkeypatch)
+    h.login_failure = True
+    assert h.run() == 2
+    assert h.session_calls == ["login", "cleanup"]
+    assert h.summary()["error_code"] == "IG_AUTHENTICATION_FAILED_NO_RETRY"
+    assert "SECRET" not in capsys.readouterr().out
+
+
+def test_cleanup_failure_blocks_compares_preserves_raws(tmp_path, monkeypatch, capsys):
+    h = Harness(tmp_path, monkeypatch)
+    h.cleanup_failure = True
+    assert h.run() == 2
+    assert h.session_calls == ["login", "prices", "prices", "prices", "cleanup"]
+    summary = h.summary()
+    assert summary["error_code"] == "IG_SESSION_CLEANUP_FAILED"
+    assert summary["session"]["cleanup_error_code"] == "IG_SESSION_CLEANUP_FAILED"
+    assert all(item["success"] for item in summary["raw"].values())
+    assert all(item["status"] == "NOT_RUN" for item in summary["compare"].values())
+    assert "SECRET" not in capsys.readouterr().out
+
+
+def test_primary_session_error_not_hidden_by_cleanup_error(tmp_path, monkeypatch):
+    h = Harness(tmp_path, monkeypatch)
+    h.failure = "B"
+    h.cleanup_failure = True
+    assert h.run() == 2
+    summary = h.summary()
+    assert summary["error_code"] == "IG_AUTHENTICATION_FAILED_NO_RETRY"
+    assert summary["session"]["cleanup_error_code"] == "IG_SESSION_CLEANUP_FAILED"
+
+
+def test_code_drift_between_captures_cleans_existing_session(tmp_path, monkeypatch):
+    h = Harness(tmp_path, monkeypatch)
+    planned = runner.schedule(START)
+    def changed(target):
+        h.current = target
+        if target == planned["B"]:
+            h.check_failure = "GOVERNANCE_TRACKED_DRIFT"
+    h.wait = changed
+    assert h.run() == 2
+    assert h.session_calls == ["login", "prices", "cleanup"]
+
+
+def test_session_tokens_or_credentials_never_persisted(tmp_path, monkeypatch):
+    h = Harness(tmp_path, monkeypatch)
+    assert h.run() == 0
+    for path in (tmp_path / runner.NAMESPACE).glob("*.json"):
+        contents = path.read_text()
+        assert "NEVER_READ_SECRET" not in contents
+        assert "CST" not in contents and "X-SECURITY-TOKEN" not in contents
+    assert h.run() == 2  # Namespace exists: no resume or second login.
+    assert h.session_calls.count("login") == 1
+
+
+def test_runner_real_readonly_client_same_tokens_for_three_gets(tmp_path, monkeypatch):
+    from daxlab.adapters.ig_rest_readonly import (
+        IG_DEMO_BASE_URL, IgDemoCredentials, IgDemoReadOnlyClient, JsonResponse,
+    )
+    h = Harness(tmp_path, monkeypatch)
+    calls = []
+    class Transport:
+        def request(self, *, method, url, headers, **kwargs):
+            calls.append((method, url, dict(headers)))
+            if method == "POST":
+                return JsonResponse(200, {"CST": "SECRET_CST",
+                    "X-SECURITY-TOKEN": "SECRET_TOKEN"}, {"accountId": "SECRET_ACCOUNT"})
+            if method == "DELETE":
+                return JsonResponse(200, {}, {})
+            assert method == "GET"
+            assert url == IG_DEMO_BASE_URL + "/prices/IX.D.DAX.IFMM.IP"
+            assert kwargs["query"] == {"resolution": "MINUTE_5", "max": "40", "pageSize": "0"}
+            boundary = h.current.replace(second=0, microsecond=0)
+            boundary -= timedelta(minutes=boundary.minute % 5)
+            h.current += timedelta(seconds=1)
+            return JsonResponse(200, {}, {"prices": [
+                price_row(boundary - timedelta(minutes=5*i)) for i in reversed(range(40))
+            ]})
+    client = IgDemoReadOnlyClient(
+        IgDemoCredentials("SECRET_USER", "SECRET_PASSWORD", "SECRET_KEY"),
+        transport=Transport(),
+    )
+    h.client_factory = lambda _: client
+    def compare(args):
+        assert not client.authenticated and calls[-1][0] == "DELETE"
+        index = args.index("--compare")
+        payload = runner.diagnostic.compare(*(
+            json.loads(Path(path).read_text()) for path in args[index+1:index+3]
+        ))
+        runner.diagnostic.atomic_write_json(Path(args[-1]), payload, overwrite=False)
+        return 0, None
+    h.execute = compare
+    assert h.run() == 0
+    assert [method for method, _, _ in calls] == ["POST", "GET", "GET", "GET", "DELETE"]
+    for _, _, headers in calls[1:]:
+        assert headers["CST"] == "SECRET_CST"
+        assert headers["X-SECURITY-TOKEN"] == "SECRET_TOKEN"
+    assert all(url.endswith("/session") or "/prices/" in url for _, url, _ in calls)
+    for path in (tmp_path / runner.NAMESPACE).glob("*.json"):
+        assert "SECRET" not in path.read_text()
+
+
+def test_provider_stdout_stderr_suppressed_on_all_session_calls(tmp_path, monkeypatch, capsys):
+    h = Harness(tmp_path, monkeypatch)
+    actual = h.client_factory
+    def noisy_client(credentials):
+        client = actual(credentials)
+        for name in ("login", "m5_prices", "logout"):
+            original = getattr(client, name)
+            def noisy(*args, _original=original, **kwargs):
+                print("SECRET_PROVIDER_STDOUT")
+                print("SECRET_PROVIDER_STDERR", file=sys.stderr)
+                return _original(*args, **kwargs)
+            setattr(client, name, noisy)
+        return client
+    h.client_factory = noisy_client
+    assert h.run() == 0
+    captured = capsys.readouterr()
+    assert "SECRET" not in captured.out + captured.err
+    assert "SECRET" not in json.dumps(h.summary())

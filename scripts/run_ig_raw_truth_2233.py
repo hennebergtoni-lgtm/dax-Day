@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import redirect_stderr, redirect_stdout
+import io
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -16,14 +18,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ig_raw_m5_timestamp_diagnostic as diagnostic  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
-NAMESPACE = ".runtime/ig_raw_m5_truth_2233_v2_attempt_02"
+NAMESPACE = ".runtime/ig_raw_m5_truth_2233_v2_attempt_03"
 CREDENTIALS = Path(r"C:\Users\Mandy\ig_demo.env")
 PERIOD_SECONDS = 300
 SAMPLE_OFFSET_SECONDS = 60  # Sampling position, NOT a provider-finalization grace.
 SAMPLE_WINDOW_SECONDS = 60
 WAIT_CHUNK_SECONDS = 30
 CLOCK_DRIFT_SECONDS = 5
-SCHEMA = "DAX_IG_RAW_TRUTH_ATTEMPT_V1"
+SCHEMA = "DAX_IG_RAW_TRUTH_ATTEMPT_V2"
 
 
 class AttemptBlocked(RuntimeError):
@@ -67,22 +69,20 @@ def wait_for(target, *, clock=now_utc, sleep=time.sleep, monotonic=time.monotoni
         sleep(min(WAIT_CHUNK_SECONDS, (target - current).total_seconds()))
 
 
+def silent_call(action, *args, **kwargs):
+    """Provider/dependency output never crosses the runner's fixed-code boundary."""
+    with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+        return action(*args, **kwargs)
+
+
 def execute(argv):
-    # No shell, no inherited provider stdout/stderr, no retry, same Python interpreter.
-    timeout = 30 if "--compare" in argv else 120
+    # Subprocesses are offline comparison only; RAW captures cannot spawn a new login.
+    require("--compare" in argv and "--credentials-file" not in argv, "RAW_LOCAL_COMPARE_ONLY")
     result = subprocess.run(
         [sys.executable, str(REPO / "scripts/ig_raw_m5_timestamp_diagnostic.py"), *argv],
-        cwd=REPO, capture_output=True, text=True, timeout=timeout, check=False,
+        cwd=REPO, capture_output=True, text=True, timeout=30, check=False,
     )
-    # Only recognize a single fixed auth code; never project arbitrary child strings.
-    code = "RAW_DIAGNOSTIC_FAILED" if result.returncode else None
-    try:
-        message = json.loads(result.stdout.strip())
-        if message.get("error_code") == "IG_AUTHENTICATION_FAILED_NO_RETRY":
-            code = "IG_AUTHENTICATION_FAILED_NO_RETRY"
-    except (ValueError, AttributeError):
-        pass
-    return result.returncode, code
+    return result.returncode, "RAW_COMPARE_FAILED" if result.returncode else None
 
 
 def read_snapshot(path, *, head, target):
@@ -106,10 +106,16 @@ def publish_summary(directory, summary):
 
 
 def run(expected_head, *, namespace=NAMESPACE, credentials_file=CREDENTIALS,
-        clock=now_utc, wait=wait_for, executor=execute, check=None, root=REPO):
+        clock=now_utc, wait=wait_for, executor=execute, check=None, root=REPO,
+        client_factory=None, capture=None):
     check = check or diagnostic.check_code
+    client_factory = client_factory or diagnostic.IgDemoReadOnlyClient
+    capture = capture or diagnostic.collect_authenticated
     summary = {
         "schema": SCHEMA, "exact_head": None, "attempt_namespace": None,
+        "session": {"model": "ONE_LOGIN_IN_MEMORY_V1", "login_attempted": False,
+                    "login_success": False, "cleanup_attempted": False,
+                    "cleanup_success": False, "cleanup_error_code": None},
         "started_at": clock().isoformat(), "finished_at": None,
         "sampling_offset_seconds": SAMPLE_OFFSET_SECONDS,
         "sampling_window_seconds": SAMPLE_WINDOW_SECONDS,
@@ -152,37 +158,59 @@ def run(expected_head, *, namespace=NAMESPACE, credentials_file=CREDENTIALS,
         for name, target in planned.items():
             print(f"{name} scheduled: {target.isoformat()}", flush=True)
         captures = {}
-        for name, target in planned.items():
-            item = summary["raw"][name]
-            print(f"WAITING FOR {name}", flush=True)
-            wait(target)
-            check(expected_head)
-            require(target <= clock() < target + timedelta(seconds=SAMPLE_WINDOW_SECONDS),
-                    "RAW_SAMPLING_WINDOW_MISSED")
-            output = directory / f"{name}.json"
-            require(not os.path.lexists(output), "RAW_OUTPUT_ALREADY_EXISTS")
-            item.update(requested=True, status="RUNNING", invoked_at=clock().isoformat())
-            try:
-                exit_code, error = executor([
-                    "--expected-head", expected_head, "--credentials-file", str(credentials_file),
-                    "--output", str(output),
-                ])
-                item["exit"] = exit_code
-                if exit_code:
-                    raise AttemptBlocked("IG_AUTHENTICATION_FAILED_NO_RETRY"
-                                         if error == "IG_AUTHENTICATION_FAILED_NO_RETRY"
-                                         else "RAW_DIAGNOSTIC_FAILED")
-                payload = read_snapshot(output, head=expected_head, target=target)
-                item.update(success=True, status="SUCCESS",
-                            request_started_at_utc=payload["request_started_at_utc"],
-                            response_observed_at_utc=payload["response_observed_at_utc"],
-                            fingerprint=payload["fingerprint"])
-                captures[name] = payload
-            except BaseException:
-                item["status"] = "FAILED"
-                raise
-            finally:
-                print(f"RAW {name}: {item['status']}\nExit: {item['exit']}", flush=True)
+        client = None
+        try:
+            for name, target in planned.items():
+                item = summary["raw"][name]
+                print(f"WAITING FOR {name}", flush=True)
+                wait(target)
+                check(expected_head)
+                require(target <= clock() < target + timedelta(seconds=SAMPLE_WINDOW_SECONDS),
+                        "RAW_SAMPLING_WINDOW_MISSED")
+                output = directory / f"{name}.json"
+                require(not os.path.lexists(output), "RAW_OUTPUT_ALREADY_EXISTS")
+                item.update(requested=True, status="RUNNING", invoked_at=clock().isoformat())
+                try:
+                    if not summary["session"]["login_attempted"]:
+                        client = silent_call(client_factory, silent_call(
+                            diagnostic._credentials_from_file, credentials_file))
+                        require(client.execution_capability == "NONE"
+                                and client.order_execution_enabled is False,
+                                "SAFETY_EXECUTION_CAPABILITY")
+                        summary["session"]["login_attempted"] = True
+                        silent_call(client.login)
+                        summary["session"]["login_success"] = True
+                    require(target <= clock() < target + timedelta(seconds=SAMPLE_WINDOW_SECONDS),
+                            "RAW_SAMPLING_WINDOW_MISSED")
+                    payload = silent_call(capture, client, head=expected_head, clock=clock)
+                    check(expected_head)
+                    diagnostic.atomic_write_json(output, payload, overwrite=False)
+                    payload = read_snapshot(output, head=expected_head, target=target)
+                    item["exit"] = 0
+                    item.update(success=True, status="SUCCESS",
+                                request_started_at_utc=payload["request_started_at_utc"],
+                                response_observed_at_utc=payload["response_observed_at_utc"],
+                                fingerprint=payload["fingerprint"])
+                    captures[name] = payload
+                except BaseException:
+                    item["status"] = "FAILED"
+                    item["exit"] = 2
+                    raise
+                finally:
+                    print(f"RAW {name}: {item['status']}\nExit: {item['exit']}", flush=True)
+        finally:
+            # Exactly one cleanup invocation for the one client, including failed login/GET.
+            # Preserve a primary failure while separately recording cleanup failure.
+            primary_failure = sys.exc_info()[0] is not None
+            if client is not None:
+                summary["session"]["cleanup_attempted"] = True
+                try:
+                    silent_call(client.logout)
+                    summary["session"]["cleanup_success"] = True
+                except Exception:
+                    summary["session"]["cleanup_error_code"] = "IG_SESSION_CLEANUP_FAILED"
+                    if not primary_failure:
+                        raise AttemptBlocked("IG_SESSION_CLEANUP_FAILED") from None
         for pair in ("AB", "BC"):
             check(expected_head)
             item = summary["compare"][pair]
@@ -208,6 +236,12 @@ def run(expected_head, *, namespace=NAMESPACE, credentials_file=CREDENTIALS,
         summary["final_state"] = "SUCCESS"
     except KeyboardInterrupt:
         summary["error_code"] = "RAW_ATTEMPT_INTERRUPTED"
+    except diagnostic.IgReadOnlyError as exc:
+        summary["error_code"] = ("IG_AUTHENTICATION_FAILED_NO_RETRY"
+                                 if re.search(r"\bHTTP 401\b", str(exc))
+                                 else "IG_SESSION_READ_FAILED_NO_RETRY")
+    except TimeoutError:
+        summary["error_code"] = "IG_SESSION_READ_FAILED_NO_RETRY"
     except subprocess.TimeoutExpired:
         summary["error_code"] = "RAW_DIAGNOSTIC_TIMEOUT_NO_RETRY"
     except Exception as exc:
@@ -221,6 +255,8 @@ def run(expected_head, *, namespace=NAMESPACE, credentials_file=CREDENTIALS,
             "RAW_SAMPLING_WINDOW_MISSED", "RAW_REQUEST_OUTSIDE_SAMPLING_WINDOW",
             "RAW_OUTPUT_ALREADY_EXISTS", "IG_AUTHENTICATION_FAILED_NO_RETRY",
             "RAW_DIAGNOSTIC_FAILED", "RAW_COMPARE_FAILED", "RAW_COMPARE_EVIDENCE_MISMATCH",
+            "IG_SESSION_CLEANUP_FAILED", "IG_SESSION_NOT_AUTHENTICATED",
+            "SAFETY_EXECUTION_CAPABILITY", "RAW_LOCAL_COMPARE_ONLY",
         }
         summary["error_code"] = str(exc) if (
             isinstance(exc, (AttemptBlocked, diagnostic.HostTestBlocked)) and str(exc) in allowed

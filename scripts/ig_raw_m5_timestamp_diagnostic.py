@@ -205,6 +205,17 @@ def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def collect_authenticated(client, *, head: str, clock=lambda: datetime.now(timezone.utc)):
+    """One prices observation using caller-owned auth; never login/logout/refresh."""
+    require(client.execution_capability == "NONE" and client.order_execution_enabled is False,
+            "SAFETY_EXECUTION_CAPABILITY")
+    require(client.authenticated, "IG_SESSION_NOT_AUTHENTICATED")
+    requested = clock()
+    response = client.m5_prices(DEFAULT_EPIC, max_bars=40)
+    observed = clock()
+    return snapshot(response.get("prices"), head=head, requested=requested, observed=observed)
+
+
 def collect(credentials_file: Path, *, head: str, client_factory=IgDemoReadOnlyClient,
             clock=lambda: datetime.now(timezone.utc)) -> dict[str, Any]:
     client = client_factory(_credentials_from_file(credentials_file))
@@ -212,13 +223,9 @@ def collect(credentials_file: Path, *, head: str, client_factory=IgDemoReadOnlyC
             "SAFETY_EXECUTION_CAPABILITY")
     try:
         client.login()  # Exactly one attempt. No inventory, market or dealing request.
-        requested = clock()
-        response = client.m5_prices(DEFAULT_EPIC, max_bars=40)
-        observed = clock()
-        payload = snapshot(response.get("prices"), head=head, requested=requested, observed=observed)
+        return collect_authenticated(client, head=head, clock=clock)
     finally:
-        client.logout()  # Session cleanup only; a failed cleanup blocks publication.
-    return payload
+        client.logout()
 
 
 def main(argv=None) -> int:

@@ -1,5 +1,27 @@
 # Step 2233 — RAW provider truth before another Candidate contract
 
+## Current auth/session lifecycle — supersedes per-capture subprocess login
+
+Task start: 127c39118d4a03e98431a48ae86eed4e0d8dc749, exact/no drift; PR109 OPEN/UNMERGED, main/base e0784ebfc11bee28475fd9c3385be661af58a738, start DAX681 / Research1465 SUCCESS.
+
+Windows attempts01 and02 both reported A SUCCESS / B HTTP401 / C+AB+BC NOT_RUN / ABORTED_FAIL_CLOSED. Attempt02 was executed by the user, not Work. Both original directories and artifacts are preserved. This establishes a repeated host failure under separate-login orchestration, not its precise provider root cause. No attempt03 under the old session model.
+
+Audit: the former runner invoked the standalone diagnostic separately for A/B/C; each standalone collect owns one login/GET/logout. IgDemoReadOnlyClient already retains CST/X-SECURITY-TOKEN in memory and sends them on subsequent GETs. Its PricesV3 API version is independent of session login V2. The client has no expiry timer, relogin, OAuth refresh or automatic retry. The [official IG REST guide](https://labs.ig.com/rest-trading-api-guide.html), checked2026-09-14, documents reusing session V1/V2 tokens on subsequent requests, initial6h validity extended while used up to72h. This supports a single-session ten-minute experiment; it does not guarantee a particular host session survives or explain the observed401. No expiry/refresh policy is inferred or implemented.
+
+Current model: one existing credentials load and one existing read-only client, login exactly once immediately before A; A/B/C each call the canonical RAW collect_authenticated observation helper with the same client. Clock-aware waits and fixed windows are unchanged. Cleanup exactly once after C or on a failure, before AB/BC. Successful A/B/C mean three read-only prices GETs; no account/inventory/Candidate/dealing calls. The standalone diagnostic still independently owns its one-login/one-observation cleanup path; both collection modes reuse the same raw projection and snapshot owner.
+
+Session loss/401 or network failure: immediate abort, no relogin, refresh, retry or replacement capture.401 -> IG_AUTHENTICATION_FAILED_NO_RETRY; other read transport failure -> IG_SESSION_READ_FAILED_NO_RETRY. Cleanup failure -> IG_SESSION_CLEANUP_FAILED and no compares. If acquisition and cleanup both fail, keep the primary error and separately record cleanup_error_code. Session DELETE is the existing session logout, never an order cancel/modify. The client now clears local tokens in finally even if the logout transport raises; server-side logout success is not fabricated. Default transport requests retain the existing20s timeout. The old120s per-capture subprocess timeout no longer applies to in-process RAW captures; local compare subprocesses remain bounded30s.
+
+No session token/credential is written to disk or shown. Login/GET/cleanup dependency stdout/stderr is suppressed; only fixed safe runner codes and projected evidence appear. Session state is deliberately ephemeral: restart never resumes authentication or an incomplete attempt. Existing namespace still STOPs before login; a later new attempt requires an explicitly unused namespace. This is one-shot orchestration, not a new persistent session engine.
+
+Default new namespace: **.runtime/ig_raw_m5_truth_2233_v2_attempt_03**. Preserve attempts01/02 completely. Windows PS1/CMD retain one start with -ExpectedHead equal to the exact final head in the Work closeout. The already-used external credentials path and python launcher defaults are unchanged. No manual UTC calculation, A/B/C commands or compare commands.
+
+Only attempt-summary schema changes to DAX_IG_RAW_TRUTH_ATTEMPT_V2, including session model ONE_LOGIN_IN_MEMORY_V1, login_attempted/login_success, cleanup_attempted/cleanup_success/cleanup_error_code. RAW observation/comparison V2 timestamps, hashes, UNKNOWN classification, candidate_finalized=false and all Candidate/overlap/freshness/state contracts remain unchanged. Exclusive RAW publication/namespace/summary remain enforced.
+
+Validation is offline: session call order/counts with mock client and real read-only client + injected transport, B/C session loss, failed login, cleanup failure including transport-level token clearing, no relogin/retry, preserved namespaces, no credential output, same headers across three GETs, NONE/false. Local selected environment remains unavailable; focused/full tests, Ruff, syntax and eight gates run in mandatory exact-head CI. Real Windows attempt03 is WAITING_EXTERNAL. Step2233 remains UNVERIFIED / WAITING_EXTERNAL; successful acquisition still does not prove timestamp semantics or close the full provider-contract mandate.
+
+
+
 Updated: 2026-09-14. Task start: `5b0b716f886361227fbe15152c9fa316fbe7a914`, exact/no drift. PR109 OPEN/UNMERGED, main/base `e0784ebfc11bee28475fd9c3385be661af58a738`; start CI DAX676 / Research1460 SUCCESS.
 
 **2233 UNVERIFIED / RAW HOST EVIDENCE WAITING_EXTERNAL.** The implemented60s policy is not a verified finalization contract. Do not repeat the earlier Candidate fresh-start/resume runbook to close this step. Preserve all2232/2233 files. No change to strategy, general normalization, grace number, overlap, checkpoint or execution semantics is justified before raw evidence review. Step2231/2232 historical user-supplied successes remain bounded initial observations, not proof of timestamp semantics or immutable bars.
@@ -20,7 +42,7 @@ The artifact includes request-start and immediate response-observation UTC, exac
 
 RAW V2 includes zero-based raw_row_index, a deterministic fingerprint for each projected row and the complete envelope. Authoritative normalized_event_time/normalized_close_time/is_closed/freshness_seconds remain null while their states are UNKNOWN; candidate_finalized is false because no Candidate input is authorized under an unresolved contract. Both current interval-end and alternative interval-start mappings are explicitly UNVERIFIED hypotheses. Each hypothesis separately displays event/close, request-start-based closure and response-observation age/freshness against the existing canonical600s limit. Negative hypothetical age means not-yet-closed, never current/finalized. No hypothesis asserts a provider-proven mapping, finality, current Candidate decision or successful resume. Local comparisons validate canonical source contracts/hashes, require same code head and sequential observations, identify changed raw fields by the **same raw timestamp**, retain both source hashes and indicate whether observation spanned timestamp+5minutes. Changed raw rows are facts; **historical closed-bar revision remains UNKNOWN until timestamp semantics is resolved**. Hashes bind artifact integrity, not provider authentication.
 
-## Windows sampling — one-command runner (current procedure)
+## Historical automation procedure — separate login per capture (superseded)
 
 Automation task start: **8105fae4247370ea6ee5e367a89c44786a6a922e**, exact/no drift; main/base e0784ebfc11bee28475fd9c3385be661af58a738, PR109 OPEN/UNMERGED, preceding CI DAX678 / Research1462 SUCCESS.
 

@@ -220,3 +220,38 @@ def test_unrecognized_provider_error_code_is_not_echoed(secret) -> None:
     assert secret not in str(error.value)
     assert "SYNTHETIC_SENTINEL" not in str(error.value)
     assert "HTTP 401" in str(error.value)
+
+
+def test_logout_transport_failure_discards_local_tokens_without_retry():
+    calls = []
+    class Transport:
+        def request(self, **kwargs):
+            calls.append(kwargs["method"])
+            if kwargs["method"] == "POST":
+                return _login_response()
+            raise IgReadOnlyError("IG read-only transport unavailable")
+    client = IgDemoReadOnlyClient(_credentials(), transport=Transport())
+    client.login()
+    with pytest.raises(IgReadOnlyError):
+        client.logout()
+    assert client.authenticated is False
+    client.logout()  # No retained token: no second remote cleanup attempt.
+    assert calls == ["POST", "DELETE"]
+
+
+def test_same_session_repeated_price_get_failure_does_not_relogin():
+    transport = FakeTransport([
+        _login_response(),
+        JsonResponse(200, {}, {"prices": []}),
+        JsonResponse(401, {}, {"errorCode": "error.security.client-token-invalid"}),
+        JsonResponse(200, {}, {}),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport=transport)
+    client.login()
+    client.m5_prices("IX.D.DAX.IFMM.IP")
+    with pytest.raises(IgReadOnlyError, match="HTTP 401"):
+        client.m5_prices("IX.D.DAX.IFMM.IP")
+    client.logout()
+    assert not client.authenticated
+    assert [call["method"] for call in transport.calls] == ["POST", "GET", "GET", "DELETE"]
+    assert transport.calls[1]["headers"]["CST"] == transport.calls[2]["headers"]["CST"]
