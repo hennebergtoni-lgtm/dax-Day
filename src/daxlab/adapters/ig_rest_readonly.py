@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
+from math import isfinite
 from typing import Mapping, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -130,11 +131,14 @@ class IgDemoReadOnlyClient:
     base_url: str = IG_DEMO_BASE_URL
     timeout_seconds: float = 20.0
     _tokens: IgSessionTokens | None = field(default=None, init=False, repr=False)
+    _session_state: str = field(default="NEW", init=False)
+    _read_count: int = field(default=0, init=False)
 
     def __post_init__(self) -> None:
         if self.base_url != IG_DEMO_BASE_URL:
             raise ValueError("IG read-only client is pinned to the Demo API endpoint")
-        if self.timeout_seconds <= 0:
+        if (type(self.timeout_seconds) not in (int, float)
+                or not isfinite(self.timeout_seconds) or self.timeout_seconds <= 0):
             raise ValueError("timeout_seconds must be positive")
 
     @property
@@ -147,24 +151,47 @@ class IgDemoReadOnlyClient:
 
     @property
     def authenticated(self) -> bool:
-        return self._tokens is not None
+        return self._tokens is not None and self._session_state == "AUTHENTICATED"
+
+    @property
+    def session_health(self) -> dict[str, object]:
+        """Credential-free local lifecycle; authentication is not broker truth."""
+        return {"state": self._session_state, "authenticated": self.authenticated,
+                "successful_reads": self._read_count, "feed_freshness": "UNKNOWN",
+                "inventory_truth": "UNKNOWN", "automatic_relogin": False,
+                "execution_capability": EXECUTION_CAPABILITY,
+                "order_execution_enabled": ORDER_EXECUTION_ENABLED}
 
     def login(self) -> None:
-        response = self.transport.request(
-            method="POST",
-            url=f"{self.base_url}/session",
-            headers=self._base_headers(version="2"),
-            body={
-                "identifier": self.credentials.identifier,
-                "password": self.credentials.password,
-                "encryptedPassword": False,
-            },
-            timeout_seconds=self.timeout_seconds,
-        )
-        self._require_success(response, action="session login")
-        cst = _header(response.headers, "CST")
-        security_token = _header(response.headers, "X-SECURITY-TOKEN")
-        self._tokens = IgSessionTokens(cst=cst, security_token=security_token)
+        if self._session_state != "NEW":
+            raise IgReadOnlyError("IG session owner already consumed; no relogin")
+        self._session_state = "LOGIN_PENDING"
+        try:
+            response = self._request(
+                method="POST", url=f"{self.base_url}/session",
+                headers=self._base_headers(version="2"),
+                body={"identifier": self.credentials.identifier,
+                      "password": self.credentials.password, "encryptedPassword": False},
+                timeout_seconds=self.timeout_seconds,
+            )
+            self._require_success(response, action="session login")
+            cst = _header(response.headers, "CST")
+            security_token = _header(response.headers, "X-SECURITY-TOKEN")
+            self._tokens = IgSessionTokens(cst=cst, security_token=security_token)
+            self._session_state = "AUTHENTICATED"
+        except Exception:
+            self._session_state = "QUERY_REQUIRED"
+            raise
+
+    def _request(self, **kwargs) -> JsonResponse:
+        try:
+            response = self.transport.request(**kwargs)
+        except Exception:
+            raise IgReadOnlyError("IG read-only transport outcome unknown; no retry") from None
+        if (not isinstance(response, JsonResponse) or type(response.status) is not int
+                or not isinstance(response.headers, Mapping)):
+            raise IgReadOnlyError("IG read-only transport returned malformed response")
+        return response
 
     def accounts(self) -> Mapping[str, object]:
         return self._get_json("/accounts", version="1")
@@ -194,14 +221,16 @@ class IgDemoReadOnlyClient:
         if isinstance(metadata, Mapping) and isinstance(metadata.get("pageData"), Mapping):
             pages = metadata["pageData"].get("totalPages")
             if isinstance(pages, bool) or not isinstance(pages, int) or pages not in (0, 1):
+                self._session_state = "QUERY_REQUIRED"
                 raise IgReadOnlyError("IG M5 history response remains paginated")
         return payload
 
     def logout(self) -> None:
         if self._tokens is None:
+            self._session_state = "CLOSED"
             return
         try:
-            response = self.transport.request(
+            response = self._request(
                 method="DELETE",
                 url=f"{self.base_url}/session",
                 headers=self._auth_headers(version="1"),
@@ -210,6 +239,7 @@ class IgDemoReadOnlyClient:
             self._require_success(response, action="session logout")
         finally:
             self._tokens = None
+            self._session_state = "CLOSED"
 
     def _get_json(
         self,
@@ -218,16 +248,21 @@ class IgDemoReadOnlyClient:
         version: str,
         query: Mapping[str, str] | None = None,
     ) -> Mapping[str, object]:
-        response = self.transport.request(
-            method="GET",
-            url=f"{self.base_url}{path}",
-            headers=self._auth_headers(version=version),
-            query=query,
-            timeout_seconds=self.timeout_seconds,
-        )
-        self._require_success(response, action=f"GET {path}")
-        if not isinstance(response.payload, Mapping):
-            raise IgReadOnlyError("IG read-only response must be a JSON object")
+        if self._session_state != "AUTHENTICATED":
+            raise IgReadOnlyError("IG read-only client is not authenticated; session query required")
+        try:
+            response = self._request(
+                method="GET", url=f"{self.base_url}{path}",
+                headers=self._auth_headers(version=version), query=query,
+                timeout_seconds=self.timeout_seconds,
+            )
+            self._require_success(response, action=f"GET {path}")
+            if not isinstance(response.payload, Mapping):
+                raise IgReadOnlyError("IG read-only response must be a JSON object")
+        except Exception:
+            self._session_state = "QUERY_REQUIRED"
+            raise
+        self._read_count += 1
         return response.payload
 
     def _base_headers(self, *, version: str) -> dict[str, str]:
@@ -261,7 +296,7 @@ class IgDemoReadOnlyClient:
 
 def _header(headers: Mapping[str, str], name: str) -> str:
     for key, value in headers.items():
-        if key.casefold() == name.casefold() and value:
+        if isinstance(key, str) and key.casefold() == name.casefold() and isinstance(value, str) and value:
             return value
     raise IgReadOnlyError(f"IG session response missing required {name} header")
 

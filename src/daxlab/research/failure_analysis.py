@@ -308,3 +308,112 @@ def trade_sequence_dna(r_values: list[float]) -> dict[str, object]:
             "inference_state": "DESCRIPTIVE_ONLY" if r_values else "INSUFFICIENT_SAMPLE",
             "scope": "NET_R_TRADE_BOUNDARIES_NOT_ACCOUNT_EQUITY",
             "execution_capability": "NONE", "order_execution_enabled": False}
+
+
+def observed_execution_costs(evidence: dict[str, object]) -> dict[str, object]:
+    """Single observed fill attribution; absence is unresolved, not non-fill proof.
+
+    Native decimal strings preserve quote/quantity precision. Request-response
+    time is client-observed round-trip, never broker-internal latency. A fill below
+    request quantity cannot prove final partial/non-fill status or cumulative qty.
+    """
+    from datetime import datetime, timezone
+    from decimal import Decimal, InvalidOperation, localcontext
+    import hashlib
+    import json
+    import re
+
+    required = {"side", "reference_price", "arrival_bid", "arrival_ask", "arrival_at",
+                "request_at", "response_at", "requested_quantity", "tick_size",
+                "source_sha256", "broker_identity_sha256"}
+    optional = {"fill_price", "fill_at", "native_quantity", "explicit_cost_cash",
+                "cash_per_point_per_unit"}
+    if not isinstance(evidence, dict) or not required <= set(evidence) or set(evidence) - required - optional:
+        raise ValueError("closed execution-cost evidence schema required")
+    for field in ("source_sha256", "broker_identity_sha256"):
+        value = evidence[field]
+        if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+            raise ValueError("source and broker identity SHA256 pins required")
+    if evidence["side"] not in ("BUY", "SELL"):
+        raise ValueError("side must be BUY or SELL")
+
+    def decimal(field, *, nullable=False, nonnegative=False):
+        value = evidence.get(field)
+        if value is None and nullable:
+            return None
+        if not isinstance(value, str) or len(value) > 40 or re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", value) is None:
+            raise ValueError("native finite decimal string required: " + field)
+        try:
+            number = Decimal(value)
+        except InvalidOperation:
+            raise ValueError("invalid native decimal") from None
+        if number < 0 or (not nonnegative and number == 0):
+            raise ValueError("positive native decimal required: " + field)
+        return number
+
+    def instant(field, *, nullable=False):
+        value = evidence.get(field)
+        if value is None and nullable:
+            return None
+        if not isinstance(value, str) or len(value) > 40:
+            raise ValueError("explicit timestamp required: " + field)
+        try:
+            time = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError("invalid timestamp") from None
+        if time.tzinfo is None or time.utcoffset() is None:
+            raise ValueError("timezone-aware timestamp required")
+        return time.astimezone(timezone.utc)
+
+    reference, bid, ask = (decimal(field) for field in ("reference_price", "arrival_bid", "arrival_ask"))
+    requested, tick = (decimal(field) for field in ("requested_quantity", "tick_size"))
+    fill = decimal("fill_price", nullable=True)
+    quantity = decimal("native_quantity", nullable=True)
+    explicit = decimal("explicit_cost_cash", nullable=True, nonnegative=True)
+    multiplier = decimal("cash_per_point_per_unit", nullable=True)
+    arrival, request, response = (instant(field) for field in ("arrival_at", "request_at", "response_at"))
+    fill_time = instant("fill_at", nullable=True)
+    if bid > ask or arrival > request or response < request:
+        raise ValueError("crossed quote or clock ordering mismatch")
+    if (fill is None) != (quantity is None) or (fill is None) != (fill_time is None):
+        raise ValueError("fill price/time/native quantity must be observed together")
+    if fill_time is not None and fill_time < request:
+        raise ValueError("fill before client request")
+    # 40-character operands and products require more than default Decimal28.
+    with localcontext() as context:
+        context.prec = 128
+        side = Decimal(1 if evidence["side"] == "BUY" else -1)
+        shortfall = None if fill is None else side * (fill - reference)
+        arrival_slippage = None if fill is None else side * (
+            fill - (ask if side == 1 else bid)
+        )
+        grid = {field: (number % tick == 0) for field, number in (
+            ("reference_price", reference), ("arrival_bid", bid), ("arrival_ask", ask),
+            ("fill_price", fill),
+        ) if number is not None}
+        cash_slippage = None if arrival_slippage is None or multiplier is None else (
+            arrival_slippage * quantity * multiplier
+        )
+        metrics = {"arrival_spread_points": str(ask - bid),
+                   "reference_shortfall_points": None if shortfall is None else str(shortfall),
+                   "arrival_slippage_points": None if arrival_slippage is None else str(arrival_slippage),
+                   "arrival_slippage_cash": None if cash_slippage is None else str(cash_slippage)}
+    digest = hashlib.sha256(json.dumps(evidence, sort_keys=True, separators=(",", ":"),
+                                      allow_nan=False).encode()).hexdigest()
+    return {"schema": "DAX_OBSERVED_EXECUTION_COSTS_V1", "identity_sha256": digest,
+            "source_sha256": evidence["source_sha256"],
+            "broker_identity_sha256": evidence["broker_identity_sha256"],
+            "source_verification": "CALLER_PINS_NOT_INDEPENDENT_BROKER_TRUTH",
+            "metrics": metrics, "price_grid_observations": grid,
+            "client_request_response_ms": (response - request).total_seconds() * 1000,
+            "arrival_to_request_ms": (request - arrival).total_seconds() * 1000,
+            "fill_observed_at": None if fill_time is None else fill_time.isoformat(),
+            "native_quantity": None if quantity is None else str(quantity),
+            "requested_quantity": str(requested),
+            "single_fill_vs_requested": "UNKNOWN" if quantity is None else (
+                "BELOW_REQUEST" if quantity < requested else "EQUAL_REQUEST" if quantity == requested
+                else "ABOVE_REQUEST"),
+            "explicit_cost_cash": None if explicit is None else str(explicit),
+            "broker_internal_latency": "UNKNOWN", "opportunity_movement": "NOT_CAPTURED",
+            "cumulative_quantity": "NOT_PROVEN", "final_outcome": "UNRESOLVED",
+            "execution_capability": "NONE", "order_execution_enabled": False}

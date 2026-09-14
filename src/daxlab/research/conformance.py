@@ -337,3 +337,58 @@ def _require_sha256(value: str, field_name: str) -> None:
         int(value, 16)
     except ValueError as exc:
         raise ValueError(f"{field_name} must be sha256 hex") from exc
+
+
+# Full-spec diagnostic identity extends this conformance owner; it is not a new
+# release/trial registry and cannot replace frozen replay conformance above.
+EVIDENCE_IDENTITY_DIMENSIONS = {
+    "dataset": "DATA", "data_contract": "DATA",
+    "engine": "SIGNAL", "strategy": "SIGNAL", "code": "SIGNAL",
+    "risk": "EXECUTION", "execution_assumptions": "EXECUTION",
+    "cost": "COST", "session": "CLOCK", "timezone": "CLOCK",
+    "adapter": "BROKER", "broker_context": "BROKER", "lifecycle": "LIFECYCLE",
+}
+
+
+def compare_full_evidence_identity(expected, observed):
+    """Compare caller-supplied semantic SHA256 pins per dimension, with gaps.
+
+    Code head/source refs belong in the pinned component manifests. A missing
+    broker/risk/session component is UNKNOWN, never an overall MATCH. This does
+    not construct a broker context from synthetic data or grant execution.
+    """
+    import re
+
+    if not isinstance(expected, dict) or not isinstance(observed, dict):
+        raise ValueError("identity must be a component mapping")
+    fields = set(EVIDENCE_IDENTITY_DIMENSIONS)
+    if set(expected) - fields or set(observed) - fields:
+        raise ValueError("unknown identity component")
+    for mapping in (expected, observed):
+        for value in mapping.values():
+            if value is not None and (
+                not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None
+            ):
+                raise ValueError("identity component must be SHA256 or unknown")
+    field_states = {}
+    for field in EVIDENCE_IDENTITY_DIMENSIONS:
+        left, right = expected.get(field), observed.get(field)
+        field_states[field] = (
+            "UNKNOWN" if left is None or right is None
+            else "MATCH" if left == right else "MISMATCH"
+        )
+    dimensions = {}
+    for dimension in sorted(set(EVIDENCE_IDENTITY_DIMENSIONS.values())):
+        states = [field_states[field] for field, dim in EVIDENCE_IDENTITY_DIMENSIONS.items()
+                  if dim == dimension]
+        dimensions[dimension] = (
+            "MISMATCH" if "MISMATCH" in states else "UNKNOWN" if "UNKNOWN" in states else "MATCH"
+        )
+    identity = {"expected": dict(expected), "observed": dict(observed)}
+    return {"schema": "DAX_FULL_EVIDENCE_IDENTITY_COMPARISON_V1",
+            "identity_sha256": _fingerprint(identity), "source_pins": identity,
+            "field_states": field_states, "dimensions": dimensions,
+            "status": "MISMATCH" if "MISMATCH" in dimensions.values()
+                      else "UNKNOWN" if "UNKNOWN" in dimensions.values() else "MATCH",
+            "inference": "COMPONENT_PIN_COMPARISON_NOT_REAL_BROKER_CONFORMANCE",
+            "execution_capability": "NONE", "order_execution_enabled": False}
