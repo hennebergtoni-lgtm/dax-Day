@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Mapping
 
 from daxlab.adapters.ig_market_data import IgClosedM5CandleSource, IgClosedM5Feed
 from daxlab.adapters.ig_rest_readonly import IgDemoCredentials, IgDemoReadOnlyClient
