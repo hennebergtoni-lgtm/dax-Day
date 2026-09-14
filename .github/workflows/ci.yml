@@ -28,6 +28,8 @@ jobs:
         run: pytest tests/test_fixed_cash_tail_research.py tests/test_boost001.py tests/test_historical_risk_envelope.py
       - name: Full identity and observed execution attribution regressions
         run: pytest tests/test_acceleration_evidence_analytics.py
+      - name: Independent PTC and protection safety regressions
+        run: pytest tests/test_independent_pretrade_controls.py tests/test_broker_execution_protection.py tests/test_nextgen_execution_protection_binding.py
       - name: Tests
         run: pytest
       - name: Recovery reconstruction preflight

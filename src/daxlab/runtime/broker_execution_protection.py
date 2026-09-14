@@ -130,7 +130,7 @@ class BrokerExecutionProtectionVerdict:
             value is None for value in session_identity
         ):
             raise ValueError("session admission identity evidence must be complete")
-        if self.execution_capability != "NONE" or self.order_execution_enabled:
+        if self.execution_capability != "NONE" or self.order_execution_enabled is not False:
             raise ValueError("execution protection verdict cannot authorize execution")
         if self.status is ExecutionProtectionStatus.ALLOW_EVIDENCE and self.blockers:
             raise ValueError("allow evidence cannot carry blockers")
@@ -215,6 +215,16 @@ def evaluate_execution_protection(
     session_observation_fresh: bool | None = None,
 ) -> BrokerExecutionProtectionVerdict:
     """Combine normalized protection evidence; submit and authorize nothing."""
+    for value, label in (
+        (host_health_green, "host_health_green"),
+        (broker_account_trade_allowed, "broker_account_trade_allowed"),
+        (reconciliation_inventory_complete, "reconciliation_inventory_complete"),
+        (duplicate_client_order_id, "duplicate_client_order_id"),
+        (sizing_allowed, "sizing_allowed"), (loss_cap_allowed, "loss_cap_allowed"),
+        (session_admission_allowed, "session_admission_allowed"),
+    ):
+        if type(value) is not bool:
+            raise ValueError(label + " must be boolean")
     _sha(client_order_id, "client_order_id")
     _validate_max_age(feed_age_seconds, "feed_age_seconds")
     _validate_max_age(max_feed_age_seconds, "max_feed_age_seconds")
@@ -543,14 +553,21 @@ def _validate_freshness_bundle(
         raise ValueError(f"{label.replace(' ', '_')}_fresh must be boolean")
 
 
+def _finite_nonnegative(value) -> bool:
+    try:
+        return type(value) in (int, float) and isfinite(value) and value >= 0
+    except OverflowError:
+        return False
+
+
 def _validate_max_age(value: float, field_name: str) -> None:
-    if isinstance(value, bool) or not isfinite(value) or value < 0:
+    if not _finite_nonnegative(value):
         raise ValueError(f"{field_name} must be finite and non-negative")
 
 
 def _validate_optional_age(value: float | None, field_name: str) -> None:
     if value is not None and (
-        isinstance(value, bool) or not isfinite(value) or value < 0
+        not _finite_nonnegative(value)
     ):
         raise ValueError(f"{field_name} must be finite and non-negative")
 
@@ -587,3 +604,109 @@ def _fingerprint(value: dict[str, Any]) -> str:
         ensure_ascii=True,
     )
     return sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def evaluate_independent_pretrade_controls(*, policy, observation, protection):
+    """Independent PTC diagnostic in this protection owner; never submit/unlock.
+
+    Explicit caller-pinned DEMO policy, native price/quantity grids and cash point
+    value are required. Strategy risk cannot supply an execution authorization.
+    Future bounded transport must revalidate this evidence at request time.
+    """
+    from decimal import Decimal, InvalidOperation, localcontext
+    import re
+
+    policy_fields = {"account_identity_sha256", "instrument_identity_sha256",
+                     "min_quantity", "max_quantity", "quantity_increment", "tick_size",
+                     "max_notional_cash", "max_price_deviation_points",
+                     "max_quote_age_seconds", "max_attempts"}
+    observation_fields = {"source_sha256", "account_identity_sha256", "instrument_identity_sha256",
+                          "environment", "quantity", "request_price", "reference_price",
+                          "cash_per_point_per_unit", "quote_age_seconds", "attempts_used",
+                          "duplicate", "inventory_clear", "session_allowed",
+                          "reservation_unknown", "emergency_latched"}
+    if (not isinstance(policy, dict) or set(policy) != policy_fields
+            or not isinstance(observation, dict) or set(observation) != observation_fields):
+        raise ValueError("closed independent PTC evidence schema required")
+    if not isinstance(protection, BrokerExecutionProtectionVerdict):
+        raise ValueError("canonical existing protection verdict required")
+    for mapping, fields in ((policy, ("account_identity_sha256", "instrument_identity_sha256")),
+                            (observation, ("source_sha256", "account_identity_sha256", "instrument_identity_sha256"))):
+        for field in fields:
+            if not isinstance(mapping[field], str) or re.fullmatch(r"[0-9a-f]{64}", mapping[field]) is None:
+                raise ValueError("PTC semantic/source SHA256 pins required")
+
+    def number(mapping, field, *, nonnegative=False):
+        value = mapping[field]
+        if not isinstance(value, str) or len(value) > 40 or re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", value) is None:
+            raise ValueError("PTC native finite decimal string required")
+        try:
+            result = Decimal(value)
+        except InvalidOperation:
+            raise ValueError("PTC invalid native decimal") from None
+        if result < 0 or (not nonnegative and result == 0):
+            raise ValueError("PTC positive bound/observation required")
+        return result
+
+    values = {field: number(policy, field, nonnegative=field == "max_price_deviation_points")
+              for field in ("min_quantity", "max_quantity", "quantity_increment", "tick_size",
+                            "max_notional_cash", "max_price_deviation_points")}
+    quantities = {field: number(observation, field)
+                  for field in ("quantity", "request_price", "reference_price", "cash_per_point_per_unit")}
+    if values["min_quantity"] > values["max_quantity"]:
+        raise ValueError("PTC inverted quantity bounds")
+    for mapping, field, positive in ((policy, "max_attempts", True), (observation, "attempts_used", False)):
+        if type(mapping[field]) is not int or mapping[field] < (1 if positive else 0):
+            raise ValueError("PTC integer attempt bound required")
+    for field in ("duplicate", "inventory_clear", "session_allowed", "reservation_unknown", "emergency_latched"):
+        if type(observation[field]) is not bool:
+            raise ValueError("PTC boolean observation required")
+    _validate_max_age(policy["max_quote_age_seconds"], "max_quote_age_seconds")
+    _validate_max_age(observation["quote_age_seconds"], "quote_age_seconds")
+    blockers = []
+    if observation["environment"] != "DEMO":
+        blockers.append("PTC_HARD_LIVE_OR_UNKNOWN_ENVIRONMENT_BLOCK")
+    for field, blocker in (("account_identity_sha256", "PTC_ACCOUNT_VETO"),
+                           ("instrument_identity_sha256", "PTC_INSTRUMENT_VETO")):
+        if observation[field] != policy[field]:
+            blockers.append(blocker)
+    if not protection.allow_evidence:
+        blockers.append("PTC_EXISTING_PROTECTION_BLOCKED")
+    with localcontext() as context:
+        context.prec = 160
+        qty = quantities["quantity"]
+        if not values["min_quantity"] <= qty <= values["max_quantity"]:
+            blockers.append("PTC_QUANTITY_BOUND_VETO")
+        if qty % values["quantity_increment"] != 0:
+            blockers.append("PTC_NATIVE_QUANTITY_GRID_VETO")
+        if quantities["request_price"] % values["tick_size"] != 0:
+            blockers.append("PTC_NATIVE_PRICE_GRID_VETO")
+        if abs(quantities["request_price"] - quantities["reference_price"]) > values["max_price_deviation_points"]:
+            blockers.append("PTC_PRICE_COLLAR_VETO")
+        notional = qty * quantities["request_price"] * quantities["cash_per_point_per_unit"]
+        if notional > values["max_notional_cash"]:
+            blockers.append("PTC_NOTIONAL_BOUND_VETO")
+    if observation["quote_age_seconds"] > policy["max_quote_age_seconds"]:
+        blockers.append("PTC_STALE_PRICE_VETO")
+    if observation["attempts_used"] >= policy["max_attempts"]:
+        blockers.append("PTC_ATTEMPT_BOUND_VETO")
+    for condition, blocker in (
+        (observation["duplicate"], "PTC_DUPLICATE_VETO"),
+        (not observation["inventory_clear"], "PTC_INVENTORY_VETO"),
+        (not observation["session_allowed"], "PTC_SESSION_VETO"),
+        (observation["reservation_unknown"], "PTC_UNKNOWN_RESERVATION_QUERY_REQUIRED"),
+        (observation["emergency_latched"], "PTC_EMERGENCY_AUTHORITY_LATCHED"),
+    ):
+        if condition:
+            blockers.append(blocker)
+    payload = {"schema": "DAX_INDEPENDENT_PTC_DIAGNOSTIC_V1",
+               "policy_fingerprint": _fingerprint(policy),
+               "observation_fingerprint": _fingerprint(observation),
+               "protection_fingerprint": protection.fingerprint,
+               "source_sha256": observation["source_sha256"], "blockers": blockers,
+               "status": "BLOCKED" if blockers else "ALLOW_EVIDENCE",
+               "notional_cash_proxy": str(notional),
+               "notional_definition": "NATIVE_QTY_X_PRICE_X_CASH_POINT_VALUE",
+               "runtime_integration": "BOUNDED_TRANSPORT_NOT_YET_VERIFIED",
+               "execution_capability": "NONE", "order_execution_enabled": False}
+    return payload | {"fingerprint": _fingerprint(payload)}
