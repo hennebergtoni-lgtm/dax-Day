@@ -26,7 +26,7 @@ When the user starts or continues a chat with `Übergabe`, recover the DAX Daytr
 
 ## Current operational handover
 
-- Official active whole-number step remains **2231**; last completed whole-number step remains **2230** unless `docs/CURRENT_WORK_STEP.md` says otherwise on the fresh head.
+- Official active whole-number step is **2232**, IMPLEMENTED_LOCAL / real Windows SHADOW E2E WAITING_EXTERNAL; last completed step is **2231**, VERIFIED AS SUPPLIED for the corrected IG feed slice. Re-pin the fresh pointer before work.
 - M01 remains the immediate operational milestone: **Real-host evidence**.
 - IG Demo account/API setup, authenticated login, Deutschland-40 market discovery, live market status, contract/economics inspection and M5 retrieval have already been exercised on the real Windows host. Do **not** restart broker/account/API-key setup unless fresh evidence shows it is broken.
 - Current target IG market: `IX.D.DAX.IFMM.IP` (Deutschland 40 cash, €1/point variant used for the host evidence lane).
@@ -35,7 +35,8 @@ When the user starts or continues a chat with `Übergabe`, recover the DAX Daytr
 - Windows IG worktree used for this lane: `C:\Users\Mandy\Documents\dax-Day-ig-hostcheck`.
 - Original MT5 hostcheck worktree remains separate: `C:\Users\Mandy\Documents\dax-Day-nextgen-hostcheck`; do not destabilize it merely to run IG evidence.
 - Credentials remain local in `C:\Users\Mandy\ig_demo.env`; never print or commit them.
-- The immediate continuation is the corrected **read-only IG host rerun / evidence verification**, not another account/API setup round.
+- The corrected read-only IG host probe has passed as supplied by the user; see `docs/STEP_2231_REAL_HOST_CLOSEOUT.md`. Protection/reconciliation remain UNKNOWN and broader M01 is incomplete.
+- The immediate continuation is the exact-head **real IG -> CAND-001 SHADOW -> validated telemetry/operator evidence** invocation in `docs/STEP_2232_IG_REAL_HOST_SHADOW_E2E.md`. Reuse the known Python environment and external credentials. Do not blindly start the MT5 supervisor on IG or claim local test fixtures as host evidence. Step 2233 is reserved after a real 2232 pass.
 
 ## Safety state — binding
 

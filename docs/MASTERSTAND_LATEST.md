@@ -330,3 +330,12 @@ No repository prose, Work report or green CI can substitute for those external f
 ## 2026-09-14 Step2231 closeout / Step2232 overlay
 
 Step2231 is COMPLETED / VERIFIED AS SUPPLIED for the corrected IG feed lane (user-reported actual Windows exit0/new evidence, raw40/excluded0, FRESH/~231s under600, exact EPIC/interval-end contract, NONE/false). No actual UTC/digest values are invented. See `STEP_2231_REAL_HOST_CLOSEOUT.md`. This overlay supersedes earlier pending2231 statements. Official pointer: last completed2231, active2232 REAL-HOST SHADOW END-TO-END, next2233 after success. M01 overall remains incomplete; Protection/Reconciliation UNKNOWN, Step2206/2122 independent. Post-DEMO research is still PLANNED/DO NOT START. No execution/Acceptance/merge authorization.
+
+
+## 2026-09-14 — Step 2232 local IG SHADOW connection / real run pending
+
+Active step 2232: IMPLEMENTED_LOCAL / WAITING_EXTERNAL. The exact-head one-shot `scripts/ig_cand001_shadow_e2e.py` reuses live read-only IG collection, canonical M5 closure/freshness, unchanged CAND-001 pipeline/orchestrator, complete manifest-bound checkpoint, OS lock, atomic JSON and validated V3/operator display projection. No new strategy/runtime engine and no fabricated MT5 host bundle. Full MT5/Neon console export/render parity is not claimed. ADAPTER contract gap reproduced; narrow DE40/5m conversion preserves actual UTC/OHLC/source.
+
+Historical catchup is explicit; latest current closed input alone supplies current decision evidence. Resume blocks on head/manifest drift, changed overlap, missing anchor, gaps, duplicate latest bar or lock conflict; no silent state reset. The independent operator read binds the hash returned by the successful live invocation and checks freshness under unchanged 600 s. Runbook/acceptance: `docs/STEP_2232_IG_REAL_HOST_SHADOW_E2E.md`.
+
+2231 corrected IG feed slice COMPLETED / VERIFIED AS SUPPLIED; broader M01 not complete. 2232 is not VERIFIED from offline tests: exact-head real Windows outputs plus new source bundle remain required. Protection/reconciliation UNKNOWN, 2122/2206 independent/external; NONE/false, SHADOW only, V11.2/CAND-001 rules/MT5/risk/costs unchanged, no orders/controls/merge/Acceptance refresh. Next whole-number step 2233 is reserved after real 2232 validation, not started.

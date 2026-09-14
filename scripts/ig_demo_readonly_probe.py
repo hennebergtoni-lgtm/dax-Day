@@ -268,13 +268,14 @@ def _fingerprint(payload: Mapping[str, object]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def collect_probe(
+def collect_probe_with_candles(
     *,
     credentials_file: Path,
     epic: str,
     instrument_id: str,
     bars: int,
-) -> dict[str, object]:
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    """One existing live read, returning the SAME validated bars for SHADOW callers."""
     credentials = _credentials_from_file(credentials_file)
     client = IgDemoReadOnlyClient(credentials=credentials)
     collection_started_at = datetime.now(timezone.utc)
@@ -331,6 +332,15 @@ def collect_probe(
     }
     _assert_credential_free(evidence)
     evidence["fingerprint"] = _fingerprint(evidence)
+    return evidence, candles
+
+
+def collect_probe(
+    *, credentials_file: Path, epic: str, instrument_id: str, bars: int,
+) -> dict[str, object]:
+    evidence, _ = collect_probe_with_candles(
+        credentials_file=credentials_file, epic=epic, instrument_id=instrument_id, bars=bars,
+    )
     return evidence
 
 

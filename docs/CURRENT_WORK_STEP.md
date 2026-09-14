@@ -11,7 +11,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Last completed whole-number step: **2231**
 - Last interrupted whole-number step: **2185**
 - Active whole-number step: **2232**
-- Active step state: **PLANNED — REAL-HOST IG SHADOW END-TO-END / NO BROKER SIDE EFFECT**
+- Active step state: **IMPLEMENTED_LOCAL / REAL-HOST IG SHADOW END-TO-END WAITING_EXTERNAL / NO BROKER SIDE EFFECT**
 - Work tranche state: **COMPLETED_LOCAL_OPERATOR_HARDENING_2 — EXTERNAL_GATES_REMAIN**
 - Next step after successful completion: **2233**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
@@ -40,6 +40,14 @@ The user's explicit 2026-09-14 Work mandate supplies a successful corrected prob
 **2231 COMPLETED / VERIFIED AS SUPPLIED** for the corrected IG feed scope. The original evidence JSON, exact UTC observation/last-close values and actual fingerprint string were not supplied to this Work turn; no such values are invented and no independent host execution is claimed. Source/limitations: `docs/STEP_2231_REAL_HOST_CLOSEOUT.md`. Current task start is exactly `8523c6cd98944c6ed95f6f7af585e2c4d9eb41de`, main unchanged; required CI DAX #670 / Research #1454 SUCCESS. The previous implementation regressions remain recorded in `IG_DEMO_M5_TIMESTAMP_HANDOFF.md`.
 
 M01 remains incomplete beyond its IG feed slice; Step2206 and MT5 host2122 remain independent and external. Step2232 must not be closed from offline tests. Its unblock condition is a newly collected real Windows IG/Candidate SHADOW evidence bundle from the exact tested publication head, with fresh processing/telemetry and no-order safety.
+
+## Step 2232 local connection / external test
+
+`scripts/ig_cand001_shadow_e2e.py` performs one existing live IG read, explicitly maps the canonical EPIC/M5 bars into DE40/5m runtime candles and reuses the unchanged CAND-001 pipeline, SHADOW orchestrator, complete checkpoint, OS lock, atomic storage and validated V3/browser Operator projection. The MT5-specific supervisor/start/check/export/full-console wrappers are not started or fed invented MT5 evidence. Historical catchup is labelled; only the latest fresh closed bar is CURRENT. Existing state is resumed only with exact code/manifest, unchanged overlap and a present anchor; no new M5, gaps, lock conflicts or drift block without state reset.
+
+The narrow ADAPTER gap was reproduced offline (domain Candle lacks runtime `symbol`); there is no strategy rule/config change. Local conformance is implementation evidence, not a real-host pass. Runbook/audit/criteria: `docs/STEP_2232_IG_REAL_HOST_SHADOW_E2E.md`. **2232 WAITING_EXTERNAL**, until both successful exact-head Windows invocation/operator-read outputs and the new complete credential-free bundle are reviewed. Its local operator display scope does not verify Neon export or the MT5 browser console. Next step remains **2233**, not started.
+
+Local validation: 70 existing IG + 22 connection regressions; full suite 2711 passed / 6 PowerShell skips; Ruff, syntax/imports, JavaScript syntax and all eight offline safety/governance gates pass. Required CI is exact-head evidence and must be re-read after publication; earlier green checks cannot close the real-host lane.
 
 ## Ledger archive
 

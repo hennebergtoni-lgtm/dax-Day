@@ -1,7 +1,7 @@
 # DAX-BOT Chat Handoff Protocol V1
 
 Status: **BINDING**  
-Updated: **2026-09-14 — IG Demo M5 / Step 2231 local correction continuity**
+Updated: **2026-09-14 — Step 2231 supplied Windows closeout / Step 2232 SHADOW E2E continuity**
 
 Purpose: make chat/context handovers deterministic and repository-backed so the DAX-BOT project resumes without asking the user to reconstruct long chats, including after conversation-length saturation. Repository truth and source Work artifacts are preferred over chat memory.
 
@@ -82,7 +82,7 @@ Recovery rule:
 
 ## 4. Current milestone recovery — BINDING
 
-Current IG continuation: first load `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md`, pin the fresh PR head/main/required CI and `CURRENT_WORK_STEP.md`. Step 2231 is locally IMPLEMENTED with a corrected real Windows IG probe still WAITING_EXTERNAL. Preserve the original supplied host verification; do not claim the interval-end mapping or pagination cause is provider-verified beyond the recorded evidence. Next action is the exact read-only Windows probe in that handoff, not an order or another implementation tranche. Step 2206 / USER_AUTH and MT5 lane 2122 stay independent. No M01/2231 completion is implied.
+Current IG continuation: first load `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md`, pin the fresh PR head/main/required CI and `CURRENT_WORK_STEP.md`. Step 2231 is COMPLETED / VERIFIED AS SUPPLIED for the corrected real Windows IG feed slice, with original JSON/time/hash values not supplied to Work; see `STEP_2231_REAL_HOST_CLOSEOUT.md`. Protection/reconciliation UNKNOWN, broader M01 incomplete. Step 2232 is IMPLEMENTED_LOCAL / real Windows SHADOW E2E WAITING_EXTERNAL. Next action is the single IG/CAND-001 invocation and bound operator read in `STEP_2232_IG_REAL_HOST_SHADOW_E2E.md`; no blind MT5 supervisor startup or fabricated MT5 bundle. Step 2206 / USER_AUTH and MT5 lane 2122 stay independent. Next 2233 only after real 2232 source review; no order authorization is implied.
 
 As of the 2026-09-14 continuity update, the latest masterstand records the durable roadmap:
 
