@@ -8,7 +8,7 @@ order, cancel or modify capability.
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -22,6 +22,7 @@ from daxlab.domain.market import InstrumentId
 SCHEMA = "DAXLAB_IG_DEMO_READONLY_PROBE_V1"
 DEFAULT_EPIC = "IX.D.DAX.IFMM.IP"
 DEFAULT_INSTRUMENT_ID = "DAX_CFD_IG_DE40_CASH_1EUR"
+_M5_DELTA = timedelta(minutes=5)
 FORBIDDEN_OUTPUT_KEYS = {
     "api_key",
     "apikey",
@@ -138,6 +139,33 @@ def _safe_market(payload: Mapping[str, object], *, expected_epic: str) -> dict[s
     }
 
 
+def _snapshot_time_utc(row: Mapping[str, object]) -> datetime:
+    raw = row.get("snapshotTimeUTC")
+    if not isinstance(raw, str) or not raw.strip():
+        raise RuntimeError("IG price row requires snapshotTimeUTC")
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise RuntimeError("IG snapshotTimeUTC must be ISO-8601") from exc
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _closed_price_rows(prices: list[object], *, observed_at: datetime) -> list[Mapping[str, object]]:
+    observed_utc = observed_at.astimezone(timezone.utc)
+    closed: list[Mapping[str, object]] = []
+    for raw in prices:
+        if not isinstance(raw, Mapping):
+            raise RuntimeError("IG price row must be an object")
+        open_time = _snapshot_time_utc(raw)
+        if open_time + _M5_DELTA <= observed_utc:
+            closed.append(raw)
+    if not closed:
+        raise RuntimeError("IG payload contains no closed M5 price rows")
+    return closed
+
+
 def _closed_candles(
     prices_payload: Mapping[str, object],
     *,
@@ -146,7 +174,8 @@ def _closed_candles(
     observed_at: datetime,
 ) -> list[dict[str, object]]:
     prices = _list_field(prices_payload, "prices")
-    feed = IgClosedM5Feed(epic=epic, observed_at=observed_at, prices=tuple(prices))
+    closed_prices = _closed_price_rows(prices, observed_at=observed_at)
+    feed = IgClosedM5Feed(epic=epic, observed_at=observed_at, prices=tuple(closed_prices))
     source = IgClosedM5CandleSource(
         feed_provider=lambda: feed,
         epic=epic,
