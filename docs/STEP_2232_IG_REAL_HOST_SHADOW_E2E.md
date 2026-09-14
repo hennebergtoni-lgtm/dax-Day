@@ -54,7 +54,7 @@ Known worktree: `C:\Users\Mandy\Documents\dax-Day-ig-hostcheck`.
 Known external credentials: `C:\Users\Mandy\ig_demo.env` (never print their contents).
 Evidence/state: `C:\Users\Mandy\Documents\dax-Day-ig-hostcheck\.runtime\ig_cand001_shadow_e2e\evidence.json`.
 
-1. Use the exact PowerShell block in the final Work handoff: it pins the actual final SHA, checks tracked cleanliness and uses `git merge --ff-only` solely to synchronize the local checkout (no PR merge). Stop on any unknown remote/checkout drift. No force/reset/clean/stash commands.
+1. Use the exact PowerShell block in the final Work handoff: it pins the actual final SHA, checks tracked cleanliness and switches to that exact commit with `git switch --detach`. Stop on any unknown remote/checkout drift. No merge/force/reset/clean/stash commands.
 2. Run the single live test below with `$ExpectedHead` set by that pinned block. The already working `python` environment is reused; do not change the separate MT5 task/environment. Dependencies are existing project dependencies, including Windows tzdata.
 
 ```powershell
