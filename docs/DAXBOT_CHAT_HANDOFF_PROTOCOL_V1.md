@@ -1,7 +1,9 @@
 # DAX-BOT Chat Handoff Protocol V1
 
 Status: **BINDING**  
-Updated: **2026-09-14 — Step2232 real Windows closeout / Step2233 finalization-contract rerun continuity**
+Updated: **2026-09-14 — Step2233 reopened / RAW provider truth before another contract**
+
+Latest2233 continuity: user-supplied60s-policy FreshStart followed by changed-overlap block disproves any60s finality guarantee. Current source: `STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md` and CURRENT_WORK_STEP pointer. RAW one-shot collection/local comparison are IMPLEMENTED_LOCAL; actual source snapshots, timestamp class, justified final contract and new Windows FreshStart/Resume/Operator proof are WAITING_EXTERNAL/UNKNOWN, not completed. Preserve old state and strict overlap. No inferred start/end convention, new grace guess, silent migration or execution authorization. User mandate received only through PHASE2 heading; request its remainder while completing authorized Phase1.
 
 Purpose: make chat/context handovers deterministic and repository-backed so the DAX-BOT project resumes without asking the user to reconstruct long chats, including after conversation-length saturation. Repository truth and source Work artifacts are preferred over chat memory.
 

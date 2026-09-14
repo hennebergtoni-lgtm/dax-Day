@@ -1,5 +1,7 @@
 # Step 2233 — IG M5 provider-finalization grace
 
+**SUPERSEDED FOR NEW HOST TESTS:** user-supplied post60s evidence again triggered STATE_CHANGED_OVERLAP. This file preserves the intermediate implementation, not a finality guarantee or current closeout plan. Follow `STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md` for read-only RAW sampling first; keep existing files and the strict overlap gate.2233 is UNVERIFIED / WAITING_EXTERNAL, not completed.
+
 Status: **IMPLEMENTED_LOCAL / REAL WINDOWS RERUN WAITING_EXTERNAL**
 Date: 2026-09-14
 Repo/branch/PR: `hennebergtoni-lgtm/dax-Day` / `nextgen-bot-line-v1` / #109 OPEN, UNMERGED.

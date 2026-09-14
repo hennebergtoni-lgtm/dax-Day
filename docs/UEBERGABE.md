@@ -1,5 +1,7 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+**Latest2233:** post60s real-host overlap failure reopens the finalization contract. UNVERIFIED / RAW PROVIDER TRUTH WAITING_EXTERNAL; use `STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md`, not the superseded60s Candidate rerun. Diagnostic collects raw prices only; timestamp hypotheses/provider finality remain UNKNOWN. Strict overlap and old evidence preserved. Remaining user mandate after PHASE2 heading not yet supplied. SHADOW only/NONE/false; next2234 after genuine new-contract host verification.
+
 Status: **BINDING RESUME POINTER / REPOSITORY TRUTH FIRST**
 Updated: **2026-09-14**
 Repository: `hennebergtoni-lgtm/dax-Day`
