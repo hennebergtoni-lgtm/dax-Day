@@ -55,7 +55,7 @@ The runner preserves all published files on failure and does not compare incompl
 
 ### Automation validation scope
 
-Offline regressions cover exact-head/tracked-drift blocking, exclusive namespace/summary and race-safe RAW publication, A/B/C/compare short circuits, no retries, retained previous A, actual Request windows, clock discontinuities, hash-bound source/compare validation, safe errors, NONE/false, single-child paths with spaces and PowerShell exit propagation. The local selected environment is unavailable for this tranche; no local execution is claimed. Mandatory GitHub CI executes the full suite, Ruff and all eight existing offline/safety gates on the published head. No JavaScript changed and no real Windows/IG attempt is executed by Work.
+Offline regressions cover exact-head/tracked-drift blocking, exclusive namespace/summary and race-safe RAW publication, A/B/C/compare short circuits, no retries, retained previous A, actual Request windows, clock discontinuities, hash-bound source/compare validation, safe errors, NONE/false, single-child paths with spaces and PowerShell exit propagation. The local selected environment is unavailable for this tranche; no local execution is claimed. Mandatory GitHub CI executes a focused runner/RAW diagnostic regression selection and Python syntax compilation, then the full suite, Ruff and all eight existing offline/safety gates on the published head. No JavaScript changed and no real Windows/IG attempt is executed by Work.
 
 ## Semantics decision gate / remaining work
 

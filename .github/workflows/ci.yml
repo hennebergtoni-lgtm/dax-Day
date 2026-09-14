@@ -18,6 +18,10 @@ jobs:
         run: pip install -e '.[dev,statistics,data]'
       - name: Ruff
         run: ruff check src tests scripts
+      - name: Step 2233 RAW runner regressions and Python syntax
+        run: |
+          pytest tests/test_run_ig_raw_truth_2233.py tests/test_ig_raw_m5_timestamp_diagnostic.py
+          python -m py_compile scripts/run_ig_raw_truth_2233.py scripts/ig_raw_m5_timestamp_diagnostic.py src/daxlab/runtime/atomic_json.py
       - name: Tests
         run: pytest
       - name: Recovery reconstruction preflight
