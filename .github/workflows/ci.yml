@@ -41,11 +41,21 @@ jobs:
           $parseErrors = $null
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/export_ig_raw_truth_2233.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
           if ($parseErrors.Count -ne 0) { throw 'EXPORT_RUNNER_SYNTAX_INVALID' }
-          $result = (& pwsh -NoProfile -File (Join-Path $PWD 'scripts/export_ig_raw_truth_2233.ps1') -ExpectedHead invalid 6>&1 | Out-String)
-          if ($LASTEXITCODE -ne 2 -or $result -notmatch 'error_code=HEAD_INVALID') { throw 'HEAD_ERROR_CONTRACT_INVALID' }
-          $missingRoot = Join-Path $PWD 'definitely-missing-export-root'
-          $result = (& pwsh -NoProfile -File (Join-Path $PWD 'scripts/export_ig_raw_truth_2233.ps1') -ExpectedHead ('a' * 40) -RepoRoot $missingRoot 6>&1 | Out-String)
-          if ($LASTEXITCODE -ne 2 -or $result -notmatch 'error_code=HOST_UNAVAILABLE') { throw 'HOST_ERROR_CONTRACT_INVALID' }
+      - name: Export runner fixed fail-closed code contract
+        shell: bash
+        run: |
+          set +e
+          result="$(pwsh -NoProfile -File scripts/export_ig_raw_truth_2233.ps1 -ExpectedHead invalid 2>&1)"
+          child_exit=$?
+          set -e
+          test "$child_exit" -eq 2
+          grep -q 'error_code=HEAD_INVALID' <<< "$result"
+          set +e
+          result="$(pwsh -NoProfile -File scripts/export_ig_raw_truth_2233.ps1 -ExpectedHead aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -RepoRoot definitely-missing-export-root 2>&1)"
+          child_exit=$?
+          set -e
+          test "$child_exit" -eq 2
+          grep -q 'error_code=HOST_UNAVAILABLE' <<< "$result"
       - name: Tests
         run: pytest
       - name: Recovery reconstruction preflight
