@@ -18,6 +18,7 @@ from daxlab.domain.market import Candle, DataQualityState, InstrumentId
 CANONICAL_TIMEFRAME = "M5"
 SOURCE_PREFIX = "IG_READ_ONLY"
 _TIMEFRAME_DELTA = timedelta(minutes=5)
+_DEFAULT_MAX_AGE = timedelta(minutes=10)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +51,7 @@ class IgClosedM5CandleSource:
     feed_provider: FeedProvider
     epic: str
     instrument_id: InstrumentId
+    max_age: timedelta = _DEFAULT_MAX_AGE
     _last_close_time: datetime | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -57,6 +59,8 @@ class IgClosedM5CandleSource:
             raise TypeError("feed_provider must be callable")
         if not self.epic or self.epic.strip() != self.epic:
             raise ValueError("epic must be non-empty without surrounding whitespace")
+        if self.max_age <= timedelta(0):
+            raise ValueError("max_age must be positive")
 
     @property
     def last_close_time(self) -> datetime | None:
@@ -98,8 +102,11 @@ class IgClosedM5CandleSource:
             raise ValueError("IG price rows must remain continuous M5 bars")
 
         observed_at = feed.observed_at.astimezone(timezone.utc)
-        if any(open_time + _TIMEFRAME_DELTA > observed_at for open_time in open_times):
+        close_times = tuple(open_time + _TIMEFRAME_DELTA for open_time in open_times)
+        if any(close_time > observed_at for close_time in close_times):
             raise ValueError("IG candle source accepts closed M5 bars only")
+        if observed_at - close_times[-1] > self.max_age:
+            raise ValueError("IG candle source requires fresh M5 data")
         return rows
 
     def _to_candle(
