@@ -83,10 +83,14 @@ def test_runner_uses_one_session_and_preserves_fresh_resume_operator(
 
     assert code == 0
     assert summary["status"] == "SUCCESS"
+    assert summary["code_deployment"] == "ISOLATED_EXACT_HEAD_WORKTREE"
+    assert summary["runtime_storage"] == "CALLER_OWNED_EXTERNAL_ROOT"
+    assert summary["session_cleanup"] == "SUCCESS"
     assert calls == ["construct", "login", "cycle", "cycle", "logout"]
     assert waits == [CLOSE + timedelta(minutes=5, seconds=5)]
     directory = tmp_path / NAMESPACE
-    assert json.loads((directory / "FRESH_START.json").read_text())["recovery_state"] == "FRESH_START"
+    fresh = json.loads((directory / "FRESH_START.json").read_text())
+    assert fresh["recovery_state"] == "FRESH_START"
     assert json.loads((directory / "RESUME.json").read_text())["recovery_state"] == (
         "RESUME_ANCHOR_RECONCILED"
     )
@@ -115,13 +119,71 @@ def test_runner_existing_namespace_fails_before_credentials_or_session(
     assert summary["error_code"] == "STATE_NAMESPACE_EXISTS"
 
 
-def test_powershell_wrapper_has_one_runner_and_no_dealing_route() -> None:
+def test_invalid_runtime_root_has_fixed_code_before_credentials(
+    tmp_path, monkeypatch,
+) -> None:
+    monkeypatch.setattr(runner.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(runner.candidate, "check_code", lambda head: head)
+    monkeypatch.setattr(
+        runner.candidate,
+        "require_verified_live_provider_contract",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        runner.probe,
+        "_credentials_from_file",
+        lambda path: pytest.fail("credentials read"),
+    )
+    code, summary = runner.run(HEAD, root=tmp_path / "missing")
+    assert code == 2
+    assert summary["error_code"] == "STATE_RUNTIME_ROOT_INVALID"
+
+
+def test_invalid_credentials_have_fixed_code_and_no_session(
+    tmp_path, monkeypatch,
+) -> None:
+    monkeypatch.setattr(runner.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(runner.candidate, "check_code", lambda head: head)
+    monkeypatch.setattr(
+        runner.candidate,
+        "require_verified_live_provider_contract",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        runner.probe,
+        "_credentials_from_file",
+        lambda path: (_ for _ in ()).throw(RuntimeError("synthetic secret")),
+    )
+    code, summary = runner.run(
+        HEAD,
+        namespace=".runtime/ig_m5_contract_2237_interval_start_v2_attempt_98",
+        root=tmp_path,
+        credentials_file=tmp_path / "external.env",
+        client_factory=lambda **kwargs: pytest.fail("session constructed"),
+    )
+    assert code == 2
+    assert summary["error_code"] == "CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID"
+    assert summary["session_cleanup"] == "NOT_RUN"
+
+
+def test_powershell_wrapper_uses_isolated_worktree_and_external_runtime() -> None:
     source = (
         Path(__file__).resolve().parents[1]
         / "scripts"
         / "run_ig_m5_contract_2237.ps1"
     ).read_text(encoding="utf-8")
     assert source.count("run_ig_m5_contract_2237.py") == 1
+    assert "worktree add --detach" in source
+    assert "worktree remove" in source
+    assert "--runtime-root $RuntimeRoot" in source
+    assert "existing checkout remains untouched" in source
+    assert "'checkout'" not in source
+    assert "'reset'" not in source
+    assert "'stash'" not in source
+    assert "'merge'" not in source
+    assert "'clean'" not in source
+    assert "--force" not in source
     assert "order_send" not in source
     assert "/positions/otc" not in source
+    assert "DEPLOYMENT_CLEANUP_FAILED_RETAINED" in source
     assert "SUMMARY: BLOCKED / FAIL_CLOSED; error_code=" in source

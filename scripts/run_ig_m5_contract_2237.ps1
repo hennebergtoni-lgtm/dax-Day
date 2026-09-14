@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$ExpectedHead,
     [string]$RepoRoot = 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck',
-    [string]$Namespace = '.runtime/ig_m5_contract_2237_interval_start_v2_attempt_01',
+    [string]$RuntimeRoot = 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck',
+    [string]$Namespace = '.runtime/ig_m5_contract_2237_interval_start_v2_attempt_02',
     [string]$CredentialsFile = 'C:\Users\Mandy\ig_demo.env',
     [string]$PythonExecutable = 'python'
 )
@@ -9,23 +10,29 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $SafeErrorCodes = @(
-    'HEAD_INVALID', 'HOST_UNAVAILABLE', 'GIT_NOT_AVAILABLE',
-    'REMOTE_QUERY_FAILED', 'REMOTE_MISMATCH', 'WORKTREE_STATUS_FAILED',
-    'TRACKED_DRIFT', 'UNTRACKED_CODE_QUERY_FAILED', 'UNTRACKED_CODE',
-    'LOCAL_HEAD_QUERY_FAILED', 'START_HEAD_NOT_ANCESTOR', 'FETCH_FAILED',
-    'PUBLISHED_HEAD_QUERY_FAILED', 'BRANCH_DRIFT',
-    'LOCAL_HEAD_NOT_ANCESTOR_FINAL', 'DETACHED_CHECKOUT_FAILED',
-    'HEAD_VERIFY_QUERY_FAILED', 'HEAD_MISMATCH', 'PYTHON_NOT_AVAILABLE',
-    'PYTHON_START_FAILED', 'PYTHON_RESULT_INVALID',
+    'HEAD_INVALID', 'HOST_UNAVAILABLE', 'RUNTIME_ROOT_UNAVAILABLE',
+    'GIT_NOT_AVAILABLE', 'REMOTE_QUERY_FAILED', 'REMOTE_MISMATCH',
+    'FETCH_FAILED', 'PUBLISHED_HEAD_QUERY_FAILED', 'BRANCH_DRIFT',
+    'START_HEAD_NOT_ANCESTOR', 'TARGET_COMMIT_UNAVAILABLE',
+    'DEPLOYMENT_PATH_COLLISION', 'DEPLOYMENT_PARENT_CREATE_FAILED',
+    'WORKTREE_ADD_FAILED', 'WORKTREE_ADD_FAILED_DEPLOYMENT_RETAINED',
+    'DEPLOYMENT_HEAD_QUERY_FAILED', 'DEPLOYMENT_HEAD_MISMATCH',
+    'DEPLOYMENT_STATUS_FAILED', 'DEPLOYMENT_NOT_CLEAN',
+    'DEPLOYMENT_CLEANUP_FAILED_RETAINED',
+    'DEPLOYMENT_PARENT_CLEANUP_FAILED_RETAINED',
+    'PYTHON_NOT_AVAILABLE', 'PYTHON_START_FAILED', 'PYTHON_RESULT_INVALID',
     'GOVERNANCE_WINDOWS_HOST_REQUIRED', 'GOVERNANCE_INVALID_HEAD',
     'GOVERNANCE_HEAD_MISMATCH', 'GOVERNANCE_TRACKED_DRIFT',
     'GOVERNANCE_UNTRACKED_CODE', 'GOVERNANCE_IMPORT_PARITY',
     'STATE_INVALID_NAMESPACE', 'STATE_NAMESPACE_SYMLINK',
-    'STATE_NAMESPACE_EXISTS', 'STATE_PUBLICATION_FAILED',
-    'STATE_CHANGED_OVERLAP', 'STATE_ANCHOR_NOT_FOUND',
-    'STATE_NO_NEW_FINALIZED_M5',
+    'STATE_NAMESPACE_EXISTS', 'STATE_RUNTIME_ROOT_INVALID',
+    'STATE_RUNTIME_ROOT_UNAVAILABLE', 'STATE_PUBLICATION_FAILED',
+    'STATE_READBACK_FAILED', 'STATE_CHANGED_OVERLAP',
+    'STATE_ANCHOR_NOT_FOUND', 'STATE_NO_NEW_FINALIZED_M5',
     'DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED',
     'DATA_STALE_AT_PROCESSING', 'DATA_TEST_FAILED',
+    'FRESH_START_FAILED', 'RESUME_FAILED', 'OPERATOR_FAILED',
+    'SESSION_SETUP_FAILED', 'CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID',
     'IG_AUTHENTICATION_FAILED_NO_RETRY',
     'IG_SESSION_READ_FAILED_NO_RETRY', 'IG_SESSION_CLEANUP_FAILED',
     'CLOCK_INVALID_UTC', 'CLOCK_MOVED_BACKWARDS',
@@ -36,10 +43,11 @@ $SafeErrorCodes = @(
 function Invoke-GitGate {
     param(
         [Parameter(Mandatory = $true)][string]$ErrorCode,
-        [Parameter(Mandatory = $true)][string[]]$Arguments
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [string]$WorkingDirectory = $RepoRoot
     )
     try {
-        $result = @(& git -C $RepoRoot @Arguments 2>$null)
+        $result = @(& git -C $WorkingDirectory @Arguments 2>$null)
         $exitCode = $LASTEXITCODE
     } catch {
         throw $ErrorCode
@@ -49,6 +57,7 @@ function Invoke-GitGate {
 }
 
 function Invoke-Closeout {
+    param([Parameter(Mandatory = $true)][string]$DeploymentRoot)
     try {
         Get-Command -Name $PythonExecutable -ErrorAction Stop | Out-Null
     } catch {
@@ -56,9 +65,9 @@ function Invoke-Closeout {
     }
     try {
         $resultLines = @(
-            & $PythonExecutable (Join-Path $RepoRoot 'scripts/run_ig_m5_contract_2237.py') `
+            & $PythonExecutable (Join-Path $DeploymentRoot 'scripts/run_ig_m5_contract_2237.py') `
                 --expected-head $ExpectedHead --namespace $Namespace `
-                --credentials-file $CredentialsFile 2>$null
+                --credentials-file $CredentialsFile --runtime-root $RuntimeRoot 2>$null
         )
         $exitCode = $LASTEXITCODE
     } catch {
@@ -76,33 +85,36 @@ function Invoke-Closeout {
     throw $innerCode
 }
 
+$deploymentParent = $null
+$deploymentRoot = $null
+$deploymentParentCreated = $false
+$worktreeAdded = $false
+$primaryErrorCode = $null
+$cleanupErrorCode = $null
+$result = $null
+$previousNoByteCode = $env:PYTHONDONTWRITEBYTECODE
+
 try {
     if ($ExpectedHead -notmatch '^[0-9a-f]{40}$') { throw 'HEAD_INVALID' }
     if (!(Test-Path -LiteralPath $RepoRoot -PathType Container)) { throw 'HOST_UNAVAILABLE' }
+    if (!(Test-Path -LiteralPath $RuntimeRoot -PathType Container)) {
+        throw 'RUNTIME_ROOT_UNAVAILABLE'
+    }
     try {
         Get-Command -Name 'git' -CommandType Application -ErrorAction Stop | Out-Null
     } catch {
         throw 'GIT_NOT_AVAILABLE'
     }
 
-    Write-Host 'START: deploy exact head; one IG read-only session; fresh start; resume; Operator'
-    $remote = Invoke-GitGate -ErrorCode 'REMOTE_QUERY_FAILED' -Arguments @('remote', 'get-url', 'origin')
+    Write-Host 'START: isolated exact-head deployment; existing checkout remains untouched'
+    $remote = Invoke-GitGate -ErrorCode 'REMOTE_QUERY_FAILED' -Arguments @(
+        'remote', 'get-url', 'origin'
+    )
     if ($remote -notin @('https://github.com/hennebergtoni-lgtm/dax-Day.git',
                          'https://github.com/hennebergtoni-lgtm/dax-Day',
-                         'git@github.com:hennebergtoni-lgtm/dax-Day.git')) { throw 'REMOTE_MISMATCH' }
-    $tracked = Invoke-GitGate -ErrorCode 'WORKTREE_STATUS_FAILED' -Arguments @(
-        'status', '--porcelain', '--untracked-files=no'
-    )
-    if ($tracked) { throw 'TRACKED_DRIFT' }
-    $untrackedCode = Invoke-GitGate -ErrorCode 'UNTRACKED_CODE_QUERY_FAILED' -Arguments @(
-        'ls-files', '--others', '--exclude-standard', 'scripts/*.py', 'src/*.py'
-    )
-    if ($untrackedCode) { throw 'UNTRACKED_CODE' }
-
-    $head = Invoke-GitGate -ErrorCode 'LOCAL_HEAD_QUERY_FAILED' -Arguments @('rev-parse', 'HEAD')
-    Invoke-GitGate -ErrorCode 'START_HEAD_NOT_ANCESTOR' -Arguments @(
-        'merge-base', '--is-ancestor', '7728453c3c4f8fcd2cf6f8189b0f94562ccfa04f', $head
-    ) | Out-Null
+                         'git@github.com:hennebergtoni-lgtm/dax-Day.git')) {
+        throw 'REMOTE_MISMATCH'
+    }
     Invoke-GitGate -ErrorCode 'FETCH_FAILED' -Arguments @(
         'fetch', '--quiet', 'origin', 'nextgen-bot-line-v1'
     ) | Out-Null
@@ -110,29 +122,118 @@ try {
         'rev-parse', 'origin/nextgen-bot-line-v1'
     )
     if ($published -ne $ExpectedHead) { throw 'BRANCH_DRIFT' }
-    Invoke-GitGate -ErrorCode 'LOCAL_HEAD_NOT_ANCESTOR_FINAL' -Arguments @(
-        'merge-base', '--is-ancestor', $head, $ExpectedHead
+    Invoke-GitGate -ErrorCode 'START_HEAD_NOT_ANCESTOR' -Arguments @(
+        'merge-base', '--is-ancestor',
+        '236ea841d3d9e9d30532b08270995cc4925abaa5', $ExpectedHead
     ) | Out-Null
-    if ($head -ne $ExpectedHead) {
-        Invoke-GitGate -ErrorCode 'DETACHED_CHECKOUT_FAILED' -Arguments @(
-            'checkout', '--detach', $ExpectedHead
-        ) | Out-Null
-    }
-    $verifiedHead = Invoke-GitGate -ErrorCode 'HEAD_VERIFY_QUERY_FAILED' -Arguments @('rev-parse', 'HEAD')
-    if ($verifiedHead -ne $ExpectedHead) { throw 'HEAD_MISMATCH' }
+    Invoke-GitGate -ErrorCode 'TARGET_COMMIT_UNAVAILABLE' -Arguments @(
+        'cat-file', '-e', ("{0}^{{commit}}" -f $ExpectedHead)
+    ) | Out-Null
 
-    Set-Location -LiteralPath $RepoRoot
-    Write-Host 'WAIT: bounded fresh-start and next-true-close resume; no order endpoint'
-    $result = Invoke-Closeout
-    Write-Host ("SUMMARY: SUCCESS; error_code=NONE; namespace={0}; NONE/false" -f $result.namespace)
-    exit 0
+    $deploymentParent = Join-Path ([System.IO.Path]::GetTempPath()) (
+        'dax-day-step2237-' + [Guid]::NewGuid().ToString('N')
+    )
+    if (Test-Path -LiteralPath $deploymentParent) { throw 'DEPLOYMENT_PATH_COLLISION' }
+    try {
+        New-Item -ItemType Directory -Path $deploymentParent -ErrorAction Stop | Out-Null
+        $deploymentParentCreated = $true
+    } catch {
+        throw 'DEPLOYMENT_PARENT_CREATE_FAILED'
+    }
+    $deploymentRoot = Join-Path $deploymentParent 'exact-head'
+    try {
+        & git -C $RepoRoot worktree add --detach $deploymentRoot $ExpectedHead 2>$null | Out-Null
+        $worktreeExit = $LASTEXITCODE
+    } catch {
+        throw 'WORKTREE_ADD_FAILED'
+    }
+    if ($worktreeExit -ne 0) { throw 'WORKTREE_ADD_FAILED' }
+    $worktreeAdded = $true
+
+    $deployedHead = Invoke-GitGate -WorkingDirectory $deploymentRoot `
+        -ErrorCode 'DEPLOYMENT_HEAD_QUERY_FAILED' -Arguments @('rev-parse', 'HEAD')
+    if ($deployedHead -ne $ExpectedHead) { throw 'DEPLOYMENT_HEAD_MISMATCH' }
+    $deploymentStatus = Invoke-GitGate -WorkingDirectory $deploymentRoot `
+        -ErrorCode 'DEPLOYMENT_STATUS_FAILED' -Arguments @(
+            'status', '--porcelain', '--untracked-files=all'
+        )
+    if ($deploymentStatus) { throw 'DEPLOYMENT_NOT_CLEAN' }
+
+    $env:PYTHONDONTWRITEBYTECODE = '1'
+    Write-Host 'WAIT: one IG read-only session; fresh start; next true close; resume; Operator'
+    $result = Invoke-Closeout -DeploymentRoot $deploymentRoot
 } catch {
     $candidate = [string]$_.Exception.Message
-    $errorCode = if ($SafeErrorCodes -contains $candidate) {
+    $primaryErrorCode = if ($SafeErrorCodes -contains $candidate) {
         $candidate
     } else {
         'RUNNER_UNEXPECTED_FAILURE'
     }
-    Write-Host ("SUMMARY: BLOCKED / FAIL_CLOSED; error_code={0}; evidence retained; execution disabled" -f $errorCode)
+} finally {
+    if ($null -eq $previousNoByteCode) {
+        Remove-Item Env:PYTHONDONTWRITEBYTECODE -ErrorAction SilentlyContinue
+    } else {
+        $env:PYTHONDONTWRITEBYTECODE = $previousNoByteCode
+    }
+
+    if ($worktreeAdded -and $deploymentRoot) {
+        try {
+            $finalStatus = Invoke-GitGate -WorkingDirectory $deploymentRoot `
+                -ErrorCode 'DEPLOYMENT_STATUS_FAILED' -Arguments @(
+                    'status', '--porcelain', '--untracked-files=all'
+                )
+            if ($finalStatus) {
+                $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
+            } else {
+                & git -C $RepoRoot worktree remove $deploymentRoot 2>$null | Out-Null
+                if ($LASTEXITCODE -ne 0 -or (Test-Path -LiteralPath $deploymentRoot)) {
+                    $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
+                }
+            }
+        } catch {
+            $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
+        }
+    } elseif ($deploymentParentCreated -and $deploymentRoot -and
+              (Test-Path -LiteralPath $deploymentRoot)) {
+        try {
+            $children = @(Get-ChildItem -LiteralPath $deploymentRoot -Force -ErrorAction Stop)
+            if ($children.Count -eq 0) {
+                [System.IO.Directory]::Delete($deploymentRoot, $false)
+            } else {
+                $cleanupErrorCode = 'WORKTREE_ADD_FAILED_DEPLOYMENT_RETAINED'
+            }
+        } catch {
+            $cleanupErrorCode = 'WORKTREE_ADD_FAILED_DEPLOYMENT_RETAINED'
+        }
+    }
+
+    if ($deploymentParentCreated -and $deploymentParent -and
+        (Test-Path -LiteralPath $deploymentParent)) {
+        try {
+            $remaining = @(Get-ChildItem -LiteralPath $deploymentParent -Force -ErrorAction Stop)
+            if ($remaining.Count -eq 0) {
+                [System.IO.Directory]::Delete($deploymentParent, $false)
+            } elseif (!$cleanupErrorCode) {
+                $cleanupErrorCode = 'DEPLOYMENT_PARENT_CLEANUP_FAILED_RETAINED'
+            }
+        } catch {
+            if (!$cleanupErrorCode) {
+                $cleanupErrorCode = 'DEPLOYMENT_PARENT_CLEANUP_FAILED_RETAINED'
+            }
+        }
+    }
+}
+
+$errorCode = if ($cleanupErrorCode) { $cleanupErrorCode } else { $primaryErrorCode }
+if ($errorCode) {
+    Write-Host (
+        'SUMMARY: BLOCKED / FAIL_CLOSED; error_code={0}; existing checkout/evidence retained; execution disabled' `
+        -f $errorCode
+    )
     exit 2
 }
+Write-Host (
+    'SUMMARY: SUCCESS; error_code=NONE; namespace={0}; deployment cleaned; NONE/false' `
+    -f $result.namespace
+)
+exit 0

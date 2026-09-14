@@ -1,8 +1,10 @@
 """One-session Windows closeout for the canonical IG M5 contract.
 
-The runner performs one authenticated read-only session, a fresh Candidate cycle,
-waits for the next true M5 close, performs one resume cycle, validates Operator
-projection, and preserves both evidence envelopes. It has no dealing capability.
+Code executes from an isolated exact-head deployment while state/evidence is
+written to a caller-owned durable runtime root. The runner performs one login,
+a fresh Candidate cycle, waits for the next true M5 close, performs one resume
+cycle, validates Operator projection, and performs one cleanup. It has no
+dealing capability.
 """
 from __future__ import annotations
 
@@ -26,12 +28,12 @@ from daxlab.adapters.ig_rest_readonly import IgDemoReadOnlyClient, IgReadOnlyErr
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
-NAMESPACE = ".runtime/ig_m5_contract_2237_interval_start_v2_attempt_01"
+NAMESPACE = ".runtime/ig_m5_contract_2237_interval_start_v2_attempt_02"
 CREDENTIALS = Path(r"C:\Users\Mandy\ig_demo.env")
 WAIT_CHUNK_SECONDS = 30
 RESUME_OFFSET_SECONDS = 5
 CLOCK_DRIFT_SECONDS = 5
-SCHEMA = "DAX_IG_M5_CONTRACT_2237_HOST_CLOSEOUT_V1"
+SCHEMA = "DAX_IG_M5_CONTRACT_2237_HOST_CLOSEOUT_V2"
 
 ERROR_CODES = frozenset({
     "GOVERNANCE_WINDOWS_HOST_REQUIRED",
@@ -43,13 +45,21 @@ ERROR_CODES = frozenset({
     "STATE_INVALID_NAMESPACE",
     "STATE_NAMESPACE_SYMLINK",
     "STATE_NAMESPACE_EXISTS",
+    "STATE_RUNTIME_ROOT_INVALID",
+    "STATE_RUNTIME_ROOT_UNAVAILABLE",
     "STATE_PUBLICATION_FAILED",
+    "STATE_READBACK_FAILED",
     "STATE_CHANGED_OVERLAP",
     "STATE_ANCHOR_NOT_FOUND",
     "STATE_NO_NEW_FINALIZED_M5",
     "DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED",
     "DATA_STALE_AT_PROCESSING",
     "DATA_TEST_FAILED",
+    "FRESH_START_FAILED",
+    "RESUME_FAILED",
+    "OPERATOR_FAILED",
+    "SESSION_SETUP_FAILED",
+    "CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID",
     "IG_AUTHENTICATION_FAILED_NO_RETRY",
     "IG_SESSION_READ_FAILED_NO_RETRY",
     "IG_SESSION_CLEANUP_FAILED",
@@ -119,6 +129,20 @@ def _exclusive_json(path: Path, payload: dict[str, object]) -> None:
         raise CloseoutBlocked("STATE_PUBLICATION_FAILED") from None
 
 
+def _atomic_json(path: Path, payload: dict[str, object]) -> None:
+    try:
+        atomic_write_json(path, payload)
+    except Exception:
+        raise CloseoutBlocked("STATE_PUBLICATION_FAILED") from None
+
+
+def _read_state(path: Path) -> dict[str, object]:
+    try:
+        return read_json_object(path)
+    except Exception:
+        raise CloseoutBlocked("STATE_READBACK_FAILED") from None
+
+
 def _cycle(
     client: IgDemoReadOnlyClient,
     *,
@@ -164,7 +188,11 @@ def run(
         "error_code": None,
         "exact_code_head": None,
         "namespace": namespace,
+        "code_deployment": "ISOLATED_EXACT_HEAD_WORKTREE",
+        "runtime_storage": "CALLER_OWNED_EXTERNAL_ROOT",
         "session_model": "ONE_LOGIN_TWO_READ_CYCLES_ONE_CLEANUP",
+        "session_cleanup": "NOT_RUN",
+        "session_cleanup_error_code": None,
         "fresh_start": "NOT_RUN",
         "resume": "NOT_RUN",
         "operator": "NOT_RUN",
@@ -175,6 +203,7 @@ def run(
     }
     directory: Path | None = None
     client: IgDemoReadOnlyClient | None = None
+    stage = "GOVERNANCE"
     try:
         require(platform.system() == "Windows", "GOVERNANCE_WINDOWS_HOST_REQUIRED")
         require(re.fullmatch(r"[0-9a-f]{40}", expected_head) is not None, "GOVERNANCE_INVALID_HEAD")
@@ -188,15 +217,34 @@ def run(
             is not None,
             "STATE_INVALID_NAMESPACE",
         )
+
+        stage = "STATE"
         root = root.resolve()
+        require(root.is_dir(), "STATE_RUNTIME_ROOT_INVALID")
         runtime = root / ".runtime"
         require(not runtime.is_symlink(), "STATE_NAMESPACE_SYMLINK")
-        runtime.mkdir(exist_ok=True)
+        try:
+            runtime.mkdir(exist_ok=True)
+        except OSError:
+            raise CloseoutBlocked("STATE_RUNTIME_ROOT_UNAVAILABLE") from None
         directory = root / namespace
         require(not os.path.lexists(directory), "STATE_NAMESPACE_EXISTS")
-        directory.mkdir()
-        credentials = probe._credentials_from_file(credentials_file)
-        client = client_factory(credentials=credentials)
+        try:
+            directory.mkdir()
+        except OSError:
+            raise CloseoutBlocked("STATE_RUNTIME_ROOT_UNAVAILABLE") from None
+
+        stage = "CREDENTIALS"
+        try:
+            credentials = probe._credentials_from_file(credentials_file)
+        except (OSError, RuntimeError, ValueError):
+            raise CloseoutBlocked("CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID") from None
+
+        stage = "SESSION"
+        try:
+            client = client_factory(credentials=credentials)
+        except Exception:
+            raise CloseoutBlocked("SESSION_SETUP_FAILED") from None
         require(
             client.execution_capability == "NONE"
             and client.order_execution_enabled is False,
@@ -204,22 +252,29 @@ def run(
         )
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
             client.login()
+
+        stage = "FRESH_START"
         fresh = _cycle(client, head=expected_head, prior=None, clock=clock)
-        atomic_write_json(directory / "evidence.json", fresh)
+        _atomic_json(directory / "evidence.json", fresh)
         _exclusive_json(directory / "FRESH_START.json", fresh)
         summary["fresh_start"] = "SUCCESS"
 
+        stage = "WAIT"
         latest = candidate.utc(fresh["latest_finalized_m5"]["close_time"])
         wait(resume_target(latest))
-        prior = read_json_object(directory / "evidence.json")
+
+        stage = "RESUME"
+        prior = _read_state(directory / "evidence.json")
         resume = _cycle(client, head=expected_head, prior=prior, clock=clock)
         require(
             resume["recovery_state"] == "RESUME_ANCHOR_RECONCILED",
             "STATE_ANCHOR_NOT_FOUND",
         )
-        atomic_write_json(directory / "evidence.json", resume)
+        _atomic_json(directory / "evidence.json", resume)
         _exclusive_json(directory / "RESUME.json", resume)
         summary["resume"] = "SUCCESS"
+
+        stage = "OPERATOR"
         candidate.validate_evidence(resume, head=expected_head, now=clock())
         _exclusive_json(directory / "OPERATOR.json", {
             "schema": "DAX_IG_M5_CONTRACT_2237_OPERATOR_V1",
@@ -242,13 +297,27 @@ def run(
         )
     except Exception as exc:
         code = str(exc)
-        summary["error_code"] = code if code in ERROR_CODES else "RUNNER_UNEXPECTED_FAILURE"
+        if code in ERROR_CODES:
+            summary["error_code"] = code
+        elif stage == "FRESH_START":
+            summary["error_code"] = "FRESH_START_FAILED"
+        elif stage in {"WAIT", "RESUME"}:
+            summary["error_code"] = "RESUME_FAILED"
+        elif stage == "OPERATOR":
+            summary["error_code"] = "OPERATOR_FAILED"
+        elif stage == "SESSION":
+            summary["error_code"] = "SESSION_SETUP_FAILED"
+        else:
+            summary["error_code"] = "RUNNER_UNEXPECTED_FAILURE"
     finally:
         if client is not None:
             try:
                 with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                     client.logout()
+                summary["session_cleanup"] = "SUCCESS"
             except Exception:
+                summary["session_cleanup"] = "FAILED"
+                summary["session_cleanup_error_code"] = "IG_SESSION_CLEANUP_FAILED"
                 if summary["status"] == "SUCCESS":
                     summary["status"] = "BLOCKED"
                     summary["error_code"] = "IG_SESSION_CLEANUP_FAILED"
@@ -266,11 +335,18 @@ def main(argv=None) -> int:
     parser.add_argument("--expected-head", required=True)
     parser.add_argument("--namespace", default=NAMESPACE)
     parser.add_argument("--credentials-file", type=Path, default=CREDENTIALS)
+    parser.add_argument(
+        "--runtime-root",
+        type=Path,
+        default=REPO,
+        help="Durable caller-owned root; code may run from an ephemeral exact-head worktree.",
+    )
     args = parser.parse_args(argv)
     code, summary = run(
         args.expected_head,
         namespace=args.namespace,
         credentials_file=args.credentials_file,
+        root=args.runtime_root,
     )
     print(json.dumps(summary, sort_keys=True, allow_nan=False))
     return code
