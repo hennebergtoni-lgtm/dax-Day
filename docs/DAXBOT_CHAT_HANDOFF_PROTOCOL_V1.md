@@ -222,6 +222,10 @@ If the old chat hard-stops first, the new chat performs the mandatory recovery s
 - official steps are integers only;
 - no decimal or letter suffixes;
 - **Step-Close-Gate:** before a new independent whole-number step starts, the previous active step must be explicitly classified `COMPLETED`, `INTERRUPTED`, `WAITING_EXTERNAL`, or `BLOCKED`, with reason/evidence and `docs/CURRENT_WORK_STEP.md` synchronized;
+- **Pointer-before-next-step:** the canonical pointer must be synchronized before any new independent official step begins;
+- **visible numbering is monotonic**: once an official step number has been visibly used, later continuation must never reuse an older number as if it were current;
+- if an interrupted lane later resumes, **resume its unfinished scope under the next unused integer** rather than reviving its old visible number;
+- **the old wording `Fortsetzung Schritt N` must not be used** for a resumed interrupted lane;
 - `WAITING_EXTERNAL` blocks only its lane unless it is the actual critical path;
 - new independent steps require the previous active step to be truthfully classified and pointer synchronized;
 - out-of-band Work commits are not retroactively relabeled as an unrelated unfinished step;
