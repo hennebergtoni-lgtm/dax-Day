@@ -8,12 +8,12 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Current pointer
 
-- Last completed whole-number step: **2230**
+- Last completed whole-number step: **2231**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2231**
-- Active step state: **IMPLEMENTED_LOCAL — WAITING_EXTERNAL IG DEMO HOST RE-RUN / NO BROKER SIDE EFFECT**
+- Active whole-number step: **2232**
+- Active step state: **PLANNED — REAL-HOST IG SHADOW END-TO-END / NO BROKER SIDE EFFECT**
 - Work tranche state: **COMPLETED_LOCAL_OPERATOR_HARDENING_2 — EXTERNAL_GATES_REMAIN**
-- Next step after successful completion: **2232**
+- Next step after successful completion: **2233**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
@@ -30,11 +30,16 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Decimal or letter step IDs: **PROHIBITED**
 
 - Step 2206 remains **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**; independent local Work uses Steps 2207 onward under WORK_CONTINUITY_PROTOCOL section 4A.
-- Active Step 2231 scope: **Explicit 2026-09-14 Work implementation mandate: audit/fix the IG Demo MINUTE_5 timestamp and v3 pagination contracts, credential-free read-only probe and regression evidence. Supplied real Windows IG login/market/tick/history observations remain VERIFIED as supplied; the corrected code's Windows run remains WAITING_EXTERNAL. M01/2231 is not fully completed by local tests. Step 2206 and host2122 are not replaced; execution remains NONE/false.**
+- Completed Step 2231 scope: **IG M5 timestamp/pagination correction and corrected real Windows probe; VERIFIED AS SUPPLIED by the user on 2026-09-14. This closes the IG feed slice of M01, not the broader host/risk/reconciliation milestone.**
+- Active Step 2232 scope: **REAL-HOST SHADOW END-TO-END OBSERVABILITY TEST: live IG CLOSED-M5 -> unchanged CAND-001 pipeline/orchestrator -> SHADOW state/DecisionRecord -> fresh validated OperatorSnapshot V3 and credential-free evidence. Reuse the IG adapter/client and generic Candidate owners; never synthesize an MT5 bundle. No orders, controls, strategy/cost/risk changes, merge or Acceptance refresh.**
 
-## Step 2231 local IG closeout — host verification still pending
+## Step 2231 real-host closeout
 
-Read `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md` for the exact start pin, reproduced timestamp/OHLC and v3 pagination defects, official documentation limits, tests, publication CI and the single next Windows probe. Local implementation uses the existing IG adapter/client/probe only; no new execution or reconciliation owner. The supplied ten-row sample alone does not reproduce the real freshness exception. Validated implementation head `a34205b66ddb68d401dc88ceb38a2146cc745001`: 70 IG / 1069 relevant passed; full local 2689 passed / 6 pwsh skips; Ruff, syntax and eight offline gates passed; DAX #668 run 34830283471 and Research #1452 run 34830283580 GREEN (2695 CI tests). Final handoff-head checks must be re-pinned separately. A corrected Windows 40-bar rerun is still required before VERIFIED / full M01 closure. Step 2231 remains the active whole-number step; 2230 remains last completed and 2232 is not started.
+The user's explicit 2026-09-14 Work mandate supplies a successful corrected probe from `C:\Users\Mandy\Documents\dax-Day-ig-hostcheck`, with clean checkout at the current publication head, credentials outside Git at `C:\Users\Mandy\ig_demo.env`, exact EPIC `IX.D.DAX.IFMM.IP`, exit 0 and newly written `.runtime/ig-demo-readonly-evidence.json`. Reported: raw=40, not-closed=0 (thus CLOSED=40), FRESH, latest closed age approximately 231 s under unchanged 600 s, `IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_END_V1`, TRADEABLE, open positions=0, working orders=0, NONE/false and fingerprint present. Protection/reconciliation remain UNKNOWN. No order/cancel/modify was reported.
+
+**2231 COMPLETED / VERIFIED AS SUPPLIED** for the corrected IG feed scope. The original evidence JSON, exact UTC observation/last-close values and actual fingerprint string were not supplied to this Work turn; no such values are invented and no independent host execution is claimed. Source/limitations: `docs/STEP_2231_REAL_HOST_CLOSEOUT.md`. Current task start is exactly `8523c6cd98944c6ed95f6f7af585e2c4d9eb41de`, main unchanged; required CI DAX #670 / Research #1454 SUCCESS. The previous implementation regressions remain recorded in `IG_DEMO_M5_TIMESTAMP_HANDOFF.md`.
+
+M01 remains incomplete beyond its IG feed slice; Step2206 and MT5 host2122 remain independent and external. Step2232 must not be closed from offline tests. Its unblock condition is a newly collected real Windows IG/Candidate SHADOW evidence bundle from the exact tested publication head, with fresh processing/telemetry and no-order safety.
 
 ## Ledger archive
 
@@ -47,6 +52,7 @@ Read `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md` for the exact start pin, reproduced 
 
 | Step | Work unit | Evidence / state |
 | ---: | --- | --- |
+| 2231 | Corrected real Windows IG feed probe. | **COMPLETED / VERIFIED AS SUPPLIED.** User reports exit 0, newly written evidence, 40 CLOSED bars, FRESH/~231 s <=600, exact EPIC/interval-end contract, NONE/false; no actual fingerprint/time values invented. Protection/reconciliation UNKNOWN; broader M01/2206/2122 not closed. |
 | 2230 | Final full-regression/safety/CI source validation. | **COMPLETED.** Tested code head 2d8b7f14165586337f5cab5237fd46aba06511dd; 119 focused and 2619 full passed / six local pwsh skips; full Ruff, JS and eight offline gates GREEN; DAX #648 run 34779991786 and research #1432 run 34779992010 GREEN. Final pointer/publication-head CI is verified separately after publication. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2229 | Malformed-source/credential-alert HTTP hardening. | **COMPLETED.** Code head 2d8b7f14165586337f5cab5237fd46aba06511dd; 85 focused malformed/credential/telemetry/HTTP/DOM/reconciliation tests passed; Ruff/JS passed; canonical PENDING_ENTRY and CANDIDATE_INPUT preserved; CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |
 | 2228 | Executable mobile DOM/failure contracts. | **COMPLETED.** Code/evidence head dcaec617ac75d349e55db9b5116cc2b0abe6d06f; 26 UI/DOM/execution/credential tests passed; Ruff/JS passed; Chromium absent, actual browser/device rendering UNVERIFIED; CI pending final-tranche verification. Step 2206 remains WAITING_EXTERNAL / USER_AUTH. |

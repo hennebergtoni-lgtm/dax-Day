@@ -77,3 +77,7 @@ On exit 2 / STALE_M5_HISTORY / INCOMPLETE_M5_PAGINATION / clock reversal: **BLOC
 - Actual first DEMO evidence order: BLOCKED by absent authorization and execution capability; outside this task.
 - `execution_capability=NONE`; `order_execution_enabled=false`; SHADOW authorized only. DEMO/PAPER/LIVE execution unauthorized.
 - No actual IG/MT5 session was opened by this Work; broker orders/side effects/order_send calls = 0. V11.2, CAND-001 trading logic, costs, risk/protection/execution and verified MT5 path unchanged. No fabricated broker evidence, merge, force push or Acceptance refresh.
+
+## 2026-09-14 supplied corrected Windows closeout
+
+The user now reports successful fresh corrected real Windows evidence: exit0/new file, raw40/excluded0, FRESH/~231 seconds under600, TRADEABLE, NONE/false, fingerprint present. **Step2231 COMPLETED / VERIFIED AS SUPPLIED** for this IG feed scope. Exact original UTC times/digest were not supplied in this Work turn; no independent rerun is claimed. Protection/reconciliation UNKNOWN; M01 overall and lanes2206/2122 remain open. This overlay supersedes the earlier pending-rerun statements above for Step2231 only. See `STEP_2231_REAL_HOST_CLOSEOUT.md`. The next task is Step2232 live IG -> unchanged generic CAND-001 SHADOW -> fresh validated operator evidence.

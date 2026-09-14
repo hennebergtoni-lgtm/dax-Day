@@ -326,3 +326,7 @@ The remaining broader host chain is: exact runtime/provider instance -> DEMO acc
 Only after those real facts are reviewed may the project decide whether conditions exist to prepare/request separate authorization for M02.
 
 No repository prose, Work report or green CI can substitute for those external facts.
+
+## 2026-09-14 Step2231 closeout / Step2232 overlay
+
+Step2231 is COMPLETED / VERIFIED AS SUPPLIED for the corrected IG feed lane (user-reported actual Windows exit0/new evidence, raw40/excluded0, FRESH/~231s under600, exact EPIC/interval-end contract, NONE/false). No actual UTC/digest values are invented. See `STEP_2231_REAL_HOST_CLOSEOUT.md`. This overlay supersedes earlier pending2231 statements. Official pointer: last completed2231, active2232 REAL-HOST SHADOW END-TO-END, next2233 after success. M01 overall remains incomplete; Protection/Reconciliation UNKNOWN, Step2206/2122 independent. Post-DEMO research is still PLANNED/DO NOT START. No execution/Acceptance/merge authorization.
