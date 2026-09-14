@@ -8,7 +8,7 @@ Updated: 2026-09-14. Local implementation is **IMPLEMENTED**; corrected Windows 
 - Exact start head: `3f96a2e23b1d55bf7cb69cfa67c6721b6da6b1fc`; actual PR head matched: **NO START DRIFT**.
 - Main: `e0784ebfc11bee28475fd9c3385be661af58a738`.
 - This change creates a newer head. Before the host rerun, re-pin the actual PR head and both required CI checks; synchronize the Windows checkout to that exact head. Never use the start SHA as the fixed deployment target.
-- Publication/CI evidence is recorded below once available. Green CI is local/fixture evidence, not a real IG observation.
+- Exact validated implementation head: `a34205b66ddb68d401dc88ceb38a2146cc745001`. The subsequent handoff-only commit preserves its code/test tree. For the actual final publication head, read PR #109 / `git rev-parse HEAD` and its fresh required checks; a document cannot contain its own commit SHA. Green CI is local/fixture evidence, not a real IG observation.
 
 ## Supplied real host evidence — preserve, do not invent
 
@@ -53,7 +53,9 @@ Market observation is a local response timestamp, not broker clock evidence. `up
 - Full pytest: **2689 passed, 6 skipped** because local `pwsh` is unavailable; these skips remain separate from real Windows evidence.
 - Full Ruff, Python syntax/imports and JavaScript syntax: **PASSED**.
 - Eight existing offline gates: recovery preflight, research registry, hypothesis ledger, web static integrity, runtime safety, frozen engine probe, V11.2 replay and shadow soak: **PASSED**. Replay/soak are fixture/synthetic-only.
-- Required `dax-bot-1x-ci` and `research-lab-ci`: **PENDING PUBLICATION**, never claimed green in advance.
+- Implementation head `a34205b66ddb68d401dc88ceb38a2146cc745001`: `dax-bot-1x-ci` **#668 GREEN**, [run 34830283471](https://github.com/hennebergtoni-lgtm/dax-Day/actions/runs/34830283471); `research-lab-ci` **#1452 GREEN**, [run 34830283580](https://github.com/hennebergtoni-lgtm/dax-Day/actions/runs/34830283580), **2695 passed** including the runner's available PowerShell parse tests.
+- Five main-push-only Neon/DB gates are skipped on PR CI and remain outside this change's evidence. The handoff-only publication commit requires both checks on its own actual head; re-read them instead of transferring these source-head statuses blindly.
+- Candidate benchmark (`--sessions 50 --repeats 3`): completed locally, OBSERVATION_ONLY, synthetic/offline data; no runtime or broker performance claim.
 
 ## Exact next Windows host probe
 

@@ -34,7 +34,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Step 2231 local IG closeout — host verification still pending
 
-Read `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md` for the exact start pin, reproduced timestamp/OHLC and v3 pagination defects, official documentation limits, tests, publication CI and the single next Windows probe. Local implementation uses the existing IG adapter/client/probe only; no new execution or reconciliation owner. The supplied ten-row sample alone does not reproduce the real freshness exception. A corrected Windows 40-bar rerun is still required before VERIFIED / full M01 closure. Step 2231 remains the active whole-number step; 2230 remains last completed and 2232 is not started.
+Read `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md` for the exact start pin, reproduced timestamp/OHLC and v3 pagination defects, official documentation limits, tests, publication CI and the single next Windows probe. Local implementation uses the existing IG adapter/client/probe only; no new execution or reconciliation owner. The supplied ten-row sample alone does not reproduce the real freshness exception. Validated implementation head `a34205b66ddb68d401dc88ceb38a2146cc745001`: 70 IG / 1069 relevant passed; full local 2689 passed / 6 pwsh skips; Ruff, syntax and eight offline gates passed; DAX #668 run 34830283471 and Research #1452 run 34830283580 GREEN (2695 CI tests). Final handoff-head checks must be re-pinned separately. A corrected Windows 40-bar rerun is still required before VERIFIED / full M01 closure. Step 2231 remains the active whole-number step; 2230 remains last completed and 2232 is not started.
 
 ## Ledger archive
 
