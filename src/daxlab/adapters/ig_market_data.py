@@ -91,6 +91,11 @@ class IgClosedM5CandleSource:
             raise ValueError("IG price rows must remain chronological")
         if len(set(open_times)) != len(open_times):
             raise ValueError("IG price timestamps must remain unique")
+        if any(
+            current - previous != _TIMEFRAME_DELTA
+            for previous, current in zip(open_times, open_times[1:])
+        ):
+            raise ValueError("IG price rows must remain continuous M5 bars")
 
         observed_at = feed.observed_at.astimezone(timezone.utc)
         if any(open_time + _TIMEFRAME_DELTA > observed_at for open_time in open_times):
