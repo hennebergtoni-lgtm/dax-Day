@@ -1,5 +1,8 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+**2233 automation update (2026-09-14):** Existing RAW attempt01 aborted fail-closed as supplied: A Exit0 preserved at .runtime/ig_raw_m5_truth_2233_v2/A.json; B IG_AUTHENTICATION_FAILED_NO_RETRY Exit2; C/AB/BC NOT RUN. New one-command Windows RAW runner: scripts/run_ig_raw_truth_2233.ps1 (optional CMD), explicit -ExpectedHead from final closeout, default unused .runtime/ig_raw_m5_truth_2233_v2_attempt_02. Fixed UTC A/B/C windows, no retries/replacement sessions, local AB/BC only after all captures succeed, exclusive credential-free SUMMARY.json, NONE/false. See STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md for the current automated procedure; the former manual command sequence is superseded. Automation is implemented repository-side, not timestamp proof. Step2233 remains UNVERIFIED / WAITING_EXTERNAL; Candidate quarantine and strict overlap remain, historical evidence untouched, no subsequent step activated. Local execution unavailable in this tranche; exact-head mandatory CI is the validation authority.
+
+
 Status: **BINDING**  
 Updated: **2026-09-14 — Step2233 reopened / RAW provider truth before another contract**
 

@@ -20,67 +20,42 @@ The artifact includes request-start and immediate response-observation UTC, exac
 
 RAW V2 includes zero-based raw_row_index, a deterministic fingerprint for each projected row and the complete envelope. Authoritative normalized_event_time/normalized_close_time/is_closed/freshness_seconds remain null while their states are UNKNOWN; candidate_finalized is false because no Candidate input is authorized under an unresolved contract. Both current interval-end and alternative interval-start mappings are explicitly UNVERIFIED hypotheses. Each hypothesis separately displays event/close, request-start-based closure and response-observation age/freshness against the existing canonical600s limit. Negative hypothetical age means not-yet-closed, never current/finalized. No hypothesis asserts a provider-proven mapping, finality, current Candidate decision or successful resume. Local comparisons validate canonical source contracts/hashes, require same code head and sequential observations, identify changed raw fields by the **same raw timestamp**, retain both source hashes and indicate whether observation spanned timestamp+5minutes. Changed raw rows are facts; **historical closed-bar revision remains UNKNOWN until timestamp semantics is resolved**. Hashes bind artifact integrity, not provider authentication.
 
-## Windows sampling — three single runs, manual five-minute pauses
+## Windows sampling — one-command runner (current procedure)
 
-Use the new RAW V2 diagnostic head. Older RAW V1 artifacts are preserved and rejected for V2 comparison with RAW_EVIDENCE_SCHEMA_MISMATCH, without rewrite/migration. This RAW observation schema bump is not a final Candidate state-contract migration. The current live Candidate CLI has no success path: after existing prior-state validation it blocks DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED before opening IG, Candidate processing or atomic evidence publication. Hash-bound local evidence reads retain existing head/manifest/freshness checks; prior-head/intermediate success cannot be presented as current new-head evidence. No CLI bypass, grace replacement, strategy or virtual-lifecycle change.
+Automation task start: **8105fae4247370ea6ee5e367a89c44786a6a922e**, exact/no drift; main/base e0784ebfc11bee28475fd9c3385be661af58a738, PR109 OPEN/UNMERGED, preceding CI DAX678 / Research1462 SUCCESS.
 
-Known host: `C:\Users\Mandy\Documents\dax-Day-ig-hostcheck`; external credentials: `C:\Users\Mandy\ig_demo.env`. Use the exact published diagnostic head reported with this handoff, not its preceding start head. No reset/clean/deletion, no merge. The only host action is this read-only diagnostic; do not run Candidate processing under the disproven policy.
+Attempt01 is **ABORTED_FAIL_CLOSED AS SUPPLIED**: A Exit0 at .runtime/ig_raw_m5_truth_2233_v2/A.json; B Exit2 / IG_AUTHENTICATION_FAILED_NO_RETRY; C/AB/BC NOT RUN. Work has not received original A bytes. Preserve that directory and A unchanged; never mix it into attempt02.
 
-```powershell
-$ErrorActionPreference = 'Stop'
-Set-Location 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck'
-# Set $ExpectedHead to the exact published diagnostic head from the Work closeout.
-if ((git status --porcelain --untracked-files=no | Out-String).Trim()) { throw 'TRACKED_DRIFT' }
-git fetch origin nextgen-bot-line-v1
-if ($LASTEXITCODE -ne 0) { throw 'FETCH_FAILED' }
-if ((git rev-parse origin/nextgen-bot-line-v1).Trim() -ne $ExpectedHead) { throw 'BRANCH_DRIFT' }
-git merge-base --is-ancestor 5b0b716f886361227fbe15152c9fa316fbe7a914 HEAD
-if ($LASTEXITCODE -ne 0) { throw 'UNKNOWN_LOCAL_ANCESTRY' }
-git merge-base --is-ancestor HEAD $ExpectedHead
-if ($LASTEXITCODE -ne 0) { throw 'PARALLEL_LOCAL_DRIFT' }
-git switch --detach $ExpectedHead
-if ($LASTEXITCODE -ne 0) { throw 'CHECKOUT_FAILED' }
+The current launcher is scripts/run_ig_raw_truth_2233.ps1, optionally scripts/run_ig_raw_truth_2233.cmd. It runs scripts/run_ig_raw_truth_2233.py, which exclusively invokes the existing diagnostic with the same Python interpreter and absolute script/output paths. No new engine, Candidate processing, state migration or provider policy is introduced.
 
-$RawDir = '.runtime/ig_raw_m5_truth_2233_v2'
-if (Test-Path $RawDir) { throw 'PRESERVE_EXISTING_RAW_EVIDENCE_REVIEW_BEFORE_NEW_RUN' }
-$Now = [DateTimeOffset]::UtcNow
-$Boundary = $Now.AddSeconds(-$Now.Second).AddMilliseconds(-$Now.Millisecond)
-$Boundary = $Boundary.AddMinutes(-($Boundary.Minute % 5))
-$AAt = $Boundary.AddSeconds(60)
-if ($Now -gt $AAt) { $AAt = $AAt.AddMinutes(5) }
-$BAt = $AAt.AddMinutes(5)
-$CAt = $AAt.AddMinutes(10)
-"Manual RAW A no earlier than $($AAt.ToString('o'))"
-"Manual RAW B no earlier than $($BAt.ToString('o'))"
-"Manual RAW C no earlier than $($CAt.ToString('o'))"
+Known Windows worktree: C:\Users\Mandy\Documents\dax-Day-ig-hostcheck. Deployment must first put this clean worktree on the **exact published final head from the Work closeout**. The launcher intentionally does not fetch, switch, reset, clean or accept a newer head automatically. Once deployed, the entire attempt needs just this one start command, from the worktree:
 
-function Invoke-2233Raw([string]$Name, [DateTimeOffset]$At) {
-    $Current = [DateTimeOffset]::UtcNow
-    if ($Current -lt $At -or $Current -ge $At.AddMinutes(4)) { throw 'RAW_SAMPLING_WINDOW_MISSED' }
-    python scripts/ig_raw_m5_timestamp_diagnostic.py --expected-head $ExpectedHead --credentials-file 'C:\Users\Mandy\ig_demo.env' --output "$RawDir/$Name.json"
-    "RAW $Name Exit: $LASTEXITCODE"
-    if ($LASTEXITCODE -ne 0) { throw 'RAW_FAILED_STOP_NO_RETRY' }
-}
-```
+    powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_ig_raw_truth_2233.ps1 -ExpectedHead FINAL_HEAD_FROM_CLOSEOUT
 
-Wait manually until AAt, then execute only:
+The closeout supplies this command with the actual final SHA substituted, rather than asking the mobile user to calculate anything. The default external credential path is the already-used C:\Users\Mandy\ig_demo.env; it is never displayed or copied into the Summary. Python defaults to python, matching the verified host command; an explicit interpreter path with spaces is supported via -PythonExecutable. The optional CMD launcher accepts the same parameters. Do not run Candidate fresh-start/resume while DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED remains active.
 
-```powershell
-Invoke-2233Raw 'A' $AAt
-```
+Default new namespace: **.runtime/ig_raw_m5_truth_2233_v2_attempt_02**. If it already exists, STOP; no overwrite, delete, reuse or automatic namespace increment. A deliberately later attempt requires an explicitly chosen new numbered namespace via -Namespace. Old RAW V1/V2 files and intermediate Candidate state remain untouched.
 
-Wait until BAt, then only `Invoke-2233Raw 'B' $BAt`. Wait until CAt, then only `Invoke-2233Raw 'C' $CAt`. This covers two successive raw timestamps before/after their next boundary without rapid login sessions. A missed window or any failure stops the experiment; do not silently replace snapshots, retry or present older success as current. Session cleanup failure also blocks publication. If auth401, fixed credential-free code IG_AUTHENTICATION_FAILED_NO_RETRY; no retry policy.
+### Schedule, failures and visible evidence
 
-Then these two comparisons run entirely locally, without credentials or IG requests:
+- Preflight: Windows, exact head, tracked drift/untracked Python/import parity via the existing guard, restricted unused attempt namespace, external credential file presence. Namespace is claimed atomically with mkdir. No credential contents are read by the runner.
+- A is scheduled 60 seconds after the **next** UTC five-minute boundary; B exactly five minutes later, C ten minutes later. This sampling offset is not a finalization grace and changes no timestamp interpretation.
+- Each permitted Request window is [scheduled UTC, scheduled UTC + 60 seconds). Windows are fixed once, never replanned. Waits are at most30 seconds per clock check, with wall/monotonic continuity checks and no network polling. Allow roughly11–16 minutes plus local comparisons; keep the Windows host awake.
+- Each child diagnostic gets one invocation, no shell, no retry: one login, one read-only prices request, cleanup. B follows only successful A; C only successful B. Three separately scheduled sessions are intentional; no automatic replacement session after a failure.
+- A success requires Exit0, a freshly created, canonical hash-valid RAW V2 artifact with matching head and the **actual price request_started_at_utc inside its fixed window**. A login that delays the request beyond the window produces a preserved artifact but an aborted attempt, never an accepted replacement. Response observation remains the diagnostic's actual clock, never the schedule.
+- Network/auth/nonzero exit, missing/invalid artifact, missed window, clock/code drift or timeout immediately abort. Child timeouts:120s RAW,30s local compare; no automatic rerun. Auth401 remains IG_AUTHENTICATION_FAILED_NO_RETRY. Child provider text/stdout/stderr and exceptions are never forwarded.
+- Only all successful A/B/C permit AB, then BC. Both use --compare locally, no credentials or provider calls; canonical comparison output is checked against the exact source artifacts. A failed AB stops BC.
+- Exit0 means **RAW acquisition and local comparisons succeeded**, never that timestamp semantics or Step2233 was verified. Any other attempt result returns Exit2 / ABORTED_FAIL_CLOSED.
 
-```powershell
-python scripts/ig_raw_m5_timestamp_diagnostic.py --expected-head $ExpectedHead --compare "$RawDir/A.json" "$RawDir/B.json" --output "$RawDir/AB.json"
-if ($LASTEXITCODE -ne 0) { throw 'RAW_AB_COMPARE_FAILED' }
-python scripts/ig_raw_m5_timestamp_diagnostic.py --expected-head $ExpectedHead --compare "$RawDir/B.json" "$RawDir/C.json" --output "$RawDir/BC.json"
-if ($LASTEXITCODE -ne 0) { throw 'RAW_BC_COMPARE_FAILED' }
-```
+The console displays HEAD, namespace and all schedules; WAITING FOR A/B/C, acquisition status/exit, compare statuses and FINAL STATUS. Supply the final screenshot/summary first; then A/B/C/AB/BC source JSON for substantive review. Do not supply credentials.
 
-Supply A/B/C plus AB/BC JSON and actual stdout/exit codes. Never supply the credentials file. The experiment is accepted only if the actual request/response times show two successive timestamps observed before and after their respective next M5 boundaries; manual schedule alone is not evidence of that coverage.
+SUMMARY.json is published once with exclusive creation. It contains exact_head, attempt_namespace, started_at/finished_at, scheduled_at/invoked_at, per-capture requested/success/exit/status and actual request/response clocks/fingerprint, compare status/exit/fingerprint, final_state/error_code, NONE/false and deterministic fingerprint. Here requested means the child acquisition was invoked; actual successful price-request clocks are recorded separately. NOT_RUN captures have requested=false/exit=null. Provider text, API keys, account IDs and tokens are excluded. Preflight rejection does not create/alter an attempt directory: its safe summary is stdout only. A hard host termination cannot guarantee a summary; never infer success from partial artifacts.
+
+The runner preserves all published files on failure and does not compare incomplete or mixed attempts. Successful automation alone does not establish interval-start/end, a maximum revision window or provider finality. Actual raw clocks and cross-boundary comparisons still require review under the unchanged classification gate below. Existing live Candidate quarantine, strict overlap and all safety limits remain.
+
+### Automation validation scope
+
+Offline regressions cover exact-head/tracked-drift blocking, exclusive namespace/summary, A/B/C/compare short circuits, no retries, retained previous A, actual Request windows, clock discontinuities, hash-bound source/compare validation, safe errors, NONE/false, single-child paths with spaces and PowerShell exit propagation. The local selected environment is unavailable for this tranche; no local execution is claimed. Mandatory GitHub CI executes the full suite, Ruff and all eight existing offline/safety gates on the published head. No JavaScript changed and no real Windows/IG attempt is executed by Work.
 
 ## Semantics decision gate / remaining work
 
