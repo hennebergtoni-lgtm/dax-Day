@@ -1,5 +1,41 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2237 final IG M5 contract — authoritative overlay
+
+The original Attempt03 bundle is now received as binding source evidence:
+A/B/C/AB/BC/SUMMARY plus the hash manifest and historical REVIEW, evidence head
+`2a99f96e06f7ce1f311c767dec43d236bb63eedd`, export runtime head
+`7728453c3c4f8fcd2cf6f8189b0f94562ccfa04f`. The original-byte artifacts and
+their `DAX_IG_RAW_REVIEW_V1:OTHER_UNKNOWN` record remain historical and are not
+rewritten.
+
+A new V2 structural review promotes the operational mapping to
+**INTERVAL_START**: raw T is the tail while T..T+5 accumulates; at T+5 the same
+raw identity moves one row back; open stays fixed while high/low/close and volume
+grow. The coupled pattern repeats for raw15:25 (volume57→1003) and raw15:30
+(210→1379). Treating T as interval end would require two consecutive supposedly
+closed bars to reopen and accumulate for exactly the following full M5 interval;
+operationally that is the start mapping. Canonical `event_time=T`,
+`close_time=T+5m`; freshness starts at true close. No post-close provider
+revision SLA is claimed.
+
+The one owner is `src/daxlab/adapters/ig_market_data.py`:
+`DAXLAB_IG_M5_MARKET_DATA_CONTRACT_V2` /
+`IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_START_V2`. The Candidate envelope/state and
+RunManifest are bumped to V3 in a new namespace. Old interval-end/60-second state
+is rejected deterministically; no silent migration/reset. The extra60-second
+Candidate workaround is retired. Strict `STATE_CHANGED_OVERLAP`,600-second
+freshness, `NONE / order_execution_enabled=false` and the hard LIVE block remain.
+
+Repository implementation and one-session Windows fresh-start/resume/Operator
+automation are prepared. Step2237 and Step2233 remain
+**IMPLEMENTED / WAITING_EXTERNAL** until that one exact-final-head Windows runner
+succeeds. M01 advances but is not complete;27 readiness gates are not all
+VERIFIED, therefore no `DEMO_ONLY` promotion and no order. See
+`STEP_2237_IG_M5_CONTRACT_CLOSEOUT.md` and
+`ACCELERATION_M01_DEMO_READINESS_MATRIX.md`.
+
+
 ## Step2237 Windows export failure — authoritative update
 
 Attempt at ef24d63470b2d2ec076089d7ee8a39d0dbcae2ec reached START but not WAIT; generic FAIL_CLOSED/RUNNER_FAILED; no ZIP. This localizes failure before Python but the old owner erased the exact Git-gate identity. Do not infer it. Corrected runner now emits one allowlisted credential-free error_code for every Git/deploy/Python/source/filesystem/publication failure and never exception/stderr/payload text. Originals unchanged; no login/broker call. Step2237 remains WAITING_EXTERNAL. See STEP_2237_WINDOWS_EXPORT_FAIL_CLOSED.md and use only the new immutable-head command after exact-head CI.

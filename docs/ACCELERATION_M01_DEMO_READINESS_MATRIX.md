@@ -1,6 +1,6 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
-Current effective execution NONE/false. One small first bounded diagnostic IG DEMO order is conditionally user-authorized; LIVE unauthorized. Matrix statuses describe actual current evidence, with local software scope explicit. Old MT5 terminal/retcode/session/MQL owner details cannot substitute for native IG truth. Full details and limits: ACCELERATION_PROGRAM_FINAL_2026_09_14.md.
+Step2237 V2 review promotes the original Attempt03 structure to the canonical operational INTERVAL_START contract. The historical OTHER_UNKNOWN review remains preserved. Current effective execution NONE/false. One small first bounded diagnostic IG DEMO order is conditionally user-authorized; LIVE unauthorized. Matrix statuses describe actual current evidence, with local software scope explicit. Old MT5 terminal/retcode/session/MQL owner details cannot substitute for native IG truth. Full details and limits: ACCELERATION_PROGRAM_FINAL_2026_09_14.md.
 
 ## M01
 
@@ -11,7 +11,7 @@ Current effective execution NONE/false. One small first bounded diagnostic IG DE
 | IG DEMO environment/account/server | WAITING_EXTERNAL | DEMO-only client and reported IG lane; reviewed current context original source missing. |
 | EPIC/instrument/symbol mapping | WAITING_EXTERNAL | IX.D.DAX.IFMM.IP supplied; DE40/5m adapter reused; full actual instrument context required. |
 | Market status/fresh quote | WAITING_EXTERNAL | Earlier TRADEABLE/FRESH supplied, not current final-head snapshot. |
-| Finalized M5 | BLOCKED | Successful RAW acquisition is not timestamp/finality evidence without originals. |
+| Finalized M5 | IMPLEMENTED | Original bundle received; V2 structural review promotes INTERVAL_START. Canonical event=T/close=T+5, active tail excluded,60s workaround retired. Final-head Windows cycles remain external. |
 | Broker/UTC/session clock | WAITING_EXTERNAL | Explicit UTC diagnostic guards; actual independent clock observations absent. |
 | DST/session semantics | WAITING_EXTERNAL | Broker-neutral gate retained; no inferred MT5 server offset transferred to IG. |
 | Full inventory/working orders/positions | WAITING_EXTERNAL | GET owners exist; earlier reported zero is not final negative-evidence flatness proof. |
@@ -21,7 +21,7 @@ Current effective execution NONE/false. One small first bounded diagnostic IG DE
 | Feed freshness | WAITING_EXTERNAL | 600s unchanged, never treated as finality/stability proof. |
 | Risk/loss/session policy | WAITING_EXTERNAL | Canonical owners retained; reviewed actual policy/source binding required. |
 | Reconciliation | WAITING_EXTERNAL | Generic local conformance is not IG real broker truth. |
-| Restart/resume | BLOCKED | Final contract missing; no mutable Candidate evidence or silent legacy migration. |
+| Restart/resume | IMPLEMENTED | V3 state/manifest/new namespace, strict overlap and single fresh/resume/Operator runner implemented; real Windows result WAITING_EXTERNAL. |
 
 ##27 Pre-DEMO gates
 
@@ -31,7 +31,7 @@ Current effective execution NONE/false. One small first bounded diagnostic IG DE
 | 2 | IG DEMO environment | WAITING_EXTERNAL | DEMO URL hard-pinned and transport rechecked locally; final real session source required. |
 | 3 | DEMO account identity | WAITING_EXTERNAL | Reviewed actual account identity/context pins absent. |
 | 4 | Instrument identity | WAITING_EXTERNAL | Supplied EPIC IX.D.DAX.IFMM.IP; final market/account observation binding required. |
-| 5 | Finalized market-data contract | BLOCKED | Six Attempt03 originals absent; no interval START/END/finality promotion. |
+| 5 | Finalized market-data contract | IMPLEMENTED | Original bundle received; canonical INTERVAL_START V2 plus true close/600s freshness separation implemented and tested. Real final-head fresh/resume remains external. |
 | 6 | Feed freshness | WAITING_EXTERNAL | 600s separate from finality; final venue source age not proven. |
 | 7 | Clock/session | WAITING_EXTERNAL | UTC availability tests implemented; actual host/broker drift/DST/session evidence absent. |
 | 8 | Understood inventory | WAITING_EXTERNAL | Earlier empty inventory supplied; not current final-head flatness proof. |
@@ -55,18 +55,18 @@ Current effective execution NONE/false. One small first bounded diagnostic IG DE
 | 26 | Explicit DEMO_ONLY capability | BLOCKED | User target authorized; effective NONE/false. No scoped bounded transport activated. |
 | 27 | Hard LIVE block | VERIFIED | LOCAL SOFTWARE SCOPE: constructor and per-request endpoint/dealing veto tests; no LIVE call made. |
 
-No all-VERIFIED readiness, no DEMO_ONLY promotion and no order. Existing PTC/risk/reservation/reconciliation/lifecycle owners remain canonical; native IG transport/context/review gaps still need implementation/evidence. Source ZIP is one decisive dependency, not a complete broker-readiness bundle.
+Current27-gate tally:1 VERIFIED,3 IMPLEMENTED,17 WAITING_EXTERNAL and6 BLOCKED. No all-VERIFIED readiness, no DEMO_ONLY promotion and no order. Existing PTC/risk/reservation/reconciliation/lifecycle owners remain canonical; native IG transport/context/evidence gaps still need completion. The received source bundle closes the contract-decision dependency, not the broker-readiness set.
 
 ## Roadmap
 
 | Milestone | Scope | Status | Next evidence |
 | --- | --- | --- | --- |
-| M01 | Real-host evidence | WAITING_EXTERNAL | Original RAW source + full final-head IG host/context/economics/clock/inventory. |
+| M01 | Real-host evidence | WAITING_EXTERNAL | Market-data contract implemented; one final-head fresh/resume/Operator run plus IG host/context/economics/clock/inventory evidence remains. |
 | M02 | First bounded DEMO | BLOCKED | 27 VERIFIED gates required; one diagnostic order authorized conditionally but not executed. |
 | M03 | Broker lifecycle truth | IN_PROGRESS | Generic conformance/failure mapping reused; real IG native lifecycle still external. |
 | M04 | Expected vs Observed | IN_PROGRESS | Complete component-pin dimensional diagnostic implemented; real paired artifacts missing. |
 | M05 | TCA / latency / cost | IN_PROGRESS | Pre-request/native-decimal attribution implemented; actual quote/request/fill source missing. |
-| M06 | Data / clock parity | IN_PROGRESS | RAW comparisons + dimensional identity + causal UTC availability prepared; final contract/dataset pair missing. |
+| M06 | Data / clock parity | IN_PROGRESS | Canonical raw/event/close mapping is fixed; paired research/broker dataset and independent clock/session evidence remain. |
 | M07 | Continuous-DEMO safety | BLOCKED | Independent PTC prepared; real startup recon/kill/watchdog/reconnect/restore/DR evidence required. |
 | M08 | Tail / risk survival | IN_PROGRESS | Five seeded resampling modes/three cost stresses + cash/floor/horizon implemented; pinned ledger absent. |
 | M09 | Strategy robustness | IN_PROGRESS | 40 hypotheses staged; causal hysteresis feature tested, no economic/OOS claim or CAND mutation. |

@@ -1,5 +1,30 @@
 # Step 2233 — RAW provider truth before another Candidate contract
 
+## Step2237 final original-evidence decision — authoritative overlay
+
+Attempt03 originals are now received. Preserve A/B/C/AB/BC/SUMMARY,
+MANIFEST and the historical `DAX_IG_RAW_REVIEW_V1` byte-for-byte. That review's
+`OTHER_UNKNOWN` classification remains an honest historical pre-decision record.
+
+The final V2 review classifies the **operational wire contract as
+INTERVAL_START** from the complete repeated structure, not from documentation or
+one field. Raw15:25 is tail at about15:26, then row38 after15:30; open is fixed,
+high/low/close change and volume57→1003. Raw15:30 repeats the same boundary-tied
+behavior with volume210→1379. A close-at-T model would need systematic full-window
+post-close accumulation twice; the observed state machine instead binds T to the
+open of T..T+5. See `STEP_2237_IG_M5_CONTRACT_CLOSEOUT.md` for the evidence
+chain and alternative analysis.
+
+Canonical values: `event_time=snapshotTimeUTC`,
+`close_time=snapshotTimeUTC+5m`, closed/finalized only at true close,
+freshness age from true close with the separate600-second limit. The60-second
+interim grace is retired. Post-close revision bound remains unproven and exact
+overlap remains fail-closed. V3 state/manifest/new namespace rejects all old
+interval-end state without migration. Step2233 closes only after the single
+final-head Windows fresh-start/resume/Operator runner succeeds; currently
+IMPLEMENTED / WAITING_EXTERNAL, NONE/false, no order.
+
+
 ## Current binding user authorization — 2026-09-14 acceleration mandate
 
 The user explicitly authorizes one first bounded, small diagnostic **IG DEMO** evidence order after all 27 Pre-DEMO readiness gates are VERIFIED. This supersedes older DEMO NOT AUTHORIZED text only for that bounded IG DEMO scope. LIVE, real money, live-account switching, cash transfers and automatic DEMO-to-LIVE promotion remain unauthorized. Cancel/modify is limited to a separately verified lifecycle design. No blind retry/resubmit, unknown transport replay or autonomous slot release.

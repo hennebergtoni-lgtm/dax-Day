@@ -1,5 +1,17 @@
 # IG Demo M5 host handoff — Step 2231 / M01
 
+## Step2237 canonical overlay
+
+The Attempt03 originals now support the final operational
+`IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_START_V2` contract. Raw timestamp T maps to
+event T and true close T+5m. The prior interval-end assumption and its60-second
+Candidate grace are historical/superseded; the original UNKNOWN review is
+preserved rather than edited. Post-close revision bound remains unproven, so exact
+overlap stays fail-closed. V3 state/manifest/new namespace prevents legacy
+acceptance. Final-head Windows fresh-start/resume/Operator evidence remains
+WAITING_EXTERNAL; NONE/false, no DEMO order and no LIVE authorization.
+
+
 Updated:2026-09-14. Canonical IG feed correction:2231 **COMPLETED / VERIFIED AS SUPPLIED**. Initial IG/CAND-001 E2E:2232 **COMPLETED / VERIFIED** under supplied binding host evidence. Current2233 is **UNVERIFIED / RAW PROVIDER TRUTH WAITING_EXTERNAL**: later60s-policy overlap failure disproves finality guarantee. Interval-end/start semantics are unresolved; previous normalization is an implemented hypothesis, not an authoritative provider statement. Classification C: OTHER / UNKNOWN; live Candidate entry blocks DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED with no override. Read `STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md` for RAW V2 sampling, not another Candidate run under the disproven policy. Historical sections below are provenance; latest overlay/current pointer controls. No execution authorization or full M01 completion.
 
 ## Repository pin and drift
