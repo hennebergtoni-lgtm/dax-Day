@@ -1,6 +1,5 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidatePattern('^[0-9a-f]{40}$')]
     [string]$ExpectedHead,
     [string]$Namespace = '.runtime/ig_raw_m5_truth_2233_v2_attempt_02',
     [string]$CredentialsFile = 'C:\Users\Mandy\ig_demo.env',

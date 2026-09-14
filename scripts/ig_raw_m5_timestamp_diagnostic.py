@@ -241,7 +241,7 @@ def main(argv=None) -> int:
             else:
                 payload = collect(args.credentials_file, head=head)
             check_code(head)
-            atomic_write_json(args.output, payload)
+            atomic_write_json(args.output, payload, overwrite=False)
         print(json.dumps({"status": "OBSERVATION_ONLY", "schema": payload["schema"],
                           "fingerprint": payload["fingerprint"], "timestamp_semantics": "UNKNOWN",
                           "execution_capability": "NONE", "order_execution_enabled": False}))

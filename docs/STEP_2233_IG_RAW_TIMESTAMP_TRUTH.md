@@ -38,7 +38,7 @@ Default new namespace: **.runtime/ig_raw_m5_truth_2233_v2_attempt_02**. If it al
 
 ### Schedule, failures and visible evidence
 
-- Preflight: Windows, exact head, tracked drift/untracked Python/import parity via the existing guard, restricted unused attempt namespace, external credential file presence. Namespace is claimed atomically with mkdir. No credential contents are read by the runner.
+- Preflight: Windows, exact head, tracked drift/untracked Python/import parity via the existing guard, restricted unused attempt namespace, external credential file presence. Namespace is claimed atomically with mkdir. RAW output uses the existing JSON persistence owner with overwrite=false: a same-filesystem hard link publishes complete bytes atomically and fails if the destination appeared during collection. Unsupported filesystem publication fails closed; there is no replace fallback. Other runtime-state callers retain the existing default replacement behavior. No credential contents are read by the runner.
 - A is scheduled 60 seconds after the **next** UTC five-minute boundary; B exactly five minutes later, C ten minutes later. This sampling offset is not a finalization grace and changes no timestamp interpretation.
 - Each permitted Request window is [scheduled UTC, scheduled UTC + 60 seconds). Windows are fixed once, never replanned. Waits are at most30 seconds per clock check, with wall/monotonic continuity checks and no network polling. Allow roughly11–16 minutes plus local comparisons; keep the Windows host awake.
 - Each child diagnostic gets one invocation, no shell, no retry: one login, one read-only prices request, cleanup. B follows only successful A; C only successful B. Three separately scheduled sessions are intentional; no automatic replacement session after a failure.
@@ -55,7 +55,7 @@ The runner preserves all published files on failure and does not compare incompl
 
 ### Automation validation scope
 
-Offline regressions cover exact-head/tracked-drift blocking, exclusive namespace/summary, A/B/C/compare short circuits, no retries, retained previous A, actual Request windows, clock discontinuities, hash-bound source/compare validation, safe errors, NONE/false, single-child paths with spaces and PowerShell exit propagation. The local selected environment is unavailable for this tranche; no local execution is claimed. Mandatory GitHub CI executes the full suite, Ruff and all eight existing offline/safety gates on the published head. No JavaScript changed and no real Windows/IG attempt is executed by Work.
+Offline regressions cover exact-head/tracked-drift blocking, exclusive namespace/summary and race-safe RAW publication, A/B/C/compare short circuits, no retries, retained previous A, actual Request windows, clock discontinuities, hash-bound source/compare validation, safe errors, NONE/false, single-child paths with spaces and PowerShell exit propagation. The local selected environment is unavailable for this tranche; no local execution is claimed. Mandatory GitHub CI executes the full suite, Ruff and all eight existing offline/safety gates on the published head. No JavaScript changed and no real Windows/IG attempt is executed by Work.
 
 ## Semantics decision gate / remaining work
 

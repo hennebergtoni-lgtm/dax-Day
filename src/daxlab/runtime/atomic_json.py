@@ -2,7 +2,8 @@
 
 Writes always go to a sibling temporary file first, are fsynced, then atomically
 replace the destination. Runtime callers therefore never observe a half-written
-heartbeat or resume payload after interruption.
+heartbeat or resume payload after interruption. Observation callers can opt out of
+replacement; publication then fails if the destination exists, including a race.
 """
 from __future__ import annotations
 
@@ -12,7 +13,9 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-def atomic_write_json(path: Path, payload: Mapping[str, Any]) -> None:
+def atomic_write_json(
+    path: Path, payload: Mapping[str, Any], *, overwrite: bool = True,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
     encoded = json.dumps(
@@ -27,7 +30,12 @@ def atomic_write_json(path: Path, payload: Mapping[str, Any]) -> None:
             handle.write(b"\n")
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temporary, path)
+        if overwrite:
+            os.replace(temporary, path)
+        else:
+            # Same-filesystem hard link publishes complete bytes atomically and fails
+            # if the destination appeared meanwhile. Never fall back to replacement.
+            os.link(temporary, path)
     finally:
         if temporary.exists():
             temporary.unlink()

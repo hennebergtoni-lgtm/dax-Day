@@ -343,3 +343,46 @@ def test_powershell_launcher_parses_and_propagates_python_exit(tmp_path):
     )
     assert result.returncode == 2
     assert "RAW_WINDOWS_LAUNCH_FAILED" not in result.stdout + result.stderr
+
+
+def test_atomic_raw_publication_race_preserves_existing_artifact(tmp_path, monkeypatch):
+    from daxlab.runtime import atomic_json
+    output = tmp_path / "A.json"
+    link = atomic_json.os.link
+    def raced(source, target):
+        target.write_text("PRESERVE_CONCURRENT_EVIDENCE")
+        link(source, target)
+    monkeypatch.setattr(atomic_json.os, "link", raced)
+    with pytest.raises(FileExistsError):
+        atomic_json.atomic_write_json(output, {"new": "observation"}, overwrite=False)
+    assert output.read_text() == "PRESERVE_CONCURRENT_EVIDENCE"
+
+
+def test_atomic_raw_publication_success_without_replace(tmp_path, monkeypatch):
+    from daxlab.runtime import atomic_json
+    monkeypatch.setattr(atomic_json.os, "replace",
+                        lambda *args: pytest.fail("RAW must never replace"))
+    output = tmp_path / "A.json"
+    atomic_json.atomic_write_json(output, {"observation": 1}, overwrite=False)
+    assert atomic_json.read_json_object(output) == {"observation": 1}
+
+
+def test_raw_diagnostic_uses_exclusive_publication(tmp_path, monkeypatch):
+    raw = runner.diagnostic
+    monkeypatch.setattr(raw, "check_code", lambda _: HEAD)
+    monkeypatch.setattr(raw.platform, "system", lambda: "Windows")
+    payload = raw.snapshot(
+        [price_row(START.replace(minute=35, second=0)),
+         price_row(START.replace(minute=40, second=0))],
+        head=HEAD, requested=START, observed=START,
+    )
+    monkeypatch.setattr(raw, "collect", lambda *args, **kwargs: payload)
+    calls = []
+    def write(path, value, *, overwrite):
+        calls.append(overwrite)
+        with path.open("x") as stream:
+            json.dump(value, stream)
+    monkeypatch.setattr(raw, "atomic_write_json", write)
+    assert raw.main(["--expected-head", HEAD, "--credentials-file", "unused.env",
+                     "--output", str(tmp_path / "A.json")]) == 0
+    assert calls == [False]
