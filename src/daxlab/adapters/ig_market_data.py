@@ -17,8 +17,9 @@ from daxlab.domain.market import Candle, DataQualityState, InstrumentId
 
 CANONICAL_TIMEFRAME = "M5"
 SOURCE_PREFIX = "IG_READ_ONLY"
+TIMESTAMP_CONTRACT = "IG_MINUTE_5_SNAPSHOT_UTC_INTERVAL_END_V1"
 _TIMEFRAME_DELTA = timedelta(minutes=5)
-_DEFAULT_MAX_AGE = timedelta(minutes=10)
+DEFAULT_MAX_AGE = timedelta(minutes=10)
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,7 +33,7 @@ class IgClosedM5Feed:
     def __post_init__(self) -> None:
         if not self.epic or self.epic.strip() != self.epic:
             raise ValueError("IG epic must be non-empty without surrounding whitespace")
-        if self.observed_at.tzinfo is None:
+        if self.observed_at.tzinfo is None or self.observed_at.utcoffset() is None:
             raise ValueError("IG observed_at must be timezone-aware")
 
 
@@ -51,7 +52,7 @@ class IgClosedM5CandleSource:
     feed_provider: FeedProvider
     epic: str
     instrument_id: InstrumentId
-    max_age: timedelta = _DEFAULT_MAX_AGE
+    max_age: timedelta = DEFAULT_MAX_AGE
     _last_close_time: datetime | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -86,26 +87,9 @@ class IgClosedM5CandleSource:
     ) -> tuple[Mapping[str, object], ...]:
         if feed.epic != self.epic:
             raise ValueError("IG feed epic does not match configured epic")
-        if not feed.prices:
-            raise ValueError("IG candle source requires at least one M5 price row")
-
-        rows = tuple(feed.prices)
-        open_times = tuple(_snapshot_time_utc(row) for row in rows)
-        if open_times != tuple(sorted(open_times)):
-            raise ValueError("IG price rows must remain chronological")
-        if len(set(open_times)) != len(open_times):
-            raise ValueError("IG price timestamps must remain unique")
-        if any(
-            current - previous != _TIMEFRAME_DELTA
-            for previous, current in zip(open_times, open_times[1:])
-        ):
-            raise ValueError("IG price rows must remain continuous M5 bars")
-
+        rows = closed_m5_price_rows(feed.prices, observed_at=feed.observed_at)
         observed_at = feed.observed_at.astimezone(timezone.utc)
-        close_times = tuple(open_time + _TIMEFRAME_DELTA for open_time in open_times)
-        if any(close_time > observed_at for close_time in close_times):
-            raise ValueError("IG candle source accepts closed M5 bars only")
-        if observed_at - close_times[-1] > self.max_age:
+        if observed_at - ig_m5_interval(rows[-1])[1] > self.max_age:
             raise ValueError("IG candle source requires fresh M5 data")
         return rows
 
@@ -115,7 +99,7 @@ class IgClosedM5CandleSource:
         *,
         received_at: datetime,
     ) -> Candle:
-        event_time = _snapshot_time_utc(row)
+        event_time, close_time = ig_m5_interval(row)
         prices = {
             field: _midpoint_price(row, field)
             for field in ("openPrice", "highPrice", "lowPrice", "closePrice")
@@ -125,7 +109,7 @@ class IgClosedM5CandleSource:
             instrument_id=self.instrument_id,
             timeframe=CANONICAL_TIMEFRAME,
             event_time=event_time,
-            close_time=event_time + _TIMEFRAME_DELTA,
+            close_time=close_time,
             open=prices["openPrice"],
             high=prices["highPrice"],
             low=prices["lowPrice"],
@@ -138,7 +122,17 @@ class IgClosedM5CandleSource:
         )
 
 
-def _snapshot_time_utc(row: Mapping[str, object]) -> datetime:
+def ig_m5_interval(row: Mapping[str, object]) -> tuple[datetime, datetime]:
+    """Normalize this IG lane's supplied interval-end timestamp convention.
+
+    The supplied IG Demo host sample at 09:02:59 includes a row labelled 09:05.
+    This contract maps its 09:00 predecessor to [08:55, 09:00). IG REST docs
+    call the field "Snapshot time" without formally specifying open versus close;
+    the corrected lane still requires a real-host rerun, not an inferred VERIFIED.
+    IG's wire UTC field may omit an offset; that field alone is assigned UTC.
+    Never fall back to local snapshotTime or apply broker/DST wallclock offsets.
+    See docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md for evidence and documentation limits.
+    """
     raw = row.get("snapshotTimeUTC")
     if not isinstance(raw, str) or not raw.strip():
         raise ValueError("IG price row requires snapshotTimeUTC")
@@ -148,7 +142,44 @@ def _snapshot_time_utc(row: Mapping[str, object]) -> datetime:
         raise ValueError("IG snapshotTimeUTC must be ISO-8601") from exc
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
+    close_time = parsed.astimezone(timezone.utc)
+    if close_time.minute % 5 or close_time.second or close_time.microsecond:
+        raise ValueError("IG snapshotTimeUTC must be aligned to the M5 boundary")
+    return close_time - _TIMEFRAME_DELTA, close_time
+
+
+def closed_m5_price_rows(
+    prices: Sequence[Mapping[str, object]], *, observed_at: datetime,
+) -> tuple[Mapping[str, object], ...]:
+    """Validate the full response, then omit its not-yet-closed tail.
+
+    This is the sole IG closure rule used by both the feed and host probe.
+    Even an omitted live row must have a valid chronological timestamp; it
+    cannot hide malformed, duplicated, gapped or implausibly future history.
+    """
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise ValueError("IG observed_at must be timezone-aware")
+    if not prices:
+        raise ValueError("IG candle source requires at least one M5 price row")
+    if any(not isinstance(row, Mapping) for row in prices):
+        raise ValueError("IG price row must be an object")
+    rows = tuple(prices)
+    close_times = tuple(ig_m5_interval(row)[1] for row in rows)
+    if close_times != tuple(sorted(close_times)):
+        raise ValueError("IG price rows must remain chronological")
+    if len(set(close_times)) != len(close_times):
+        raise ValueError("IG price timestamps must remain unique")
+    if any(b - a != _TIMEFRAME_DELTA for a, b in zip(close_times, close_times[1:])):
+        raise ValueError("IG price rows must remain continuous M5 bars")
+    now = observed_at.astimezone(timezone.utc)
+    next_boundary = now.replace(minute=now.minute - now.minute % 5, second=0,
+                                microsecond=0) + _TIMEFRAME_DELTA
+    if close_times[-1] > next_boundary:
+        raise ValueError("IG history extends beyond the current M5 interval")
+    closed = tuple(row for row, close in zip(rows, close_times) if close <= now)
+    if not closed:
+        raise ValueError("IG candle source accepts closed M5 bars only; none available")
+    return closed
 
 
 def _midpoint_price(row: Mapping[str, object], field: str) -> float:

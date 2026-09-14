@@ -108,7 +108,7 @@ def test_login_accounts_market_prices_and_logout_use_read_only_routes() -> None:
         f"{IG_DEMO_BASE_URL}/prices/IX.D.DAX.IFMM.IP",
         f"{IG_DEMO_BASE_URL}/session",
     ]
-    assert transport.calls[3]["query"] == {"resolution": "MINUTE_5", "max": "40"}
+    assert transport.calls[3]["query"] == {"resolution": "MINUTE_5", "max": "40", "pageSize": "0"}
     assert transport.calls[0]["headers"]["VERSION"] == "2"
     assert transport.calls[1]["headers"]["VERSION"] == "1"
     assert transport.calls[2]["headers"]["VERSION"] == "3"
@@ -196,3 +196,27 @@ def test_epic_and_bar_limit_validation_fail_closed_before_transport() -> None:
         client.m5_prices("IX.D.DAX.IFMM.IP", max_bars=0)
 
     assert len(transport.calls) == 1
+
+
+@pytest.mark.parametrize("pages", [2, 10, True, "1", None])
+def test_unpaged_request_does_not_accept_remaining_or_invalid_pagination(pages) -> None:
+    transport = FakeTransport([_login_response(), JsonResponse(
+        200, {}, {"prices": [], "metadata": {"pageData": {"totalPages": pages}}},
+    )])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    with pytest.raises(IgReadOnlyError, match="remains paginated"):
+        client.m5_prices("IX.D.DAX.IFMM.IP")
+    assert transport.calls[-1]["query"]["pageSize"] == "0"
+
+
+@pytest.mark.parametrize("secret", ["Bearer SYNTHETIC_SENTINEL", "postgres://user:secret@host/db",
+                                    "error.security.SYNTHETIC_SENTINEL"])
+def test_unrecognized_provider_error_code_is_not_echoed(secret) -> None:
+    transport = FakeTransport([JsonResponse(401, {}, {"errorCode": secret})])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    with pytest.raises(IgReadOnlyError) as error:
+        client.login()
+    assert secret not in str(error.value)
+    assert "SYNTHETIC_SENTINEL" not in str(error.value)
+    assert "HTTP 401" in str(error.value)

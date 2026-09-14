@@ -22,6 +22,14 @@ from urllib.request import Request, urlopen
 IG_DEMO_BASE_URL = "https://demo-api.ig.com/gateway/deal"
 EXECUTION_CAPABILITY = "NONE"
 ORDER_EXECUTION_ENABLED = False
+_SAFE_ERROR_CODES = frozenset({
+    "error.security.invalid-details", "error.security.api-key-invalid",
+    "error.security.api-key-disabled", "error.security.account-token-invalid",
+    "error.security.client-token-invalid", "error.public-api.exceeded-account-allowance",
+    "error.public-api.exceeded-api-key-allowance",
+    "error.public-api.exceeded-account-historical-data-allowance",
+    "error.invalid.daterange", "error.malformed.date", "invalid.input", "system.error",
+})
 
 
 class IgReadOnlyError(RuntimeError):
@@ -109,8 +117,10 @@ class UrllibJsonTransport:
                 headers={key: value for key, value in exc.headers.items()},
                 payload=payload,
             )
-        except URLError as exc:
-            raise IgReadOnlyError("IG read-only transport unavailable") from exc
+        except URLError:
+            raise IgReadOnlyError("IG read-only transport unavailable") from None
+        except (json.JSONDecodeError, UnicodeError):
+            raise IgReadOnlyError("IG read-only response contains malformed JSON") from None
 
 
 @dataclass(slots=True)
@@ -173,11 +183,19 @@ class IgDemoReadOnlyClient:
         clean_epic = _clean_epic(epic)
         if isinstance(max_bars, bool) or not isinstance(max_bars, int) or not 1 <= max_bars <= 1000:
             raise ValueError("max_bars must be an integer between 1 and 1000")
-        return self._get_json(
+        payload = self._get_json(
             f"/prices/{clean_epic}",
             version="3",
-            query={"resolution": "MINUTE_5", "max": str(max_bars)},
+            # IG v3 defaults to pageSize=20. With max=40 the first page alone
+            # may contain older history, causing a false stale-feed diagnosis.
+            query={"resolution": "MINUTE_5", "max": str(max_bars), "pageSize": "0"},
         )
+        metadata = payload.get("metadata")
+        if isinstance(metadata, Mapping) and isinstance(metadata.get("pageData"), Mapping):
+            pages = metadata["pageData"].get("totalPages")
+            if isinstance(pages, bool) or not isinstance(pages, int) or pages not in (0, 1):
+                raise IgReadOnlyError("IG M5 history response remains paginated")
+        return payload
 
     def logout(self) -> None:
         if self._tokens is None:
@@ -235,7 +253,7 @@ class IgDemoReadOnlyClient:
         error_code = None
         if isinstance(response.payload, Mapping):
             candidate = response.payload.get("errorCode")
-            if isinstance(candidate, str) and candidate:
+            if isinstance(candidate, str) and candidate in _SAFE_ERROR_CODES:
                 error_code = candidate
         suffix = "" if error_code is None else f" ({error_code})"
         raise IgReadOnlyError(f"IG read-only {action} failed: HTTP {response.status}{suffix}")

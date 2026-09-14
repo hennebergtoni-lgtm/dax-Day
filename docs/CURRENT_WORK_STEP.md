@@ -1,7 +1,7 @@
 # Current Work Step — DAX Daytrading Bot
 
 Status: BINDING NUMBERING POINTER
-Updated: 2026-09-13
+Updated: 2026-09-14
 Branch: `nextgen-bot-line-v1`
 
 Purpose: preserve one unambiguous whole-number work sequence across chat/context loss while keeping the active pointer compact. Repository code, tests, evidence, safety contracts and verified runtime evidence remain authoritative for technical truth.
@@ -11,7 +11,7 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Last completed whole-number step: **2230**
 - Last interrupted whole-number step: **2185**
 - Active whole-number step: **2231**
-- Active step state: **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**
+- Active step state: **IMPLEMENTED_LOCAL — WAITING_EXTERNAL IG DEMO HOST RE-RUN / NO BROKER SIDE EFFECT**
 - Work tranche state: **COMPLETED_LOCAL_OPERATOR_HARDENING_2 — EXTERNAL_GATES_REMAIN**
 - Next step after successful completion: **2232**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
@@ -30,7 +30,11 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 - Decimal or letter step IDs: **PROHIBITED**
 
 - Step 2206 remains **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**; independent local Work uses Steps 2207 onward under WORK_CONTINUITY_PROTOCOL section 4A.
-- Active Step 2231 scope: **Next independent tranche re-pin/review and real-host/policy handoff only; no repository-local implementation pending in this read-only mandate; Step 2206 is not replaced.**
+- Active Step 2231 scope: **Explicit 2026-09-14 Work implementation mandate: audit/fix the IG Demo MINUTE_5 timestamp and v3 pagination contracts, credential-free read-only probe and regression evidence. Supplied real Windows IG login/market/tick/history observations remain VERIFIED as supplied; the corrected code's Windows run remains WAITING_EXTERNAL. M01/2231 is not fully completed by local tests. Step 2206 and host2122 are not replaced; execution remains NONE/false.**
+
+## Step 2231 local IG closeout — host verification still pending
+
+Read `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md` for the exact start pin, reproduced timestamp/OHLC and v3 pagination defects, official documentation limits, tests, publication CI and the single next Windows probe. Local implementation uses the existing IG adapter/client/probe only; no new execution or reconciliation owner. The supplied ten-row sample alone does not reproduce the real freshness exception. A corrected Windows 40-bar rerun is still required before VERIFIED / full M01 closure. Step 2231 remains the active whole-number step; 2230 remains last completed and 2232 is not started.
 
 ## Ledger archive
 

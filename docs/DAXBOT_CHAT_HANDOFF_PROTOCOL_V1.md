@@ -1,7 +1,7 @@
 # DAX-BOT Chat Handoff Protocol V1
 
 Status: **BINDING**  
-Updated: **2026-09-14 — Research Factory 3.0 / Step 2231 continuity**
+Updated: **2026-09-14 — IG Demo M5 / Step 2231 local correction continuity**
 
 Purpose: make chat/context handovers deterministic and repository-backed so the DAX-BOT project resumes without asking the user to reconstruct long chats, including after conversation-length saturation. Repository truth and source Work artifacts are preferred over chat memory.
 
@@ -81,6 +81,8 @@ Recovery rule:
 ---
 
 ## 4. Current milestone recovery — BINDING
+
+Current IG continuation: first load `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md`, pin the fresh PR head/main/required CI and `CURRENT_WORK_STEP.md`. Step 2231 is locally IMPLEMENTED with a corrected real Windows IG probe still WAITING_EXTERNAL. Preserve the original supplied host verification; do not claim the interval-end mapping or pagination cause is provider-verified beyond the recorded evidence. Next action is the exact read-only Windows probe in that handoff, not an order or another implementation tranche. Step 2206 / USER_AUTH and MT5 lane 2122 stay independent. No M01/2231 completion is implied.
 
 As of the 2026-09-14 continuity update, the latest masterstand records the durable roadmap:
 

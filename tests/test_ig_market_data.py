@@ -48,8 +48,8 @@ def test_ig_source_maps_bid_ask_midpoint_without_fabricating_last_traded() -> No
     assert candle is not None
     assert candle.instrument_id == INSTRUMENT
     assert candle.timeframe == "M5"
-    assert candle.event_time == datetime(2026, 9, 14, 10, 0, tzinfo=timezone.utc)
-    assert candle.close_time == datetime(2026, 9, 14, 10, 5, tzinfo=timezone.utc)
+    assert candle.event_time == datetime(2026, 9, 14, 9, 55, tzinfo=timezone.utc)
+    assert candle.close_time == datetime(2026, 9, 14, 10, 0, tzinfo=timezone.utc)
     assert candle.open == 25_501.0
     assert candle.high == 25_511.0
     assert candle.low == 25_496.0
@@ -127,7 +127,7 @@ def test_ig_source_rejects_open_or_future_bar() -> None:
         feed_provider=lambda: IgClosedM5Feed(
             epic=EPIC,
             observed_at=datetime(2026, 9, 14, 10, 4, 59, tzinfo=timezone.utc),
-            prices=(_row("2026-09-14T10:00:00"),),
+            prices=(_row("2026-09-14T10:05:00"),),
         ),
         epic=EPIC,
         instrument_id=INSTRUMENT,

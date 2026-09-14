@@ -1,7 +1,7 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
 Status: **BINDING LATEST HANDOVER / REPOSITORY TRUTH FIRST**  
-Updated: **2026-09-14 — Step 2231 / Research Factory 3.0 continuity handoff**  
+Updated: **2026-09-14 — Step 2231 / IG Demo M5 local correction; host rerun WAITING_EXTERNAL**
 Repository: `hennebergtoni-lgtm/dax-Day`  
 Working branch: `nextgen-bot-line-v1`  
 Pull request: `#109` -> `main`
@@ -45,7 +45,13 @@ If File Library is unavailable, continue from repository truth and this masterst
 
 ---
 
-## 2. Repository truth at the Research Factory 3.0 anchor
+## 2. Current IG Demo / M01 overlay — IMPLEMENTED_LOCAL, WAITING_EXTERNAL
+
+The actual IG task start PR head matched `3f96a2e23b1d55bf7cb69cfa67c6721b6da6b1fc`; no start drift. Main remains `e0784ebfc11bee28475fd9c3385be661af58a738`. Supplied real IG Demo login/market/history observations remain VERIFIED AS SUPPLIED. The existing IG adapter/client/probe now share an interval-end UTC M5 contract, disable v3 default pagination, preserve stale-data vetoes and structurally project credential-free evidence. The corrected Windows rerun remains WAITING_EXTERNAL; no M01/2231 completion, execution capability or broker protection/reconciliation parity is inferred.
+
+The ten-row diagnostic reproduces a wrong OHLC/time mapping, not the freshness exception itself. Paging is a separately reproduced request-contract defect; its causal role on the failing host still needs real metadata/rerun evidence. Official IG REST documentation does not formally specify start versus end labels. See **`docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md`** for exact evidence, tests/CI and the single next read-only Windows command. Re-pin the current publication head and required CI rather than deploy the old start SHA.
+
+### Preserved Research Factory 3.0 anchor
 
 Immediately before this documentation-only continuity update, main chat independently verified:
 
@@ -64,12 +70,12 @@ This documentation update creates a newer branch head. Therefore every future ch
 
 ## 3. Official work pointer — BINDING
 
-At the pre-update research anchor, `docs/CURRENT_WORK_STEP.md` states:
+Current `docs/CURRENT_WORK_STEP.md` states:
 
 - last completed whole-number step: **2230**;
 - last interrupted step: **2185**;
 - active whole-number step: **2231**;
-- active state: **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**;
+- active state: **IMPLEMENTED_LOCAL — WAITING_EXTERNAL IG DEMO HOST RE-RUN / NO BROKER SIDE EFFECT**;
 - next after successful completion: **2232**;
 - Step 2206 remains **WAITING_EXTERNAL / USER_AUTH**;
 - active real-host lane 2122 remains **WAITING_EXTERNAL** for market-open clock/GREEN/Candidate/restart evidence;
@@ -313,7 +319,9 @@ Do not silently adopt:
 
 Unless repository/runtime truth has changed materially, the next technical progression is **M01 / active Step 2231 real-host evidence**, not new strategy coding:
 
-Windows checkout/runtime build -> correct MT5 instance -> DEMO account/server/symbol/account mode -> fresh tick/CLOSED-M5 -> broker/UTC/session clock -> full-account inventory/history -> economics/precision/symbol contract -> risk/loss/protection -> reconciliation/restart evidence.
+First synchronize the Windows checkout to the fresh exact PR head and green required CI, then run the single **IG Demo read-only probe** in `docs/IG_DEMO_M5_TIMESTAMP_HANDOFF.md`. Review its new redacted timestamp/count/fingerprint evidence. This closes no execution authorization and does not replace outstanding MT5 lane 2122.
+
+The remaining broader host chain is: exact runtime/provider instance -> DEMO account/server/symbol/account semantics -> fresh quote/CLOSED-M5 -> broker/UTC/session clock -> full-account inventory/history -> economics/precision/symbol contract -> risk/loss/protection -> reconciliation/restart evidence.
 
 Only after those real facts are reviewed may the project decide whether conditions exist to prepare/request separate authorization for M02.
 
