@@ -83,3 +83,10 @@ Classify actual failure as DATA/CLOCK/ADAPTER/STRATEGY/STATE/RUNTIME/TELEMETRY/O
 Local validation: 70 existing IG regressions and 23 new connection/state/operator/CLI/import-parity regressions pass; full suite **2712 passed / 6 local PowerShell skips** (2718 collected). Ruff on src/tests/scripts, AST syntax/imports and JavaScript syntax pass. All eight existing offline gates pass: recovery preflight, research registry, hypothesis ledger, web status, static runtime safety, V11.2 probe, V11.2 replay and SHADOW soak. Required CI must still be checked on the actual publication head; prior #671/#1455 results belong only to the 2231 documentation commit.
 
 2232 remains WAITING_EXTERNAL until the real bundle is reviewed; next exact whole-number step is **2233**, reserved for the single evidence-driven successor after 2232 passes. 2233 is not started or execution-authorized here. NONE/false, SHADOW only; V11.2/CAND-001 rules and MT5 path remain unchanged. No DEMO/PAPER/LIVE order authorization.
+
+
+## 2026-09-14 — actual host closeout / historical contract
+
+**2232 COMPLETED / VERIFIED** under the user-supplied binding2233 mandate: live/operator exit0, raw40/closed40, GREEN, FRESH, NO_TRADE, NONE/OR_INCOMPLETE, NO_SIGNAL, NONE/false, fingerprint present; real IG/CAND-001/SHADOW/telemetry/operator chain, no broker side effects. Work did not independently operate Windows or receive full source JSON/hash bytes. This closes the initial E2E scope only.
+
+The subsequent STATE_CHANGED_OVERLAP on revised11:40UTC OHLC/volume is a correct fail-closed result and motivates active2233. All run commands above are historical2232-contract instructions, not the next rerun. New2233 contract/namespace must not silently consume or delete these saved files. Next official step is2233;2234 follows only after its new fresh-start/resume proof.
