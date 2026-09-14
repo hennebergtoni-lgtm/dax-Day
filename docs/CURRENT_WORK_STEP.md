@@ -34,7 +34,7 @@ Step2233 is **WAITING_EXTERNAL** after supplied successful RAW attempt03: six or
 - Active whole-number step: **2234**
 - Active step state: **IN_PROGRESS / RESEARCH FACTORY RECONCILIATION AND PRIORITIZATION / NO BROKER SIDE EFFECT**
 - Work tranche state: **COMPLETED_LOCAL_OPERATOR_HARDENING_2 — EXTERNAL_GATES_REMAIN**
-- Next step after successful completion: **2235** — select only after the active step is truthfully classified.
+- Next step after successful completion: **2235**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
