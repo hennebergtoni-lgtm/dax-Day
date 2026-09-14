@@ -272,6 +272,10 @@ def fixed_cash_tail_research(gross_r, cost_r, config, *, source_sha256,
             "cost_stresses": {
                 str(factor): {
                     "floor_hit_rate": sum(r["floor_hit"] for r in results) / paths,
-                    "final_capital": empirical_distribution([r["final_capital"] for r in results]),
+                    "final_capital": empirical_distribution([r["final_capital"] for r in results]) | {
+                        "worst_observed": min(r["final_capital"] for r in results),
+                        "worst_direction": "LOWER_CAPITAL",
+                        "quantile_direction": "UPPER_QUANTILES_ARE_HIGHER_CAPITAL_NOT_LOSS_TAIL",
+                    },
                     "max_cash_drawdown": empirical_distribution([r["max_cash_drawdown"] for r in results]),
                 } for factor, results in outcomes.items()}}

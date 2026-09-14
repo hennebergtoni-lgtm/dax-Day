@@ -144,3 +144,14 @@ def test_empty_sample_and_causal_finite_validation():
     assert trade_sequence_dna([])["inference_state"] == "INSUFFICIENT_SAMPLE"
     with pytest.raises(ValueError):
         trade_sequence_dna([nan])
+
+
+def test_final_capital_worst_is_lower_capital_not_upper_quantile():
+    result = fixed_cash_tail_research(
+        [-1, 1], [0, 0], FixedCashResearchConfig(100, 2, 10, 1),
+        source_sha256="a" * 64, paths=10, seed=0,
+    )
+    distribution = result["cost_stresses"]["1.0"]["final_capital"]
+    assert distribution["worst_observed"] == 98
+    assert distribution["p99"] == 102
+    assert distribution["worst_direction"] == "LOWER_CAPITAL"
