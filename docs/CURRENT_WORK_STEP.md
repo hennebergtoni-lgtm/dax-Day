@@ -1,5 +1,10 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current acceleration closeout — authoritative 2026-09-14
+
+See [complete A–Z report](ACCELERATION_PROGRAM_FINAL_2026_09_14.md), [M01/readiness matrix](ACCELERATION_M01_DEMO_READINESS_MATRIX.md), [H40/F100/L24 register](../research/acceleration_program_v1.json). One export runner/one immutable-final-head command in the handoff. No Windows original ZIP delivered yet. Effective NONE/false, hard LIVE block, CAND-001/frozen reference untouched. New bounded IG DEMO authorization is binding conditionally; older prose below is history where it conflicts.
+
+
 ## Current binding user authorization — 2026-09-14 acceleration mandate
 
 The user explicitly authorizes one first bounded, small diagnostic **IG DEMO** evidence order after all 27 Pre-DEMO readiness gates are VERIFIED. This supersedes older DEMO NOT AUTHORIZED text only for that bounded IG DEMO scope. LIVE, real money, live-account switching, cash transfers and automatic DEMO-to-LIVE promotion remain unauthorized. Cancel/modify is limited to a separately verified lifecycle design. No blind retry/resubmit, unknown transport replay or autonomous slot release.
@@ -10,6 +15,8 @@ Attempt03 at exact head2a99f96e06f7ce1f311c767dec43d236bb63eedd is **SUCCESS / V
 
 The acceleration mandate activates independent Post-DEMO A–J preparation/research/failure work when dependencies permit. Original rescue reports remain historical read-only artifacts. No Acceptance refresh, merge or force push is authorized.
 
+
+## Historical capture overlays — not current pointer/readiness
 
 **Latest2233 session update:** attempts01/02 user-reported A success/B401 abort; original evidence preserved. One read-only in-memory IG session now owns A/B/C: one login, three PricesV3 GETs on success, one cleanup before local AB/BC. No relogin/refresh/retry; any session loss or cleanup failure aborts. Default unused namespace .runtime/ig_raw_m5_truth_2233_v2_attempt_03; one Windows PS1/CMD start with exact final -ExpectedHead. Attempt-summary V2 records session lifecycle; RAW timestamp/evidence V2 and Candidate/state/overlap contracts unchanged. Precise host401 root cause UNKNOWN. See current session section in STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md; earlier per-capture subprocess procedure is historical. UNVERIFIED / WAITING_EXTERNAL; NONE/false, no Candidate or broker mutation, no later step activated. Local execution unavailable; exact-head mandatory CI required.
 
@@ -25,30 +32,27 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Acceleration sequence — current authoritative pointer
 
-Step2234 **INTERRUPTED FOR FINAL VALIDATION**: H40/F100/L24 source/owner mapping implemented; Ruff,118 focused and registry integrity green on3867fcd; full required CI pending, not represented as completed. Its source review deliverable remains available in ACCELERATION_RESEARCH_FACTORY_RECONCILIATION.md. Active2235 extends existing boost001/failure_analysis diagnostic owners; no current pinned Candidate ledger means real risk results external. Final-head validation will close this local work if successful.
+Local Steps2234–2236 deliver complete source/owner mapping plus original-export, one-session, risk/tail/DNA, full identity, TCA, native-grid independent PTC, hard DEMO transport boundary and causal-hysteresis feature preparation. Completed local code requires the latest implementation-head green checks; final documentation-head CI is checked before handoff. This does not close real broker/M01/M02 evidence.
 
-Step2233 is **WAITING_EXTERNAL** after supplied successful RAW attempt03: six original files must be exported and reviewed; semantics/final contract/new Candidate resume remain UNKNOWN. Continue independent authorized work. Active2234 maps all H01–H40, F001–F100 and24 learnings against exact code/tests, with conservative evidence classes and current public donor rescan. No source artifact is rewritten. See IG_DEMO_BOUNDED_AUTHORIZATION_2026_09_14.md for bounded authorization; effective NONE/false, LIVE prohibited. Older chronological overlays below are history, not active pointers.
-
-
-## Acceleration pause ledger — mandatory sequential evidence
+Step2233 remains WAITING_EXTERNAL: six Attempt03 original JSON files; supplied acquisition SUCCESS is not final contract proof. Active2237 is the original-bundle review/final contract and native IG readiness follow-up, waiting for the one offline export runner. Last completed2236 refers to the independent local lane under WORK_CONTINUITY_PROTOCOL4A and does not erase paused2233.
 
 | Step | Scope | State |
 | --- | --- | --- |
-| 2233 | Original Attempt03 bytes and provider semantics | **WAITING_EXTERNAL** — successful acquisition supplied; no interval contract proof |
-| 2234 | H40/F100/L24 source and owner reconciliation | **INTERRUPTED** — implementation delivered; final CI closeout pending |
-| 2235 | Existing risk owner tail/DNA extension | **INTERRUPTED** — implementation delivered; final CI closeout pending |
-
-Active2236 hardens the existing IG session owner and dimensional conformance evidence. The prior full-suite failure was missing formal pause-ledger rows;118 focused tests/Ruff/register integrity passed. This ledger fixes the actual governance requirement without changing its tests.
+| 2233 | Original Attempt03 bytes / provider timestamp/finality | **WAITING_EXTERNAL** — supplied one-session SUCCESS; original source absent |
+| 2234 | Full H40/F100/L24 source reconciliation and donor review | **COMPLETED_LOCAL** — full CI/source integrity; no real broker assertions |
+| 2235 | Existing risk tail/fixed cash/DNA extensions | **COMPLETED_LOCAL** — hand-computed/focused/full local tests; ledger external |
+| 2236 | Existing IG session, identity/TCA/PTC, hard DEMO boundary and causal research preparation | **COMPLETED_LOCAL** — implementation-head CI; final doc-head CI required |
+| 2237 | Six-source review, final contract, native IG readiness | **WAITING_EXTERNAL** — no actual DEMO order or promotion |
 
 ## Current pointer
 
-- Last completed whole-number step: **2232**
-- Last interrupted whole-number step: **2185**
-- Active whole-number step: **2236**
-- Active step state: **IN_PROGRESS / IG SESSION AND DIMENSIONAL EVIDENCE HARDENING / NO BROKER SIDE EFFECT**
-- Work tranche state: **COMPLETED_LOCAL_OPERATOR_HARDENING_2 — EXTERNAL_GATES_REMAIN**
-- Next step after successful completion: **2237**
-- Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
+- Last completed whole-number step: **2236**
+- Last interrupted whole-number step: **2235**
+- Active whole-number step: **2237**
+- Active step state: **WAITING_EXTERNAL / ATTEMPT03 ORIGINAL BUNDLE AND FINAL IG CONTRACT / CONDITIONAL BOUNDED DEMO AUTHORIZED**
+- Work tranche state: **IMPLEMENTED_LOCAL_ACCELERATION_2234_2236 / TESTED_CODE_HEAD / FINAL_DOCUMENTATION_CI_REQUIRED**
+- Next step after successful completion: **2238**
+- Stop boundary: **Bounded small IG DEMO evidence order is user-authorized only after all27 VERIFIED readiness gates. Current NONE/false; LIVE forbidden. No blind resubmit, unknown transport replay, autonomous slot release or state reset. Native IG integration/review + source evidence remain blocked; see ACCELERATION_PROGRAM_FINAL_2026_09_14.md.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
 - Historical Step 2203 scope: **Narrow provenance adapter beside the existing loss checkpoint, preserving its canonical bytes and fingerprints.**
@@ -66,6 +70,10 @@ Active2236 hardens the existing IG session owner and dimensional conformance evi
 - Step 2206 remains **PLANNED — WAITING_EXTERNAL / USER_AUTH / NO BROKER SIDE EFFECT**; independent local Work uses Steps 2207 onward under WORK_CONTINUITY_PROTOCOL section 4A.
 - Completed Step 2231 scope: **IG M5 timestamp/pagination correction and corrected real Windows probe; VERIFIED AS SUPPLIED by the user on 2026-09-14. This closes the IG feed slice of M01, not the broader host/risk/reconciliation milestone.**
 - Completed Step 2232 scope: **REAL-HOST SHADOW END-TO-END OBSERVABILITY TEST: live IG CLOSED-M5 -> unchanged CAND-001 pipeline/orchestrator -> SHADOW state/DecisionRecord -> fresh validated OperatorSnapshot V3 and credential-free evidence. Reuse the IG adapter/client and generic Candidate owners; never synthesize an MT5 bundle. No orders, controls, strategy/cost/risk changes, merge or Acceptance refresh.**
+
+## Historical work ledger and prior safety wording
+
+The following records preserve original chronology/evidence. Earlier DEMO NOT AUTHORIZED, no later step activated, natural STOP, post-demo DO NOT START and old Active/Next prose are superseded by the authoritative current authorization/pointer above. No historical observation is upgraded into final-head broker truth.
 
 ## Step 2231 real-host closeout
 

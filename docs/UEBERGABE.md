@@ -1,4 +1,17 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
+## Current acceleration closeout — 2026-09-14 authoritative
+
+The acceleration mandate is implemented in existing owners, with complete40 hypotheses/100 failures/24 learnings reconciliation, original-byte export automation, one-session transport safety, full identity/TCA, risk/tail/DNA, independent PTC and causal hysteresis preparation. See [complete A–Z report](ACCELERATION_PROGRAM_FINAL_2026_09_14.md), [M01 +27 readiness gates](ACCELERATION_M01_DEMO_READINESS_MATRIX.md), [source/owner register](../research/acceleration_program_v1.json).
+
+Current official pointer: last completed2236 (independent local lane), active2237 WAITING_EXTERNAL original-bundle/contract/native IG readiness, next2238 after successful closeout. Step2233 stays WAITING_EXTERNAL. Historical capture SUCCESS at2a99f96e is supplied evidence; original bytes and final provider mapping are missing. Current effective NONE/false, no bounded transport activated, no first order. Local green software cannot prove M01 account/economics/clock/inventory/native lifecycle/recovery.
+
+**User authorization is current:** one small bounded diagnostic IG DEMO evidence order may execute autonomously after all27 gates VERIFIED; this supersedes historical DEMO NOT AUTHORIZED only for that scope. LIVE/real money/live switch/transfers/automatic promotion remain unauthorized. No blind retry/resubmit/slot release/reset. Continuous DEMO remains M07-gated. Cancel/modify requires verified lifecycle design.
+
+One Windows START→WAIT→SUMMARY export runner is prepared; immutable exact-final-head start command is in the final handoff. No recapture03, manual six-command sequence, credentials or broker call. Need ZIP containing all six hash-bound originals before final contract interpretation.
+
+Repository/code truth remains authoritative. Local code/check results and exact final documentation-head CI are distinguished in the report/final handoff. No Acceptance refresh/main merge/force push; no CAND-001/frozen-reference/cost mutation.
+
+
 
 ## Current binding user authorization — 2026-09-14 acceleration mandate
 
@@ -10,6 +23,8 @@ Attempt03 at exact head2a99f96e06f7ce1f311c767dec43d236bb63eedd is **SUCCESS / V
 
 The acceleration mandate activates independent Post-DEMO A–J preparation/research/failure work when dependencies permit. Original rescue reports remain historical read-only artifacts. No Acceptance refresh, merge or force push is authorized.
 
+
+## Historical capture overlays — not current roadmap
 
 **Latest2233 session update:** attempts01/02 user-reported A success/B401 abort; original evidence preserved. One read-only in-memory IG session now owns A/B/C: one login, three PricesV3 GETs on success, one cleanup before local AB/BC. No relogin/refresh/retry; any session loss or cleanup failure aborts. Default unused namespace .runtime/ig_raw_m5_truth_2233_v2_attempt_03; one Windows PS1/CMD start with exact final -ExpectedHead. Attempt-summary V2 records session lifecycle; RAW timestamp/evidence V2 and Candidate/state/overlap contracts unchanged. Precise host401 root cause UNKNOWN. See current session section in STEP_2233_IG_RAW_TIMESTAMP_TRUTH.md; earlier per-capture subprocess procedure is historical. UNVERIFIED / WAITING_EXTERNAL; NONE/false, no Candidate or broker mutation, no later step activated. Local execution unavailable; exact-head mandatory CI required.
 
