@@ -204,7 +204,6 @@ def collect_probe(
 ) -> dict[str, object]:
     credentials = _credentials_from_file(credentials_file)
     client = IgDemoReadOnlyClient(credentials=credentials)
-    observed_at = datetime.now(timezone.utc)
     try:
         client.login()
         accounts = client.accounts()
@@ -212,6 +211,7 @@ def collect_probe(
         working_orders = client.working_orders()
         market = client.market(epic)
         prices = client.m5_prices(epic, max_bars=bars)
+        observed_at = datetime.now(timezone.utc)
     finally:
         client.logout()
 
