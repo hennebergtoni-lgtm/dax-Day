@@ -137,6 +137,21 @@ def test_ig_source_rejects_open_or_future_bar() -> None:
         source.next_candle()
 
 
+def test_ig_source_rejects_stale_latest_closed_bar() -> None:
+    source = IgClosedM5CandleSource(
+        feed_provider=lambda: IgClosedM5Feed(
+            epic=EPIC,
+            observed_at=datetime(2026, 9, 14, 10, 15, 1, tzinfo=timezone.utc),
+            prices=(_row("2026-09-14T10:00:00"),),
+        ),
+        epic=EPIC,
+        instrument_id=INSTRUMENT,
+    )
+
+    with pytest.raises(ValueError, match="fresh M5 data"):
+        source.next_candle()
+
+
 def test_ig_source_rejects_duplicate_or_out_of_order_rows() -> None:
     duplicate = _feed(
         _row("2026-09-14T10:00:00"),
