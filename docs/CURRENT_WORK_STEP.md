@@ -25,16 +25,18 @@ Purpose: preserve one unambiguous whole-number work sequence across chat/context
 
 ## Acceleration sequence — current authoritative pointer
 
+Step2234 **INTERRUPTED FOR FINAL VALIDATION**: H40/F100/L24 source/owner mapping implemented; Ruff,118 focused and registry integrity green on3867fcd; full required CI pending, not represented as completed. Its source review deliverable remains available in ACCELERATION_RESEARCH_FACTORY_RECONCILIATION.md. Active2235 extends existing boost001/failure_analysis diagnostic owners; no current pinned Candidate ledger means real risk results external. Final-head validation will close this local work if successful.
+
 Step2233 is **WAITING_EXTERNAL** after supplied successful RAW attempt03: six original files must be exported and reviewed; semantics/final contract/new Candidate resume remain UNKNOWN. Continue independent authorized work. Active2234 maps all H01–H40, F001–F100 and24 learnings against exact code/tests, with conservative evidence classes and current public donor rescan. No source artifact is rewritten. See IG_DEMO_BOUNDED_AUTHORIZATION_2026_09_14.md for bounded authorization; effective NONE/false, LIVE prohibited. Older chronological overlays below are history, not active pointers.
 
 ## Current pointer
 
 - Last completed whole-number step: **2232**
 - Last interrupted whole-number step: **2185**
-- Active whole-number step: **2234**
-- Active step state: **IN_PROGRESS / RESEARCH FACTORY RECONCILIATION AND PRIORITIZATION / NO BROKER SIDE EFFECT**
+- Active whole-number step: **2235**
+- Active step state: **IN_PROGRESS / HISTORICAL RISK AND DEPENDENT FIXED CASH RESEARCH / NO BROKER SIDE EFFECT**
 - Work tranche state: **COMPLETED_LOCAL_OPERATOR_HARDENING_2 — EXTERNAL_GATES_REMAIN**
-- Next step after successful completion: **2235**
+- Next step after successful completion: **2236**
 - Stop boundary: **The first actual DEMO evidence order remains separately authorization-gated. Step 2201 may audit/compose read-only real-host readiness and evidence owners but may not call `mt5.order_send`, place/cancel/modify an order, release a consumed slot, enable execution, authorize normal PAPER/LIVE or infer broker facts from Linux/fixture evidence.**
 - Historical Step 2201 scope: **Audit and compose the remaining read-only first-DEMO-order readiness chain after Step 2200: current Windows/MT5 host lane 2122, market-open feed and broker clock/timezone, exact observed DEMO account/server/symbol, real transport-tag lookup support, broker economics, explicit risk/loss/sizing policy and current protection. REUSE before BUILD; prepare only evidence/readiness surfaces that can be proven without a broker side effect. No actual DEMO order, no `order_send`, no PAPER/LIVE authorization, no Acceptance refresh or merge.**
 - Historical Step 2202 scope: **Narrow source/account/time/review binding in the existing economics bridge; preserve Risk V1 and original binding fingerprints.**
