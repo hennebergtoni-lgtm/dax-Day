@@ -214,6 +214,11 @@ def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -
     assert "--force" not in source
     assert "order_send" not in source + owner and "/positions/otc" not in source + owner
     assert "DAX_STEP2238_DEPLOYMENT_OWNER_V1" in source
+    assert "MaterializedPath = $materializedPath" in source
+    assert "[System.IO.File]::Delete([string]$ownerContext.MaterializedPath)" in source
+    assert source.index("[System.IO.File]::Delete([string]$ownerContext.MaterializedPath)") < source.index(
+        "Test-RunnerOwnedDeployment -TemporaryRoot $temporaryRoot", source.index("} finally {")
+    )
     assert "SUMMARY: BLOCKED / FAIL_CLOSED; error_code=" in source
     assert source.index("COLLECTOR PRECHECK:") < source.index("AUTH READ-ONLY START:")
 

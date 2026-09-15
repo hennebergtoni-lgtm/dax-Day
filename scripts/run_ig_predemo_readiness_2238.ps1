@@ -420,6 +420,7 @@ function Import-DaxHostRuntimeOwner {
         WritePreflight = $commandMap['Write-DaxHostPreflight']
         SourcePathFingerprint = $diagnostic.path_fingerprint
         ModuleFileSha256 = $diagnostic.module_file_sha256
+        MaterializedPath = $materializedPath
     }
 }
 
@@ -539,6 +540,12 @@ function Invoke-Closeout {
     } finally {
         if ($null -ne $ownerContext -and $null -ne $ownerContext.Module) {
             Remove-Module -ModuleInfo $ownerContext.Module -Force -ErrorAction SilentlyContinue
+        }
+        if ($null -ne $ownerContext -and $null -ne $ownerContext.MaterializedPath -and
+            (Test-Path -LiteralPath $ownerContext.MaterializedPath -PathType Leaf)) {
+            try {
+                [System.IO.File]::Delete([string]$ownerContext.MaterializedPath)
+            } catch { }
         }
     }
 }

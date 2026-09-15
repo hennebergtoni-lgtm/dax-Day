@@ -1,5 +1,29 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2242 Bot-Helper real-host IG read-contract closeout — IN_PROGRESS (2026-09-15)
+
+Pinned start head: `d7ad273e71a9ae993d8c28031e8c20d3a84e32d2`; branch
+`nextgen-bot-line-v1`, PR #109 OPEN/UNMERGED; main unchanged
+`e0784ebfc11bee28475fd9c3385be661af58a738`. The supplied real Windows run
+proved 50/52 host preflight PASS, exact-head collector precheck, one successful
+IG DEMO login and all eight read rows: five PASS plus HTTP_4XX for both
+WORKING_ORDERS_V2 rows and ACTIVITY_HISTORY_V3. NONE/false and no retry/order
+were preserved. Step2242 is the single integer for the contract repair,
+Bot-Helper dogfood, regressions and acceptance; prior 2238/2239/2240/M01 status
+is not promoted.
+
+Official-source and repository comparison found three shared request/diagnostic
+defects and one independent wrapper cleanup defect. The deployed adapter used
+`/working-orders`, while both official IG Java and .NET runtime samples use
+`/workingorders` for VERSION 2 with the same `workingOrders` /
+`workingOrderData` response family. Activity v3 emitted Python `isoformat()`
+values with `+00:00`; the documented/sample request contract uses UTC
+`yyyy-MM-ddTHH:mm:ss`, pageSize 10–500 and fixed query keys. The safe provider
+allowlist omitted documented date/page/security/public-API codes. Finally, the
+wrapper materialized its imported module inside the deployment parent but did
+not include or remove that file before its exact ownership check, so cleanup
+could reject runner-owned state. Implementation and two-pass acceptance follow.
+
 ## Current: Step2241 Bot-Helper-Kollektiv V1 — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
 Accepted runtime head: `6acb5399c1a9f23def20ada9660e09e023fdf33e`.

@@ -186,7 +186,79 @@ def test_v4_market_and_bounded_activity_are_get_only() -> None:
     assert [call["method"] for call in transport.calls] == ["POST", "GET", "GET"]
     assert transport.calls[1]["headers"]["VERSION"] == "4"
     assert transport.calls[2]["url"].endswith("/history/activity")
-    assert transport.calls[2]["query"]["detailed"] == "true"
+    assert transport.calls[2]["query"] == {
+        "from": "2026-09-08T00:00:00",
+        "to": "2026-09-15T00:00:00",
+        "detailed": "true",
+        "pageSize": "500",
+    }
+
+
+def test_activity_v3_normalizes_to_utc_seconds_without_zone_suffix() -> None:
+    transport = FakeTransport([
+        _login_response(),
+        JsonResponse(200, {}, {"activities": [], "metadata": {"paging": {}}}),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    client.readiness_account_activity(
+        from_utc=datetime.fromisoformat("2026-09-14T12:34:56.987654+02:00"),
+        to_utc=datetime.fromisoformat("2026-09-15T12:34:56.987654+02:00"),
+        page_size=10,
+    )
+    assert transport.calls[1]["query"] == {
+        "from": "2026-09-14T10:34:56",
+        "to": "2026-09-15T10:34:56",
+        "detailed": "true",
+        "pageSize": "10",
+    }
+    assert all(
+        not transport.calls[1]["query"][key].endswith(("Z", "+00:00"))
+        for key in ("from", "to")
+    )
+
+
+@pytest.mark.parametrize("days,page_size", [(8, 500), (7, 9), (7, 501), (7, True)])
+def test_activity_v3_rejects_out_of_contract_bounds(days: int, page_size: int) -> None:
+    client = IgDemoReadOnlyClient(_credentials(), FakeTransport([_login_response()]))
+    client.login()
+    end = datetime(2026, 9, 15, tzinfo=timezone.utc)
+    with pytest.raises(ValueError):
+        client.readiness_account_activity(
+            from_utc=end - timedelta(days=days), to_utc=end, page_size=page_size
+        )
+
+
+def test_urllib_transport_percent_encodes_activity_colons(monkeypatch) -> None:
+    from daxlab.adapters import ig_rest_readonly
+
+    observed = {}
+
+    class Response:
+        status = 200
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return b"{}"
+
+    def fake_urlopen(request, *, timeout):
+        observed["url"] = request.full_url
+        observed["timeout"] = timeout
+        return Response()
+
+    monkeypatch.setattr(ig_rest_readonly, "urlopen", fake_urlopen)
+    ig_rest_readonly.UrllibJsonTransport().request(
+        method="GET", url=f"{IG_DEMO_BASE_URL}/history/activity", headers={},
+        query={"from": "2026-09-14T10:34:56", "to": "2026-09-15T10:34:56"},
+    )
+    assert "from=2026-09-14T10%3A34%3A56" in observed["url"]
+    assert "to=2026-09-15T10%3A34%3A56" in observed["url"]
 
 
 def test_unauthenticated_read_is_fail_closed() -> None:
@@ -340,8 +412,8 @@ def test_readiness_resource_contracts_use_official_versions_paths_and_shapes() -
     ]
     assert [item.status for item in results] == ["PASS"] * 8
     assert [call["url"].removeprefix(IG_DEMO_BASE_URL) for call in transport.calls[1:]] == [
-        "/accounts", "/positions", "/working-orders", "/markets/IX.D.DAX.IFMM.IP",
-        "/history/activity", "/prices/IX.D.DAX.IFMM.IP", "/positions", "/working-orders",
+        "/accounts", "/positions", "/workingorders", "/markets/IX.D.DAX.IFMM.IP",
+        "/history/activity", "/prices/IX.D.DAX.IFMM.IP", "/positions", "/workingorders",
     ]
     assert [call["headers"]["VERSION"] for call in transport.calls[1:]] == [
         "1", "2", "2", "4", "3", "3", "2", "2",
@@ -366,6 +438,46 @@ def test_readiness_http_failure_does_not_hide_independent_reads() -> None:
     assert failed.request_id_fingerprint and "private-request" not in repr(failed.safe_view())
     assert passed.status == "PASS"
     assert [call["method"] for call in transport.calls] == ["POST", "GET", "GET"]
+
+
+@pytest.mark.parametrize("provider_code", [
+    "error.request.invalid.date-range",
+    "error.request.invalid.page-size",
+    "error.security.api-key-restricted",
+    "error.security.api-key-revoked",
+    "error.public-api.failure.encryption.required",
+    "error.public-api.failure.kyc.required",
+    "error.public-api.failure.missing.credentials",
+    "error.public-api.failure.pending.agreements.required",
+    "error.public-api.failure.preferred.account.disabled",
+    "error.public-api.failure.preferred.account.not.set",
+    "error.public-api.failure.product-code-not-allowed",
+    "error.public-api.failure.stockbroking-not-supported",
+])
+def test_documented_provider_codes_are_preserved_without_response_text(provider_code) -> None:
+    transport = FakeTransport([
+        _login_response(), JsonResponse(400, {}, {
+            "errorCode": provider_code, "errorText": "credential-and-account-secret"
+        }),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    result = client.readiness_working_orders("WORKING_ORDERS_A")
+    assert result.provider_error_code == provider_code
+    assert "credential-and-account-secret" not in repr(result.safe_view())
+
+
+def test_unknown_provider_code_remains_safely_unclassified() -> None:
+    transport = FakeTransport([
+        _login_response(), JsonResponse(400, {}, {
+            "errorCode": "error.private.account.SECRET", "detail": "secret"
+        }),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    result = client.readiness_working_orders("WORKING_ORDERS_A")
+    assert result.provider_error_code is None
+    assert "SECRET" not in repr(result.safe_view())
 
 
 def test_readiness_401_blocks_later_reads_without_relogin_or_get() -> None:

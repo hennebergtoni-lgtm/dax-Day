@@ -1,9 +1,8 @@
 # Bot-Helper-Kollektiv V1 — Step 2241 acceptance record
 
-Status: **COMPLETED / TECHNICALLY VERIFIED — SYNTHETIC + CI**.
-Updated: 2026-09-15T10:33Z. This new technical V1 record does not replace historical
-VERIFIED evidence, formal project acceptance or merge governance.
-**FOLLOW-UP WORK DEBT: EXTERNAL_ONLY. Open internal V1 defects: 0.**
+Status: **IN_PROGRESS / CI_PENDING**. This is a new implementation record, not a
+replacement for historical VERIFIED evidence or formal project acceptance.
+Updated: 2026-09-15. Internal acceptance is **NOT YET COMPLETE**.
 
 ## Authority, pin and unchanged boundaries
 
@@ -12,12 +11,8 @@ VERIFIED evidence, formal project acceptance or merge governance.
 | Repository / branch / PR | `hennebergtoni-lgtm/dax-Day` / `nextgen-bot-line-v1` / #109 OPEN, UNMERGED |
 | Expected and observed start head | `aa11dc32fbd91c84edea19816e13fb6dc613a964` |
 | main | `e0784ebfc11bee28475fd9c3385be661af58a738` |
-| Runtime pin rechecked via GitHub | 2026-09-15T10:33Z; branch/head/main match, PR remains OPEN/UNMERGED |
-| Start drift | NONE; only two authorized implementation commits, followed by documentation closeout |
-| Accepted runtime commit | `6acb5399c1a9f23def20ada9660e09e023fdf33e` |
-| CI execution commit (GitHub PR test merge, not an actual merge) | `39de0fad926a792e70ab17c0119477547d6b7a6e` |
-| Identical runtime and CI tree | `b9fb2b5d194b6c049a8aff2bc495efe52d781ca7` |
-| Final documentation head | Recorded by the containing documentation commit and final handoff; no new runtime authority is claimed from documentation |
+| Start drift | NONE; subsequent own uncommitted implementation is separately reviewable |
+| Runtime execution commit / final PR head | CI_PENDING; must be filled from actual committed/tested trees |
 | Mandate | Recovered complete `DAX_BOT_HELPER_KOLLEKTIV_V1_META_DESIGN_UND_ASTRA_AUFTRAG.md`, section 11; current user autonomy clauses take precedence |
 | Scope | BOT_HELPER_KOLLEKTIV_V1_ONLY; one official work unit, Step 2241 |
 
@@ -90,46 +85,47 @@ readback, including the manifest. Its success is not a demonstrated user-host
 upload. Local originals survive a failed transfer. No general uploader, account,
 secret, service, tunnel, database schema or new destination was created.
 
-## Acceptance matrix — measured technical V1 result
+## Acceptance matrix — provisional, not a final verdict
 
-All three required workflows passed on the accepted runtime tree. Each workflow
-executed **pass 1 = 916 PASS / 0 SKIP / 0 FAIL** and **pass 2 = 916 PASS / 0 SKIP /
-0 FAIL**, with fresh processes and stable source snapshots. Every T01–T15 group
-passed in both passes. Actual Chromium executed at 390px on Linux and Windows.
-Native Windows PowerShell 5.1 parser/import/failure-matrix tests and PS7 compatibility
-passed; CI Windows is not evidence from the user's Windows machine.
+Repair freeze after D18–D20: local full suite **3443 passed / 8 skipped / 0 failed**;
+both fresh aggregate passes **915 passed / 1 skipped**, stable source hashes.
+The local skip is Chromium; actual CI repeats remain required.
+Evidence: `/tmp/bot-helper-repaired-ci/pass1/`, `pass2/` (sanitized JSON/JUnit).
 
-Full research CI: **3450 passed / 1 skipped**, 23.43 seconds. The existing full-suite
-skip is not counted as PASS. Its five conditional database steps (connection,
-migrations, integrity, restore drill, detail-import drill) are **SKIPPED / external**.
-Local repair freeze: **3443 passed / 8 skipped / 0 failed**; both helper passes
-**915 passed / 1 Chromium skip**. Those local skips remain recorded as skips;
-only the actual CI browser runs close T12/T14. Ruff and existing Safety/Recovery/
-Reference/Registry gates passed without changing their acceptance thresholds.
+Pre-CI frozen-source snapshot (superseded by the repair run below): **pass 1: 899 passed / 1 skipped**;
+**pass 2: 899 passed / 1 skipped**, with no failed assertions. The full existing
+suite is **3427 passed / 8 skipped / 0 failed** (27.615 seconds). Local JSON/JUnit
+runs are at `/tmp/bot-helper-ci-ready/pass1/` and `pass2/`; the repository runner
+and CI artifact mechanism define their reproducible evidence path. Both helper
+runs retain the mandatory Chromium skip as INCOMPLETE for T12/T14. CI must execute
+the actual browser and native Windows tests before technical acceptance can pass.
+Earlier three alternate-pass fixture failures were repaired and retested; they
+are historical build observations, not current failures. These local results do
+not replace exact committed-head CI evidence.
 
-All matrix rows below are measured **SYNTHETIC/REPLAY** assertions, with real
-local state/process/file behavior. Real-host and real-broker coverage remains
-**NOT_PROVEN** in every row. PASS does not mean every F001–F100 facet is solved.
-The common CI/Windows column refers to the 916-case union on each runner plus
-native PS5.1 parity; it is not a claim that the entire repository suite ran on Windows.
+`LOCAL*` means the selected synthetic assertions passed in the reported local
+snapshot, not every real-host or registry facet. `PENDING` is not PASS. Evidence
+paths below identify executable assertions, not unexecuted coverage claims.
+All rows have real-host/broker scope **NOT_PROVEN** and native Windows parity
+**CI_PENDING**; Linux/PowerShell 7 evidence never substitutes for Windows 5.1.
 
 | Group | Pass 1 | Dogfood / injection evidence | Pass 2 | Three CIs / Windows | Scope / assertion reference |
 | --- | --- | --- | --- | --- | --- |
-| T01 Healthy / NO_TRADE | PASS | Real Candidate sequence, one intent/outcome; healthy NO_TRADE | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; `test_bot_helper_acceptance.py`, IG SHADOW e2e |
-| T02 Data→admission | PASS | Stale/open/gap/duplicate/revision/nonfinite/ordering; actual entrance veto | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; acceptance + review + quality/IG adapter tests |
-| T03 Broker truth | PASS | Unknown/None/manual inventory/bracket/history owner regressions | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; IG safety, inventory and reconciliation suites |
-| T04 Lifecycle conflict | PASS | ACK/partial/timeout/duplicate/out-of-order; no retry/release | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; lifecycle/reconciliation/query/restart suites |
-| T05 Subject binding | PASS | Account/instrument/run/session/code/policy/contract mixes | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; acceptance, review, IG safety/reservation |
-| T06 Independent PTC | PASS | All 17 fixed veto cases; current subject binding; healthy PTC control | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; acceptance + independent PTC/protection |
-| T07 Full matrices | PASS | 52 preflight / eight resource guards / derived-stage and cleanup faults | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; preflight and actual collector suites |
-| T08 Failure isolation | PASS | Broken source/store/publisher/operator; retained independent outcomes | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; durability and HTTP/malformed suites |
-| T09 Restart/recovery | PASS | Real process kills, receipts/checkpoints, tamper/restore invariants | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; acceptance + durability + canonical recovery |
-| T10 Event bounds | PASS | Duplicate/conflicting IDs, stale dependencies, order, cycles/storm | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; acceptance + independent review + lock |
-| T11 Leakage/trust | PASS | Closed schema, malformed/nested inputs, scope/JSON and output rejection | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; acceptance + credentials/durability |
-| T12 Existing UI/HTTP | PASS | Actual GET/DOM/390px Chromium; source age preserved, failed refresh clears cached diagnosis | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC; operator suite + actual browser test |
-| T13 Evidence transfer | PASS | Failed/wrong target, receipt/readback, duplicates; local originals retained | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC SINK ONLY; durability + acceptance |
-| T14 Actual V3 chain | PASS | Collector→safety→coordinator→actual entrance/GET; connected review included | PASS | 3 GREEN / PS5.1 PASS | SYNTHETIC/REPLAY; operator, review, IG safety/e2e |
-| T15 Registry | PASS | Exact IDs/meanings/statuses; skipped/missing assertions cannot become PASS | PASS | 3 GREEN / PS5.1 PASS | Registry invariants, not broker evidence |
+| T01 Healthy / NO_TRADE | LOCAL* | Real Candidate sequence, one intent/outcome; healthy NO_TRADE | LOCAL* | CI_PENDING | SYNTHETIC; `test_bot_helper_acceptance.py`, IG SHADOW e2e |
+| T02 Data→admission | LOCAL* | Stale/open/gap/duplicate/revision/nonfinite/ordering; actual entrance veto | LOCAL* | CI_PENDING | SYNTHETIC; acceptance + review + quality/IG adapter tests |
+| T03 Broker truth | LOCAL* | Unknown/None/manual inventory/bracket/history owner regressions | LOCAL* | CI_PENDING | SYNTHETIC; IG safety, inventory and reconciliation suites |
+| T04 Lifecycle conflict | LOCAL* | ACK/partial/timeout/duplicate/out-of-order; no retry/release | LOCAL* | CI_PENDING | SYNTHETIC; lifecycle/reconciliation/query/restart suites |
+| T05 Subject binding | LOCAL* | Account/instrument/run/session/code/policy/contract mixes | LOCAL* | CI_PENDING | SYNTHETIC; acceptance, review, IG safety/reservation |
+| T06 Independent PTC | LOCAL* | All 17 fixed veto cases; current subject binding; healthy PTC control | LOCAL* | CI_PENDING | SYNTHETIC; acceptance + independent PTC/protection |
+| T07 Full matrices | LOCAL* | 52 preflight / eight resource guards / derived-stage and cleanup faults | LOCAL* | CI_PENDING | SYNTHETIC; preflight and actual collector suites |
+| T08 Failure isolation | LOCAL* | Broken source/store/publisher/operator; retained independent outcomes | LOCAL* | CI_PENDING | SYNTHETIC; durability and HTTP/malformed suites |
+| T09 Restart/recovery | LOCAL* | Real process kills, receipts/checkpoints, tamper/restore invariants | LOCAL* | CI_PENDING | SYNTHETIC; acceptance + durability + canonical recovery |
+| T10 Event bounds | LOCAL* | Duplicate/conflicting IDs, stale dependencies, order, cycles/storm | LOCAL* | CI_PENDING | SYNTHETIC; acceptance + independent review + lock |
+| T11 Leakage/trust | LOCAL* | Closed schema, malformed/nested inputs, scope/JSON and output rejection | LOCAL* | CI_PENDING | SYNTHETIC; acceptance + credentials/durability |
+| T12 Existing UI/HTTP | INCOMPLETE | GET/DOM/freshness controls pass locally; actual 390px Chromium skipped | INCOMPLETE | CI_PENDING | SYNTHETIC; operator suite + actual browser test |
+| T13 Evidence transfer | LOCAL* | Failed/wrong target, receipt/readback, duplicates; local originals retained | LOCAL* | CI_PENDING | SYNTHETIC SINK ONLY; durability + acceptance |
+| T14 Actual V3 chain | INCOMPLETE | Collector→safety→coordinator→actual entrance/GET; connected review included | INCOMPLETE | CI_PENDING | SYNTHETIC/REPLAY; operator, review, IG safety/e2e |
+| T15 Registry | LOCAL* | Exact IDs/meanings/statuses; skipped/missing assertions cannot become PASS | LOCAL* | CI_PENDING | Registry invariants, not broker evidence |
 
 The fixed specification is `tests/fixtures/bot_helper_acceptance_v1.json`.
 `scripts/run_bot_helper_acceptance.py` runs the union in fresh subprocesses;
@@ -140,39 +136,15 @@ overall PASS. A failed/absent browser, test or source pin is never cosmetically 
 CI artifact uploads run even on failure, with 30-day retention; actual upload
 success remains the upload step's separate result.
 
-## CI evidence and readback
-
-| Workflow | Accepted run | Pass 1 / Pass 2 | Artifact ID | Upload/readback |
-| --- | --- | --- | --- | --- |
-| dax-bot-1x-ci | [#730](https://github.com/hennebergtoni-lgtm/dax-Day/actions/runs/34958170507) | 916 / 916 PASS | 10391974152 | PASS / exact ZIP digest + both JSON reports |
-| research-lab-ci | [#1514](https://github.com/hennebergtoni-lgtm/dax-Day/actions/runs/34958170496) | 916 / 916 PASS | 10391617935 | PASS / exact ZIP digest + both JSON reports |
-| windows-host-lane-ci | [#19](https://github.com/hennebergtoni-lgtm/dax-Day/actions/runs/34958170511) | 916 / 916 PASS | 10392486074 | PASS / exact ZIP digest + both JSON reports |
-
-Archive SHA256 values, verified after actual download:
-
-- 10391974152: `99360feb523ef191da89b3fd595e8a7aaa162dbf599c1710d5e5823c4e24b282`
-- 10391617935: `6bf2a7071511e0d91332accc112cdc839ccded3fbe248ae8be1f366b103ea52c`
-- 10392486074: `751447668a70726eb870ba8131a836c9958cb61209037995586205e13197f465`
-
-All archives contain `pass1/acceptance.json`, `pass2/acceptance.json`, sanitized
-JUnit and attempt records. The JSON reports bind the actual PR test-merge SHA,
-original source/test hashes, stable before/after snapshots and required browser.
-Both local and GitHub trees were compared, not inferred from branch names.
-The CI output directory itself can make `worktree_dirty=true`; unchanged source
-hashes and the execution tree remain explicit. There is no claim of a clean source
-based on that flag alone. Artifact retention is 30 days, expiry 2026-10-15 around
-10:30–10:31Z, checked separately from test success. CI upload/readback proves
-GitHub CI evidence transport, not user-host collection or automatic host transfer.
-
 Failure registry remains **53 GAP / 38 SYNTHETIC_ONLY / 9 WAITING_EXTERNAL**,
 exactly F001–F100. No real-broker refs or legacy statuses were promoted. Selected
 Detection/Reaction/Recovery assertions do not prove all Host/Broker facets.
 
-## Defects found and fixed before user handoff
+## Defects found and repaired before final handoff — provisional ledger
 
 IDs below count distinct defects, not each failing parameter/test or rerun.
-Repairs are implemented and both acceptance passes passed on all three CIs,
-including actual browser and native Windows. No known internal V1 defect remains.
+Repairs are implemented and local frozen-source regression has passed; required
+CI/browser/Windows acceptance is pending.
 Test/harness defects are explicitly distinguished from runtime defects.
 
 | ID | Discovery phase | Finding → repair / verification anchor |
@@ -200,14 +172,12 @@ Test/harness defects are explicitly distinguished from runtime defects.
 
 Discovery counts: **6 build, 1 dogfood, 9 failure injection, 2 second-pass/review,
 2 native Windows CI = 20**. D13/D15/D16/D20 are test/verification defects, not
-claims of trading-engine defects. All **20 repairs are confirmed; 0 internal V1 defects remain** after the complete
-repeat and native Windows acceptance. The first published runtime head
+claims of trading-engine defects. All repairs are implemented; final repeat and
+native Windows confirmation remain pending. The first published runtime head
 `ca5e500285736abb2f13d81e82b43b402f453a8d` had both Linux lanes green, including
 two actual-browser passes; Windows run #18 found 11 failed assertions caused by
 D19/D20. Its failure artifact was uploaded and read back. No failure was relabeled
-PASS. The corrected whole union and all three lanes subsequently passed, as
-recorded above. Bounded independent closure review confirmed D18/D19 at the exact
-accepted tree; the active internal-remaining hunt has no open V1 finding.
+PASS; the corrected whole acceptance union and all three lanes must run again.
 
 Reuse rule: test owner-to-owner contracts and actual admission before polishing
 projections; persist observations before derivation; bind source identity and
@@ -215,14 +185,16 @@ freshness independently; measure coverage and import ownership rather than assum
 
 ## Remaining gates and bounded host handoff
 
-**FOLLOW-UP WORK DEBT: EXTERNAL_ONLY.** All internal V1 requirements above are
-closed. Formal project acceptance and merge governance remain separate. This
-technical closeout promotes no M01/2238/2239/2240 or historical host gate.
+**Current FOLLOW-UP WORK DEBT: INTERNAL_REMAINING (acceptance still in progress).**
+EXTERNAL_ONLY is not yet justified. Root must record final commits/diff, check the local stable-tree results against
+all three CI runs/native Windows 5.1, complete actual browser acceptance and perform the
+active internal-remaining hunt before considering an external-only outcome.
+Formal project acceptance and merge governance remain separate.
 
-One new current-head Windows/IG observation remains
+After those internal gates, one new current-head Windows/IG observation may remain
 necessary. Use the existing wrapper, once, with a fresh namespace; no manual
 endpoint series. The following is a **template**, not an executed command or a
-verified installed-wrapper claim. The final response supplies the exact final PR SHA for `<FINAL_HEAD>`;
+verified installed-wrapper claim. Replace `<FINAL_HEAD>` only after final pinning;
 the wrapper must be supplied through the existing pinned deployment handoff:
 
 ```powershell
@@ -248,7 +220,7 @@ uploader or ask the user to hunt/upload ZIP files.
 | Additional host action prepared | 1 conditional existing-runner invocation, not yet released |
 | Required manual external file transfers | None prescribed; automatic channel remains unproved |
 | Additional external decision | Conditional channel configuration/access; exact necessity UNVERIFIED |
-| Follow-up Work likely? | External host/channel evidence follow-through only; no internal repair-WORK outstanding |
+| Follow-up Work likely? | Unknown until internal acceptance finishes; no new repair-WORK requested |
 
 ## Deliberately not built
 
@@ -261,12 +233,5 @@ would introduce authority and state without an authorized V1 need. These are
 separate deferred products, not names for unresolved V1 defects.
 
 Credits were not metered here; no cost total or budget-consumption claim is made.
-Feature expansion stopped at complete V1 acceptance. Runtime changes: 30 files,
-4742 insertions / 48 deletions from the start head; most additions are fixed
-acceptance specification, tests and evidence documentation. Published implementation
-commits: `ca5e500285736abb2f13d81e82b43b402f453a8d` then
-`6acb5399c1a9f23def20ada9660e09e023fdf33e`, both normal fast-forwards. The final
-documentation commit only records this result. Direct CLI push had no login; the
-authorized GitHub connection published byte-identical trees, verified before ref
-updates. No force push, actual PR merge, main update or foreign checkout mutation.
-Recovered mandate text SHA256: `12f789d8554bf54cd22d9395f326723bff353a1eb66f7ab1adb6047c944bb493`.
+Stop expansion once mandatory acceptance is complete. The final report must
+replace provisional counts with actual final-tree, CI, Windows and artifact evidence.

@@ -12,7 +12,7 @@ transport without network access.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from hashlib import sha256
 import json
@@ -37,6 +37,17 @@ _SAFE_ERROR_CODES = frozenset({
     "error.security.oauth-token-invalid", "error.security.api-key-missing",
     "endpoint.unavailable.for.api-key", "error.public-api.epic-not-found",
     "error.trading.otc.instrument-not-found", "invalid.url",
+    "error.request.invalid.date-range", "error.request.invalid.page-size",
+    "error.security.api-key-restricted", "error.security.api-key-revoked",
+    "error.public-api.exceeded-account-trading-allowance",
+    "error.public-api.failure.encryption.required",
+    "error.public-api.failure.kyc.required",
+    "error.public-api.failure.missing.credentials",
+    "error.public-api.failure.pending.agreements.required",
+    "error.public-api.failure.preferred.account.disabled",
+    "error.public-api.failure.preferred.account.not.set",
+    "error.public-api.failure.product-code-not-allowed",
+    "error.public-api.failure.stockbroking-not-supported",
 })
 _SESSION_INVALID_ERROR_CODES = frozenset({
     "error.security.account-token-invalid",
@@ -312,7 +323,7 @@ class IgDemoReadOnlyClient:
         return self._get_json("/positions", version="2")
 
     def working_orders(self) -> Mapping[str, object]:
-        return self._get_json("/working-orders", version="2")
+        return self._get_json("/workingorders", version="2")
 
     def market(self, epic: str) -> Mapping[str, object]:
         clean_epic = _clean_epic(epic)
@@ -327,22 +338,10 @@ class IgDemoReadOnlyClient:
         self, *, from_utc: datetime, to_utc: datetime, page_size: int = 500
     ) -> Mapping[str, object]:
         """Read bounded account activity; never follows an unknown paging link."""
-        for value, name in ((from_utc, "from_utc"), (to_utc, "to_utc")):
-            if value.tzinfo is None or value.utcoffset() is None:
-                raise ValueError(f"{name} must be timezone-aware")
-        if to_utc <= from_utc:
-            raise ValueError("account activity interval must be positive")
-        if type(page_size) is not int or not 10 <= page_size <= 500:
-            raise ValueError("page_size must be between 10 and 500")
         payload = self._get_json(
             "/history/activity",
             version="3",
-            query={
-                "from": from_utc.astimezone(timezone.utc).isoformat(),
-                "to": to_utc.astimezone(timezone.utc).isoformat(),
-                "detailed": "true",
-                "pageSize": str(page_size),
-            },
+            query=_activity_query(from_utc, to_utc, page_size),
         )
         return payload
 
@@ -384,7 +383,7 @@ class IgDemoReadOnlyClient:
             raise ValueError("invalid readiness working-orders resource")
         return self._readiness_get(
             resource=resource, endpoint_family="WORKING_ORDERS_V2",
-            path="/working-orders", version="2", shape=_shape_working_orders,
+            path="/workingorders", version="2", shape=_shape_working_orders,
         )
 
     def readiness_market_v4(self, epic: str) -> IgReadinessRead:
@@ -397,19 +396,10 @@ class IgDemoReadOnlyClient:
     def readiness_account_activity(
         self, *, from_utc: datetime, to_utc: datetime, page_size: int = 500
     ) -> IgReadinessRead:
-        for value, name in ((from_utc, "from_utc"), (to_utc, "to_utc")):
-            if value.tzinfo is None or value.utcoffset() is None:
-                raise ValueError(f"{name} must be timezone-aware")
-        if to_utc <= from_utc or type(page_size) is not int or not 10 <= page_size <= 500:
-            raise ValueError("invalid account activity bounds")
         return self._readiness_get(
             resource="ACTIVITY_HISTORY", endpoint_family="ACTIVITY_HISTORY_V3",
             path="/history/activity", version="3", shape=_shape_activity,
-            query={
-                "from": from_utc.astimezone(timezone.utc).isoformat(),
-                "to": to_utc.astimezone(timezone.utc).isoformat(),
-                "detailed": "true", "pageSize": str(page_size),
-            },
+            query=_activity_query(from_utc, to_utc, page_size),
         )
 
     def readiness_m5_prices(self, epic: str, *, max_bars: int = 40) -> IgReadinessRead:
@@ -645,6 +635,27 @@ def _safe_provider_error(payload: object) -> str | None:
     return candidate if isinstance(candidate, str) and candidate in _SAFE_ERROR_CODES else None
 
 
+def _activity_query(
+    from_utc: datetime, to_utc: datetime, page_size: int
+) -> dict[str, str]:
+    """Canonical IG activity-v3 query: UTC wall time at whole-second precision."""
+    for value, name in ((from_utc, "from_utc"), (to_utc, "to_utc")):
+        if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError(f"{name} must be timezone-aware")
+    start = from_utc.astimezone(timezone.utc)
+    end = to_utc.astimezone(timezone.utc)
+    if end <= start or end - start > timedelta(days=7):
+        raise ValueError("account activity interval must be positive and at most 7 days")
+    if type(page_size) is not int or not 10 <= page_size <= 500:
+        raise ValueError("page_size must be between 10 and 500")
+    return {
+        "from": start.strftime("%Y-%m-%dT%H:%M:%S"),
+        "to": end.strftime("%Y-%m-%dT%H:%M:%S"),
+        "detailed": "true",
+        "pageSize": str(page_size),
+    }
+
+
 def _http_status_class(status: int) -> str:
     return f"HTTP_{status // 100}XX" if 100 <= status <= 599 else "HTTP_OTHER"
 
@@ -687,7 +698,7 @@ def _shape_activity(payload: Mapping[str, object]) -> bool:
     metadata = payload.get("metadata")
     activities = _mapping_list(payload, "activities")
     return (activities is not None and all(isinstance(value, Mapping) for value in activities)
-            and isinstance(metadata, Mapping))
+            and isinstance(metadata, Mapping) and isinstance(metadata.get("paging"), Mapping))
 
 
 def _shape_prices(payload: Mapping[str, object]) -> bool:

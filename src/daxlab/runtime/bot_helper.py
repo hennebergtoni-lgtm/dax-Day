@@ -1,8 +1,8 @@
 """Bounded pure composition of existing owners, with a real SHADOW entrance veto.
 
 No broker I/O, persistence, policy calculation or background worker lives here.
-The existing runtime owns its state. Optional broker-read gaps do not disable an
-isolated healthy SHADOW stream. Explicit pretrade vetoes do reach its entrance.
+The existing runtime owns its state. Broker-read gaps in a readiness matrix
+reach the safety entrance as a veto while host and data truth stay independent.
 """
 from __future__ import annotations
 
@@ -455,12 +455,30 @@ def run_ig_readiness_shadow(state, evidence, *, subject, observed_at, run_manife
                                     observed_at=received, valid_until=source_time + delay,
                                     evidence_scope=evidence_scope, evidence_refs=(binding.source_fingerprint,),
                                     evidence_schema="DAXLAB_IG_PREDEMO_READINESS_V3"))
-        findings.append(observation(subject, "B", "UNKNOWN" if binding.blockers else "PASS",
+        read_blocked = any(row.get("status") != "PASS" for row in reads)
+        findings.append(observation(subject, "B", "BLOCKED" if read_blocked else
+                                    ("UNKNOWN" if binding.blockers else "PASS"),
                                     source_time=received, observed_at=received, valid_until=None,
                                     evidence_scope=evidence_scope,
-                                    reason_codes=("BROKER_UNKNOWN",) if binding.blockers else (),
+                                    reason_codes=("BROKER_READ_FAILED",)
+                                    if read_blocked
+                                    else (("BROKER_UNKNOWN",) if binding.blockers else ()),
                                     evidence_refs=(binding.source_fingerprint,),
                                     evidence_schema="DAXLAB_IG_PREDEMO_READINESS_V3"))
+        findings.append(observation(
+            subject, "S", "BLOCKED" if read_blocked else "PASS",
+            source_time=received, observed_at=received, valid_until=source_time + delay,
+            evidence_scope=evidence_scope,
+            reason_codes=("READINESS_BLOCKED",) if read_blocked else (),
+            evidence_refs=(binding.source_fingerprint,),
+            evidence_schema="DAXLAB_IG_PREDEMO_READINESS_V3",
+        ))
+        findings.append(observation(
+            subject, "O", "PASS", source_time=received, observed_at=received,
+            valid_until=source_time + delay, evidence_scope=evidence_scope,
+            evidence_refs=(binding.source_fingerprint,),
+            evidence_schema="DAXLAB_IG_PREDEMO_READINESS_V3",
+        ))
     except Exception:
         findings.append(observation(subject, "H", "BLOCKED", source_time=now,
                                     observed_at=now, valid_until=now, evidence_scope=evidence_scope,
