@@ -1,6 +1,6 @@
 # Current Work Step — DAX Daytrading Bot
 
-## Current: Step2243 Bot-Helper 8/8-read derivation closeout — IN_PROGRESS (2026-09-15)
+## Current: Step2243 Bot-Helper 8/8-read derivation closeout — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
 Pinned start head: `5eca87b68b15fa5c82cb1dc1193364f28905bafe`; branch
 `nextgen-bot-line-v1`, PR #109 OPEN/UNMERGED; main unchanged
@@ -10,11 +10,30 @@ read rows PASS. Its outer result proves only that at least one mandatory derived
 stage did not pass; the prior stdout did not expose the stage identity, so no
 specific historical stage is guessed from raw-read success.
 
-Step2243 owns the bounded Raw-vs-Derived diagnostic/coordination repair,
-ten-stage failure injection, regression and required CI. It does not change an
-endpoint, provider request, strategy, risk/loss policy, execution authorization
-or older VERIFIED evidence. NONE/false, no order and LIVE prohibited remain
-binding. Step2238/2239/2240/M01 and the 27 gates are not promoted.
+Accepted runtime head: `c6c41581fcb6632e89e8d20d264e78756b314f93`, tree
+`b45dc5261ba10c79e474967c624d8af12245b23b`. All three required CIs are green:
+dax-bot-1x-ci #736, research-lab-ci #1520 and windows-host-lane-ci #25. Each
+owner passed two independent acceptance runs with 977 PASS, 0 SKIP and all
+T01–T15 PASS. Research full suite: 3476 passed / 1 external conditional skip.
+Native Windows PowerShell 5.1 exact import/failure injection, PowerShell 7,
+Ruff, Python syntax and actual Chromium passed.
+
+The existing collector now emits and persists one fixed ten-row derivation
+ledger beside the unchanged eight-row raw-read ledger. The Windows output,
+SUMMARY, DERIVATION component and existing Operator GET expose only fixed stage
+names, status, reason code and bounded safe facts. Bot-Helper dogfood proves
+that 8/8 raw PASS remains B evidence while any mandatory derived blocker keeps
+S and K blocked and Candidate state unchanged. Failure injection covers every
+derived stage and never erases raw rows. No provider request or endpoint changed.
+
+The exact stage that failed in the supplied historical run remains
+`UNKNOWN_NOT_EMITTED`: only the outer derivation-incomplete code was supplied.
+Synthetic processing for all ten stages is green; the remaining fact is one
+exact-final-head real-host recheck, which now reports the stage directly without
+a manual diagnostic chain. No internal Step2243 defect remains;
+FOLLOW-UP WORK DEBT=EXTERNAL_ONLY. Step2238/2239/2240/M01 and the 27 gates are
+not promoted. NONE/false, no retry/dealing/order and LIVE prohibited remain
+binding. See `STEP_2243_IG_DERIVATION_CLOSEOUT.md`.
 
 ## Current: Step2242 Bot-Helper real-host IG read-contract closeout — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
