@@ -1,5 +1,30 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 real-host module isolation/diagnostics — authoritative (2026-09-15)
+
+Real Windows head `575666143c92d21d4fb211655098c41a936eac79`
+passed isolated deployment but stopped before preflight as
+`MODULE_IMPORT_EXCEPTION`, correctly attributed to POWERSHELL. The same module
+bytes imported on this host in earlier runs and pass fresh Windows PowerShell
+5.1 CI, so the exact historical exception remains UNKNOWN; an intrinsic parser
+or deterministic module-source defect is not supported.
+
+The active loader now executes a hash-verified runner-owned module copy with a
+unique per-run module name and unique exported-command prefix, then removes only
+that exact ModuleInfo. This prevents persistent PowerShell-session module/name
+state from colliding across repeated ephemeral deployments. A sanitized
+`MODULE_DIAGNOSTIC` records parse/import stage, allow-listed exception class,
+safe fully-qualified error ID/category, path fingerprint/category, PowerShell
+version/edition, language mode, effective execution policy, module SHA-256 and
+Mark-of-the-Web state. Raw exception messages and raw paths are not emitted.
+
+Dot-sourcing is **REJECTED**: it would discard module scope/export registration
+and could evade host execution policy. Native Windows PowerShell 5.1 CI #15,
+DAX #726 and Research #1510 are GREEN on code head
+`5bfa2aa5f28b05f11f5a16e7992d813b80b96185`. Step2238 remains
+IMPLEMENTED/WAITING_EXTERNAL; the 52 checks and eight IG resources are unchanged.
+NONE/false, no order and LIVE prohibition remain binding.
+
 ## Step2238 Windows module-load contract — authoritative (2026-09-15)
 
 The real Windows run on `5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880`

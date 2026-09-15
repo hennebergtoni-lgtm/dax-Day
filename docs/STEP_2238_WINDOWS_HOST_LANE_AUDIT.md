@@ -1,5 +1,43 @@
 # Step2238 Windows host-lane audit
 
+## Real-host module isolation and diagnostic boundary — 2026-09-15
+
+The real run on `575666143c92d21d4fb211655098c41a936eac79` proved the
+prior classification layer and stopped as `MODULE_IMPORT_EXCEPTION` at phase
+POWERSHELL. The source module is unchanged from earlier successful host runs and
+imports in a clean Windows PowerShell 5.1 CI process. Therefore the historical
+exception cannot be narrowed honestly beyond an ambient host/session/policy/
+security/registration class.
+
+The active contract addresses the reproducible session-state class and makes
+all remaining classes self-diagnosing:
+
+| Boundary | Behavior |
+| --- | --- |
+| Source | Exact deployment leaf, no reparse point, strict ASCII, parser-clean, SHA-256 bound |
+| Security | Effective policy/language mode observed; non-FullLanguage and MOTW fail closed |
+| Identity | Byte-identical copy outside the checkout with unique module filename and export prefix |
+| Initialization | Import exceptions classified without exposing their message |
+| Registration | Prefixed command count and exact unique-module origin verified |
+| Cleanup | Exact returned ModuleInfo removed; outer owner deletes only its marked deployment parent |
+
+The diagnostic allow-list contains status/error code, import phase, exception
+type, syntactically safe fully-qualified error ID and category, path category and
+fingerprint, PowerShell version/edition, language mode, execution policy, module
+hash, security-marker state and module-identity class. It never prints raw error
+messages, raw paths, credentials, headers or payloads.
+
+Windows CI reproduces same-basename stale module state, unique registration,
+module initialization failure, export mismatch, BOM, MOTW where ADS is
+available, LF/CRLF, non-ASCII/spaced and bounded-long paths. Native Windows
+PowerShell 5.1 #15, DAX #726 and Research #1510 are GREEN on code head
+`5bfa2aa5f28b05f11f5a16e7992d813b80b96185`.
+
+Dot-sourcing was evaluated and **REJECTED**. It would place private helpers in
+the runner scope, discard the explicit export-origin contract and risk bypassing
+a host execution policy. Unique ordinary module import preserves those safety
+boundaries. No IG collector, broker adapter or 52-check preflight code changed.
+
 ## Windows PowerShell module-load contract — 2026-09-15
 
 Real-host head `5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880` completed

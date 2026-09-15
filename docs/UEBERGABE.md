@@ -1,5 +1,19 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: Step2238 isolated module identity (2026-09-15)
+
+Historical head `575666143c92d21d4fb211655098c41a936eac79` failed at
+`MODULE_IMPORT_EXCEPTION / POWERSHELL`. Use only the new immutable-head command;
+do not request manual PowerShell diagnostics.
+
+The runner now isolates repeated-session module/command registration with a
+unique hash-verified copy and command prefix. If policy, language mode, MOTW,
+permissions, initialization or registration still blocks, `MODULE_DIAGNOSTIC`
+contains the safe class/category/phase and fingerprints in the same run. Raw
+messages and paths remain hidden. The temporary module is explicitly removed;
+existing checkout/evidence remain untouched. Step2238 remains WAITING_EXTERNAL,
+NONE/false; no order, LIVE prohibited.
+
 ## Resume: Step2238 Windows module import (2026-09-15)
 
 Historical head `5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880`

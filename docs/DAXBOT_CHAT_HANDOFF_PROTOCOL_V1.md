@@ -1,5 +1,18 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 module-isolation handoff — authoritative (2026-09-15)
+
+The real `MODULE_IMPORT_EXCEPTION` at
+`575666143c92d21d4fb211655098c41a936eac79` is historical and did not reach
+preflight, credentials or IG. Its discarded raw exception must not be inferred.
+
+The active runner uses a unique, hash-equal, runner-owned module identity and
+prefixed exports, then unloads exactly that module. Any remaining failure emits
+one sanitized `MODULE_DIAGNOSTIC` with stage, safe exception metadata, runtime
+mode/policy, MOTW and fingerprints. Dot-sourcing is prohibited because it would
+weaken module-scope/export and execution-policy boundaries. Handoff remains one
+command and one result; the 52-check/eight-resource lane is unchanged.
+
 ## Step2238 module-load handoff — authoritative (2026-09-15)
 
 Treat `HOST_RUNTIME_OWNER_IMPORT_FAILED` from real head

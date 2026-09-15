@@ -1,5 +1,24 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2238 module isolation and safe diagnostics (2026-09-15)
+
+The real host at `575666143c92d21d4fb211655098c41a936eac79`
+returned `MODULE_IMPORT_EXCEPTION / POWERSHELL` before preflight. Because the
+same module worked there earlier and is green in fresh Windows PowerShell 5.1
+CI, the historical exception is not guessed.
+
+The replacement gives every invocation a hash-verified temporary module
+identity and prefixed commands, removes only its own ModuleInfo, rejects MOTW
+and non-FullLanguage conditions, and prints one credential-free diagnostic row
+for file/parse/materialization/security/initialization/registration/export
+failures. Dot-sourcing is rejected on policy and scope-integrity grounds. Code
+head `5bfa2aa5f28b05f11f5a16e7992d813b80b96185` passed Windows #15,
+DAX #726 and Research #1510.
+
+Step2238 stays IMPLEMENTED/WAITING_EXTERNAL for one real-host run. IG logic,
+broker logic and all 52 preflight rows are unchanged; NONE/false, no order, LIVE
+prohibited.
+
 ## Current: Step2238 Windows module-load contract (2026-09-15)
 
 The real host on `5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880`
