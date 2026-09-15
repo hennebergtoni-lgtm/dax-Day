@@ -1,5 +1,61 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2237 Windows worktree-add hardening — authoritative overlay (2026-09-15)
+
+The real Windows run at
+`78fb8cf8648e51de964f09e205f7f278193c5439` reached START and then stopped
+fail-closed with
+`WORKTREE_ADD_FAILED_DEPLOYMENT_RETAINED`. WAIT, Python, IG login and
+market-data requests were not reached; the existing checkout and all Evidence
+remained unchanged. The exact Windows leaf cause is **UNKNOWN** because the
+wrapper intentionally suppressed Git stderr. No host-specific explanation is
+invented.
+
+The repository audit identifies the unsafe dependency class: `git worktree add`
+shares administrative state with the source repository and can fail after
+creating some combination of the temporary directory, checkout files, a
+worktree `.git` pointer, and `.git/worktrees/<id>` metadata. Windows path
+limits, ACLs, antivirus/indexing locks, or stale partial registration are
+possible causes, but none is claimed as the observed cause.
+
+Implementation head
+`47d2bffc9a6b0dab527f77726d606796cf1c1de2` retires worktree creation and
+removal. The V3 deployment owner now:
+
+- applies the origin, fetched published-head, ancestry and exact-commit gates
+  before deployment;
+- creates a short unique `%TEMP%\d2237-<128-bit-token>` parent and writes a
+  head-bound `DAX_STEP2237_DEPLOYMENT_OWNER_V1` marker;
+- creates an independent local clone with `--no-checkout --no-hardlinks`,
+  Windows long-path handling and an empty hooks path, then checks out only the
+  immutable expected commit inside that disposable clone;
+- proves the deployed HEAD and clean tree before Python, while keeping durable
+  State/Evidence in the caller-owned runtime root and exclusive `attempt_03`
+  namespace;
+- detects old Step2237 worktree registrations/directories read-only and reports
+  only `NONE_DETECTED`, `DETECTED_RETAINED` or
+  `QUERY_INCOMPLETE_RETAINED`; it never prunes or deletes them;
+- recursively removes a new partial or complete clone only when temp-root,
+  short-name pattern, allowed top-level layout, non-reparse paths, expected
+  head and the in-memory ownership token all match. Otherwise it retains the
+  deployment with `DEPLOYMENT_CLEANUP_FAILED_RETAINED`.
+
+There is no `worktree add/remove/prune`, in-place checkout, reset, clean,
+stash, merge, force operation, dealing route or retry. All errors exposed to the
+operator remain fixed and credential-free. Code validation is green: focused
+271, full 3103, Ruff, Python syntax, PowerShell parser, fixed fail-closed tests,
+eight safety/recovery gates, `dax-bot-1x-ci` #702 and
+`research-lab-ci` #1486.
+
+Step2233/2237 remain **IMPLEMENTED / WAITING_EXTERNAL** until the new one-command
+Windows run proves exact-head Fresh Start, next true M5 close, Resume, Operator
+and cleanup. M01 and the 27-gate readiness tally do not advance from this
+deployment-only change. Effective capability remains
+`execution_capability=NONE`, `order_execution_enabled=false`; no DEMO order;
+LIVE prohibited. Any lower section describing the temporary worktree or
+`attempt_02` is superseded implementation history, not the current runner.
+
+
 ## Step2237 Windows exact-head deployment hardening — authoritative overlay
 
 The real Windows attempt on
