@@ -1,5 +1,21 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238–2240 pre-DEMO program — authoritative (2026-09-15)
+
+Repository work now provides one-session native IG read-only readiness capture,
+credential-free account/request identity fingerprints, bracketed inventory,
+bounded history paging truth, market v4 quote/rules/clock evidence and strict
+broker-bound risk/lifecycle adapters. Real Step2238 evidence is still external;
+Step2238 and Step2239 are IMPLEMENTED/WAITING_EXTERNAL, Step2240 is
+IN_PROGRESS/BLOCKED, M01 remains IN_PROGRESS, and readiness remains NOT READY.
+
+The 27 gates remain 8 VERIFIED, 0 IMPLEMENTED, 13 WAITING_EXTERNAL and 6
+BLOCKED until the exact-head Windows bundle is reviewed. Capability remains
+NONE/false, no DEMO order is executed and LIVE remains forbidden. See
+`STEP_2238_2240_PREDEMO_PROGRAM.md`. Step2233/2237 remain COMPLETED/VERIFIED;
+Sentinel, Helperbot and Multi-Market stay queued.
+
+
 ## Step2233/2237 real-host closeout — authoritative (2026-09-15)
 
 **Formal decision:** Step2233 and Step2237 are **COMPLETED / VERIFIED** on the

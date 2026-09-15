@@ -1,5 +1,22 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238–2240 pre-DEMO program — authoritative (2026-09-15)
+
+The exact-head one-session Step2238 collector, hash-bound credential-free
+bundle, native IG v4 market/rule parser, bounded activity-history scope,
+bracketed inventory truth, server-clock provenance and fail-closed Step2239/2240
+provider bindings are implemented. No exact-head Windows Step2238 bundle exists
+yet. Therefore M01 remains **IN_PROGRESS**, DEMO readiness is **NOT READY**, and
+the gate tally remains **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6
+BLOCKED**.
+
+Step2238 and Step2239 are **IMPLEMENTED / WAITING_EXTERNAL**. Step2240 is
+**IN_PROGRESS / BLOCKED** because the durable attempt reservation is still
+MT5-bundle-bound and no native IG submit/confirm/reconciliation adapter has real
+DEMO conformance evidence. See `STEP_2238_2240_PREDEMO_PROGRAM.md`. NONE/false
+remains effective; no order; LIVE prohibited. Lower sections are historical.
+
+
 ## Step2233/2237 real-host closeout — authoritative (2026-09-15)
 
 **Formal decision:** Step2233 and Step2237 are **COMPLETED / VERIFIED** on the

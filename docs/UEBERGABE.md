@@ -1,5 +1,18 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: STEP2238 WINDOWS READINESS EVIDENCE
+
+Step2233/2237 remain COMPLETED/VERIFIED. Step2238/2239 repository work is
+IMPLEMENTED but WAITING_EXTERNAL; Step2240 is IN_PROGRESS/BLOCKED. Run only the
+single exact-head Step2238 Windows wrapper documented in
+`STEP_2238_2240_PREDEMO_PROGRAM.md`, then return its SUMMARY and retained
+namespace bundle. Do not issue a second diagnostic chain or any order.
+
+Current readiness is 8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6
+BLOCKED. Capability remains NONE/false; LIVE prohibited.
+Sentinel/Helperbot/Multi-Market remain queued.
+
+
 ## Step2233/2237 real-host closeout — authoritative (2026-09-15)
 
 **Formal decision:** Step2233 and Step2237 are **COMPLETED / VERIFIED** on the

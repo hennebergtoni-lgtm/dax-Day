@@ -1,5 +1,21 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238–2240 authoritative handoff (2026-09-15)
+
+Continue with exactly one Step2238 exact-head Windows evidence run. The runner
+uses one IG DEMO read-only session and emits a credential-free hash-bound bundle
+for account, bracketed inventory, history scope, market v4 economics/stops,
+quote/server clock and finalized M5. Step2239 consumes only verified bundle
+values; absent tick/quantity/economics values remain blockers. Step2240 may not
+promote capability until native IG reservation, confirm, reconciliation and
+restart truth are complete.
+
+Gate tally before that run: 8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL /
+6 BLOCKED. Effective state is NONE/false; no order; LIVE prohibited.
+Step2233/2237 are not reopened. Sentinel/Helperbot/Multi-Market remain queued.
+See `STEP_2238_2240_PREDEMO_PROGRAM.md`.
+
+
 ## Step2233/2237 real-host closeout — authoritative (2026-09-15)
 
 **Formal decision:** Step2233 and Step2237 are **COMPLETED / VERIFIED** on the

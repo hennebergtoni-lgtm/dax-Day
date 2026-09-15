@@ -1,5 +1,24 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2238–2240 pre-DEMO program (2026-09-15)
+
+Step2238 is **IMPLEMENTED / WAITING_EXTERNAL**: one exact-head isolated Windows
+runner now gathers account context, bracketed positions/orders, IG v4
+market/economics/stops, bounded activity history, provider clock provenance and
+canonical finalized M5 in one login and one cleanup. Step2239 is **IMPLEMENTED /
+WAITING_EXTERNAL**: its IG binding refuses missing tick, quantity, currency,
+inventory, history or stop dimensions and reuses canonical risk/session owners.
+Step2240 is **IN_PROGRESS / BLOCKED**: provider transition rules enforce
+UNKNOWN→QUERY_REQUIRED, reconcile partial/duplicate/out-of-order evidence, and
+forbid retry/slot release, but native IG reservation/confirm/reconciliation is
+not complete or broker-verified.
+
+Current tally: **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED**.
+Capability remains NONE/false; no order; LIVE prohibited. Step2233/2237 remain
+COMPLETED/VERIFIED. Sentinel/Helperbot/Multi-Market remain queued. See
+`STEP_2238_2240_PREDEMO_PROGRAM.md`.
+
+
 ## Step2233/2237 real-host closeout — authoritative (2026-09-15)
 
 **Formal decision:** Step2233 and Step2237 are **COMPLETED / VERIFIED** on the
