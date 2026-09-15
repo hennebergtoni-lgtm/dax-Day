@@ -49,7 +49,8 @@ $SafeErrorCodes = @(
     'STATE_RUNTIME_ROOT_UNAVAILABLE', 'STATE_PUBLICATION_FAILED',
     'STATE_READBACK_FAILED', 'STATE_CHANGED_OVERLAP',
     'STATE_ANCHOR_NOT_FOUND', 'STATE_NO_NEW_FINALIZED_M5',
-    'HEAD_QUERY_FAILED', 'PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE',
+    'HEAD_MISMATCH', 'HEAD_QUERY_FAILED', 'NAMESPACE_EXISTS',
+    'PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE',
     'DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED',
     'DATA_STALE_AT_PROCESSING', 'DATA_TEST_FAILED',
     'FRESH_START_FAILED', 'RESUME_FAILED', 'OPERATOR_FAILED',
@@ -265,10 +266,20 @@ function Invoke-Closeout {
             '--expected-head', $ExpectedHead, '--namespace', $Namespace,
             '--credentials-file', $CredentialsFile, '--runtime-root', $RuntimeRoot
         )
-        return Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
-            -ScriptPath $collectorPath -Arguments $collectorArguments `
-            -SafePayloadCodes $SafeErrorCodes
+        try {
+            return Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
+                -ScriptPath $collectorPath -Arguments $collectorArguments `
+                -SafePayloadCodes $SafeErrorCodes
+        } catch {
+            try { $_.Exception.Data['FailurePhase'] = 'IG_SESSION' } catch { }
+            throw
+        }
     } catch {
+        try {
+            if (!$_.Exception.Data.Contains('FailurePhase')) {
+                $_.Exception.Data['FailurePhase'] = $script:runnerPhase
+            }
+        } catch { }
         if ($SafeErrorCodes -contains $_.Exception.Message) { throw }
         throw 'HOST_LANE_INTERNAL_FAILURE'
     }
@@ -282,6 +293,8 @@ $ownerToken = $null
 $deploymentParentCreated = $false
 $primaryErrorCode = $null
 $cleanupErrorCode = $null
+$payloadFailurePhase = 'NONE'
+$processExitContract = 'NONE'
 $result = $null
 $legacyPartialState = 'NOT_QUERIED'
 $runnerPhase = 'HOST'
@@ -399,6 +412,32 @@ try {
     Write-Host 'WAIT: aggregate local/network/credential-shape preflight before any IG session'
     $result = Invoke-Closeout -DeploymentRoot $deploymentRoot
 } catch {
+    try {
+        if ($_.Exception.Data.Contains('FailurePhase')) {
+            $reportedPhase = [string]$_.Exception.Data['FailurePhase']
+            if ($reportedPhase -in @(
+                    'HOST', 'POWERSHELL', 'GIT', 'FILESYSTEM', 'PYTHON',
+                    'IMPORT', 'PREFLIGHT', 'NETWORK', 'CREDENTIAL', 'SAFETY',
+                    'IG_SESSION', 'EVIDENCE', 'CLEANUP')) {
+                $runnerPhase = $reportedPhase
+            }
+        }
+        if ($_.Exception.Data.Contains('HostLaneProcessExitContract')) {
+            $reportedExitContract = [string]$_.Exception.Data['HostLaneProcessExitContract']
+            if ($reportedExitContract -in @(
+                    'FAILURE_EXIT_MATCH', 'FAILURE_PAYLOAD_EXIT_ZERO',
+                    'FAILURE_PAYLOAD_NONSTANDARD_NONZERO')) {
+                $processExitContract = $reportedExitContract
+            }
+        }
+        if ($_.Exception.Data.Contains('HostLaneResult')) {
+            $phaseProperty = $_.Exception.Data['HostLaneResult'].PSObject.Properties['failure_phase']
+            if ($null -ne $phaseProperty -and $phaseProperty.Value -is [string] -and
+                $phaseProperty.Value -match '^[A-Z][A-Z0-9_]*$') {
+                $payloadFailurePhase = [string]$phaseProperty.Value
+            }
+        }
+    } catch { }
     $candidate = [string]$_.Exception.Message
     $exceptionName = $_.Exception.GetType().Name
     $failureClass = if ($exceptionName -in @(
@@ -453,11 +492,16 @@ try {
     }
 }
 
-$errorCode = if ($cleanupErrorCode) { $cleanupErrorCode } else { $primaryErrorCode }
+$errorCode = if ($primaryErrorCode) { $primaryErrorCode } else { $cleanupErrorCode }
+$secondaryCleanupError = if ($primaryErrorCode -and $cleanupErrorCode) {
+    $cleanupErrorCode
+} else { 'NONE' }
+if (!$primaryErrorCode -and $cleanupErrorCode) { $runnerPhase = 'CLEANUP' }
 if ($errorCode) {
     Write-Host (
-        'SUMMARY: BLOCKED / FAIL_CLOSED; error_code={0}; failure_phase={1}; exception_class={2}; legacy_partial_state={3}; existing checkout/evidence retained; execution disabled' `
-        -f $errorCode, $runnerPhase, $failureClass, $legacyPartialState
+        'SUMMARY: BLOCKED / FAIL_CLOSED; error_code={0}; failure_phase={1}; payload_failure_phase={2}; process_exit_contract={3}; exception_class={4}; cleanup_error_code={5}; legacy_partial_state={6}; existing checkout/evidence retained; execution disabled' `
+        -f $errorCode, $runnerPhase, $payloadFailurePhase, $processExitContract, `
+            $failureClass, $secondaryCleanupError, $legacyPartialState
     )
     exit 2
 }

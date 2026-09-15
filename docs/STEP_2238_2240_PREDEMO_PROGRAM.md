@@ -1,5 +1,25 @@
 # Step2238–2240 pre-DEMO readiness program
 
+## Collector process/output contract — authoritative (2026-09-15)
+
+The real Windows run on `ecd029924af4cd949676dace039c330fff31e12d`
+proved Phase A/B preflight (50/52 PASS, zero required failures) and reached
+authenticated read-only Phase C. Its outcome was reduced to
+`HOST_LANE_PROCESS_EXIT_MISMATCH` by incomplete error-code parity and coupled
+exit validation.
+
+The corrected boundary accepts exactly one JSON line, validates status/error and
+NONE/false, preserves an allowlisted BLOCKED/FAIL collector code regardless of
+whether native exit is the expected 2 or a contradictory 0/other nonzero, and
+records the exit contract separately. Unknown codes, success with nonzero exit,
+no output, multiline output and malformed JSON remain host-lane failures.
+Read failure remains primary if logout or runner-owned deployment cleanup also
+fails; secondary cleanup remains visible. No retry or broker side effect was
+added.
+
+Step2238 remains IMPLEMENTED/WAITING_EXTERNAL for one final-head run; Step2239/
+2240 and readiness remain unchanged.
+
 ## IG HTTP transport/provider-health contract — authoritative (2026-09-15)
 
 On real Windows head `8defee400ccb40f8bde379f0d3acfed316f9d07c`,

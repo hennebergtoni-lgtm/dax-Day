@@ -1,5 +1,26 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 collector exit-contract closeout — authoritative (2026-09-15)
+
+Real Windows head `ecd029924af4cd949676dace039c330fff31e12d`
+proved the complete host preflight: 50/52 PASS, zero required failures, one
+expected provider-health UNKNOWN and one NOT_REQUIRED. Authentication then
+started and the collector returned through the wrapper as
+`HOST_LANE_PROCESS_EXIT_MISMATCH`; no order occurred and NONE/false remained.
+
+The bounded audit found a collector/wrapper contract gap, not a reopened host
+lane. Valid collector codes `HEAD_MISMATCH` and `NAMESPACE_EXISTS` were missing
+from the wrapper allowlist, and an allowlisted failure payload could be discarded
+when its native exit differed from the expected failure exit. The shared process
+owner now preserves every allowlisted structured BLOCKED/FAIL result as primary,
+records the exit contract separately, validates NONE/false in every JSON payload,
+and keeps secondary logout/deployment cleanup failures visible without replacing
+the original read/collector failure. Failure phase is carried explicitly as
+IG_SESSION.
+
+Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL** for one final-head rerun.
+M01/readiness do not advance; no DEMO order and LIVE remains prohibited.
+
 ## Step2238 IG HTTP transport semantics — authoritative (2026-09-15)
 
 Real Windows head `8defee400ccb40f8bde379f0d3acfed316f9d07c`

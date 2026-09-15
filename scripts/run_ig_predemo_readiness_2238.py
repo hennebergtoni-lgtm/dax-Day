@@ -457,11 +457,13 @@ def main() -> int:
         phase = "PUBLISH"
         _publish(namespace, evidence, components, head=head)
     except Exception as exc:
-        if client is not None:
+        failed_phase = phase
+        cleanup_error_code = "NONE"
+        if client is not None and failed_phase != "CLEANUP":
             try:
                 client.logout()
             except Exception:
-                phase = "CLEANUP"
+                cleanup_error_code = "IG_SESSION_CLEANUP_FAILED"
         code = str(exc) if str(exc) in ERROR_CODES else {
             "LOGIN": "IG_AUTHENTICATION_FAILED_NO_RETRY",
             "READ": "IG_SESSION_READ_FAILED_NO_RETRY",
@@ -471,10 +473,12 @@ def main() -> int:
             "RUNTIME": "STATE_RUNTIME_ROOT_UNAVAILABLE",
             "HEAD": "HEAD_QUERY_FAILED",
             "VALIDATE": "EVIDENCE_INVALID",
-        }.get(phase, "PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE")
+        }.get(failed_phase, "PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE")
         print(json.dumps({
             "status": "BLOCKED",
             "error_code": code,
+            "failure_phase": failed_phase,
+            "cleanup_error_code": cleanup_error_code,
             "execution_capability": "NONE",
             "order_execution_enabled": False,
         }, sort_keys=True))

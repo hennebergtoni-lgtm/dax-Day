@@ -1,5 +1,33 @@
 # Step2238 Windows host-lane audit
 
+## Authenticated collector boundary — 2026-09-15
+
+Real host head `ecd029924af4cd949676dace039c330fff31e12d` proved
+the lane through 50/52 PASS and zero required preflight failures. The failure
+occurred only after `AUTH READ-ONLY START`, where a structured collector outcome
+was converted to `HOST_LANE_PROCESS_EXIT_MISMATCH`.
+
+The targeted audit retained the proven deployment/preflight architecture and
+corrected only the JSON/exit boundary:
+
+| Case | Canonical result |
+|---|---|
+| JSON success + exit 0 | return success |
+| allowlisted JSON failure + exit 2 | preserve collector code |
+| allowlisted JSON failure + exit 0/other | preserve collector code; annotate exit contradiction |
+| unknown failure code | exit mismatch |
+| success + nonzero | exit mismatch |
+| no/multiline/malformed output | fixed host-lane code |
+| read failure + logout failure | read code primary; cleanup code secondary |
+| primary failure + deployment cleanup failure | primary code retained; cleanup code secondary |
+
+Every parsed result must also carry `execution_capability=NONE` and boolean
+`order_execution_enabled=false`. Raw stderr remains suppressed. The wrapper and
+collector error registries are parity-tested, and exception data carries
+`failure_phase=IG_SESSION` back to the outer SUMMARY. Step2238 remains
+IMPLEMENTED/WAITING_EXTERNAL for one final-head run; no order is authorized in
+this closeout.
+
 ## IG HTTPS semantic closeout — 2026-09-15
 
 The real run at `8defee400ccb40f8bde379f0d3acfed316f9d07c`

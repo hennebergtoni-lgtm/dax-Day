@@ -1,5 +1,17 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: collector exit contract (2026-09-15)
+
+Historical real-host head `ecd029924af4cd949676dace039c330fff31e12d`
+proved 50/52 PASS with no required preflight failure, then entered AUTH READ-ONLY
+and ended as `HOST_LANE_PROCESS_EXIT_MISMATCH`. Do not reopen or manually
+diagnose the host lane.
+
+Use only the new final-head command. The process owner now preserves a valid
+allowlisted Collector BLOCKED/FAIL payload, carries IG_SESSION phase explicitly,
+requires NONE/false in the JSON shape, and reports secondary cleanup separately.
+Return the single final SUMMARY. Step2238 remains WAITING_EXTERNAL; no order.
+
 ## Resume: IG transport semantics (2026-09-15)
 
 Historical real-host result at head

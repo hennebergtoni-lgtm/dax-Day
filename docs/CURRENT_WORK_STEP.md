@@ -1,5 +1,22 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2238 collector process contract (2026-09-15)
+
+The real host on `ecd029924af4cd949676dace039c330fff31e12d`
+passed all required preflight checks (50/52 PASS, 0 required failures), entered
+AUTH READ-ONLY and then surfaced `HOST_LANE_PROCESS_EXIT_MISMATCH`. The host
+preflight remains proven; work is limited to collector stdout/exit handling.
+
+The wrapper now has complete parity with the collector error registry, preserves
+allowlisted structured failures even when the native exit is contradictory, and
+records that contradiction separately. JSON must contain valid status/error plus
+NONE/false. A primary broker/read error survives a secondary logout or deployment
+cleanup failure. Explicit exception-carried phase attribution reports IG_SESSION
+instead of stale PYTHON.
+
+Step2238 is IMPLEMENTED/WAITING_EXTERNAL for exactly one new final-head run.
+No gate change, no order, LIVE prohibited.
+
 ## Current: IG HTTP transport/provider-health split (2026-09-15)
 
 The real host at `8defee400ccb40f8bde379f0d3acfed316f9d07c`

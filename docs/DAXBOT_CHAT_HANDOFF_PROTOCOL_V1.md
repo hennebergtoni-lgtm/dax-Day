@@ -1,5 +1,17 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 authenticated collector handoff — authoritative (2026-09-15)
+
+The host preflight is real-host proven at 50/52 PASS with zero required failures
+on `ecd029924af4cd949676dace039c330fff31e12d`. The subsequent AUTH READ-ONLY
+result was hidden by `HOST_LANE_PROCESS_EXIT_MISMATCH`.
+
+The active owner preserves all allowlisted structured collector failures and
+their result payload, independently records process-exit contradiction, validates
+NONE/false, carries failure phase IG_SESSION, and never lets secondary cleanup
+replace the primary collector error. Handoff is one exact-head invocation and
+one SUMMARY only; no manual diagnostics, retry or order.
+
 ## Step2238 IG HTTP handoff — authoritative (2026-09-15)
 
 The 49/51 real-host result on

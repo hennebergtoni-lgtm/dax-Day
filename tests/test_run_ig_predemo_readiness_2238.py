@@ -128,6 +128,13 @@ def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> No
     assert "PYTHON_RESULT_INVALID" not in source
     # Candidate probes and the final payload both suppress raw stderr.
     assert owner.count("2>$null") == 2
+    for error_code in runner.ERROR_CODES:
+        assert f"'{error_code}'" in source
+    assert "HostLaneProcessExitContract" in owner
+    assert "FailurePhase" in source
+    assert "payload_failure_phase=" in source
+    assert "process_exit_contract=" in source
+    assert "$errorCode = if ($primaryErrorCode)" in source
 
 
 def test_python_runtime_failure_injection_is_executable_when_pwsh_exists() -> None:
@@ -286,3 +293,119 @@ def test_collector_head_query_failure_has_fixed_code(tmp_path, monkeypatch, caps
     result = json.loads(rendered)
     assert result["error_code"] == "HEAD_QUERY_FAILED"
     assert "secret" not in rendered
+
+
+def test_authenticated_read_failure_emits_one_structured_line_and_exit_two(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    class Client:
+        logout_calls = 0
+
+        def login(self):
+            return None
+
+        def logout(self):
+            self.logout_calls += 1
+
+    client = Client()
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path),
+        "--namespace", ".runtime/attempt",
+    ])
+    monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
+    monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
+    monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
+    monkeypatch.setattr(
+        runner, "collect", lambda *_, **__: (_ for _ in ()).throw(OSError("secret"))
+    )
+    assert runner.main() == 2
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 1
+    result = json.loads(lines[0])
+    assert result == {
+        "cleanup_error_code": "NONE",
+        "error_code": "IG_SESSION_READ_FAILED_NO_RETRY",
+        "execution_capability": "NONE",
+        "failure_phase": "READ",
+        "order_execution_enabled": False,
+        "status": "BLOCKED",
+    }
+    assert client.logout_calls == 1
+    assert "secret" not in lines[0]
+
+
+def test_read_failure_preserves_primary_code_when_logout_cleanup_fails(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    class Client:
+        logout_calls = 0
+
+        def login(self):
+            return None
+
+        def logout(self):
+            self.logout_calls += 1
+            raise OSError("secret cleanup")
+
+    client = Client()
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path),
+        "--namespace", ".runtime/attempt",
+    ])
+    monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
+    monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
+    monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
+    monkeypatch.setattr(
+        runner, "collect", lambda *_, **__: (_ for _ in ()).throw(OSError("secret read"))
+    )
+    assert runner.main() == 2
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 1
+    result = json.loads(lines[0])
+    assert result["error_code"] == "IG_SESSION_READ_FAILED_NO_RETRY"
+    assert result["cleanup_error_code"] == "IG_SESSION_CLEANUP_FAILED"
+    assert result["failure_phase"] == "READ"
+    assert client.logout_calls == 1
+    assert "secret" not in lines[0]
+
+
+def test_logout_failure_after_successful_collection_is_structured_cleanup_failure(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    class Client:
+        logout_calls = 0
+
+        def login(self):
+            return None
+
+        def logout(self):
+            self.logout_calls += 1
+            raise OSError("secret logout")
+
+    client = Client()
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path),
+        "--namespace", ".runtime/attempt",
+    ])
+    monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
+    monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
+    monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
+    monkeypatch.setattr(runner, "collect", lambda *_, **__: ({}, {}))
+    assert runner.main() == 2
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 1
+    result = json.loads(lines[0])
+    assert result["error_code"] == "IG_SESSION_CLEANUP_FAILED"
+    assert result["cleanup_error_code"] == "NONE"
+    assert result["failure_phase"] == "CLEANUP"
+    assert client.logout_calls == 1
+    assert "secret" not in lines[0]

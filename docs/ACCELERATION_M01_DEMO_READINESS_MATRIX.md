@@ -1,5 +1,18 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 collector-contract overlay — 2026-09-15
+
+Real-host preflight is now materially proven: head
+`ecd029924af4cd949676dace039c330fff31e12d` reported 50/52 PASS, zero required
+failures, then began AUTH READ-ONLY. Its structured collector outcome was masked
+by the wrapper exit contract. The corrected owner preserves allowlisted domain
+errors, validates NONE/false and separates primary broker/read truth from
+secondary cleanup/exit diagnostics.
+
+This supplies host-lane evidence but not the missing account/inventory/economics
+bundle. Gate counts remain **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL /
+6 BLOCKED**; M01 IN_PROGRESS; DEMO NOT READY; no order; LIVE prohibited.
+
 ## Step2238 IG HTTP semantics overlay — 2026-09-15
 
 Real-host head `8defee400ccb40f8bde379f0d3acfed316f9d07c` produced

@@ -226,7 +226,10 @@ $base = @{
     PythonPath = '/python'
     ScriptPath = $modulePath
     Arguments = @()
-    SafePayloadCodes = @('PREFLIGHT_REQUIRED_CHECK_FAILED')
+    SafePayloadCodes = @(
+        'PREFLIGHT_REQUIRED_CHECK_FAILED',
+        'IG_SESSION_READ_FAILED_NO_RETRY'
+    )
 }
 Assert-Code 'HOST_LANE_PROCESS_START_FAILED' {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { throw [InvalidOperationException]::new('secret') } }
@@ -255,18 +258,50 @@ Assert-Code 'HOST_LANE_PROCESS_RESULT_INVALID' {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{ ExitCode = 0; Lines = @('{"status":"PASS"}') } } }
 }
 Assert-Code 'HOST_LANE_PROCESS_EXIT_MISMATCH' {
-    Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{ ExitCode = 2; Lines = @('{"status":"BLOCKED","error_code":"UNKNOWN"}') } } }
+    Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{ ExitCode = 2; Lines = @('{"status":"BLOCKED","error_code":"UNKNOWN","execution_capability":"NONE","order_execution_enabled":false}') } } }
 }
 Assert-Code 'PREFLIGHT_REQUIRED_CHECK_FAILED' {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
         ExitCode = 2
-        Lines = @('{"status":"BLOCKED","error_code":"PREFLIGHT_REQUIRED_CHECK_FAILED","checks":[]}')
+        Lines = @('{"status":"BLOCKED","error_code":"PREFLIGHT_REQUIRED_CHECK_FAILED","checks":[],"execution_capability":"NONE","order_execution_enabled":false}')
+    } } }
+}
+try {
+    Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
+        ExitCode = 0
+        Lines = @('{"status":"BLOCKED","error_code":"IG_SESSION_READ_FAILED_NO_RETRY","execution_capability":"NONE","order_execution_enabled":false}')
+    } } }
+    throw 'ASSERT_NO_ERROR:FAIL_JSON_EXIT_ZERO'
+} catch {
+    if ($_.Exception.Message -ne 'IG_SESSION_READ_FAILED_NO_RETRY' -or
+        [string]$_.Exception.Data['HostLaneProcessExitContract'] -ne
+            'FAILURE_PAYLOAD_EXIT_ZERO') {
+        throw 'ASSERT_FAIL_JSON_EXIT_ZERO_NOT_PRESERVED'
+    }
+}
+try {
+    Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
+        ExitCode = 2
+        Lines = @('{"status":"BLOCKED","error_code":"IG_SESSION_READ_FAILED_NO_RETRY","execution_capability":"NONE","order_execution_enabled":false}')
+    } } }
+    throw 'ASSERT_NO_ERROR:FAIL_JSON_EXIT_NONZERO'
+} catch {
+    if ($_.Exception.Message -ne 'IG_SESSION_READ_FAILED_NO_RETRY' -or
+        [string]$_.Exception.Data['HostLaneProcessExitContract'] -ne
+            'FAILURE_EXIT_MATCH') {
+        throw 'ASSERT_FAIL_JSON_EXIT_NONZERO_NOT_PRESERVED'
+    }
+}
+Assert-Code 'HOST_LANE_PROCESS_EXIT_MISMATCH' {
+    Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
+        ExitCode = 2
+        Lines = @('{"status":"SUCCESS","error_code":"NONE","execution_capability":"NONE","order_execution_enabled":false}')
     } } }
 }
 try {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
         ExitCode = 2
-        Lines = @('{"status":"BLOCKED","error_code":"PREFLIGHT_REQUIRED_CHECK_FAILED","checks":[]}')
+        Lines = @('{"status":"BLOCKED","error_code":"PREFLIGHT_REQUIRED_CHECK_FAILED","checks":[],"execution_capability":"NONE","order_execution_enabled":false}')
     } } }
     throw 'ASSERT_NO_ERROR:PREFLIGHT_RESULT_RETAINED'
 } catch {
@@ -277,7 +312,7 @@ try {
 }
 $success = Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
     ExitCode = 0
-    Lines = @('{"status":"PASS","error_code":"NONE","checks":[]}')
+    Lines = @('{"status":"PASS","error_code":"NONE","checks":[],"execution_capability":"NONE","order_execution_enabled":false}')
 } } }
 if ($success.status -ne 'PASS') { throw 'ASSERT_SUCCESS_SHAPE_FAILED' }
 

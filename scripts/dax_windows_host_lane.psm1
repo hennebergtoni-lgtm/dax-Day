@@ -347,15 +347,36 @@ function Invoke-DaxHostJsonProcess {
         catch { Throw-HostLaneCode 'HOST_LANE_PROCESS_JSON_INVALID' }
         $status = Get-HostLaneProperty $result 'status' 'HOST_LANE_PROCESS_RESULT_INVALID' String
         $innerCode = Get-HostLaneProperty $result 'error_code' 'HOST_LANE_PROCESS_RESULT_INVALID' String
+        $capability = Get-HostLaneProperty $result 'execution_capability' `
+            'HOST_LANE_PROCESS_RESULT_INVALID' String
+        $executionEnabled = Get-HostLaneProperty $result 'order_execution_enabled' `
+            'HOST_LANE_PROCESS_RESULT_INVALID' Object
+        if ($capability -ne 'NONE' -or $executionEnabled -isnot [bool] -or
+            $executionEnabled) {
+            Throw-HostLaneCode 'HOST_LANE_PROCESS_RESULT_INVALID'
+        }
         if ($exitCode -eq 0 -and $status -in @('PASS', 'SUCCESS') -and $innerCode -eq 'NONE') {
             return $result
         }
-        if ($exitCode -eq 0 -or $SafePayloadCodes -notcontains $innerCode) {
+        $structuredFailure = (
+            $status -in @('BLOCKED', 'FAIL') -and
+            $innerCode -ne 'NONE' -and
+            $SafePayloadCodes -contains $innerCode
+        )
+        if (!$structuredFailure) {
             Throw-HostLaneCode 'HOST_LANE_PROCESS_EXIT_MISMATCH'
         }
         $exception = [System.Exception]::new($innerCode)
         $exception.Data['HostLaneCode'] = $innerCode
         $exception.Data['HostLaneResult'] = $result
+        $exception.Data['HostLaneProcessExitCode'] = $exitCode
+        $exception.Data['HostLaneProcessExitContract'] = if ($exitCode -eq 2) {
+            'FAILURE_EXIT_MATCH'
+        } elseif ($exitCode -eq 0) {
+            'FAILURE_PAYLOAD_EXIT_ZERO'
+        } else {
+            'FAILURE_PAYLOAD_NONSTANDARD_NONZERO'
+        }
         throw $exception
     } catch {
         if ((Test-HostLaneCode $_.Exception) -or
