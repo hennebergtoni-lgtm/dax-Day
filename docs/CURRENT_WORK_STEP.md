@@ -1,5 +1,22 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: canonical Windows Python runtime selection (2026-09-15)
+
+Implementation commit: `3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+
+The real Step2238 lane identified `PYTHON_COMMAND_RESULT_MULTIPLE` before its
+51-check preflight and before any IG login. The canonical owner now distinguishes
+resolver commands from real interpreter identities: it probes `python`/
+`python.exe` and `py`/`py.exe -3`, rejects Store aliases without execution,
+collapses PATH/identity duplicates, validates CPython 3.11+, architecture and
+exact deployment imports, and selects the sole valid highest-priority identity.
+Only true same-rank runtime ambiguity blocks.
+
+Repository status is **IMPLEMENTED**; Step2238 remains **WAITING_EXTERNAL** for
+exactly one new final-head Windows run. The existing 51 checks, isolated clone,
+stderr secrecy and NONE/false contract are unchanged. M01/gates do not advance;
+no broker access has been claimed, no order is allowed, LIVE remains prohibited.
+
 ## Current: Step2238 full Windows host-lane audit (2026-09-15)
 
 Repository implementation head `6bf1a6bbbcc0af24ba35a6c8397a614f241013fe`

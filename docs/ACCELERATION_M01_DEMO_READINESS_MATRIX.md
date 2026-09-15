@@ -1,9 +1,21 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 canonical Python selection overlay — 2026-09-15
+
+Implementation commit: `3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+
+The real `PYTHON_COMMAND_RESULT_MULTIPLE` block is pre-authentication host-lane
+evidence only. The runtime owner now probes and collapses actual interpreter
+identities rather than blocking on command count, while keeping the existing 51
+checks. This changes no broker gate: **8 VERIFIED / 0 IMPLEMENTED / 13
+WAITING_EXTERNAL / 6 BLOCKED** remains authoritative. Step2238 remains
+IMPLEMENTED/WAITING_EXTERNAL; M01 IN_PROGRESS; DEMO NOT READY; NONE/false; no
+order; LIVE prohibited.
+
 ## Step2238 host-lane audit overlay — 2026-09-15
 
 The repository-owned Step2238 lane now has a reusable Windows runtime owner, 51
-aggregate preflight checks, 34 deterministic failure scenarios, a shared
+aggregate preflight checks, 38 deterministic failure scenarios, a shared
 credential-shape contract, staged/hash-bound evidence publication and dedicated
 Windows CI. These are implementation and parity improvements, not new broker
 truth. No exact-head Step2238 account/inventory/economics bundle exists yet.

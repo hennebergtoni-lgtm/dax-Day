@@ -1,5 +1,31 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 canonical Windows Python selection — authoritative (2026-09-15)
+
+Runtime-selection code commit:
+`3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+
+The latest exact-head Windows run reached WAIT and failed closed before
+authentication as `PYTHON_COMMAND_RESULT_MULTIPLE`. This is now classified as a
+host-runtime selection contract gap: multiple resolver rows did not prove
+multiple interpreters. No IG login, broker query or order occurred;
+`legacy_partial_state=NONE_DETECTED` and NONE/false remained effective.
+
+The shared host owner now discovers `python`, `python.exe`, `py` and `py.exe`,
+rejects WindowsApps Store aliases without launch, de-duplicates launcher paths,
+and probes every candidate for its real `sys.executable`, CPython 3.11+ version,
+architecture and exact deployment import origins. Equal runtime identities are
+collapsed. The proven configured `python` family has priority over the `py -3`
+fallback; only multiple distinct valid identities at the same best rank are
+blocked. The selected real interpreter path runs the unchanged 51-check
+preflight. Windows CI simulates all seven required resolver scenarios.
+
+Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL**, M01 **IN_PROGRESS**, and
+readiness remains **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6
+BLOCKED** until exactly one new immutable-head Windows run succeeds. No manual
+diagnostics, no order, no promotion; LIVE prohibited. Older Python-cardinality
+sections remain historical.
+
 ## Step2238 full Windows host-lane audit — authoritative (2026-09-15)
 
 Code head `6bf1a6bbbcc0af24ba35a6c8397a614f241013fe` consolidates the

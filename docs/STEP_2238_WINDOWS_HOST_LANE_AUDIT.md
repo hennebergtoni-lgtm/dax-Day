@@ -1,5 +1,53 @@
 # Step2238 Windows host-lane audit
 
+## Canonical Windows Python runtime selection — 2026-09-15
+
+Code commit `3d03489d3a0959e76abacdc02d7878c784d71b9f` owns the selection
+contract; the final documentation commit does not change its runtime blobs.
+
+The latest real Windows run completed exact-head deployment and stopped before
+authentication with `PYTHON_COMMAND_RESULT_MULTIPLE`, `failure_phase=PYTHON`,
+`exception_class=OTHER` and `legacy_partial_state=NONE_DETECTED`. This proves a
+resolver-cardinality block, not multiple usable interpreters. It produced no IG
+login, broker query or order. Historical output is retained; the active owner no
+longer treats multiple `Get-Command` rows as runtime ambiguity.
+
+The canonical contract is now:
+
+1. discover the configured `python`/`python.exe` family and the `py`/`py.exe -3`
+   fallback without reading credentials;
+2. normalize duplicate launcher paths and reject Microsoft WindowsApps Store
+   aliases without starting them;
+3. probe each remaining candidate in a separate stderr-suppressed process;
+4. accept only CPython 3.11+, matching PowerShell process architecture, an
+   absolute existing `sys.executable`, exact deployment-owned `daxlab` and
+   collector origins, and unchanged `NONE/false` safety;
+5. group resolver results by the sanitized runtime identity fingerprint;
+6. select the only valid identity at the highest priority. The explicitly
+   configured family is rank 0; `py -3` is a fallback. More than one distinct
+   valid identity at the same best rank is `PYTHON_RUNTIME_AMBIGUOUS`; none is
+   `PYTHON_RUNTIME_NO_VALID_CANDIDATE`.
+
+Step2237 previously proved the host's default `python` command path functionally,
+but did not record an executable pathname. Accordingly the repository does not
+invent a hard-coded host path: it gives that proven command family priority and
+re-proves full path, version, architecture and exact import origin on every
+isolated deployment. The selected real `sys.executable`, not `py.exe`, starts
+the 51-check preflight and eventual collector.
+
+Native Windows failure injection covers: `python` plus `python.exe` resolving to
+one interpreter, `python` plus `py` resolving to one interpreter, two different
+valid same-rank interpreters, a WindowsApps alias, a duplicated PATH result, an
+additional wrong-version interpreter, and exactly one valid interpreter among
+multiple candidates. Shape/path/start anomalies remain sanitized. Any genuine
+ambiguity prevents the 51-check preflight and therefore prevents IG login.
+
+Status remains **IMPLEMENTED / WAITING_EXTERNAL** pending exactly one run on the
+new immutable final head. M01 and the 27-gate tally remain unchanged at **8
+VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED**. Effective safety
+is `execution_capability=NONE`, `order_execution_enabled=false`; no order; LIVE
+prohibited.
+
 ## Decision — 2026-09-15
 
 Code head `6bf1a6bbbcc0af24ba35a6c8397a614f241013fe` replaces the
@@ -89,7 +137,7 @@ CREDENTIAL, IG_SESSION/IG_READ, EVIDENCE or CLEANUP codes.
 
 ## Failure injection and system reaction
 
-The machine-checked register maps 34 required scenarios, including multiple or
+The machine-checked register maps 38 required scenarios, including multiple or
 missing Python commands, wrong version/architecture, path and import-origin
 failures, module shadowing, collector output/JSON/exit anomalies, unavailable or
 read-only runtime, existing namespace, Git failures, long paths, cleanup denial,

@@ -1,5 +1,22 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 canonical Python runtime handoff — authoritative (2026-09-15)
+
+Runtime-selection implementation:
+`3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+
+The latest Windows blocker `PYTHON_COMMAND_RESULT_MULTIPLE` occurred before the
+51 checks and before authentication. The replacement owner probes resolver
+outputs and selects by real executable identity, version, architecture and exact
+project origins. Same-runtime `python`/`python.exe`/`py` results and duplicated
+PATH rows are not ambiguous; Store aliases and invalid runtimes are rejected;
+only multiple distinct valid best-rank identities block. On a block the runner
+prints the sanitized candidate matrix and does not log in.
+
+Handoff remains one exact-head invocation and its final output/evidence. Never
+request a manual interpreter diagnostic chain. Step2238 stays
+IMPLEMENTED/WAITING_EXTERNAL and NONE/false; no DEMO order; LIVE prohibited.
+
 ## Step2238 Windows host-lane overlay — authoritative (2026-09-15)
 
 The active handoff uses the current PR head and the single runner

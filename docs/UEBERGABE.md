@@ -1,5 +1,22 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: canonical Windows Python selection (2026-09-15)
+
+Runtime owner commit: `3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+
+The previous real run stopped safely with `PYTHON_COMMAND_RESULT_MULTIPLE`
+before preflight/authentication. Use only the new exact-head command. The shared
+owner now resolves multiple command rows into probed interpreter identities and
+accepts duplicates only when they are the same runtime or when one valid
+configured-family identity deterministically outranks fallback launchers.
+WindowsApps aliases are not started. A true equal-rank ambiguity emits
+`PYTHON_RUNTIME_AMBIGUOUS` plus the sanitized candidate matrix and performs no
+IG login.
+
+Exactly one Windows run remains. Do not ask for PATH, Python or `py` diagnostic
+commands. Step2238 is IMPLEMENTED/WAITING_EXTERNAL; readiness remains 8/0/13/6,
+M01 IN_PROGRESS, NONE/false, no order, LIVE prohibited.
+
 ## Resume: Step2238 full Windows host-lane audit (2026-09-15)
 
 Use the exact current PR head, not an older Python-hardening head. Code commit

@@ -1,6 +1,24 @@
  1 file changed, 1 insertion(+), 1 deletion(-)
 # Step2238–2240 pre-DEMO readiness program
 
+## Canonical Windows Python runtime selection — authoritative (2026-09-15)
+
+Runtime-selection code commit:
+`3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+
+The latest real Step2238 attempt stopped before authentication with
+`PYTHON_COMMAND_RESULT_MULTIPLE`. The shared host owner now separates resolver
+cardinality from interpreter identity and deterministically selects one runtime
+only after version, architecture and exact project-origin parity. Equal
+identities collapse, Store aliases are not started, invalid candidates are
+excluded, configured `python` outranks the `py -3` fallback, and genuine
+same-rank ambiguity blocks with a sanitized matrix. The 51-check preflight is
+unchanged.
+
+Step2238 remains IMPLEMENTED/WAITING_EXTERNAL pending exactly one final-head
+Windows run. Step2239/2240, M01 and all 27 gates remain unchanged; NONE/false,
+no order and LIVE prohibition remain binding.
+
 ## Full Windows host-lane audit — authoritative (2026-09-15)
 
 Code head `6bf1a6bbbcc0af24ba35a6c8397a614f241013fe` supersedes the
