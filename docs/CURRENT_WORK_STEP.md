@@ -1,5 +1,45 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Authoritative closeout pointer — Step2244 REAL-HOST VERIFIED (2026-09-15)
+
+Start/evidence head:
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`; branch
+`nextgen-bot-line-v1`; PR #109 OPEN/UNMERGED; main
+`e0784ebfc11bee28475fd9c3385be661af58a738`. The later anchor commit is
+documentation/test continuity only and does not claim a second host run.
+
+The final-head-bound Windows/IG-DEMO run proved 50/52 preflight PASS, zero
+required failures, one UNKNOWN, one NOT_REQUIRED, one authenticated read-only
+session, 8/8 raw reads PASS, 10/10 derived stages PASS, 5/5 required Economics
+subchecks PASS and successful cleanup. No retry, dealing call or order occurred.
+`execution_capability=NONE` and `order_execution_enabled=false` remained.
+
+Current formal states:
+
+- Step2242: **COMPLETED / REAL-HOST VERIFIED**;
+- Step2243: **COMPLETED / REAL-HOST VERIFIED**;
+- Step2244: **COMPLETED / REAL-HOST VERIFIED**;
+- Step2238: **COMPLETED / REAL-HOST VERIFIED** for its bounded read-only
+  acquisition contract;
+- Step2239: **IMPLEMENTED / PARTIALLY REAL-HOST VERIFIED /
+  WAITING_EXTERNAL** for missing native economics/session/admission inputs;
+- Step2240: **IN_PROGRESS / BLOCKED** for native IG execution lifecycle and
+  reconciliation;
+- M01: **IN_PROGRESS / NOT READY**;
+- 27 gates: **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED /
+  0 UNKNOWN**.
+
+Step2244 internal defects: NONE. Overall follow-up debt is INTERNAL_REMAINING
+because Step2240 native IG lifecycle work is not implemented, with additional
+Step2239 external/provider-value evidence still required. The next separately
+authorized project package is Bot-Helper Turbo V1.1 using the final closeout
+anchor named in the handoff; do not start it from this pointer alone.
+
+All lower Step2242–2244 recheck requests and Step2238 WAITING_EXTERNAL/next-run
+statements are historical and superseded. Their observed failure facts remain
+valid history. The authoritative row-by-row recount is
+`ACCELERATION_M01_DEMO_READINESS_MATRIX.md`.
+
 ## Current: Step2244 MARKET_ECONOMICS derivation closeout — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
 Pinned start head: `9f8c34adc6e359ea314a7051dffcc256efad7ba2`; branch

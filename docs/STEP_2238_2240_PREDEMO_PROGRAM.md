@@ -1,5 +1,31 @@
 # Step2238–2240 pre-DEMO readiness program
 
+## Step2244 real-host closeout overlay — authoritative (2026-09-15)
+
+All lower Step2238 WAITING_EXTERNAL/next-run statements are historical and
+superseded by this section. The final-head-bound Windows/IG-DEMO run on
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2` completed the actual Step2238
+read-only acquisition contract: 50/52 preflight PASS with zero required
+failures, one login, 8/8 raw reads PASS, 10/10 derived stages PASS, five of five
+required Economics subchecks PASS, evidence components emitted and cleanup
+successful. No retry, dealing call or order occurred; NONE/false remained.
+
+- Step2238: **COMPLETED / REAL-HOST VERIFIED** for the bounded one-session
+  read-only evidence lane.
+- Step2239: **IMPLEMENTED / PARTIALLY REAL-HOST VERIFIED /
+  WAITING_EXTERNAL**. Account/read/economics-projection inputs exist, but native
+  tick size, quantity step/max, complete tick-value/cash-loss, margin, stop and
+  exact session/admission bindings are not verified. `economics_verified=false`
+  is authoritative.
+- Step2240: **IN_PROGRESS / BLOCKED**. No native IG submit/confirmation,
+  deal/order/position identity lifecycle, partial-fill truth, unknown-transport
+  query/reconciliation, durable IG attempt binding, cancel/modify semantics or
+  provider-real DEMO lifecycle evidence exists.
+
+M01 remains IN_PROGRESS / NOT READY. The blocker-dominant 27-gate recount is
+8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED / 0 UNKNOWN.
+No read result authorizes execution.
+
 ## Exact-clone collector path contract — authoritative (2026-09-15)
 
 The real run at `9ae082ce094967cedc3ab6525173a68041f76965`

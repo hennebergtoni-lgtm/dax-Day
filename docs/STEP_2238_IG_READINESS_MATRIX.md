@@ -2,6 +2,19 @@
 
 Status date: 2026-09-15
 
+## Final real-host closeout — authoritative
+
+The exact-Step2244-head Windows/IG-DEMO run on
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2` satisfied the V3 availability and
+read contracts: one authenticated session, exactly eight rows, 8/8 PASS,
+10/10 derived stages PASS, successful evidence construction and cleanup, with
+no retry/dealing/order and NONE/false. Step2238 is **COMPLETED / REAL-HOST
+VERIFIED** for this bounded read-only acquisition contract.
+
+All lower WAITING_EXTERNAL/next-run wording is historical. The raw PASS result
+does not prove flat inventory, full history, canonical broker economics or any
+execution lifecycle. Those limits are counted in the current M01 matrix.
+
 ## V3 availability closeout
 
 The subsequent real host reached successful login and authenticated READ but a
@@ -36,7 +49,7 @@ process exit and cleanup contracts. The authenticated phase then stopped at the
 first read with `IG_SESSION_READ_FAILED_NO_RETRY`. That historical result is not
 rewritten and does not prove which IG resource failed.
 
-Step2238 therefore remains **IMPLEMENTED / WAITING_EXTERNAL**. M01 and the 27
+Historically Step2238 therefore remained **IMPLEMENTED / WAITING_EXTERNAL**. M01 and the 27
 pre-DEMO gates do not advance from this repository-only change. Effective safety
 remains `execution_capability=NONE`, `order_execution_enabled=false`; no dealing
 route, retry, relogin or order is present.
@@ -50,17 +63,18 @@ in order. Each eligible GET is attempted once and never retried:
 |---|---|---|
 | `ACCOUNTS` | `GET /accounts`, v1 | `accounts[]` |
 | `POSITIONS_A` | `GET /positions`, v2 | `positions[]` |
-| `WORKING_ORDERS_A` | `GET /working-orders`, v2 | `workingOrders[]` |
+| `WORKING_ORDERS_A` | `GET /workingorders`, v2 | `workingOrders[]` |
 | `MARKET_V4` | `GET /markets/{epic}`, v4 | `instrument`, `dealingRules`, `snapshot` |
 | `ACTIVITY_HISTORY` | `GET /history/activity`, v3 | `activities[]`, `metadata` |
 | `M5_PRICES` | `GET /prices/{epic}`, v3 | `prices[]`, `metadata` |
 | `POSITIONS_B` | `GET /positions`, v2 | `positions[]` |
-| `WORKING_ORDERS_B` | `GET /working-orders`, v2 | `workingOrders[]` |
+| `WORKING_ORDERS_B` | `GET /workingorders`, v2 | `workingOrders[]` |
 
-The prior `/workingorders` spelling was a repository mismatch and is replaced by
-the documented `/working-orders` route. Activity history uses the documented
-10–500 page-size range. Prices retain `resolution=MINUTE_5`, bounded `max`, and
-`pageSize=0`, which the v3 contract defines as paging disabled.
+The earlier `/working-orders` route was rejected by the real gateway. The final
+contract uses `/workingorders` v2, matching the official IG Java/.NET runtime
+samples and the successful final real-host run. Activity history uses the
+documented 10–500 page-size range. Prices retain `resolution=MINUTE_5`, bounded
+`max`, and `pageSize=0`, which the v3 contract defines as paging disabled.
 
 Each matrix row publishes only `PASS`, `FAIL`, `BLOCKED` or `UNKNOWN`, endpoint
 family, HTTP status class, an explicitly allow-listed provider error code,

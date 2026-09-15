@@ -1,5 +1,24 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Active handoff — Step2244 real-host closeout complete (2026-09-15)
+
+Resume from the final closeout anchor, not from any lower rerun command. The
+accepted real-host evidence head is
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`: 50/52 preflight PASS with zero
+required failures, 8/8 raw reads PASS, 10/10 derived PASS, 5/5 required
+Economics subchecks PASS, one session, cleanup successful, no retry/dealing/order
+and NONE/false.
+
+Step2244 and Step2238 are COMPLETED / REAL-HOST VERIFIED within their scoped
+contracts. Step2239 remains partially real-host verified/waiting external;
+Step2240 remains blocked. M01 is NOT READY and the full 27-gate recount is
+8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED / 0 UNKNOWN.
+Use `ACCELERATION_M01_DEMO_READINESS_MATRIX.md` for the row authority.
+
+Do not run another Step2238 collector merely because older sections request it;
+those instructions are superseded history. Do not start Bot-Helper Turbo V1.1,
+Step2240 execution work or a DEMO order without the separate next mandate.
+
 ## Active Step2238 continuity overlay — V3 matrix invariant (2026-09-15)
 
 Real Windows has reached authenticated READ after the proven host preflight, but

@@ -1,6 +1,18 @@
 # Step2243 — IG 8/8 Read Derivation Closeout
 
-Status: COMPLETED / TECHNICALLY VERIFIED
+Status: COMPLETED / REAL-HOST VERIFIED
+
+## Final real-host acceptance — authoritative (2026-09-15)
+
+The later exact-Step2244-head Windows/IG-DEMO run emitted all eight raw rows and
+all ten derived rows in one authenticated, no-retry, read-only session. All
+eight raw reads and all ten derived stages were PASS, cleanup succeeded and
+NONE/false remained effective. The Step2243 external recheck action is therefore
+closed. The earlier `UNKNOWN_NOT_EMITTED` classification remains the correct
+description of the historical failed run; it is not rewritten.
+
+This closes Step2243 only. The current Step2238/2239/2240 and M01/27-gate truth
+is recorded in `ACCELERATION_M01_DEMO_READINESS_MATRIX.md`.
 
 ## Pinned truth
 
@@ -110,15 +122,14 @@ foreign checkout.
 ## Remaining truth and safety
 
 All ten synthetic derived stages pass. The historical concrete stage cannot be
-recovered from an outer payload that never contained it. One final-head real
-Windows/provider run is therefore the only remaining Step2243 evidence action;
-it will directly emit all eight raw rows and all ten derived rows in the same
-invocation. No manual endpoint series or diagnostic commands are needed.
+recovered from an outer payload that never contained it. The later final-head
+real Windows/provider action described above emitted all eight raw rows and all
+ten derived rows PASS.
 
-FOLLOW-UP WORK DEBT: EXTERNAL_ONLY.
+Historical FOLLOW-UP WORK DEBT: EXTERNAL_ONLY — **CLOSED**.
 
 Execution remains `execution_capability=NONE` and
 `order_execution_enabled=false`. No endpoint/request, retry, dealing method,
 order, strategy parameter, cost model, risk/loss policy, V11.2 reference or
-CAND-001 decision sequence changed. LIVE remains prohibited. This step does not
-promote Step2238, Step2239, Step2240, M01 or the 27 readiness gates.
+CAND-001 decision sequence changed. LIVE remains prohibited. Later promotions
+are limited to the separately documented real-host recount.

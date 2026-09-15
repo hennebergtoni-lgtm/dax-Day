@@ -1,5 +1,24 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Current resume pointer — Step2244 real-host closeout complete (2026-09-15)
+
+Accepted real-host evidence head:
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`. The final Windows/IG-DEMO
+read-only run completed 50/52 preflight with zero required failures, 8/8 raw
+reads, 10/10 derived stages and 5/5 required Economics subchecks as PASS, then
+cleaned up successfully. It used one session and performed no retry,
+dealing call or order; NONE/false remained.
+
+Resume states: Step2244 and Step2238 COMPLETED / REAL-HOST VERIFIED; Step2239
+IMPLEMENTED / PARTIALLY REAL-HOST VERIFIED / WAITING_EXTERNAL; Step2240
+IN_PROGRESS / BLOCKED; M01 IN_PROGRESS / NOT READY; 27 gates = 8 VERIFIED /
+0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED / 0 UNKNOWN.
+
+The next start point is the final documentation/test anchor produced by this
+closeout. Wait for the separate Bot-Helper Turbo V1.1 mandate. Do not use any
+lower historical Step2238 rerun instruction and do not start execution work or
+send a DEMO/PAPER/LIVE order.
+
 ## Step2241 handoff — internal V1 complete; external evidence only (2026-09-15)
 
 Accepted runtime head: `6acb5399c1a9f23def20ada9660e09e023fdf33e`.

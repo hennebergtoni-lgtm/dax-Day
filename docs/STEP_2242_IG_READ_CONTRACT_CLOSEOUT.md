@@ -1,6 +1,6 @@
 # Step2242 — IG read-contract real-host closeout
 
-Status: COMPLETED / TECHNICALLY VERIFIED / REAL_HOST_RECHECK_REQUIRED
+Status: COMPLETED / REAL-HOST VERIFIED
 Date: 2026-09-15  
 Start head: `d7ad273e71a9ae993d8c28031e8c20d3a84e32d2`  
 Branch: `nextgen-bot-line-v1`  
@@ -8,6 +8,15 @@ PR: #109 OPEN / UNMERGED
 Main at start: `e0784ebfc11bee28475fd9c3385be661af58a738`
 
 Accepted runtime head: `20b1c86b5af771757d3557b6910e26501a419984`.
+
+## Final replacement-contract evidence — authoritative (2026-09-15)
+
+The later exact-Step2244-head Windows/IG-DEMO run used the final replacement
+contracts and returned PASS for all eight required raw reads, including both
+WORKING_ORDERS rows and ACTIVITY_HISTORY. Cleanup succeeded; the run used one
+session, no retry/dealing/order, and retained NONE/false. The Step2242
+real-provider recheck is therefore complete. The earlier 5 PASS / 3 HTTP_4XX
+result remains historical evidence for the superseded request contracts.
 
 ## Real-host finding retained
 
@@ -136,6 +145,6 @@ commit restored those files; the repaired remote tree was proven byte-identical
 to the locally accepted tree. No force update or historical rewrite occurred,
 and only the later exact-head CIs above count as evidence.
 
-No internal defect is deferred. FOLLOW-UP WORK DEBT=`EXTERNAL_ONLY`. Real
-provider acceptance remains external and must use the single final-head-bound
-wrapper invocation in the final handoff.
+No internal defect is deferred. Historical FOLLOW-UP WORK
+DEBT=`EXTERNAL_ONLY` is **CLOSED** by the final replacement-contract evidence
+above.

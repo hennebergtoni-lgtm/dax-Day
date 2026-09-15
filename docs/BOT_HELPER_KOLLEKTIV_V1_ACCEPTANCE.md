@@ -1,5 +1,24 @@
 # Bot-Helper-Kollektiv V1 — Step 2241 acceptance record
 
+## Step2244 real-host dogfood overlay — authoritative (2026-09-15)
+
+The final-head-bound Windows/IG-DEMO read-only run supplies scoped real-host
+evidence to the existing collective without expanding its authority:
+
+| Role | Current scoped result | Boundary |
+| --- | --- | --- |
+| H — Host/runtime | PASS | Exact runtime head, Windows lane, 50/52 preflight with zero required failures, one session and successful cleanup. |
+| D — Data truth | PASS | MARKET_V4 and M5 raw/derived contracts passed; no native tick/value semantics are invented. |
+| B — Broker/recovery | PASS for READ ACQUISITION | Eight of eight broker GET outcomes passed; this is not order/deal lifecycle or reconciliation evidence. |
+| S — Safety/decision | BLOCKED for DEMO ADMISSION | `economics_verified=false`; missing native economics/session/protection inputs retain the veto. |
+| O — Evidence/operator | PASS | Raw, derived, Economics and component evidence were emitted under fixed sanitized schemas. |
+| K — Coordination | BLOCKED for DEMO ADMISSION | H/D/B/O success cannot outvote S or the Step2240 lifecycle blockers. |
+
+This closes the former current-host/provider action for the Step2238 acquisition
+lane and provides real-host dogfood for the listed slice only. It does not turn
+all T01–T15 synthetic/CI acceptance rows into real-broker evidence. Current
+M01/27-gate truth is owned by `ACCELERATION_M01_DEMO_READINESS_MATRIX.md`.
+
 Status: **COMPLETED / TECHNICALLY VERIFIED — SYNTHETIC + CI**.
 Updated: 2026-09-15T10:33Z. This new technical V1 record does not replace historical
 VERIFIED evidence, formal project acceptance or merge governance.

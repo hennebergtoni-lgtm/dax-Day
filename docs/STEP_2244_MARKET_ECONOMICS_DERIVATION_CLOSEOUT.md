@@ -1,6 +1,33 @@
 # Step2244 — MARKET_ECONOMICS Derivation Closeout
 
-Status: COMPLETED / TECHNICALLY VERIFIED
+Status: COMPLETED / REAL-HOST VERIFIED
+
+## Final real-host acceptance — authoritative (2026-09-15)
+
+The final-head-bound Windows/IG-DEMO recheck on
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2` satisfies the remaining
+acceptance action recorded below:
+
+- preflight: 50/52 PASS, 0 required FAIL/BLOCKED, 1 UNKNOWN and 1 NOT_REQUIRED;
+- exactly one authenticated read-only session;
+- raw reads: 8/8 PASS;
+- derived stages: 10/10 PASS, including MARKET_ECONOMICS;
+- required Economics subchecks: 5/5 PASS (MARKET_SHAPE,
+  MARKET_IDENTITY, MARKET_STATUS, PRICE_PRECISION and DEALING_RULES);
+- cleanup successful; no retry, resubmit, dealing method or order;
+- `execution_capability=NONE`; `order_execution_enabled=false`.
+
+The former MARKET_DERIVATION_FAILED is therefore superseded operationally on
+the accepted contract. Its historical occurrence remains valid history. Optional
+MARGIN_OR_SIZE_RULES and CANONICAL_ECONOMICS_CONSTRUCTION may remain UNKNOWN;
+`economics_verified=false` remains correct because native tick value, complete
+quantity grid, cash-loss and margin semantics were not established.
+
+Remaining internal Step2244 defects: **NONE**. The former EXTERNAL_ONLY recheck
+debt is closed. Step2238 is separately closed for the bounded read-only
+acquisition lane; Step2239 remains partially verified/waiting external and
+Step2240 remains blocked. The authoritative M01/27-gate recount is in
+`ACCELERATION_M01_DEMO_READINESS_MATRIX.md`.
 
 ## Pinned truth
 
@@ -117,15 +144,13 @@ T07/T14 H/D/B/S/O/K behavior.
 Remaining internal Step2244 defects: NONE.
 
 The concrete historical subcause remains unavailable because the previous run
-did not emit it. One final-head Windows/provider run is the only remaining
-evidence action. It will either prove MARKET_ECONOMICS projection PASS or expose
-the exact fixed subcheck in the same invocation; no manual endpoint series is
-needed.
+did not emit it. The final-head Windows/provider action described in the opening
+acceptance section has now passed.
 
-FOLLOW-UP WORK DEBT: EXTERNAL_ONLY.
+Historical FOLLOW-UP WORK DEBT: EXTERNAL_ONLY — **CLOSED**.
 
 Execution remains `execution_capability=NONE` and
 `order_execution_enabled=false`. No endpoint/request, retry, dealing method,
 order, strategy parameter, cost model, risk/loss policy, V11.2 reference or
-CAND-001 sequence changed. LIVE remains prohibited. Step2238, Step2239,
-Step2240, M01 and the readiness gates are not promoted.
+CAND-001 sequence changed. LIVE remains prohibited. Promotions are limited to
+the scoped opening acceptance and the separately recomputed M01/27-gate matrix.

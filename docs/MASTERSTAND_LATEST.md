@@ -1,5 +1,35 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2244 real-host evidence and gate closeout — authoritative (2026-09-15)
+
+The exact-head Windows/IG-DEMO recheck on
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2` completed the bounded read-only
+lane: 50/52 preflight PASS with zero required failures, 8/8 raw reads PASS,
+10/10 derived stages PASS, 5/5 required MARKET_ECONOMICS subchecks PASS, one
+session and successful cleanup. There was no retry, resubmit, dealing call or
+order. NONE/false and the hard LIVE prohibition remained effective.
+
+Step2242, Step2243 and Step2244 are COMPLETED / REAL-HOST VERIFIED. Step2238 is
+COMPLETED / REAL-HOST VERIFIED for the evidence-acquisition contract. Step2239
+is IMPLEMENTED / PARTIALLY REAL-HOST VERIFIED / WAITING_EXTERNAL because the
+bundle deliberately does not establish native tick size, quantity step/max,
+complete tick-value/cash-loss, margin, stop or exact session/admission semantics.
+Step2240 remains IN_PROGRESS / BLOCKED because the native IG submit,
+confirmation, identity, partial-fill, unknown-outcome, reconciliation,
+protection and restart lifecycle is absent/unproved.
+
+M01 remains IN_PROGRESS / NOT READY. The full evidence-first recount is
+8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED / 0 UNKNOWN among
+27 gates. Successful raw reads and derivation do not establish execution-ready
+broker economics or lifecycle truth. Current detailed authority:
+`ACCELERATION_M01_DEMO_READINESS_MATRIX.md` and
+`STEP_2244_MARKET_ECONOMICS_DERIVATION_CLOSEOUT.md`.
+
+All lower Step2238 WAITING_EXTERNAL/next-host-run and Step2242–2244 recheck
+statements are historical/superseded. Bot-Helper K remains blocker-dominant; S
+and Step2240 veto DEMO admission. The next large package is separately ordered
+Bot-Helper Turbo V1.1 from the final closeout anchor; it is not started here.
+
 ## Step2241 Bot-Helper-Kollektiv V1 — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
 Accepted runtime head: `6acb5399c1a9f23def20ada9660e09e023fdf33e`.

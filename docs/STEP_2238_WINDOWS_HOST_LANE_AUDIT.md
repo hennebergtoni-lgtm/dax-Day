@@ -1,5 +1,19 @@
 # Step2238 Windows host-lane audit
 
+## Final Step2244 real-host closeout — authoritative (2026-09-15)
+
+The exact-head Windows lane on
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2` completed 50/52 preflight with
+zero required failures, authenticated once, returned 8/8 raw reads and 10/10
+derived stages PASS, constructed evidence and cleaned up successfully. No
+retry, dealing call or order occurred; NONE/false remained effective.
+
+Step2238 is **COMPLETED / REAL-HOST VERIFIED** for the bounded read-only host
+lane. All lower Step2238 WAITING_EXTERNAL/next-run statements are historical.
+They remain useful failure/repair evidence but are not the resume instruction.
+This closeout does not promote Step2239 native economics/admission or Step2240
+execution/reconciliation.
+
 ## Real-host module isolation and diagnostic boundary — 2026-09-15
 
 The real run on `575666143c92d21d4fb211655098c41a936eac79` proved the

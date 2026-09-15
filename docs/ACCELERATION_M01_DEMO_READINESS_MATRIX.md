@@ -1,5 +1,115 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2244 real-host evidence recount — authoritative (2026-09-15)
+
+This section supersedes every lower current-status/count/next-run statement. The
+lower sections remain immutable chronology for the failures and repairs that led
+to this result.
+
+The exact-Step2244-head Windows/IG-DEMO recheck on
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2` completed the one-session
+read-only lane: preflight 50/52 PASS, zero required failures, one UNKNOWN and
+one NOT_REQUIRED; one login; all eight raw reads PASS; all ten derived stages
+PASS; all five required MARKET_ECONOMICS subchecks PASS; cleanup successful.
+There was no retry, dealing call or order. Effective safety remained
+`execution_capability=NONE` and `order_execution_enabled=false`.
+
+Step2238 is therefore **COMPLETED / REAL-HOST VERIFIED** for its bounded
+read-only evidence-acquisition contract. This does not mean every value carried
+by the resulting components is execution-ready. A successful projection proves
+that the source/shape/derivation contract ran; it does not convert absent
+provider-native economics into verified risk inputs.
+
+### M01 evidence recomputation
+
+| M01 requirement | Status | Current evidence / remaining limit |
+| --- | --- | --- |
+| Exact runtime head | VERIFIED | The supplied recheck was explicitly bound to `ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`. The later closeout commit is documentation/test continuity only. |
+| Windows runtime | VERIFIED | The one-command Windows lane reached authenticated READ and cleanup after the 50/52 preflight. |
+| IG DEMO environment | VERIFIED | One authenticated session used the hard-pinned IG DEMO endpoint. |
+| Account-context projection | VERIFIED | ACCOUNTS and LOGIN_CONTEXT completed in the same authenticated session. This is scoped projection evidence, not disclosure of an account identifier. |
+| Exact DEMO account identity/binding | WAITING_EXTERNAL | The supplied closeout facts do not include the pseudonymous account-context fingerprint/value needed to audit exact selected-account binding. |
+| Server/environment identity | VERIFIED | The provider environment is the hard-pinned IG DEMO API; no LIVE endpoint or account switch was used. |
+| Instrument identity | VERIFIED | MARKET_IDENTITY PASS binds the response `instrument.epic` to the requested DAX EPIC. |
+| MARKET_V4 read/shape | VERIFIED | MARKET_V4 raw PASS and MARKET_SHAPE PASS were observed. |
+| Market status contract | VERIFIED | Required MARKET_STATUS subcheck PASS proves a recognized provider v4 status, not necessarily TRADEABLE at every later instant. |
+| Price precision representation | VERIFIED | Required PRICE_PRECISION PASS proves valid decimal/scaling representation; it is not native tick size. |
+| Finalized M5 contract | VERIFIED | Existing Step2237 real-host INTERVAL_START/true-close evidence remains valid; M5_PRICES and M5 derivation also passed in this run. |
+| Feed freshness | VERIFIED | The prior accepted Step2237 real-host true-close freshness evidence remains the authority; this recount does not broaden its time scope. |
+| Broker/server clock provenance | VERIFIED | CLOCK derivation completed and the real bundle contains clock provenance. This does not prove the session calendar or a DST boundary. |
+| Timezone/session/DST semantics | WAITING_EXTERNAL | No exact current session-calendar/DST policy binding was supplied by the closeout facts. |
+| Positions A/B read contract | VERIFIED | Both bracketed position reads passed in the same session. Read success alone is not a flatness claim. |
+| Working orders A/B read contract | VERIFIED | Both bracketed working-order reads passed in the same session. Read success alone is not a zero-order claim. |
+| Inventory state/foreign-manual clearance | WAITING_EXTERNAL | The supplied closeout facts do not state the counts, stable-bracket verdict or foreign/manual-inventory verdict. |
+| Bounded activity-history derivation | VERIFIED | ACTIVITY_HISTORY and HISTORY derivation passed for the collector's bounded scope. Absolute venue-history completeness is not claimed. |
+| Market-economics projection | VERIFIED | MARKET_ECONOMICS plus all five required subchecks passed. Provider-dependent/canonical economics remain separate. |
+| Minimum deal-size rule | VERIFIED | DEALING_RULES PASS proves a positive provider minimum with a recognized unit; it does not prove the full quantity grid. |
+| Native tick size | WAITING_EXTERNAL | Deliberately not inferred from decimal/scaling factors. |
+| Quantity increment | WAITING_EXTERNAL | No provider-native `quantity_step` evidence was supplied. |
+| Maximum size | WAITING_EXTERNAL | No provider-native `quantity_max` evidence was supplied. |
+| Margin/canonical economics | WAITING_EXTERNAL | MARGIN_OR_SIZE_RULES and CANONICAL_ECONOMICS_CONSTRUCTION may honestly remain UNKNOWN; complete cash-loss/margin semantics are absent. |
+| Stop/protection semantics | WAITING_EXTERNAL | The supplied facts do not prove complete native stop-distance, controlled-risk or request-time protection semantics. |
+| Fixed-cash risk | WAITING_EXTERNAL | The canonical owner exists but cannot run broker-bound admission without tick/quantity/value semantics. |
+| Loss/exposure/session policy | WAITING_EXTERNAL | Existing policy owners still need the exact account, inventory, economics and session bindings. |
+| Attempt reservation | BLOCKED | The durable reservation is not yet bound to a native IG submission/deal-reference lifecycle. |
+| Native reconciliation | BLOCKED | No IG submit/confirm/order/deal/position reconciliation path or real lifecycle evidence exists. |
+| Restart/resume | BLOCKED | Read-only Candidate resume is VERIFIED historically; unresolved native IG execution-attempt recovery remains unimplemented/unproved. |
+| Telemetry/operator evidence | VERIFIED | Existing real-host Operator/telemetry evidence remains valid; this run additionally emitted the raw, derived, economics and component evidence surfaces. |
+| Unexpected inventory handling | IMPLEMENTED | Fail-closed handling exists and is synthetically tested; the supplied run does not provide the inventory values needed for a real-host verdict. |
+| Execution remains disabled | VERIFIED | The real run retained NONE/false and used only GET/session cleanup. |
+
+**M01 status: IN_PROGRESS / NOT READY.** The read-only acquisition lane is
+closed, but broker-bound admission and native lifecycle readiness are not.
+
+### Recomputed 27 Pre-DEMO gates
+
+| Gate | Requirement | Status | Current evidence / remaining limit |
+| ---: | --- | --- | --- |
+| 1 | Exact final runtime head | VERIFIED | Real-host run bound to `ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`; later closeout is non-runtime. |
+| 2 | IG DEMO environment | VERIFIED | Successful authentication/read-only session on the hard-pinned DEMO API. |
+| 3 | DEMO account identity | WAITING_EXTERNAL | Account-context projection passed, but the exact pseudonymous binding/value is not present in the supplied closeout facts. |
+| 4 | Instrument identity | VERIFIED | Required MARKET_IDENTITY PASS for the requested DAX EPIC. |
+| 5 | Finalized market-data contract | VERIFIED | Historical real-host INTERVAL_START/true-close contract remains verified; current M5 read/derivation passed. |
+| 6 | Feed freshness | VERIFIED | Retained Step2237 real-host true-close freshness evidence; no broader timeless claim. |
+| 7 | Clock/session | WAITING_EXTERNAL | Clock provenance exists, but current timezone/session/DST binding is not fully supplied. |
+| 8 | Understood inventory | WAITING_EXTERNAL | Position reads A/B passed; counts, stable-bracket result and foreign/manual clearance are not stated. |
+| 9 | Working-order truth | WAITING_EXTERNAL | Working-order reads A/B passed; exact current counts/history completeness are not stated. |
+| 10 | Economics | WAITING_EXTERNAL | Required market projection passed, but canonical tick/value/quantity/margin/cost binding is explicitly incomplete. |
+| 11 | Tick size | WAITING_EXTERNAL | Native tick size is absent and is not inferred from price precision. |
+| 12 | Quantity increment | WAITING_EXTERNAL | Native quantity step is absent. |
+| 13 | Min/max size | WAITING_EXTERNAL | Minimum dealing rule passed; full min/max/grid binding is incomplete because maximum/step are absent. |
+| 14 | Stop/target constraints | WAITING_EXTERNAL | Full native distance/control/request-time semantics are not established by DEALING_RULES alone. |
+| 15 | Fixed-Cash Risk | WAITING_EXTERNAL | Canonical owner lacks complete broker-native economics. |
+| 16 | Loss/exposure admission | WAITING_EXTERNAL | Requires reviewed account, inventory, exposure, economics and policy inputs. |
+| 17 | Session guard | WAITING_EXTERNAL | Requires exact broker clock/calendar/DST/session binding. |
+| 18 | One-trade-per-session guard | WAITING_EXTERNAL | Durable owner exists but final IG session identity/policy binding is not verified. |
+| 19 | Attempt reservation | BLOCKED | No native IG submission/deal-reference binding. |
+| 20 | Idempotency | BLOCKED | No-blind-resubmit policy exists; native IG submission/idempotency lifecycle is absent. |
+| 21 | Reconciliation | BLOCKED | No native IG order/deal/position/history lifecycle conformance or real DEMO evidence. |
+| 22 | Protection | BLOCKED | Independent PTC exists; native request-time enforcement is absent. |
+| 23 | Telemetry | VERIFIED | Existing real-host telemetry plus current raw/derived/component evidence surfaces. |
+| 24 | Operator visibility | VERIFIED | Existing real-host Operator proof remains valid; current code projects the new fixed ledgers. |
+| 25 | Restart/recovery | BLOCKED | Read-only resume is verified; unresolved native execution-attempt recovery is not. |
+| 26 | Explicit DEMO_ONLY capability | BLOCKED | Capability deliberately remains NONE/false; no bounded native transport is activated. |
+| 27 | Hard LIVE block | VERIFIED | The real run used only the DEMO read-only boundary; LIVE remains unauthorized. |
+
+**Recomputed tally: 8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL /
+6 BLOCKED / 0 UNKNOWN = 27.** No gate is newly promoted solely from successful
+transport/derivation. The newly verified facts live inside Gates 3 and 7–14 but
+do not complete those compound gates. Synthetic/CI is not real host, real-host
+read is not execution, and readiness is not dealing authorization.
+
+### Smallest remaining work
+
+1. Step2239: acquire/review the exact account/inventory/session fields and the
+   missing native tick/quantity/value/margin/stop semantics, then bind them to
+   the existing Risk/Loss/Session owners.
+2. Step2240: implement and independently verify the native IG reservation,
+   submit/confirmation/query/reconciliation/protection/restart path while
+   capability remains NONE.
+3. Only after every gate is VERIFIED may a separate bounded NONE-to-DEMO_ONLY
+   authorization package be reviewed. No order is authorized by this recount.
+
 ## Step2238 V3 eight-row availability overlay — 2026-09-15
 
 The latest real host proved the lane through authenticated READ but did not emit
