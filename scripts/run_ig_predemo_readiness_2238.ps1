@@ -39,6 +39,7 @@ $SafeErrorCodes = @(
     'PYTHON_UNCLASSIFIED_FAILURE', 'IMPORT_UNCLASSIFIED_FAILURE',
     'PREFLIGHT_UNCLASSIFIED_FAILURE', 'NETWORK_UNCLASSIFIED_FAILURE',
     'CREDENTIAL_UNCLASSIFIED_FAILURE', 'SAFETY_UNCLASSIFIED_FAILURE',
+    'COLLECTOR_PRECHECK_UNCLASSIFIED_FAILURE',
     'IG_SESSION_UNCLASSIFIED_FAILURE',
     'EVIDENCE_UNCLASSIFIED_FAILURE', 'CLEANUP_UNCLASSIFIED_FAILURE',
     'GOVERNANCE_WINDOWS_HOST_REQUIRED', 'GOVERNANCE_INVALID_HEAD',
@@ -259,13 +260,27 @@ function Invoke-Closeout {
             }
             throw
         }
-        $script:runnerPhase = 'IG_SESSION'
-        Write-Host 'AUTH READ-ONLY START: one IG login; account; inventory bracket; market/economics; history; M5; cleanup'
         $collectorPath = Join-Path $DeploymentRoot 'scripts/run_ig_predemo_readiness_2238.py'
         $collectorArguments = @(
             '--expected-head', $ExpectedHead, '--namespace', $Namespace,
             '--credentials-file', $CredentialsFile, '--runtime-root', $RuntimeRoot
         )
+        $script:runnerPhase = 'COLLECTOR_PRECHECK'
+        Write-Host 'COLLECTOR PRECHECK: exact deployment head; runtime namespace; credential shape; no IG login'
+        try {
+            $precheck = Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
+                -ScriptPath $collectorPath `
+                -Arguments @($collectorArguments + '--pre-auth-precheck') `
+                -SafePayloadCodes $SafeErrorCodes
+            if ([string]$precheck.pre_auth_precheck -ne 'PASS') {
+                throw 'COLLECTOR_PRECHECK_UNCLASSIFIED_FAILURE'
+            }
+        } catch {
+            try { $_.Exception.Data['FailurePhase'] = 'COLLECTOR_PRECHECK' } catch { }
+            throw
+        }
+        $script:runnerPhase = 'IG_SESSION'
+        Write-Host 'AUTH READ-ONLY START: one IG login; account; inventory bracket; market/economics; history; M5; cleanup'
         try {
             return Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
                 -ScriptPath $collectorPath -Arguments $collectorArguments `
@@ -418,7 +433,7 @@ try {
             if ($reportedPhase -in @(
                     'HOST', 'POWERSHELL', 'GIT', 'FILESYSTEM', 'PYTHON',
                     'IMPORT', 'PREFLIGHT', 'NETWORK', 'CREDENTIAL', 'SAFETY',
-                    'IG_SESSION', 'EVIDENCE', 'CLEANUP')) {
+                    'COLLECTOR_PRECHECK', 'IG_SESSION', 'EVIDENCE', 'CLEANUP')) {
                 $runnerPhase = $reportedPhase
             }
         }
@@ -460,6 +475,7 @@ try {
             'NETWORK' { 'NETWORK_UNCLASSIFIED_FAILURE' }
             'CREDENTIAL' { 'CREDENTIAL_UNCLASSIFIED_FAILURE' }
             'SAFETY' { 'SAFETY_UNCLASSIFIED_FAILURE' }
+            'COLLECTOR_PRECHECK' { 'COLLECTOR_PRECHECK_UNCLASSIFIED_FAILURE' }
             'IG_SESSION' { 'IG_SESSION_UNCLASSIFIED_FAILURE' }
             'EVIDENCE' { 'EVIDENCE_UNCLASSIFIED_FAILURE' }
             'CLEANUP' { 'CLEANUP_UNCLASSIFIED_FAILURE' }

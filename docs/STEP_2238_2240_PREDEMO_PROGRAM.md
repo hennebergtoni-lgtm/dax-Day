@@ -1,5 +1,19 @@
 # Step2238–2240 pre-DEMO readiness program
 
+## Exact-clone collector path contract — authoritative (2026-09-15)
+
+The real run at `9ae082ce094967cedc3ab6525173a68041f76965`
+preserved `HEAD_MISMATCH` because the absolute collector script was launched
+while CWD could remain another checkout. `_head()` now derives the repository
+from resolved `__file__` and calls `git -C` on the isolated clone.
+
+A new local-only invocation validates collector HEAD, runtime root, namespace
+availability and credential shape before the wrapper announces AUTH. It never
+constructs the IG client. The authenticated invocation repeats these checks to
+avoid a check/use gap, then retains exactly one login/GET flow/cleanup. Tests
+cover a different Git CWD and non-Git CWD. Step2238 remains
+IMPLEMENTED/WAITING_EXTERNAL; later phases and safety state are unchanged.
+
 ## Collector process/output contract — authoritative (2026-09-15)
 
 The real Windows run on `ecd029924af4cd949676dace039c330fff31e12d`

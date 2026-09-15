@@ -95,6 +95,7 @@ def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -
     assert "order_send" not in source + owner and "/positions/otc" not in source + owner
     assert "DAX_STEP2238_DEPLOYMENT_OWNER_V1" in source
     assert "SUMMARY: BLOCKED / FAIL_CLOSED; error_code=" in source
+    assert source.index("COLLECTOR PRECHECK:") < source.index("AUTH READ-ONLY START:")
 
 
 def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> None:
@@ -293,6 +294,74 @@ def test_collector_head_query_failure_has_fixed_code(tmp_path, monkeypatch, caps
     result = json.loads(rendered)
     assert result["error_code"] == "HEAD_QUERY_FAILED"
     assert "secret" not in rendered
+
+
+def _git_head(path: Path) -> str:
+    return subprocess.run(
+        ["git", "-C", str(path), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def test_collector_head_is_bound_to_script_repo_from_different_git_cwd(
+    tmp_path, monkeypatch
+) -> None:
+    other = tmp_path / "other-checkout"
+    other.mkdir()
+    subprocess.run(["git", "init", "--quiet", str(other)], check=True)
+    subprocess.run(["git", "-C", str(other), "config", "user.name", "Test"], check=True)
+    subprocess.run(
+        ["git", "-C", str(other), "config", "user.email", "test@example.invalid"],
+        check=True,
+    )
+    (other / "marker.txt").write_text("other\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(other), "add", "marker.txt"], check=True)
+    subprocess.run(["git", "-C", str(other), "commit", "--quiet", "-m", "other"], check=True)
+    other_head = _git_head(other)
+    exact_clone_head = _git_head(ROOT)
+    assert other_head != exact_clone_head
+    monkeypatch.chdir(other)
+    assert runner._head() == exact_clone_head
+
+
+def test_collector_head_is_bound_to_script_repo_from_non_git_cwd(
+    tmp_path, monkeypatch
+) -> None:
+    non_git = tmp_path / "not-a-checkout"
+    non_git.mkdir()
+    exact_clone_head = _git_head(ROOT)
+    monkeypatch.chdir(non_git)
+    assert runner._head() == exact_clone_head
+
+
+def test_pre_auth_precheck_validates_local_contract_without_constructing_client(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    exact_clone_head = runner._head()
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", exact_clone_head,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path),
+        "--namespace", ".runtime/attempt",
+        "--pre-auth-precheck",
+    ])
+    monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
+    monkeypatch.setattr(
+        runner,
+        "IgDemoReadOnlyClient",
+        lambda _: (_ for _ in ()).throw(AssertionError("client must not be constructed")),
+    )
+    assert runner.main() == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 1
+    result = json.loads(lines[0])
+    assert result["pre_auth_precheck"] == "PASS"
+    assert result["exact_head"] == exact_clone_head
+    assert result["execution_capability"] == "NONE"
+    assert result["order_execution_enabled"] is False
 
 
 def test_authenticated_read_failure_emits_one_structured_line_and_exit_two(

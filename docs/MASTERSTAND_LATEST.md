@@ -1,5 +1,24 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 exact-clone collector head — authoritative (2026-09-15)
+
+Real Windows head `9ae082ce094967cedc3ab6525173a68041f76965`
+again proved the 52-check preflight and preserved the collector domain error:
+`HEAD_MISMATCH`, payload phase HEAD, matching failure exit, no cleanup error.
+Root cause was the collector's unbound `git rev-parse HEAD`, which inherited the
+existing checkout as process CWD despite being launched from the exact clone.
+
+The canonical collector now derives its repository root from resolved
+`Path(__file__)` and executes `git -C <exact-clone-root> rev-parse HEAD`. Tests
+prove the same exact-clone head from another valid checkout with a different
+head and from a non-Git CWD. No other collector subprocess has hidden-CWD Git
+semantics. A broker-free local collector HEAD/runtime/namespace/credential-shape
+precheck now completes before `AUTH READ-ONLY START`; the authenticated process
+rechecks the same conditions fail-closed.
+
+Step2238 remains IMPLEMENTED/WAITING_EXTERNAL for one final-head run. NONE/false,
+no order, no retry and LIVE prohibition remain binding.
+
 ## Step2238 collector exit-contract closeout — authoritative (2026-09-15)
 
 Real Windows head `ecd029924af4cd949676dace039c330fff31e12d`

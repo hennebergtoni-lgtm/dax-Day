@@ -1,5 +1,30 @@
 # Step2238 Windows host-lane audit
 
+## Collector exact-root ownership — 2026-09-15
+
+The structured real-host result on
+`9ae082ce094967cedc3ab6525173a68041f76965` was `HEAD_MISMATCH` with payload
+phase HEAD and a matching failure exit. This confirmed that the corrected
+process/error boundary worked and exposed one hidden-CWD defect:
+
+```text
+absolute collector script + inherited host-checkout CWD
+→ git rev-parse HEAD queries the wrong repository
+```
+
+The fix defines `COLLECTOR_PATH = Path(__file__).resolve()` and
+`REPO_ROOT = COLLECTOR_PATH.parents[1]`; `_head()` resolves that root and invokes
+`git -C REPO_ROOT rev-parse HEAD` with bounded, strict UTF-8 subprocess handling.
+Tests deliberately switch CWD to another committed Git repository with a
+different head and to a non-Git directory; both return the exact collector clone
+head. The audit found no other collector subprocess or implicit Git lookup.
+
+The wrapper now runs `--pre-auth-precheck` first. That path validates head,
+runtime root, namespace and credential shape, emits one NONE/false JSON line,
+and never constructs an IG client. Only after it passes does the operator see
+`AUTH READ-ONLY START`; the full collector independently rechecks the local
+conditions. Existing 52 host checks and process contracts remain intact.
+
 ## Authenticated collector boundary — 2026-09-15
 
 Real host head `ecd029924af4cd949676dace039c330fff31e12d` proved

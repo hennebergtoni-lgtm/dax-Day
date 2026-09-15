@@ -1,5 +1,17 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: exact-clone collector head (2026-09-15)
+
+Historical head `9ae082ce094967cedc3ab6525173a68041f76965`
+preserved `HEAD_MISMATCH` after a fully passing required preflight. The collector
+was querying the caller's CWD repository. The active code binds Git to the
+resolved collector clone root and performs a broker-free collector precheck
+before printing AUTH.
+
+Use one new exact-head command only. Do not change the existing checkout or run
+manual Git diagnostics. Step2238 remains WAITING_EXTERNAL; NONE/false, no retry,
+no order, LIVE prohibited.
+
 ## Resume: collector exit contract (2026-09-15)
 
 Historical real-host head `ecd029924af4cd949676dace039c330fff31e12d`

@@ -18,13 +18,18 @@ import sys
 from typing import Mapping
 from uuid import uuid4
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+COLLECTOR_PATH = Path(__file__).resolve()
+REPO_ROOT = COLLECTOR_PATH.parents[1]
+sys.path.insert(0, str(COLLECTOR_PATH.parent))
+sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from daxlab.adapters.ig_market_data import DEFAULT_MAX_AGE, closed_m5_price_rows
-from daxlab.adapters.ig_rest_readonly import IgDemoReadOnlyClient
+from daxlab.adapters.ig_market_data import (  # noqa: E402
+    DEFAULT_MAX_AGE,
+    closed_m5_price_rows,
+)
+from daxlab.adapters.ig_rest_readonly import IgDemoReadOnlyClient  # noqa: E402
 
-from ig_demo_readonly_probe import (
+from ig_demo_readonly_probe import (  # noqa: E402
     DEFAULT_EPIC,
     DEFAULT_INSTRUMENT_ID,
     _assert_credential_free,
@@ -361,9 +366,16 @@ def collect(
     return evidence, components
 
 
-def _head() -> str:
+def _head(repo_root: Path = REPO_ROOT) -> str:
+    canonical_root = repo_root.resolve(strict=True)
     result = subprocess.run(
-        ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+        ["git", "-C", str(canonical_root), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=20,
+        encoding="utf-8",
+        errors="strict",
     )
     return result.stdout.strip()
 
@@ -428,6 +440,7 @@ def main() -> int:
     parser.add_argument("--epic", default=DEFAULT_EPIC)
     parser.add_argument("--instrument-id", default=DEFAULT_INSTRUMENT_ID)
     parser.add_argument("--bars", type=int, default=40)
+    parser.add_argument("--pre-auth-precheck", action="store_true")
     args = parser.parse_args()
     client = None
     phase = "VALIDATE"
@@ -444,7 +457,18 @@ def main() -> int:
         if namespace.exists():
             raise RuntimeError("NAMESPACE_EXISTS")
         phase = "CREDENTIAL"
-        client = IgDemoReadOnlyClient(_credentials_from_file(args.credentials_file))
+        credentials = _credentials_from_file(args.credentials_file)
+        if args.pre_auth_precheck:
+            print(json.dumps({
+                "status": "SUCCESS",
+                "error_code": "NONE",
+                "pre_auth_precheck": "PASS",
+                "exact_head": head,
+                "execution_capability": "NONE",
+                "order_execution_enabled": False,
+            }, sort_keys=True))
+            return 0
+        client = IgDemoReadOnlyClient(credentials)
         phase = "LOGIN"
         client.login()
         phase = "READ"

@@ -1,5 +1,18 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: exact-clone collector head ownership (2026-09-15)
+
+The real run on `9ae082ce094967cedc3ab6525173a68041f76965`
+reported the true collector error `HEAD_MISMATCH`. `_head()` used process CWD,
+which could be the existing host checkout rather than the isolated deployment.
+
+The collector now owns an immutable root derived from resolved `__file__` and
+always calls Git with `-C` against that root. Different-Git-CWD and non-Git-CWD
+tests both resolve the exact clone correctly. A separate local collector precheck
+runs HEAD, runtime namespace and credential shape without constructing an IG
+client; only success prints `AUTH READ-ONLY START`. Step2238 remains
+IMPLEMENTED/WAITING_EXTERNAL; no gate change or order.
+
 ## Current: Step2238 collector process contract (2026-09-15)
 
 The real host on `ecd029924af4cd949676dace039c330fff31e12d`

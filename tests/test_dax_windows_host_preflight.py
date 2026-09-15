@@ -420,8 +420,9 @@ def test_proxy_names_are_observed_without_values_or_false_block(
 
 def test_wrapper_orders_preflight_before_authenticated_collector() -> None:
     source = (ROOT / "scripts/run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
-    assert source.index("dax_windows_host_preflight.py") < source.index("AUTH READ-ONLY START")
-    assert source.index("AUTH READ-ONLY START") < source.index("run_ig_predemo_readiness_2238.py")
+    assert source.index("dax_windows_host_preflight.py") < source.index("COLLECTOR PRECHECK:")
+    assert source.index("COLLECTOR PRECHECK:") < source.index("AUTH READ-ONLY START")
+    assert "--pre-auth-precheck" in source
     assert "Write-DaxHostPreflight" in source
     assert "$script:runnerPhase = $preflightPhase" in source
     assert "'NETWORK' { 'NETWORK_UNCLASSIFIED_FAILURE' }" in source

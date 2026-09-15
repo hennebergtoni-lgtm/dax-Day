@@ -1,5 +1,17 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 collector-head overlay — 2026-09-15
+
+Head `9ae082ce094967cedc3ab6525173a68041f76965` supplied real host
+preflight truth but authenticated collection did not begin: the preserved
+`HEAD_MISMATCH` came from an unbound process-CWD Git query. The corrected
+collector checks its resolved exact-clone root with `git -C` and performs this
+plus runtime/namespace/credential shape before AUTH wording.
+
+No broker-readiness gate advances until the replacement evidence bundle exists.
+Counts remain **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED**;
+M01 IN_PROGRESS, DEMO NOT READY, NONE/false, no order, LIVE prohibited.
+
 ## Step2238 collector-contract overlay — 2026-09-15
 
 Real-host preflight is now materially proven: head

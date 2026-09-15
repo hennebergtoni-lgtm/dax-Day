@@ -1,5 +1,18 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 exact-clone head handoff — authoritative (2026-09-15)
+
+The real `HEAD_MISMATCH` on
+`9ae082ce094967cedc3ab6525173a68041f76965` was valid domain evidence: the
+collector inherited a different checkout as CWD. The active `_head()` derives
+the exact clone from `Path(__file__).resolve()` and invokes `git -C` there.
+Tests cover a different valid Git CWD and a non-Git CWD.
+
+The wrapper now emits `COLLECTOR PRECHECK` before any client construction and
+prints `AUTH READ-ONLY START` only after local HEAD/runtime/namespace/credential
+checks pass. Handoff remains one command and one SUMMARY; no manual diagnosis,
+retry or order.
+
 ## Step2238 authenticated collector handoff — authoritative (2026-09-15)
 
 The host preflight is real-host proven at 50/52 PASS with zero required failures
