@@ -1,3 +1,4 @@
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 # Step2238–2240 pre-DEMO readiness program
 
 ## Decision
@@ -11,7 +12,7 @@ WAITING_EXTERNAL**, and Step2240 is **IN_PROGRESS / BLOCKED**. M01 remains
 
 The implementation commit is
 
-`2e01303befe70b3720d9ed5b370aa03624b7599f`.
+`29805ca7aa7d8bb3695846aa9db9a247b27e7fda`.
 
 Effective safety state is unchanged:
 
