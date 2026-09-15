@@ -209,7 +209,8 @@ function Resolve-DaxHostPython {
                         $response = [pscustomobject]@{ ExitCode = $LASTEXITCODE; Lines = $lines }
                     }
                     $exitCode = Get-HostLaneProperty $response 'ExitCode' 'PYTHON_CANDIDATE_PROBE_SHAPE_INVALID' Integer
-                    $lines = @(Get-HostLaneProperty $response 'Lines' 'PYTHON_CANDIDATE_PROBE_SHAPE_INVALID' Enumerable)
+                    $rawLines = Get-HostLaneProperty $response 'Lines' 'PYTHON_CANDIDATE_PROBE_SHAPE_INVALID' Enumerable
+                    $lines = @($rawLines)
                     if ($lines.Count -eq 0) { $reason = 'PYTHON_CANDIDATE_PROBE_NO_OUTPUT' }
                     elseif ($lines.Count -ne 1 -or $lines[0] -isnot [string]) {
                         $reason = 'PYTHON_CANDIDATE_PROBE_OUTPUT_INVALID'
