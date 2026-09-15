@@ -1,27 +1,42 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
-## Resume Step2241 — finish internal V1 acceptance before host handoff (2026-09-15)
+## Step2241 handoff — internal V1 complete; external evidence only (2026-09-15)
 
-Status IN_PROGRESS / CI_PENDING. The recovered mandate is complete; do not ask
-for another implementation authorization. Start head is
-`aa11dc32fbd91c84edea19816e13fb6dc613a964`, branch `nextgen-bot-line-v1`, PR #109
-OPEN/UNMERGED, main `e0784ebfc11bee28475fd9c3385be661af58a738`.
+Accepted runtime head: `6acb5399c1a9f23def20ada9660e09e023fdf33e`.
+CI execution SHA: `39de0fad926a792e70ab17c0119477547d6b7a6e`; identical tree
+`b9fb2b5d194b6c049a8aff2bc495efe52d781ca7`. Start `aa11dc32fbd91c84edea19816e13fb6dc613a964`;
+branch `nextgen-bot-line-v1`, PR #109 OPEN/UNMERGED; main unchanged
+`e0784ebfc11bee28475fd9c3385be661af58a738`. Documentation commits do not create
+new runtime/host evidence. No unknown drift or destructive Git operation.
 
-Use `BOT_HELPER_KOLLEKTIV_V1_ACCEPTANCE.md` and the current code as the live
-handoff. Both frozen local helper passes have 899 passed / 1 skipped; the full suite has
-3427 passed / 8 skipped / 0 failed. Verify all three CI runs/native Windows parity
-and complete mandatory browser acceptance. Earlier second-pass fixture defects
-are repaired and retested. The local browser skip must not become PASS or an
-external host gate by relabeling. Confirmed raw evidence and historical records stay intact.
+Recovered mandate section11 and current user autonomy addendum applied:
+MANDATE_RECOVERED=YES; T01_T15_PRESENT=YES; AUTONOMY_ADDENDUM_APPLIED=YES;
+IMPLEMENTATION_SCOPE=BOT_HELPER_KOLLEKTIV_V1_ONLY. Step2241 is the single new
+integer for this implementation, its repairs and acceptance.
 
-Only after those gates may the prepared one-call exact-final-head existing Windows
-collector handoff be released, with a new namespace. No endpoint series, routine
-ZIP-upload request, broker retry, new credential/channel or execution activation.
-A real automatic user-host transfer channel remains unproved. It blocks only its
-own lane. Step2238/2239/2240 and M01 are not silently closed by Step2241.
+Both acceptance passes: **916 PASS, 0 SKIP, 0 FAIL** in each of three green CIs:
+dax-bot-1x-ci #730, research-lab-ci #1514, windows-host-lane-ci #19. All T01–T15
+passed, including real Chromium at 390px, native Windows PS5.1 and PS7 parity.
+Full research CI **3450 passed / 1 skipped**; five conditional DB gates remain
+SKIPPED/external. Uploaded sanitized artifacts were downloaded, byte-hash checked
+and both reports inspected. **20 defects fixed; 0 open internal V1 defects.**
 
-Safety remains NONE/false, authorized SHADOW only, LIVE forbidden; frozen V11.2,
-CAND-001 and costs/risk/loss policy unchanged. Historical entries below are retained.
+See `BOT_HELPER_KOLLEKTIV_V1_ACCEPTANCE.md` for architecture/rights, per-group
+scope, defect ledger, exact CI/artifact references and the existing one-call
+final-head-bound Windows collector template. FOLLOW-UP WORK DEBT=EXTERNAL_ONLY:
+current user-host/provider evidence and a demonstrated authorized automatic host
+transfer channel remain external. No routine ZIP courier or endpoint series.
+Internal acceptance used 0 manual host actions, 0 manual transfers, 0 external user
+decisions. External handoff prepares 1 bundled host invocation; a channel access/
+configuration action is conditional on the existing authorized channel being absent.
+
+NONE/false, SHADOW only; DEMO/PAPER execution and LIVE remain unauthorized.
+V11.2, CAND-001 strategy/config, costs and risk/loss policy unchanged. Step2233/2237
+historical VERIFIED stands; 2238/2239 WAITING_EXTERNAL; 2240 BLOCKED; M01
+IN_PROGRESS; 27 gates remain 8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL /
+6 BLOCKED. F001–F100 unchanged: 53 GAP / 38 SYNTHETIC_ONLY / 9 WAITING_EXTERNAL.
+This is scoped technical V1 acceptance, not formal project acceptance or merge
+approval. Feature expansion stopped; no additional internal repair-WORK required.
 
 ## Active Step2238 handoff — eight-row post-login invariant (2026-09-15)
 
