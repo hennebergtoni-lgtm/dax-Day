@@ -121,7 +121,7 @@ function Invoke-DaxHostJsonProcess {
     param(
         [Parameter(Mandatory = $true)][string]$PythonPath,
         [Parameter(Mandatory = $true)][string]$ScriptPath,
-        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Arguments,
         [Parameter(Mandatory = $true)][string[]]$SafePayloadCodes,
         [hashtable]$Hooks = @{}
     )
