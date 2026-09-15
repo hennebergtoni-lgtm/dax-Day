@@ -17,7 +17,7 @@ from email.utils import parsedate_to_datetime
 from hashlib import sha256
 import json
 from math import isfinite
-from typing import Mapping, Protocol
+from typing import Callable, Mapping, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -33,6 +33,17 @@ _SAFE_ERROR_CODES = frozenset({
     "error.public-api.exceeded-api-key-allowance",
     "error.public-api.exceeded-account-historical-data-allowance",
     "error.invalid.daterange", "error.malformed.date", "invalid.input", "system.error",
+    "error.security.account-token-missing", "error.security.client-token-missing",
+    "error.security.oauth-token-invalid", "error.security.api-key-missing",
+    "endpoint.unavailable.for.api-key", "error.public-api.epic-not-found",
+    "error.trading.otc.instrument-not-found", "invalid.url",
+})
+_SESSION_INVALID_ERROR_CODES = frozenset({
+    "error.security.account-token-invalid",
+    "error.security.account-token-missing",
+    "error.security.client-token-invalid",
+    "error.security.client-token-missing",
+    "error.security.oauth-token-invalid",
 })
 
 
@@ -91,6 +102,60 @@ class IgReadObservation:
             or self.server_date_utc.utcoffset() is None
         ):
             raise ValueError("IG server date must be timezone-aware")
+
+
+@dataclass(frozen=True, slots=True)
+class IgReadinessRead:
+    """One sanitized Step2238 GET outcome plus an in-memory successful payload."""
+
+    resource: str
+    endpoint_family: str
+    status: str
+    reason_code: str
+    response_shape_status: str
+    request_started_at: datetime | None
+    response_observed_at: datetime | None
+    http_status_class: str | None
+    provider_error_code: str | None
+    request_id_fingerprint: str | None
+    server_date_utc: datetime | None
+    payload: Mapping[str, object] | None = field(default=None, repr=False)
+
+    def __post_init__(self) -> None:
+        if self.status not in {"PASS", "FAIL", "BLOCKED", "UNKNOWN"}:
+            raise ValueError("invalid IG readiness status")
+        if self.provider_error_code is not None and self.provider_error_code not in _SAFE_ERROR_CODES:
+            raise ValueError("unsafe IG provider error code")
+        if self.http_status_class not in {
+            None, "HTTP_1XX", "HTTP_2XX", "HTTP_3XX", "HTTP_4XX", "HTTP_5XX", "HTTP_OTHER"
+        }:
+            raise ValueError("invalid IG HTTP status class")
+        if self.request_id_fingerprint is not None and (
+            len(self.request_id_fingerprint) != 64
+            or any(value not in "0123456789abcdef" for value in self.request_id_fingerprint)
+        ):
+            raise ValueError("invalid IG request fingerprint")
+        for value in (self.request_started_at, self.response_observed_at, self.server_date_utc):
+            if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+                raise ValueError("IG readiness timestamps must be timezone-aware")
+        if (self.request_started_at is not None and self.response_observed_at is not None
+                and self.response_observed_at < self.request_started_at):
+            raise ValueError("IG readiness observation clock moved backwards")
+
+    def safe_view(self) -> dict[str, object]:
+        return {
+            "resource": self.resource,
+            "endpoint_family": self.endpoint_family,
+            "status": self.status,
+            "reason_code": self.reason_code,
+            "http_status_class": self.http_status_class,
+            "provider_error_code": self.provider_error_code,
+            "response_shape_status": self.response_shape_status,
+            "request_started_at_utc": None if self.request_started_at is None else self.request_started_at.isoformat(),
+            "response_observed_at_utc": None if self.response_observed_at is None else self.response_observed_at.isoformat(),
+            "request_id_fingerprint": self.request_id_fingerprint,
+            "server_date_utc": None if self.server_date_utc is None else self.server_date_utc.isoformat(),
+        }
 
 
 class JsonTransport(Protocol):
@@ -247,7 +312,7 @@ class IgDemoReadOnlyClient:
         return self._get_json("/positions", version="2")
 
     def working_orders(self) -> Mapping[str, object]:
-        return self._get_json("/workingorders", version="2")
+        return self._get_json("/working-orders", version="2")
 
     def market(self, epic: str) -> Mapping[str, object]:
         clean_epic = _clean_epic(epic)
@@ -267,8 +332,8 @@ class IgDemoReadOnlyClient:
                 raise ValueError(f"{name} must be timezone-aware")
         if to_utc <= from_utc:
             raise ValueError("account activity interval must be positive")
-        if type(page_size) is not int or not 1 <= page_size <= 500:
-            raise ValueError("page_size must be between 1 and 500")
+        if type(page_size) is not int or not 10 <= page_size <= 500:
+            raise ValueError("page_size must be between 10 and 500")
         payload = self._get_json(
             "/history/activity",
             version="3",
@@ -299,6 +364,122 @@ class IgDemoReadOnlyClient:
                 self._session_state = "QUERY_REQUIRED"
                 raise IgReadOnlyError("IG M5 history response remains paginated")
         return payload
+
+    def readiness_accounts(self) -> IgReadinessRead:
+        return self._readiness_get(
+            resource="ACCOUNTS", endpoint_family="ACCOUNTS_V1", path="/accounts",
+            version="1", shape=_shape_accounts,
+        )
+
+    def readiness_positions(self, resource: str) -> IgReadinessRead:
+        if resource not in {"POSITIONS_A", "POSITIONS_B"}:
+            raise ValueError("invalid readiness positions resource")
+        return self._readiness_get(
+            resource=resource, endpoint_family="POSITIONS_V2", path="/positions",
+            version="2", shape=_shape_positions,
+        )
+
+    def readiness_working_orders(self, resource: str) -> IgReadinessRead:
+        if resource not in {"WORKING_ORDERS_A", "WORKING_ORDERS_B"}:
+            raise ValueError("invalid readiness working-orders resource")
+        return self._readiness_get(
+            resource=resource, endpoint_family="WORKING_ORDERS_V2",
+            path="/working-orders", version="2", shape=_shape_working_orders,
+        )
+
+    def readiness_market_v4(self, epic: str) -> IgReadinessRead:
+        clean_epic = _clean_epic(epic)
+        return self._readiness_get(
+            resource="MARKET_V4", endpoint_family="MARKET_V4",
+            path=f"/markets/{clean_epic}", version="4", shape=_shape_market_v4,
+        )
+
+    def readiness_account_activity(
+        self, *, from_utc: datetime, to_utc: datetime, page_size: int = 500
+    ) -> IgReadinessRead:
+        for value, name in ((from_utc, "from_utc"), (to_utc, "to_utc")):
+            if value.tzinfo is None or value.utcoffset() is None:
+                raise ValueError(f"{name} must be timezone-aware")
+        if to_utc <= from_utc or type(page_size) is not int or not 10 <= page_size <= 500:
+            raise ValueError("invalid account activity bounds")
+        return self._readiness_get(
+            resource="ACTIVITY_HISTORY", endpoint_family="ACTIVITY_HISTORY_V3",
+            path="/history/activity", version="3", shape=_shape_activity,
+            query={
+                "from": from_utc.astimezone(timezone.utc).isoformat(),
+                "to": to_utc.astimezone(timezone.utc).isoformat(),
+                "detailed": "true", "pageSize": str(page_size),
+            },
+        )
+
+    def readiness_m5_prices(self, epic: str, *, max_bars: int = 40) -> IgReadinessRead:
+        clean_epic = _clean_epic(epic)
+        if isinstance(max_bars, bool) or not isinstance(max_bars, int) or not 1 <= max_bars <= 1000:
+            raise ValueError("max_bars must be an integer between 1 and 1000")
+        return self._readiness_get(
+            resource="M5_PRICES", endpoint_family="PRICES_V3",
+            path=f"/prices/{clean_epic}", version="3", shape=_shape_prices,
+            query={"resolution": "MINUTE_5", "max": str(max_bars), "pageSize": "0"},
+        )
+
+    def _readiness_get(
+        self,
+        *,
+        resource: str,
+        endpoint_family: str,
+        path: str,
+        version: str,
+        shape: Callable[[Mapping[str, object]], bool],
+        query: Mapping[str, str] | None = None,
+    ) -> IgReadinessRead:
+        """Execute one GET without retry; known independent failures stay observable."""
+        if self._session_state != "AUTHENTICATED":
+            return IgReadinessRead(
+                resource, endpoint_family, "BLOCKED", "IG_READ_AUTH_PRECONDITION_BLOCKED",
+                "NOT_EVALUATED", None, None, None, None, None, None,
+            )
+        started = datetime.now(timezone.utc)
+        try:
+            response = self._request(
+                method="GET", url=f"{self.base_url}{path}",
+                headers=self._auth_headers(version=version), query=query,
+                timeout_seconds=self.timeout_seconds,
+            )
+        except Exception:
+            observed = datetime.now(timezone.utc)
+            return IgReadinessRead(
+                resource, endpoint_family, "UNKNOWN",
+                f"IG_READ_{resource}_TRANSPORT_UNKNOWN", "NOT_OBSERVED",
+                started, observed, None, None, None, None,
+            )
+        observed = datetime.now(timezone.utc)
+        status_class = _http_status_class(response.status)
+        provider_code = _safe_provider_error(response.payload)
+        request_fingerprint = _header_fingerprint_or_none(response.headers, "X-REQUEST-ID")
+        server_date = _http_date_or_none(response.headers)
+        if not 200 <= response.status < 300:
+            if response.status == 401 or provider_code in _SESSION_INVALID_ERROR_CODES:
+                self._session_state = "QUERY_REQUIRED"
+            return IgReadinessRead(
+                resource, endpoint_family, "FAIL", f"IG_READ_{resource}_HTTP_FAILED",
+                "NOT_EVALUATED", started, observed, status_class, provider_code,
+                request_fingerprint, server_date,
+            )
+        if not isinstance(response.payload, Mapping) or not shape(response.payload):
+            return IgReadinessRead(
+                resource, endpoint_family, "FAIL",
+                f"IG_READ_{resource}_RESPONSE_SHAPE_INVALID", "INVALID",
+                started, observed, status_class, provider_code, request_fingerprint, server_date,
+            )
+        self._read_count += 1
+        self._read_observations.append(IgReadObservation(
+            resource=resource, request_started_at=started, response_observed_at=observed,
+            server_date_utc=server_date, request_id_fingerprint=request_fingerprint,
+        ))
+        return IgReadinessRead(
+            resource, endpoint_family, "PASS", "NONE", "VALID", started, observed,
+            status_class, provider_code, request_fingerprint, server_date, response.payload,
+        )
 
     def logout(self) -> None:
         if self._tokens is None:
@@ -455,3 +636,69 @@ def _header_fingerprint_or_none(
         if key.casefold() == name.casefold() and isinstance(value, str) and value:
             return sha256(value.encode()).hexdigest()
     return None
+
+
+def _safe_provider_error(payload: object) -> str | None:
+    if not isinstance(payload, Mapping):
+        return None
+    candidate = payload.get("errorCode")
+    return candidate if isinstance(candidate, str) and candidate in _SAFE_ERROR_CODES else None
+
+
+def _http_status_class(status: int) -> str:
+    return f"HTTP_{status // 100}XX" if 100 <= status <= 599 else "HTTP_OTHER"
+
+
+def _mapping_list(payload: Mapping[str, object], name: str) -> list[object] | None:
+    value = payload.get(name)
+    return value if isinstance(value, list) else None
+
+
+def _shape_accounts(payload: Mapping[str, object]) -> bool:
+    values = _mapping_list(payload, "accounts")
+    return values is not None and all(isinstance(value, Mapping) for value in values)
+
+
+def _shape_positions(payload: Mapping[str, object]) -> bool:
+    values = _mapping_list(payload, "positions")
+    return values is not None and all(
+        isinstance(value, Mapping)
+        and isinstance(value.get("position"), Mapping)
+        and isinstance(value.get("market"), Mapping)
+        for value in values
+    )
+
+
+def _shape_working_orders(payload: Mapping[str, object]) -> bool:
+    values = _mapping_list(payload, "workingOrders")
+    return values is not None and all(
+        isinstance(value, Mapping) and isinstance(value.get("workingOrderData"), Mapping)
+        for value in values
+    )
+
+
+def _shape_market_v4(payload: Mapping[str, object]) -> bool:
+    return all(isinstance(payload.get(name), Mapping) for name in (
+        "instrument", "dealingRules", "snapshot"
+    ))
+
+
+def _shape_activity(payload: Mapping[str, object]) -> bool:
+    metadata = payload.get("metadata")
+    activities = _mapping_list(payload, "activities")
+    return (activities is not None and all(isinstance(value, Mapping) for value in activities)
+            and isinstance(metadata, Mapping))
+
+
+def _shape_prices(payload: Mapping[str, object]) -> bool:
+    prices = _mapping_list(payload, "prices")
+    if (prices is None or not all(isinstance(value, Mapping) for value in prices)
+            or not isinstance(payload.get("metadata"), Mapping)):
+        return False
+    page_data = payload["metadata"].get("pageData")
+    if page_data is None:
+        return True
+    if not isinstance(page_data, Mapping):
+        return False
+    pages = page_data.get("totalPages")
+    return pages is None or (type(pages) is int and pages in (0, 1))

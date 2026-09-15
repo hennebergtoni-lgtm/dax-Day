@@ -228,7 +228,8 @@ $base = @{
     Arguments = @()
     SafePayloadCodes = @(
         'PREFLIGHT_REQUIRED_CHECK_FAILED',
-        'IG_SESSION_READ_FAILED_NO_RETRY'
+        'IG_SESSION_READ_FAILED_NO_RETRY',
+        'IG_READINESS_MATRIX_INCOMPLETE'
     )
 }
 Assert-Code 'HOST_LANE_PROCESS_START_FAILED' {
@@ -256,6 +257,19 @@ Assert-Code 'HOST_LANE_PROCESS_JSON_INVALID' {
 }
 Assert-Code 'HOST_LANE_PROCESS_RESULT_INVALID' {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{ ExitCode = 0; Lines = @('{"status":"PASS"}') } } }
+}
+try {
+    Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
+        ExitCode = 2
+        Lines = @('{"status":"BLOCKED","error_code":"IG_READINESS_MATRIX_INCOMPLETE","failure_phase":"READ","readiness_matrix_counts":{"PASS":6,"FAIL":1,"BLOCKED":0,"UNKNOWN":1},"execution_capability":"NONE","order_execution_enabled":false}')
+    } } }
+    throw 'ASSERT_NO_ERROR:READINESS_MATRIX_RESULT'
+} catch {
+    if ($_.Exception.Message -ne 'IG_READINESS_MATRIX_INCOMPLETE' -or
+        !$_.Exception.Data.Contains('HostLaneResult') -or
+        [int]$_.Exception.Data['HostLaneResult'].readiness_matrix_counts.PASS -ne 6) {
+        throw 'ASSERT_READINESS_MATRIX_RESULT_NOT_PRESERVED'
+    }
 }
 Assert-Code 'HOST_LANE_PROCESS_EXIT_MISMATCH' {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{ ExitCode = 2; Lines = @('{"status":"BLOCKED","error_code":"UNKNOWN","execution_capability":"NONE","order_execution_enabled":false}') } } }

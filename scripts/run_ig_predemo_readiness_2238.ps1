@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ExpectedHead,
     [string]$RepoRoot = 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck',
     [string]$RuntimeRoot = 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck',
-    [string]$Namespace = '.runtime/ig_predemo_readiness_2238_attempt_01',
+    [string]$Namespace = '.runtime/ig_predemo_readiness_2238_v2_attempt_01',
     [string]$CredentialsFile = 'C:\Users\Mandy\ig_demo.env',
     [string]$PythonExecutable = 'python'
 )
@@ -57,7 +57,8 @@ $SafeErrorCodes = @(
     'FRESH_START_FAILED', 'RESUME_FAILED', 'OPERATOR_FAILED',
     'SESSION_SETUP_FAILED', 'CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID',
     'IG_AUTHENTICATION_FAILED_NO_RETRY',
-    'IG_SESSION_READ_FAILED_NO_RETRY', 'IG_SESSION_CLEANUP_FAILED',
+    'IG_SESSION_READ_FAILED_NO_RETRY', 'IG_READINESS_MATRIX_INCOMPLETE',
+    'IG_SESSION_CLEANUP_FAILED',
     'CLOCK_INVALID_UTC', 'CLOCK_MOVED_BACKWARDS',
     'CLOCK_DISCONTINUITY', 'SAFETY_EXECUTION_CAPABILITY',
     'EVIDENCE_INVALID', 'EVIDENCE_PUBLICATION_FAILED', 'UNEXPECTED_FAILURE',
@@ -190,6 +191,46 @@ function Test-RunnerOwnedDeployment {
     }
 }
 
+function Write-IgReadinessMatrix {
+    param([Parameter(Mandatory = $true)]$Result)
+    try {
+        $property = $Result.PSObject.Properties['readiness_matrix']
+        if ($null -eq $property -or $null -eq $property.Value) { return }
+        $rows = @($property.Value)
+        if ($rows.Count -gt 8) { throw 'INVALID_COUNT' }
+        Write-Host ('IG READINESS MATRIX: rows={0}' -f $rows.Count)
+        foreach ($row in $rows) {
+            $resource = [string]$row.resource
+            $endpoint = [string]$row.endpoint_family
+            $status = [string]$row.status
+            $reason = [string]$row.reason_code
+            $httpClass = if ($null -eq $row.http_status_class) { 'NONE' } else { [string]$row.http_status_class }
+            $providerCode = if ($null -eq $row.provider_error_code) { 'NONE' } else { [string]$row.provider_error_code }
+            $shape = [string]$row.response_shape_status
+            $requestId = if ($null -eq $row.request_id_fingerprint) { 'NONE' } else { [string]$row.request_id_fingerprint }
+            $started = if ($null -eq $row.request_started_at_utc) { 'NONE' } else { [string]$row.request_started_at_utc }
+            $observed = if ($null -eq $row.response_observed_at_utc) { 'NONE' } else { [string]$row.response_observed_at_utc }
+            if ($resource -notmatch '^[A-Z][A-Z0-9_]*$' -or
+                $endpoint -notmatch '^[A-Z][A-Z0-9_]*$' -or
+                $status -notin @('PASS', 'FAIL', 'BLOCKED', 'UNKNOWN') -or
+                $reason -notmatch '^[A-Z][A-Z0-9_]*$' -or
+                $httpClass -notmatch '^(?:NONE|HTTP_[1-5]XX|HTTP_OTHER)$' -or
+                $providerCode -notmatch '^(?:NONE|[a-z0-9.-]+)$' -or
+                $shape -notmatch '^[A-Z][A-Z0-9_]*$' -or
+                $requestId -notmatch '^(?:NONE|[0-9a-f]{64})$' -or
+                $started -notmatch '^(?:NONE|[0-9T:+.-]+)$' -or
+                $observed -notmatch '^(?:NONE|[0-9T:+.-]+)$') {
+                throw 'INVALID_ROW'
+            }
+            Write-Host ('IG_READ: resource={0}; endpoint_family={1}; status={2}; reason_code={3}; http_status_class={4}; provider_error_code={5}; response_shape_status={6}; request_started_at_utc={7}; response_observed_at_utc={8}; request_id_fingerprint={9}' -f
+                $resource, $endpoint, $status, $reason, $httpClass, $providerCode,
+                $shape, $started, $observed, $requestId)
+        }
+    } catch {
+        Write-Host 'IG READINESS MATRIX: SANITIZED_SHAPE_INVALID'
+    }
+}
+
 function Invoke-Closeout {
     param([Parameter(Mandatory = $true)][string]$DeploymentRoot)
     try {
@@ -280,12 +321,17 @@ function Invoke-Closeout {
             throw
         }
         $script:runnerPhase = 'IG_SESSION'
-        Write-Host 'AUTH READ-ONLY START: one IG login; account; inventory bracket; market/economics; history; M5; cleanup'
+        Write-Host 'AUTH READ-ONLY START: one login; eight-resource readiness matrix; no retry; one cleanup'
         try {
-            return Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
+            $collectorResult = Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
                 -ScriptPath $collectorPath -Arguments $collectorArguments `
                 -SafePayloadCodes $SafeErrorCodes
+            Write-IgReadinessMatrix -Result $collectorResult
+            return $collectorResult
         } catch {
+            if ($_.Exception.Data.Contains('HostLaneResult')) {
+                Write-IgReadinessMatrix -Result $_.Exception.Data['HostLaneResult']
+            }
             try { $_.Exception.Data['FailurePhase'] = 'IG_SESSION' } catch { }
             throw
         }

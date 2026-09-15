@@ -63,7 +63,7 @@ def test_positions_and_working_orders_are_get_only_v2_inventory_reads() -> None:
     assert working_orders == {"workingOrders": []}
     assert [call["method"] for call in transport.calls] == ["POST", "GET", "GET"]
     assert transport.calls[1]["url"] == f"{IG_DEMO_BASE_URL}/positions"
-    assert transport.calls[2]["url"] == f"{IG_DEMO_BASE_URL}/workingorders"
+    assert transport.calls[2]["url"] == f"{IG_DEMO_BASE_URL}/working-orders"
     assert transport.calls[1]["headers"]["VERSION"] == "2"
     assert transport.calls[2]["headers"]["VERSION"] == "2"
     assert transport.calls[1]["body"] is None

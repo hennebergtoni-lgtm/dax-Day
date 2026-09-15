@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from typing import Mapping
 
 import pytest
@@ -309,3 +310,139 @@ def test_same_session_repeated_price_get_failure_does_not_relogin():
     assert not client.authenticated
     assert [call["method"] for call in transport.calls] == ["POST", "GET", "GET", "DELETE"]
     assert transport.calls[1]["headers"]["CST"] == transport.calls[2]["headers"]["CST"]
+
+
+def test_readiness_resource_contracts_use_official_versions_paths_and_shapes() -> None:
+    transport = FakeTransport([
+        _login_response(),
+        JsonResponse(200, {}, {"accounts": []}),
+        JsonResponse(200, {}, {"positions": []}),
+        JsonResponse(200, {}, {"workingOrders": []}),
+        JsonResponse(200, {}, {"instrument": {}, "dealingRules": {}, "snapshot": {}}),
+        JsonResponse(200, {}, {"activities": [], "metadata": {"paging": {}}}),
+        JsonResponse(200, {}, {"prices": [], "metadata": {"pageData": {"totalPages": 1}}}),
+        JsonResponse(200, {}, {"positions": []}),
+        JsonResponse(200, {}, {"workingOrders": []}),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    from datetime import datetime, timedelta, timezone
+    now = datetime(2026, 9, 15, tzinfo=timezone.utc)
+    results = [
+        client.readiness_accounts(),
+        client.readiness_positions("POSITIONS_A"),
+        client.readiness_working_orders("WORKING_ORDERS_A"),
+        client.readiness_market_v4("IX.D.DAX.IFMM.IP"),
+        client.readiness_account_activity(from_utc=now - timedelta(days=7), to_utc=now),
+        client.readiness_m5_prices("IX.D.DAX.IFMM.IP"),
+        client.readiness_positions("POSITIONS_B"),
+        client.readiness_working_orders("WORKING_ORDERS_B"),
+    ]
+    assert [item.status for item in results] == ["PASS"] * 8
+    assert [call["url"].removeprefix(IG_DEMO_BASE_URL) for call in transport.calls[1:]] == [
+        "/accounts", "/positions", "/working-orders", "/markets/IX.D.DAX.IFMM.IP",
+        "/history/activity", "/prices/IX.D.DAX.IFMM.IP", "/positions", "/working-orders",
+    ]
+    assert [call["headers"]["VERSION"] for call in transport.calls[1:]] == [
+        "1", "2", "2", "4", "3", "3", "2", "2",
+    ]
+    assert all(call["method"] == "GET" for call in transport.calls[1:])
+
+
+def test_readiness_http_failure_does_not_hide_independent_reads() -> None:
+    transport = FakeTransport([
+        _login_response(),
+        JsonResponse(500, {"X-REQUEST-ID": "private-request"}, {"errorCode": "system.error"}),
+        JsonResponse(200, {}, {"positions": []}),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    failed = client.readiness_accounts()
+    passed = client.readiness_positions("POSITIONS_A")
+    assert failed.status == "FAIL"
+    assert failed.reason_code == "IG_READ_ACCOUNTS_HTTP_FAILED"
+    assert failed.http_status_class == "HTTP_5XX"
+    assert failed.provider_error_code == "system.error"
+    assert failed.request_id_fingerprint and "private-request" not in repr(failed.safe_view())
+    assert passed.status == "PASS"
+    assert [call["method"] for call in transport.calls] == ["POST", "GET", "GET"]
+
+
+def test_readiness_401_blocks_later_reads_without_relogin_or_get() -> None:
+    transport = FakeTransport([
+        _login_response(),
+        JsonResponse(401, {}, {"errorCode": "error.security.client-token-invalid"}),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    failed = client.readiness_accounts()
+    blocked = client.readiness_positions("POSITIONS_A")
+    assert failed.status == "FAIL" and failed.http_status_class == "HTTP_4XX"
+    assert blocked.status == "BLOCKED"
+    assert blocked.reason_code == "IG_READ_AUTH_PRECONDITION_BLOCKED"
+    assert blocked.request_started_at is None
+    assert [call["method"] for call in transport.calls] == ["POST", "GET"]
+
+
+def test_readiness_shape_failure_is_sanitized_and_next_read_continues() -> None:
+    transport = FakeTransport([
+        _login_response(), JsonResponse(200, {}, {"accounts": "wrong"}),
+        JsonResponse(200, {}, {"positions": []}),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    invalid = client.readiness_accounts()
+    following = client.readiness_positions("POSITIONS_A")
+    assert invalid.status == "FAIL"
+    assert invalid.response_shape_status == "INVALID"
+    assert invalid.reason_code == "IG_READ_ACCOUNTS_RESPONSE_SHAPE_INVALID"
+    assert following.status == "PASS"
+
+
+def test_readiness_transport_unknown_is_not_retried_and_next_read_continues() -> None:
+    class Transport:
+        calls = 0
+        def request(self, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                return _login_response()
+            if self.calls == 2:
+                raise OSError("secret transport detail")
+            return JsonResponse(200, {}, {"positions": []})
+    transport = Transport()
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    unknown = client.readiness_accounts()
+    passed = client.readiness_positions("POSITIONS_A")
+    assert unknown.status == "UNKNOWN"
+    assert unknown.reason_code == "IG_READ_ACCOUNTS_TRANSPORT_UNKNOWN"
+    assert "secret" not in repr(unknown.safe_view())
+    assert passed.status == "PASS"
+    assert transport.calls == 3
+
+
+@pytest.mark.parametrize(
+    ("resource", "payload", "invoke"),
+    [
+        ("ACCOUNTS", {"accounts": {}}, lambda client, now: client.readiness_accounts()),
+        ("POSITIONS_A", {"positions": {}}, lambda client, now: client.readiness_positions("POSITIONS_A")),
+        ("WORKING_ORDERS_A", {"workingOrders": {}}, lambda client, now: client.readiness_working_orders("WORKING_ORDERS_A")),
+        ("MARKET_V4", {"instrument": {}, "snapshot": {}}, lambda client, now: client.readiness_market_v4("IX.D.DAX.IFMM.IP")),
+        ("ACTIVITY_HISTORY", {"activities": [], "metadata": []}, lambda client, now: client.readiness_account_activity(from_utc=now - timedelta(days=7), to_utc=now)),
+        ("M5_PRICES", {"prices": [], "metadata": {"pageData": {"totalPages": 2}}}, lambda client, now: client.readiness_m5_prices("IX.D.DAX.IFMM.IP")),
+        ("POSITIONS_B", {"positions": None}, lambda client, now: client.readiness_positions("POSITIONS_B")),
+        ("WORKING_ORDERS_B", {"workingOrders": None}, lambda client, now: client.readiness_working_orders("WORKING_ORDERS_B")),
+    ],
+)
+def test_each_readiness_resource_has_a_fixed_shape_failure(
+    resource, payload, invoke
+) -> None:
+    transport = FakeTransport([_login_response(), JsonResponse(200, {}, payload)])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    result = invoke(client, datetime(2026, 9, 15, tzinfo=timezone.utc))
+    assert result.resource == resource
+    assert result.status == "FAIL"
+    assert result.reason_code == f"IG_READ_{resource}_RESPONSE_SHAPE_INVALID"
+    assert result.response_shape_status == "INVALID"
+    assert len(transport.calls) == 2

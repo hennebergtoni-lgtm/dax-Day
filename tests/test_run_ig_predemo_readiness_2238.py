@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -84,6 +85,8 @@ def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -
     assert "dax_windows_host_lane.psm1" in source
     assert "dax_windows_python_runtime_probe.py" in owner
     assert "Invoke-DaxHostJsonProcess" in source
+    assert "Write-IgReadinessMatrix" in source
+    assert "request_started_at_utc" in source and "response_observed_at_utc" in source
     assert "clone --quiet --no-checkout --no-hardlinks" in source
     assert "checkout --quiet --detach" in source
     assert "'--runtime-root', $RuntimeRoot" in source
@@ -173,19 +176,34 @@ def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatc
             "account_context_fingerprint": "b" * 64,
             "timezone_offset_hours": 1.0,
         }
-        read_observations = ()
+        def result(self, resource, payload, endpoint):
+            return SimpleNamespace(
+                resource=resource, endpoint_family=endpoint, status="PASS",
+                reason_code="NONE", response_shape_status="VALID",
+                request_started_at=now, response_observed_at=now,
+                http_status_class="HTTP_2XX", provider_error_code=None,
+                request_id_fingerprint=None, server_date_utc=now, payload=payload,
+                safe_view=lambda: {
+                    "resource": resource, "endpoint_family": endpoint, "status": "PASS",
+                    "reason_code": "NONE", "response_shape_status": "VALID",
+                    "request_started_at_utc": now.isoformat(),
+                    "response_observed_at_utc": now.isoformat(),
+                    "http_status_class": "HTTP_2XX", "provider_error_code": None,
+                    "request_id_fingerprint": None, "server_date_utc": now.isoformat(),
+                },
+            )
 
-        def accounts(self):
-            return {"accounts": [{"accountType": "CFD", "currency": "EUR"}]}
+        def readiness_accounts(self):
+            return self.result("ACCOUNTS", {"accounts": [{"accountType": "CFD", "currency": "EUR"}]}, "ACCOUNTS_V1")
 
-        def positions(self):
-            return {"positions": []}
+        def readiness_positions(self, resource):
+            return self.result(resource, {"positions": []}, "POSITIONS_V2")
 
-        def working_orders(self):
-            return {"workingOrders": []}
+        def readiness_working_orders(self, resource):
+            return self.result(resource, {"workingOrders": []}, "WORKING_ORDERS_V2")
 
-        def market_v4(self, epic):
-            return {
+        def readiness_market_v4(self, epic):
+            return self.result("MARKET_V4", {
                 "instrument": {"epic": epic, "type": "INDICES", "unit": "CONTRACTS"},
                 "dealingRules": {
                     "minDealSize": {"value": 1, "unit": "POINTS"},
@@ -193,17 +211,17 @@ def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatc
                     "maxStopOrLimitDistance": {"value": 1000, "unit": "POINTS"},
                 },
                 "snapshot": {"marketStatus": "TRADEABLE", "bid": 100, "ask": 102},
-            }
+            }, "MARKET_V4")
 
-        def account_activity(self, **kwargs):
-            return {"activities": [], "metadata": {"paging": {}}}
+        def readiness_account_activity(self, **kwargs):
+            return self.result("ACTIVITY_HISTORY", {"activities": [], "metadata": {"paging": {}}}, "ACTIVITY_HISTORY_V3")
 
-        def m5_prices(self, epic, *, max_bars):
+        def readiness_m5_prices(self, epic, *, max_bars):
             start = datetime(2026, 9, 15, 8, 20, tzinfo=timezone.utc)
-            return {
+            return self.result("M5_PRICES", {
                 "prices": [_price_row(start + timedelta(minutes=5 * i), 100 + i) for i in range(9)],
                 "metadata": {"pageData": {"totalPages": 1}},
-            }
+            }, "PRICES_V3")
 
     monkeypatch.setattr(runner, "datetime", FixedClock)
     evidence, components = runner.collect(
@@ -211,15 +229,15 @@ def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatc
     )
     assert evidence["inventory"]["stable_across_bracket"] is True
     assert evidence["inventory"]["foreign_or_manual_inventory_present"] is False
-    assert evidence["inventory"]["history_scope_complete"] is True
+    assert evidence["history_scope"]["scope_complete"] is True
     assert evidence["market_data"]["fresh"] is True
     assert evidence["market"]["tick_size"] is None
     assert evidence["market"]["economics_verified"] is False
     assert evidence["execution_capability"] == "NONE"
     assert evidence["order_execution_enabled"] is False
-    assert set(components) == {
-        "ACCOUNT.json", "INVENTORY.json", "MARKET.json", "CLOCK.json", "HISTORY_SCOPE.json"
-    }
+    assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
+    assert set(components) == {"READ_MATRIX.json", "ACCOUNT.json", "INVENTORY.json",
+                               "MARKET.json", "CLOCK.json", "HISTORY_SCOPE.json"}
 
 
 def test_publication_is_exclusive_and_manifest_hashes_summary(tmp_path) -> None:
@@ -478,3 +496,49 @@ def test_logout_failure_after_successful_collection_is_structured_cleanup_failur
     assert result["failure_phase"] == "CLEANUP"
     assert client.logout_calls == 1
     assert "secret" not in lines[0]
+
+
+def test_incomplete_read_matrix_is_published_after_one_cleanup(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    class Client:
+        logout_calls = 0
+        def login(self):
+            return None
+        def logout(self):
+            self.logout_calls += 1
+
+    client = Client()
+    matrix = {
+        "status": "BLOCKED", "required_resources": 8,
+        "counts": {"PASS": 7, "FAIL": 1, "BLOCKED": 0, "UNKNOWN": 0},
+        "resources": [{"resource": "MARKET_V4", "status": "FAIL",
+                       "reason_code": "IG_READ_MARKET_V4_HTTP_FAILED"}],
+        "no_retry": True, "single_login": True, "single_cleanup": True,
+    }
+    evidence = {
+        "schema": runner.SCHEMA, "account": {}, "inventory": {}, "market": {},
+        "clock": {}, "history_scope": {}, "authenticated_read_matrix": matrix,
+        "dependent_conclusions": {"economics": "BLOCKED"},
+        "execution_capability": "NONE", "order_execution_enabled": False,
+    }
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py", "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path), "--namespace", ".runtime/attempt",
+    ])
+    monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
+    monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
+    monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
+    monkeypatch.setattr(runner, "collect", lambda *_, **__: (evidence, {}))
+    assert runner.main() == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["error_code"] == "IG_READINESS_MATRIX_INCOMPLETE"
+    assert result["readiness_matrix_counts"]["PASS"] == 7
+    assert result["cleanup_error_code"] == "NONE"
+    assert client.logout_calls == 1
+    published = json.loads((tmp_path / ".runtime/attempt/READ_MATRIX.json").read_text())
+    assert published["authenticated_read_matrix"] == matrix
+    summary = json.loads((tmp_path / ".runtime/attempt/SUMMARY.json").read_text())
+    assert summary["status"] == "BLOCKED"
+    assert summary["error_code"] == "IG_READINESS_MATRIX_INCOMPLETE"

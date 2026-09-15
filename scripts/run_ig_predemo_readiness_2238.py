@@ -15,7 +15,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-from typing import Mapping
+from typing import Any, Mapping
 from uuid import uuid4
 
 COLLECTOR_PATH = Path(__file__).resolve()
@@ -40,8 +40,8 @@ from ig_demo_readonly_probe import (  # noqa: E402
 )
 
 
-SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_V1"
-MANIFEST_SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_MANIFEST_V1"
+SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_V2"
+MANIFEST_SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_MANIFEST_V2"
 ERROR_CODES = {
     "HEAD_MISMATCH",
     "HEAD_QUERY_FAILED",
@@ -50,6 +50,7 @@ ERROR_CODES = {
     "CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID",
     "IG_AUTHENTICATION_FAILED_NO_RETRY",
     "IG_SESSION_READ_FAILED_NO_RETRY",
+    "IG_READINESS_MATRIX_INCOMPLETE",
     "IG_SESSION_CLEANUP_FAILED",
     "EVIDENCE_INVALID",
     "EVIDENCE_PUBLICATION_FAILED",
@@ -122,8 +123,8 @@ def _order_view(entry: object) -> dict[str, object]:
         "direction": order.get("direction")
         if order.get("direction") in {"BUY", "SELL"}
         else None,
-        "size": _num(order.get("size")),
-        "level": _num(order.get("level")),
+        "size": _num(order.get("orderSize")),
+        "level": _num(order.get("orderLevel")),
         "stop_distance": _num(order.get("stopDistance")),
         "limit_distance": _num(order.get("limitDistance")),
     }
@@ -248,64 +249,106 @@ def _observation_view(client: IgDemoReadOnlyClient) -> list[dict[str, object]]:
     ]
 
 
+def _result_payload(results: Mapping[str, Any], name: str) -> Mapping[str, object] | None:
+    result = results[name]
+    return result.payload if result.status == "PASS" else None
+
+
+def _matrix_summary(results: list[Any]) -> dict[str, object]:
+    counts = {status: sum(item.status == status for item in results)
+              for status in ("PASS", "FAIL", "BLOCKED", "UNKNOWN")}
+    return {
+        "status": "PASS" if counts["PASS"] == len(results) else "BLOCKED",
+        "required_resources": len(results),
+        "counts": counts,
+        "resources": [item.safe_view() for item in results],
+        "no_retry": True,
+        "single_login": True,
+        "single_cleanup": True,
+    }
+
+
+def _blocked(reason: str) -> dict[str, object]:
+    return {"status": "BLOCKED", "reason_code": reason}
+
+
+def _build_components(evidence: Mapping[str, object]) -> dict[str, dict[str, object]]:
+    inventory = evidence["inventory"]
+    assert isinstance(inventory, Mapping)
+    return {
+        "READ_MATRIX.json": {
+            "schema": SCHEMA,
+            "authenticated_read_matrix": evidence["authenticated_read_matrix"],
+            "dependent_conclusions": evidence["dependent_conclusions"],
+        },
+        "ACCOUNT.json": {"schema": SCHEMA, "account": evidence["account"]},
+        "INVENTORY.json": {"schema": SCHEMA, "inventory": inventory},
+        "MARKET.json": {"schema": SCHEMA, "market": evidence["market"]},
+        "CLOCK.json": {"schema": SCHEMA, "clock": evidence["clock"]},
+        "HISTORY_SCOPE.json": {"schema": SCHEMA, "history_scope": evidence["history_scope"]},
+    }
+
+
+def _finalize_evidence(
+    evidence: dict[str, object], *, cleanup_status: str, cleanup_error_code: str
+) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
+    evidence["session_cleanup"] = {
+        "status": cleanup_status,
+        "error_code": cleanup_error_code,
+        "attempts": 1,
+    }
+    evidence.pop("fingerprint", None)
+    _assert_credential_free(evidence)
+    evidence["fingerprint"] = _fingerprint(evidence)
+    return evidence, _build_components(evidence)
+
+
 def collect(
     client: IgDemoReadOnlyClient, *, epic: str, instrument_id: str, bars: int
 ) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
     """Collect all Step2238 evidence in one already-authenticated session."""
     started = datetime.now(timezone.utc)
     account = dict(client.login_context)
-    accounts = client.accounts()
-    positions_a = client.positions()
-    orders_a = client.working_orders()
-    market_raw = client.market_v4(epic)
-    market_observed = datetime.now(timezone.utc)
     history_from = started - timedelta(days=7)
-    history = client.account_activity(from_utc=history_from, to_utc=started)
-    price_started = datetime.now(timezone.utc)
-    prices = client.m5_prices(epic, max_bars=bars)
-    price_observed = datetime.now(timezone.utc)
-    positions_b = client.positions()
-    orders_b = client.working_orders()
+    reads = [
+        client.readiness_accounts(),
+        client.readiness_positions("POSITIONS_A"),
+        client.readiness_working_orders("WORKING_ORDERS_A"),
+        client.readiness_market_v4(epic),
+        client.readiness_account_activity(from_utc=history_from, to_utc=started),
+        client.readiness_m5_prices(epic, max_bars=bars),
+        client.readiness_positions("POSITIONS_B"),
+        client.readiness_working_orders("WORKING_ORDERS_B"),
+    ]
+    results = {item.resource: item for item in reads}
+    matrix = _matrix_summary(reads)
+    price_observed = results["M5_PRICES"].response_observed_at or datetime.now(timezone.utc)
 
-    inventory_a = _inventory_view(positions_a, orders_a)
-    inventory_b = _inventory_view(positions_b, orders_b)
-    stable = inventory_a["fingerprint"] == inventory_b["fingerprint"]
-    active_count = len(inventory_b["positions"]) + len(inventory_b["working_orders"])
-    paging = history.get("metadata")
-    next_page = None
-    if isinstance(paging, Mapping) and isinstance(paging.get("paging"), Mapping):
-        next_page = paging["paging"].get("next")
-    activities = history.get("activities")
-    history_shape_valid = isinstance(activities, list)
-    raw_prices = _list_field(prices, "prices")
-    closed_rows = closed_m5_price_rows(raw_prices, observed_at=price_started)
-    candles = _closed_candles(
-        prices,
-        epic=epic,
-        instrument_id=instrument_id,
-        observed_at=price_observed,
-        closed_as_of=price_started,
-    )
-    latest_close = datetime.fromisoformat(candles[-1]["close_time"])
-    market = _market_view(market_raw, epic=epic, observed_at=market_observed)
-    observations = _observation_view(client)
-    server_dates = [item["server_date_utc"] for item in observations if item["server_date_utc"]]
-    evidence: dict[str, object] = {
-        "schema": SCHEMA,
-        "environment": "IG_DEMO",
-        "instrument_id": instrument_id,
-        "collected_at_utc": price_observed.isoformat(),
-        "execution_capability": "NONE",
-        "order_execution_enabled": False,
-        "account": account
-        | {
-            "accounts": _safe_accounts(accounts),
-            "active_context_bound_to_single_session": True,
-        },
-        "market": market,
-        "inventory": {
-            "first": inventory_a,
-            "second": inventory_b,
+    accounts = _result_payload(results, "ACCOUNTS")
+    account_evidence: dict[str, object] = account | {
+        "accounts": [] if accounts is None else _safe_accounts(accounts),
+        "active_context_bound_to_single_session": True,
+        "resource_status": results["ACCOUNTS"].status,
+    }
+
+    inventory: dict[str, object]
+    try:
+        position_a = _result_payload(results, "POSITIONS_A")
+        order_a = _result_payload(results, "WORKING_ORDERS_A")
+        position_b = _result_payload(results, "POSITIONS_B")
+        order_b = _result_payload(results, "WORKING_ORDERS_B")
+        if any(value is None for value in (position_a, order_a, position_b, order_b)):
+            raise ValueError("inventory bracket resource incomplete")
+        assert position_a is not None and order_a is not None
+        assert position_b is not None and order_b is not None
+        inventory_a = _inventory_view(position_a, order_a)
+        inventory_b = _inventory_view(position_b, order_b)
+        stable = inventory_a["fingerprint"] == inventory_b["fingerprint"]
+        active_count = len(inventory_b["positions"]) + len(inventory_b["working_orders"])
+        inventory = {
+            "status": "PASS" if stable else "UNKNOWN",
+            "reason_code": "NONE" if stable else "INVENTORY_BRACKET_CHANGED",
+            "first": inventory_a, "second": inventory_b,
             "stable_across_bracket": stable,
             "stable_inventory_fingerprint": inventory_b["fingerprint"] if stable else None,
             "positions_count": len(inventory_b["positions"]),
@@ -313,57 +356,129 @@ def collect(
             "foreign_or_manual_inventory_present": active_count > 0,
             "atomic": False,
             "scope": "TWO_STABLE_READS_IN_ONE_AUTHENTICATED_SESSION",
-            "history_from_utc": history_from.isoformat(),
-            "history_to_utc": started.isoformat(),
-            "history_entries_count": len(activities) if history_shape_valid else None,
-            "history_scope_complete": history_shape_valid and not next_page,
-            "history_absolute_complete": False,
-        },
-        "clock": {
-            "local_clock": "UTC_AWARE",
-            "provider_server_dates_observed": len(server_dates),
-            "server_date_values_utc": server_dates,
-            "broker_timezone_offset_hours": account.get("timezone_offset_hours"),
-            "session_clock_verified": bool(server_dates)
-            and account.get("timezone_offset_hours") is not None,
-        },
-        "market_data": {
-            "raw_rows": len(raw_prices),
-            "closed_rows": len(closed_rows),
-            "latest_closed_m5": candles[-1],
+        }
+    except (AssertionError, KeyError, RuntimeError, TypeError, ValueError):
+        inventory = _blocked("INVENTORY_BRACKET_READS_INCOMPLETE") | {
+            "stable_across_bracket": False,
+            "stable_inventory_fingerprint": None,
+            "positions_count": None,
+            "working_orders_count": None,
+            "foreign_or_manual_inventory_present": None,
+            "atomic": False,
+            "scope": "UNPROVEN",
+        }
+
+    history = _result_payload(results, "ACTIVITY_HISTORY")
+    if history is None:
+        history_scope = _blocked("ACTIVITY_HISTORY_READ_INCOMPLETE") | {
+            "from_utc": history_from.isoformat(), "to_utc": started.isoformat(),
+            "entries_count": None, "scope_complete": False, "absolute_complete": False,
+        }
+    else:
+        paging = history.get("metadata")
+        next_page = paging.get("paging", {}).get("next") if isinstance(paging, Mapping) and isinstance(paging.get("paging"), Mapping) else None
+        activities = history["activities"]
+        assert isinstance(activities, list)
+        history_scope = {
+            "status": "PASS" if not next_page else "UNKNOWN",
+            "reason_code": "NONE" if not next_page else "ACTIVITY_HISTORY_NEXT_PAGE_PRESENT",
+            "from_utc": history_from.isoformat(), "to_utc": started.isoformat(),
+            "entries_count": len(activities), "scope_complete": not next_page,
+            "absolute_complete": False,
+        }
+
+    market_raw = _result_payload(results, "MARKET_V4")
+    try:
+        if market_raw is None:
+            raise ValueError("market read incomplete")
+        market = _market_view(market_raw, epic=epic, observed_at=price_observed)
+        market["status"] = "PASS"
+        market["reason_code"] = "NONE"
+    except (KeyError, RuntimeError, TypeError, ValueError):
+        market = _blocked("MARKET_ECONOMICS_READ_INCOMPLETE") | {
+            "epic": epic, "economics_verified": False,
+            "economics_blockers": ["MARKET_V4_UNAVAILABLE_OR_INVALID"],
+        }
+
+    prices = _result_payload(results, "M5_PRICES")
+    try:
+        if prices is None or results["M5_PRICES"].request_started_at is None:
+            raise ValueError("M5 read incomplete")
+        price_started = results["M5_PRICES"].request_started_at
+        raw_prices = _list_field(prices, "prices")
+        closed_rows = closed_m5_price_rows(raw_prices, observed_at=price_started)
+        candles = _closed_candles(
+            prices, epic=epic, instrument_id=instrument_id,
+            observed_at=price_observed, closed_as_of=price_started,
+        )
+        latest_close = datetime.fromisoformat(candles[-1]["close_time"])
+        market_data = {
+            "status": "PASS", "reason_code": "NONE", "raw_rows": len(raw_prices),
+            "closed_rows": len(closed_rows), "latest_closed_m5": candles[-1],
             "latest_closed_age_seconds": (price_observed - latest_close).total_seconds(),
             "freshness_max_age_seconds": DEFAULT_MAX_AGE.total_seconds(),
             "fresh": (price_observed - latest_close) <= DEFAULT_MAX_AGE,
-            "timestamp_semantics": "INTERVAL_START",
-            "freshness_basis": "TRUE_CLOSE_TIME",
+            "timestamp_semantics": "INTERVAL_START", "freshness_basis": "TRUE_CLOSE_TIME",
+        }
+    except (IndexError, KeyError, RuntimeError, TypeError, ValueError):
+        market_data = _blocked("M5_FRESHNESS_READ_INCOMPLETE") | {
+            "raw_rows": None, "closed_rows": None, "latest_closed_m5": None,
+            "latest_closed_age_seconds": None,
+            "freshness_max_age_seconds": DEFAULT_MAX_AGE.total_seconds(), "fresh": False,
+            "timestamp_semantics": "INTERVAL_START", "freshness_basis": "TRUE_CLOSE_TIME",
+        }
+
+    server_dates = [item.server_date_utc.isoformat() for item in reads if item.server_date_utc]
+    clock = {
+        "local_clock": "UTC_AWARE", "provider_server_dates_observed": len(server_dates),
+        "server_date_values_utc": server_dates,
+        "broker_timezone_offset_hours": account.get("timezone_offset_hours"),
+        "session_clock_verified": bool(server_dates) and account.get("timezone_offset_hours") is not None,
+    }
+    economics_status = (
+        "PASS" if market.get("economics_verified") is True
+        else "UNKNOWN" if market.get("status") == "PASS"
+        else "BLOCKED"
+    )
+    dependent = {
+        "inventory_stability": {
+            "status": inventory["status"], "reason_code": inventory["reason_code"]
         },
-        "read_observations": observations,
-        "provider_queries": len(observations),
+        "history_completeness": {
+            "status": history_scope["status"], "reason_code": history_scope["reason_code"]
+        },
+        "economics": {
+            "status": economics_status,
+            "reason_code": "NONE" if economics_status == "PASS" else (
+                "NATIVE_ECONOMICS_FIELDS_UNVERIFIED" if economics_status == "UNKNOWN"
+                else "MARKET_V4_READ_INCOMPLETE"
+            ),
+        },
+        "m5_freshness": {
+            "status": market_data["status"], "reason_code": market_data["reason_code"]
+        },
+    }
+    evidence: dict[str, object] = {
+        "schema": SCHEMA,
+        "environment": "IG_DEMO",
+        "instrument_id": instrument_id,
+        "collected_at_utc": price_observed.isoformat(),
+        "execution_capability": "NONE",
+        "order_execution_enabled": False,
+        "account": account_evidence,
+        "market": market,
+        "inventory": inventory,
+        "history_scope": history_scope,
+        "clock": clock,
+        "market_data": market_data,
+        "authenticated_read_matrix": matrix,
+        "dependent_conclusions": dependent,
+        "provider_queries": sum(item.request_started_at is not None for item in reads),
         "single_authenticated_session": True,
+        "session_cleanup": {"status": "PENDING", "error_code": "NONE", "attempts": 0},
         "unknowns_preserved": True,
     }
-    _assert_credential_free(evidence)
-    evidence["fingerprint"] = _fingerprint(evidence)
-    components = {
-        "ACCOUNT.json": {"schema": SCHEMA, "account": evidence["account"]},
-        "INVENTORY.json": {"schema": SCHEMA, "inventory": evidence["inventory"]},
-        "MARKET.json": {"schema": SCHEMA, "market": evidence["market"]},
-        "CLOCK.json": {"schema": SCHEMA, "clock": evidence["clock"]},
-        "HISTORY_SCOPE.json": {
-            "schema": SCHEMA,
-            "history_scope": {
-                key: evidence["inventory"][key]
-                for key in (
-                    "history_from_utc",
-                    "history_to_utc",
-                    "history_entries_count",
-                    "history_scope_complete",
-                    "history_absolute_complete",
-                )
-            },
-        },
-    }
-    return evidence, components
+    return _finalize_evidence(evidence, cleanup_status="PENDING", cleanup_error_code="NONE")
 
 
 def _head(repo_root: Path = REPO_ROOT) -> str:
@@ -386,6 +501,8 @@ def _publish(
     components: Mapping[str, Mapping[str, object]],
     *,
     head: str,
+    status: str = "SUCCESS",
+    error_code: str = "NONE",
 ) -> None:
     if namespace.exists():
         raise FileExistsError("namespace exists")
@@ -393,8 +510,8 @@ def _publish(
     staging = namespace.with_name(f".{namespace.name}.partial-{uuid4().hex}")
     staging.mkdir(exist_ok=False)
     summary = {
-        "status": "SUCCESS",
-        "error_code": "NONE",
+        "status": status,
+        "error_code": error_code,
         "namespace": str(namespace),
         "readiness_fingerprint": evidence["fingerprint"],
         "execution_capability": "NONE",
@@ -476,10 +593,30 @@ def main() -> int:
             client, epic=args.epic, instrument_id=args.instrument_id, bars=args.bars
         )
         phase = "CLEANUP"
-        client.logout()
+        cleanup_error_code = "NONE"
+        try:
+            client.logout()
+        except Exception:
+            cleanup_error_code = "IG_SESSION_CLEANUP_FAILED"
         client = None
+        evidence, components = _finalize_evidence(
+            evidence,
+            cleanup_status="PASS" if cleanup_error_code == "NONE" else "FAIL",
+            cleanup_error_code=cleanup_error_code,
+        )
+        matrix = evidence["authenticated_read_matrix"]
+        assert isinstance(matrix, Mapping)
+        matrix_complete = matrix.get("status") == "PASS"
+        result_code = (
+            "IG_READINESS_MATRIX_INCOMPLETE" if not matrix_complete
+            else cleanup_error_code
+        )
+        result_status = "SUCCESS" if result_code == "NONE" else "BLOCKED"
         phase = "PUBLISH"
-        _publish(namespace, evidence, components, head=head)
+        _publish(
+            namespace, evidence, components, head=head,
+            status=result_status, error_code=result_code,
+        )
     except Exception as exc:
         failed_phase = phase
         cleanup_error_code = "NONE"
@@ -507,14 +644,21 @@ def main() -> int:
             "order_execution_enabled": False,
         }, sort_keys=True))
         return 2
+    matrix_counts = matrix.get("counts") if isinstance(matrix.get("counts"), Mapping) else {}
     print(json.dumps({
-        "status": "SUCCESS",
-        "error_code": "NONE",
+        "status": result_status,
+        "error_code": result_code,
         "namespace": str(namespace),
+        "failure_phase": None if result_status == "SUCCESS" else (
+            "READ" if not matrix_complete else "CLEANUP"
+        ),
+        "cleanup_error_code": cleanup_error_code,
+        "readiness_matrix_counts": matrix_counts,
+        "readiness_matrix": matrix.get("resources"),
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }, sort_keys=True))
-    return 0
+    return 0 if result_status == "SUCCESS" else 2
 
 
 if __name__ == "__main__":
