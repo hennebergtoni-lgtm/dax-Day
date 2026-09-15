@@ -11,8 +11,15 @@ function Assert-Code {
         & $Operation
         throw "ASSERT_NO_ERROR:$Expected"
     } catch {
-        if ($_.Exception.Message -ne $Expected) {
-            throw "ASSERT_WRONG_ERROR:$Expected"
+        $observed = if ($_.Exception.Data.Contains('HostLaneCode')) {
+            [string]$_.Exception.Data['HostLaneCode']
+        } elseif ($_.Exception.Message -match '^[A-Z][A-Z0-9_]+$') {
+            [string]$_.Exception.Message
+        } else {
+            'CLASS_' + $_.Exception.GetType().Name
+        }
+        if ($observed -ne $Expected) {
+            throw "ASSERT_WRONG_ERROR:$Expected`:OBSERVED_$observed"
         }
     }
 }

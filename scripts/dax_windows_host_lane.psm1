@@ -16,7 +16,21 @@ $script:HostLaneCodes = @(
 
 function Throw-HostLaneCode {
     param([Parameter(Mandatory = $true)][string]$Code)
-    throw $Code
+    $exception = [System.Exception]::new($Code)
+    $exception.Data['HostLaneCode'] = $Code
+    throw $exception
+}
+
+function Test-HostLaneCode {
+    param([Parameter(Mandatory = $true)][object]$Exception)
+    try {
+        if ($Exception.Data.Contains('HostLaneCode')) {
+            return $script:HostLaneCodes -contains [string]$Exception.Data['HostLaneCode']
+        }
+        return $script:HostLaneCodes -contains [string]$Exception.Message
+    } catch {
+        return $false
+    }
 }
 
 function Get-HostLaneProperty {
@@ -98,7 +112,7 @@ function Resolve-DaxHostPython {
         if (!$exists) { Throw-HostLaneCode 'PYTHON_EXECUTABLE_NOT_FOUND' }
         return $paths[0]
     } catch {
-        if ($script:HostLaneCodes -contains $_.Exception.Message) { throw }
+        if (Test-HostLaneCode $_.Exception) { throw }
         Throw-HostLaneCode 'PYTHON_DISCOVERY_INTERNAL_FAILURE'
     }
 }
@@ -145,10 +159,11 @@ function Invoke-DaxHostJsonProcess {
             Throw-HostLaneCode 'HOST_LANE_PROCESS_EXIT_MISMATCH'
         }
         $exception = [System.Exception]::new($innerCode)
+        $exception.Data['HostLaneCode'] = $innerCode
         $exception.Data['HostLaneResult'] = $result
         throw $exception
     } catch {
-        if ($script:HostLaneCodes -contains $_.Exception.Message -or
+        if ((Test-HostLaneCode $_.Exception) -or
             $SafePayloadCodes -contains $_.Exception.Message) { throw }
         Throw-HostLaneCode 'HOST_LANE_INTERNAL_FAILURE'
     }
