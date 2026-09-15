@@ -1,7 +1,7 @@
 # Step2245 — Turbo V1.1 acceptance / continuity handoff
 
-Status: IMPLEMENTED / LOCAL TEST VERIFIED / CI PENDING.
-Do not interpret this pre-publication state as completed acceptance.
+Status: COMPLETED / CI VERIFIED — DEVELOPMENT PLANE ONLY.
+No new real-host/broker evidence or profitability/risk-promotion claim.
 
 ## Authoritative identities
 
@@ -9,7 +9,20 @@ Start: `9491a5922eac4abc6984618585778317dd249600`.
 Historical real-host head: `ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`.
 Main unchanged: `e0784ebfc11bee28475fd9c3385be661af58a738`.
 Branch `nextgen-bot-line-v1`, PR #109 OPEN / UNMERGED.
-Accepted implementation/CI and final continuity SHA are recorded after CI.
+Accepted implementation: `f4fbf15cd613d124849d5ce971dd84a8de6a6373`.
+GitHub PR CI checkout: `5dc94d1334e7b081d5a5fe263148e3610cf27a70`.
+Both have exact tree `a32cbfb4ba9651712e62cdbf56e7280bd721cd1d`; the latter
+is GitHub's temporary PR test merge, not a user/assistant branch merge.
+Local pre-publication commit `467b715c70a5b580f4ad14804016b5782a9e2507` has
+that same tested tree. Ordinary connected GitHub publication was used after
+native push lacked configured HTTP authentication; no credentials were extracted,
+no force update/merge/reset/stash/clean occurred. Remote parent is the exact start.
+
+Final continuity anchor is the commit containing this closeout, after all three
+required checks succeed for that PR head. Resolve the immutable SHA through
+PR #109/final handoff; a document cannot embed its own content-dependent SHA.
+The final delta is continuity documentation plus a terminal-pointer regression
+fix, not a new runtime/research build. No unexplained branch drift was accepted.
 
 ## Implemented scope
 
@@ -54,6 +67,44 @@ Acceptance/lessons publisher: `scripts/run_turbo_acceptance.py`.
   contract, stale/superseded evidence, holdout aliasing, independent source
   mismatch, journal restart and no-runtime-effect assertions passed.
 
+## Authoritative CI evidence for the implementation
+
+| Owner | Run | Result |
+| --- | --- | --- |
+| dax-bot-1x-ci #741 | [34995092253](https://github.com/hennebergtoni-lgtm/dax-Day/actions/runs/34995092253) | SUCCESS; V1 twice, 992 PASS / 0 SKIP each; candidate benchmark unchanged |
+| research-lab-ci #1525 | [34995092254](https://github.com/hennebergtoni-lgtm/dax-Day/actions/runs/34995092254) | SUCCESS; Turbo twice, 93 PASS / 0 SKIP each; V1 twice 992 PASS; full suite 3589 PASS / 1 SKIP |
+| windows-host-lane-ci #30 | [34995092260](https://github.com/hennebergtoni-lgtm/dax-Day/actions/runs/34995092260) | SUCCESS; Turbo twice, 93 PASS / 0 SKIP each; V1 twice 992 PASS; native PS5.1, PS7 and Chromium |
+
+Every Turbo pass executed all U01–U40 and all 15 historical lesson cases;
+every V1 pass reports T01–T15 PASS. Both passes have distinct namespace/date/
+regime and fault ordering. Independent raw-input G checks, state/hash guards,
+tamper/restart and multi-fault assertions are included, not inferred from totals.
+This is independent acceptance context/oracles, not independent market samples
+or an independent human author. The protected production sources are unchanged.
+
+Downloaded ZIP bytes were checked against GitHub's SHA256 digest. Source hashes
+matched the accepted tree: Linux byte-for-byte; all Windows differences matched
+exact LF-to-CRLF checkout materialization (20 Turbo files, 152 V1 files), with
+zero unexplained mismatch. Stable before/after snapshots passed in every report.
+V1's broader dirty-worktree flag includes generated artifacts; its complete
+source hash map is verified. Turbo's tracked-diff flag is false. Neither flag
+replaces source verification.
+
+| Artifact ID | Retained evidence | ZIP SHA256 |
+| --- | --- | --- |
+| 10406979676 | Turbo Linux pass1/pass2 + lessons | `6798f8dad0c44bb75b6dad81ae2f5ceee7e67548d3ab17347c0538558ed02ce6` |
+| 10406199746 | Turbo Windows pass1/pass2 + lessons | `933f6ac7fe2ca51a389092315dcf7808e29ad18d412e789da358d82fb01d63a6` |
+| 10407243343 | V1 Linux pass1/pass2 | `928c9e4c6a38d6be4c5ad86f9163fca2ff972cb78f625ba5df9e9d2cc0c7e768` |
+| 10406658397 | V1 Windows pass1/pass2 | `fe534023348464205dba7ae5cc66dbe56098ffaf748a59c7fb613f277124e8c7` |
+| 10407581130 | V1 focused pass1/pass2 | `dcd7a71ee8553432ad307476b1a66372d481de7f1ed440dd34da901981f6e87c` |
+
+Existing retention is 30 days; artifacts are not promised permanent. The
+versioned scenarios/contracts and run/hash references remain reproducible.
+No Neon connection/migration/restore proof is claimed: five existing main-only
+DB workflow gates were SKIPPED, not newly enabled. The broad suite's one skip
+is not a skipped Turbo/V1 acceptance assertion. Local browser/PowerShell gaps
+are superseded only for the actual CI host scopes above, not the real IG host.
+
 ## Internal findings repaired in this work unit
 
 Windows lock cleanup; incomplete typed persistence schema; future generation
@@ -61,7 +112,11 @@ time reuse; untimed post-decision metrics; mixed/unordered filter universe;
 content-renamed OOS reuse; unrelated G-to-opportunity projection; missing
 independent input reproduction; pooled OOS/WF sample inadequacy; owner-order/
 duplicate-delivery pattern handling; journal-bound G accounting; reconstruction
-head versus original real-host evidence head. No productive policy was changed.
+head versus original real-host evidence head. The closeout additionally repairs
+the continuity test's assumption that active must always exceed last-completed:
+equality is allowed only for a COMPLETED terminal pointer, never IN_PROGRESS,
+BLOCKED or WAITING_EXTERNAL. Four targeted assertions guard that distinction;
+the reserved next step is not activated. No productive policy was changed.
 
 ## Preserved readiness and safety
 
@@ -93,6 +148,11 @@ External/separately authorized gaps remain native broker economics/sizing/
 session evidence and Step2240 lifecycle/reconciliation. These are not Turbo
 implementation defects. Current-host freshness still requires a real observation
 when the later contract needs it; old history is not refreshed by lookup.
+
+Remaining internally solvable defects caused by this Turbo work: NONE KNOWN
+after both acceptance passes and adversarial repairs. Turbo follow-up debt:
+NONE. Overall project debt remains INTERNAL_REMAINING (unimplemented native
+Step2240) plus EXTERNAL_ONLY evidence gaps (Step2239), deliberately out of scope.
 
 ## Resume / stop
 

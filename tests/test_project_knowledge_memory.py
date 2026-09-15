@@ -1,6 +1,8 @@
 from pathlib import Path
 import re
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -21,6 +23,27 @@ def _step_value(text: str, label: str) -> int:
     match = re.search(rf"^- {re.escape(label)}: \*\*(\d+)\*\*$", text, re.MULTILINE)
     assert match, f"missing integer work-step pointer: {label}"
     return int(match.group(1))
+
+
+def _assert_step_order(last_completed: int, active: int, ledger: str) -> None:
+    assert active >= last_completed
+    if active == last_completed:
+        # A terminal pointer does not authorize starting the reserved next step.
+        assert re.search(r"^- Active step state: \*\*COMPLETED(?: / [^\n*]+)?\*\*$",
+                         ledger, re.MULTILINE)
+
+
+@pytest.mark.parametrize("state", ["IN_PROGRESS", "BLOCKED", "WAITING_EXTERNAL"])
+def test_equal_step_pointer_requires_completed_state(state: str) -> None:
+    with pytest.raises(AssertionError):
+        _assert_step_order(2245, 2245, f"- Active step state: **{state}**")
+    _assert_step_order(2244, 2245, f"- Active step state: **{state}**")
+
+
+def test_completed_pointer_does_not_require_next_step_activation() -> None:
+    _assert_step_order(2245, 2245, "- Active step state: **COMPLETED / CI VERIFIED**")
+    with pytest.raises(AssertionError):
+        _assert_step_order(2245, 2244, "- Active step state: **COMPLETED**")
 
 
 def test_canonical_engineering_memory_documents_exist() -> None:
@@ -53,7 +76,7 @@ def test_current_step_pointer_is_integer_sequential_and_keeps_500_audit() -> Non
     next_match = re.search(r"^- Next step after successful completion: \*\*(\d+)\*\*$", ledger, re.MULTILINE)
     audit = _step_value(ledger, "Next mandatory 500-step full audit")
 
-    assert active > last_completed
+    _assert_step_order(last_completed, active, ledger)
     if next_match:
         assert int(next_match.group(1)) == active + 1
     else:

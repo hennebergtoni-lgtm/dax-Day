@@ -1,19 +1,25 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
-## Current Step2245 — Turbo V1.1 implemented, CI acceptance pending (2026-09-15)
+## Current Step2245 — Turbo V1.1 COMPLETED / CI VERIFIED (2026-09-15)
 
 Start/continuity anchor `9491a5922eac4abc6984618585778317dd249600`; historical
 real-host evidence remains on `ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`.
 Development-only L/E/G, partial evidence, lessons, filter/autopsy/challenger
 governance and bounded Turbo-risk research are implemented. No runtime policy,
-strategy, execution or broker capability changed. Local U01–U40 passed twice;
-exact-head CI and final publication are pending, not inferred from local green.
+strategy, execution or broker capability changed. Accepted implementation head
+`f4fbf15cd613d124849d5ce971dd84a8de6a6373`, tree
+`a32cbfb4ba9651712e62cdbf56e7280bd721cd1d`: all three required CIs passed.
+U01–U40: 93 PASS per independent pass on Linux and Windows. V1 T01–T15:
+992 PASS per pass in all three CI owners. Full research: 3589 PASS / 1 SKIP.
+Actual Chromium, native PS5.1 and PS7 passed; these are CI, not broker evidence.
+The containing closeout commit becomes the next anchor after its required CI;
+resolve its exact SHA from PR #109 and the final handoff, not the historical host.
 
 Current handoff: `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`; architecture/reuse/rights:
 `BOT_HELPER_TURBO_V1_1_DESIGN.md`; acceptance: `BOT_HELPER_TURBO_V1_1_ACCEPTANCE.md`.
 Step2239 WAITING_EXTERNAL, Step2240 BLOCKED, M01 NOT READY, gates 8/0/13/6/0.
 Below, statements that Turbo has not started are historical/superseded only;
-historical real-host VERIFIED facts are preserved. STOP after this acceptance.
+historical real-host VERIFIED facts are preserved. STOP: 2246 is reserved only.
 
 ## Step2244 real-host evidence and gate closeout — authoritative (2026-09-15)
 

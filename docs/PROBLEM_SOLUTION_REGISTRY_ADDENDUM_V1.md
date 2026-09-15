@@ -77,7 +77,7 @@ This addendum continues the canonical PSR numbering without rewriting the large 
 
 ## PSR-019 — Learning evidence must not inherit runtime or promotion authority
 
-**Status:** IMPLEMENTED / ACCEPTANCE IN STEP2245 CLOSEOUT
+**Status:** COMPLETED / CI VERIFIED — EVIDENCE IN STEP2245 CLOSEOUT
 **Component:** development L/E/G / evidence, research and operator boundaries
 
 **Problem:** Partial real-host truths can disappear behind a composite blocker;

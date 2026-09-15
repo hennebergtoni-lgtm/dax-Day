@@ -67,3 +67,16 @@ explicit research envelope); no current productive limit is soft or changed.
 
 All tests are SYNTHETIC/REPLAY/LOCAL_TEST/CI evidence. They do not prove trading
 edge, actual account survival, execution readiness, or a new real-host run.
+
+## Acceptance result (additive; frozen expectations above unchanged)
+
+Implementation `f4fbf15cd613d124849d5ce971dd84a8de6a6373` passed both fresh
+processes in research-lab-ci #1525 and windows-host-lane-ci #30: **93 PASS,
+0 SKIP, all U01–U40 PASS**, each. Every pass also analyzed/journalled/restored
+the 15 historical dogfood cases. Distinct IDs, timestamps, data/regime slices
+and reversed fault ordering were verified in the retained JSON artifacts.
+V1 T01–T15 passed twice (992 PASS, 0 SKIP) in all three existing CI owners.
+Exact PR-head/CI-checkout/tree and artifact digest mapping is in
+`BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`. No statistical independence or second
+human reviewer is claimed: the second pass is fresh-process, changed-fixture,
+independent-oracle acceptance, supplemented by raw-input G reproduction.

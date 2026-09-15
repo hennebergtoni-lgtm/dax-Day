@@ -1,14 +1,15 @@
 # Current Work Step — DAX Daytrading Bot
 
-## Current: Step2245 Bot-Helper Turbo V1.1 — IN_PROGRESS (2026-09-15)
+## Current: Step2245 Bot-Helper Turbo V1.1 — COMPLETED / CI VERIFIED (2026-09-15)
 
-- Last completed whole-number step: **2244**
+- Last completed whole-number step: **2245**
 - Active whole-number step: **2245**
-- Active step state: **IN_PROGRESS / UNVERIFIED UNTIL TWO PASSES AND CI**
+- Active step state: **COMPLETED / CI VERIFIED**
 - Next step after successful completion: **2246**
 
-2246 is reserved only; user STOP applies after this build. Lower structured
-step pointers are historical snapshots, not authority to resume an older step.
+2245 remains the terminal pointer. 2246 is reserved only, NOT ACTIVATED; user
+STOP applies. Lower structured step pointers are historical snapshots, not
+authority to resume an older step or start another tranche.
 
 Implementation authorized from PR #109 anchor
 `9491a5922eac4abc6984618585778317dd249600`. Evidence head remains
@@ -22,10 +23,17 @@ remain the separate authoritative readiness truth. No broker action is authorize
 
 Current implementation/acceptance/handoff: `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`.
 Design: `BOT_HELPER_TURBO_V1_1_DESIGN.md`; frozen U01–U40:
-`BOT_HELPER_TURBO_V1_1_ACCEPTANCE.md`. Final CI acceptance is still pending.
+`BOT_HELPER_TURBO_V1_1_ACCEPTANCE.md`. Accepted implementation head
+`f4fbf15cd613d124849d5ce971dd84a8de6a6373`: all three required CIs green;
+U01–U40 twice on Linux and Windows (93 PASS per pass); V1 T01–T15 twice in all
+three owners (992 PASS per pass); research full suite 3589 PASS / 1 SKIP.
+This closeout commit is the new continuity anchor only after its own required
+CI succeeds; its exact SHA/checks are resolved from PR #109, never self-invented.
+No open Turbo implementation defect. Global native lifecycle work remains
+separately blocked/unimplemented; no broker or profitability proof is added.
 
 
-## Authoritative closeout pointer — Step2244 REAL-HOST VERIFIED (2026-09-15)
+## Historical closeout pointer — Step2244 REAL-HOST VERIFIED (2026-09-15)
 
 Start/evidence head:
 `ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`; branch

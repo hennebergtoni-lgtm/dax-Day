@@ -4,7 +4,9 @@
 
 The authoritative current handoff is `MASTERSTAND_LATEST.md` together with
 `CURRENT_WORK_STEP.md` and `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`. Turbo V1.1 is
-development-only and currently awaiting final CI acceptance. The start anchor
+development-only, COMPLETED / CI VERIFIED on implementation head
+`f4fbf15cd613d124849d5ce971dd84a8de6a6373`. Its closeout commit is the new
+continuity anchor after exact-head CI, not new provider evidence. The start anchor
 is `9491a5922eac4abc6984618585778317dd249600`; the real-host evidence head remains
 `ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`. No second real-host run or productive
 risk/strategy/execution change. Step2239 remains waiting external, Step2240
