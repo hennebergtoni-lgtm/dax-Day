@@ -19,7 +19,7 @@ function Assert-Code {
 
 $exists = { param($Path) return $true }
 $identityPath = { param($Path) return [string]$Path }
-$oneCommand = { param($Name) [pscustomobject]@{ Source = 'C:\Python311\python.exe' } }
+$oneCommand = { param($Name) [pscustomobject]@{ Source = '/python/python' } }
 
 Assert-Code 'PYTHON_COMMAND_DISCOVERY_FAILED' {
     Resolve-Step2238PythonRuntime python @{ GetCommand = { throw [InvalidOperationException]::new('secret') } }
@@ -61,51 +61,51 @@ function New-ParityHooks {
         ImportProbe = $ImportProbe
     }
 }
-$validVersion = { [pscustomobject]@{ ExitCode = 0; Lines = @('{"major":3,"minor":11,"executable":"C:\\Python311\\python.exe"}') } }
-$validImport = { [pscustomobject]@{ ExitCode = 0; Lines = @('{"daxlab_origin":"C:\\deploy\\src\\daxlab\\__init__.py","runner_origin":"C:\\deploy\\scripts\\run_ig_predemo_readiness_2238.py"}') } }
+$validVersion = { [pscustomobject]@{ ExitCode = 0; Lines = @('{"major":3,"minor":11,"executable":"/python/python"}') } }
+$validImport = { [pscustomobject]@{ ExitCode = 0; Lines = @('{"daxlab_origin":"/deploy/src/daxlab/__init__.py","runner_origin":"/deploy/scripts/run_ig_predemo_readiness_2238.py"}') } }
 
 Assert-Code 'PYTHON_DEPLOYMENT_PATH_BUILD_FAILED' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' $null @{}
+    Test-Step2238PythonRuntimeParity '/python/python' $null @{}
 }
 Assert-Code 'PYTHON_SCRIPT_CHECK_FAILED' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' @{
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' @{
         TestPath = { throw [IO.IOException]::new('secret') }
     }
 }
 Assert-Code 'PYTHON_VERSION_PROBE_LAUNCH_FAILED' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks { throw [InvalidOperationException]::new('secret') } $validImport)
 }
 Assert-Code 'PYTHON_VERSION_PROBE_RESPONSE_INVALID' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks { [pscustomobject]@{ Lines = @('{}') } } $validImport)
 }
 Assert-Code 'PYTHON_VERSION_PROBE_OUTPUT_INVALID' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks { [pscustomobject]@{ ExitCode = 0; Lines = @('{}', '{}') } } $validImport)
 }
 Assert-Code 'PYTHON_VERSION_PROBE_JSON_INVALID' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks { [pscustomobject]@{ ExitCode = 0; Lines = @('{') } } $validImport)
 }
 Assert-Code 'PYTHON_VERSION_IDENTITY_INVALID' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks { [pscustomobject]@{ ExitCode = 0; Lines = @('{"major":"3","minor":11,"executable":"x"}') } } $validImport)
 }
 Assert-Code 'PYTHON_IDENTITY_PATH_FAILED' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks $validVersion $validImport { throw [ArgumentException]::new('secret') })
 }
 Assert-Code 'PYTHON_IMPORT_PROBE_LAUNCH_FAILED' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks $validVersion { throw [InvalidOperationException]::new('secret') })
 }
 Assert-Code 'PYTHON_IMPORT_PROBE_JSON_INVALID' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks $validVersion { [pscustomobject]@{ ExitCode = 0; Lines = @('bad') } })
 }
 Assert-Code 'PYTHON_IMPORT_IDENTITY_INVALID' {
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks $validVersion { [pscustomobject]@{ ExitCode = 0; Lines = @('{"daxlab_origin":42}') } })
 }
 $pathCalls = 0
@@ -116,19 +116,19 @@ Assert-Code 'PYTHON_IMPORT_ORIGIN_PATH_FAILED' {
         if ($script:pathCalls -ge 3) { throw [ArgumentException]::new('secret') }
         return [string]$Path
     }
-    Test-Step2238PythonRuntimeParity 'C:\Python311\python.exe' 'C:\deploy' `
+    Test-Step2238PythonRuntimeParity '/python/python' '/deploy' `
         (New-ParityHooks $validVersion $validImport $countingPath)
 }
 
 $parity = [pscustomobject]@{
-    SourceRoot = 'C:\deploy\src'
-    ScriptsRoot = 'C:\deploy\scripts'
-    CollectorPath = 'C:\deploy\scripts\run_ig_predemo_readiness_2238.py'
+    SourceRoot = '/deploy/src'
+    ScriptsRoot = '/deploy/scripts'
+    CollectorPath = '/deploy/scripts/run_ig_predemo_readiness_2238.py'
 }
 $collectorArgs = @{
-    PythonPath = 'C:\Python311\python.exe'; Parity = $parity
+    PythonPath = '/python/python'; Parity = $parity
     ExpectedHead = ('a' * 40); Namespace = '.runtime/test'
-    CredentialsFile = 'C:\secret.env'; RuntimeRoot = 'C:\runtime'
+    CredentialsFile = '/secret.env'; RuntimeRoot = '/runtime'
     SafeErrorCodes = @('EVIDENCE_INVALID')
 }
 Assert-Code 'PYTHON_COLLECTOR_START_FAILED' {
