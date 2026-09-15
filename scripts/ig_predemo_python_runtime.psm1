@@ -6,12 +6,34 @@ function Throw-Step2238Code {
 }
 
 function Get-Step2238Property {
-    param([object]$Value, [string]$Name, [string]$ErrorCode)
+    param(
+        [object]$Value,
+        [string]$Name,
+        [string]$ErrorCode,
+        [ValidateSet('Any', 'String', 'Integer', 'Enumerable')]
+        [string]$ExpectedType = 'Any'
+    )
     try {
         if ($null -eq $Value) { Throw-Step2238Code $ErrorCode }
         $property = $Value.PSObject.Properties[$Name]
         if ($null -eq $property -or $null -eq $property.Value) {
             Throw-Step2238Code $ErrorCode
+        }
+        if ($ExpectedType -eq 'String' -and $property.Value -isnot [string]) {
+            Throw-Step2238Code $ErrorCode
+        }
+        if ($ExpectedType -eq 'Integer' -and $property.Value -isnot [int] -and
+            $property.Value -isnot [long]) {
+            Throw-Step2238Code $ErrorCode
+        }
+        if ($ExpectedType -eq 'Enumerable' -and
+            ($property.Value -is [string] -or
+             $property.Value -isnot [System.Collections.IEnumerable])) {
+            Throw-Step2238Code $ErrorCode
+        }
+        if ($ExpectedType -eq 'Enumerable') {
+            Write-Output -NoEnumerate $property.Value
+            return
         }
         return $property.Value
     } catch {
@@ -76,8 +98,9 @@ function Resolve-Step2238PythonRuntime {
             Throw-Step2238Code 'PYTHON_COMMAND_RESULT_NULL'
         }
         if ($commands.Count -ne 1) { Throw-Step2238Code 'PYTHON_COMMAND_RESULT_MULTIPLE' }
-        $source = Get-Step2238Property $commands[0] 'Source' 'PYTHON_COMMAND_IDENTITY_INVALID'
-        if ($source -isnot [string] -or [string]::IsNullOrWhiteSpace($source)) {
+        $source = Get-Step2238Property $commands[0] 'Source' `
+            'PYTHON_COMMAND_IDENTITY_INVALID' String
+        if ([string]::IsNullOrWhiteSpace($source)) {
             Throw-Step2238Code 'PYTHON_COMMAND_IDENTITY_INVALID'
         }
         $path = Get-Step2238FullPath $source 'PYTHON_EXECUTABLE_PATH_FAILED' $Hooks
@@ -117,9 +140,8 @@ function Convert-Step2238ProbeJson {
     param([object]$Response, [string]$Prefix)
     $responseCode = $Prefix + '_RESPONSE_INVALID'
     $outputCode = $Prefix + '_OUTPUT_INVALID'
-    $exitCode = Get-Step2238Property $Response 'ExitCode' $responseCode
-    $lines = Get-Step2238Property $Response 'Lines' $responseCode
-    if ($exitCode -isnot [int]) { Throw-Step2238Code $responseCode }
+    $exitCode = Get-Step2238Property $Response 'ExitCode' $responseCode Integer
+    $lines = Get-Step2238Property $Response 'Lines' $responseCode Enumerable
     if ($exitCode -ne 0) { Throw-Step2238Code ($Prefix + '_EXIT_FAILED') }
     if ($lines -is [string] -or $lines -isnot [System.Collections.IEnumerable]) {
         Throw-Step2238Code $outputCode
@@ -151,14 +173,9 @@ function Test-Step2238PythonRuntimeParity {
         $response = Invoke-Step2238Probe -Kind Version -PythonPath $PythonPath `
             -Program $versionProgram -Hooks $Hooks
         $version = Convert-Step2238ProbeJson -Response $response -Prefix 'PYTHON_VERSION_PROBE'
-        $major = Get-Step2238Property $version 'major' 'PYTHON_VERSION_IDENTITY_INVALID'
-        $minor = Get-Step2238Property $version 'minor' 'PYTHON_VERSION_IDENTITY_INVALID'
-        $executable = Get-Step2238Property $version 'executable' 'PYTHON_VERSION_IDENTITY_INVALID'
-        if (($major -isnot [int] -and $major -isnot [long]) -or
-            ($minor -isnot [int] -and $minor -isnot [long]) -or
-            $executable -isnot [string]) {
-            Throw-Step2238Code 'PYTHON_VERSION_IDENTITY_INVALID'
-        }
+        $major = Get-Step2238Property $version 'major' 'PYTHON_VERSION_IDENTITY_INVALID' Integer
+        $minor = Get-Step2238Property $version 'minor' 'PYTHON_VERSION_IDENTITY_INVALID' Integer
+        $executable = Get-Step2238Property $version 'executable' 'PYTHON_VERSION_IDENTITY_INVALID' String
         if ($major -ne 3 -or $minor -lt 11) { Throw-Step2238Code 'PYTHON_VERSION_UNSUPPORTED' }
         $expectedExecutable = Get-Step2238FullPath $PythonPath 'PYTHON_IDENTITY_PATH_FAILED' $Hooks
         $observedExecutable = Get-Step2238FullPath $executable 'PYTHON_IDENTITY_PATH_FAILED' $Hooks
@@ -178,8 +195,8 @@ print(json.dumps({"daxlab_origin": str(pathlib.Path(daxlab.__file__).resolve()),
         $response = Invoke-Step2238Probe -Kind Import -PythonPath $PythonPath `
             -Program $importProgram -Arguments @($sourceRoot, $scriptsRoot) -Hooks $Hooks
         $identity = Convert-Step2238ProbeJson -Response $response -Prefix 'PYTHON_IMPORT_PROBE'
-        $daxlabOrigin = Get-Step2238Property $identity 'daxlab_origin' 'PYTHON_IMPORT_IDENTITY_INVALID'
-        $runnerOrigin = Get-Step2238Property $identity 'runner_origin' 'PYTHON_IMPORT_IDENTITY_INVALID'
+        $daxlabOrigin = Get-Step2238Property $identity 'daxlab_origin' 'PYTHON_IMPORT_IDENTITY_INVALID' String
+        $runnerOrigin = Get-Step2238Property $identity 'runner_origin' 'PYTHON_IMPORT_IDENTITY_INVALID' String
         try {
             $separator = [System.IO.Path]::DirectorySeparatorChar
             $expectedDaxlab = Get-Step2238FullPath (Join-Path $sourceRoot 'daxlab') 'PYTHON_IMPORT_ORIGIN_PATH_FAILED' $Hooks
@@ -207,9 +224,9 @@ function Invoke-Step2238Collector {
           [string]$Namespace, [string]$CredentialsFile, [string]$RuntimeRoot,
           [string[]]$SafeErrorCodes, [hashtable]$Hooks = @{})
     try {
-        $sourceRoot = Get-Step2238Property $Parity 'SourceRoot' 'PYTHON_COLLECTOR_PATHS_INVALID'
-        $scriptsRoot = Get-Step2238Property $Parity 'ScriptsRoot' 'PYTHON_COLLECTOR_PATHS_INVALID'
-        $collectorPath = Get-Step2238Property $Parity 'CollectorPath' 'PYTHON_COLLECTOR_PATHS_INVALID'
+        $sourceRoot = Get-Step2238Property $Parity 'SourceRoot' 'PYTHON_COLLECTOR_PATHS_INVALID' String
+        $scriptsRoot = Get-Step2238Property $Parity 'ScriptsRoot' 'PYTHON_COLLECTOR_PATHS_INVALID' String
+        $collectorPath = Get-Step2238Property $Parity 'CollectorPath' 'PYTHON_COLLECTOR_PATHS_INVALID' String
         $bootstrap = @'
 import pathlib, runpy, sys
 src = pathlib.Path(sys.argv.pop(1)).resolve()
@@ -230,12 +247,8 @@ runpy.run_path(str(collector), run_name="__main__")
             }
         } catch { Throw-Step2238Code 'PYTHON_COLLECTOR_START_FAILED' }
         if ($null -eq $response) { Throw-Step2238Code 'PYTHON_COLLECTOR_RESPONSE_NULL' }
-        $exitCode = Get-Step2238Property $response 'ExitCode' 'PYTHON_COLLECTOR_RESPONSE_INVALID'
-        $lines = Get-Step2238Property $response 'Lines' 'PYTHON_COLLECTOR_RESPONSE_INVALID'
-        if ($exitCode -isnot [int]) { Throw-Step2238Code 'PYTHON_COLLECTOR_RESPONSE_INVALID' }
-        if ($lines -is [string] -or $lines -isnot [System.Collections.IEnumerable]) {
-            Throw-Step2238Code 'PYTHON_COLLECTOR_OUTPUT_TYPE_INVALID'
-        }
+        $exitCode = Get-Step2238Property $response 'ExitCode' 'PYTHON_COLLECTOR_RESPONSE_INVALID' Integer
+        $lines = Get-Step2238Property $response 'Lines' 'PYTHON_COLLECTOR_RESPONSE_INVALID' Enumerable
         $array = @($lines)
         if ($array.Count -eq 0) { Throw-Step2238Code 'PYTHON_COLLECTOR_NO_OUTPUT' }
         if ($array.Count -ne 1) { Throw-Step2238Code 'PYTHON_COLLECTOR_MULTILINE_OUTPUT' }
@@ -244,13 +257,10 @@ runpy.run_path(str(collector), run_name="__main__")
         }
         try { $result = $array[0] | ConvertFrom-Json -ErrorAction Stop }
         catch { Throw-Step2238Code 'PYTHON_COLLECTOR_JSON_INVALID' }
-        $status = Get-Step2238Property $result 'status' 'PYTHON_COLLECTOR_RESULT_INVALID'
-        $innerCode = Get-Step2238Property $result 'error_code' 'PYTHON_COLLECTOR_RESULT_INVALID'
-        if ($status -isnot [string] -or $innerCode -isnot [string]) {
-            Throw-Step2238Code 'PYTHON_COLLECTOR_RESULT_INVALID'
-        }
+        $status = Get-Step2238Property $result 'status' 'PYTHON_COLLECTOR_RESULT_INVALID' String
+        $innerCode = Get-Step2238Property $result 'error_code' 'PYTHON_COLLECTOR_RESULT_INVALID' String
         if ($exitCode -eq 0 -and $status -eq 'SUCCESS') {
-            $null = Get-Step2238Property $result 'namespace' 'PYTHON_COLLECTOR_RESULT_INVALID'
+            $null = Get-Step2238Property $result 'namespace' 'PYTHON_COLLECTOR_RESULT_INVALID' String
             return $result
         }
         if ($exitCode -eq 0 -or $SafeErrorCodes -notcontains $innerCode) {
