@@ -1,5 +1,21 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 IG HTTP semantics overlay — 2026-09-15
+
+Real-host head `8defee400ccb40f8bde379f0d3acfed316f9d07c` produced
+49/51 PASS. The sole required failure was the prior combined IG HTTPS check
+observing HTTP 5xx; DNS/TLS passed and no authenticated phase ran. Preflight V2
+now separates required `NETWORK_IG_HTTPS_TRANSPORT` from optional
+`IG_PROVIDER_HEALTH`. A received status proves transport only; provider health
+stays UNKNOWN absent a documented anonymous IG health endpoint and must be
+observed during authenticated read-only collection. A no-response remains
+BLOCKED and is attributed to NETWORK.
+
+This corrects evidence semantics but adds no broker truth. Gate counts remain
+**8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED**; Step2238 is
+IMPLEMENTED/WAITING_EXTERNAL, M01 IN_PROGRESS, DEMO NOT READY, NONE/false, no
+order, LIVE prohibited.
+
 ## Step2238 canonical Python selection overlay — 2026-09-15
 
 Implementation head: `30d9575fc8b8526e281a86c9717d19e9dda6b71b`;

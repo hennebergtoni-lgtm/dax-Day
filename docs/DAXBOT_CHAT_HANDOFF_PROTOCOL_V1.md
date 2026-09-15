@@ -1,5 +1,23 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 IG HTTP handoff — authoritative (2026-09-15)
+
+The 49/51 real-host result on
+`8defee400ccb40f8bde379f0d3acfed316f9d07c` is historical evidence: the only
+required failure was the combined IG HTTPS check observing HTTP 5xx after DNS
+and TLS passed. No authentication or broker access occurred.
+
+The active V2 contract has 52 checks. Treat
+`NETWORK_IG_HTTPS_TRANSPORT=PASS` as transport evidence only;
+`IG_PROVIDER_HEALTH=UNKNOWN` is expected before the one authenticated read-only
+flow because IG has no documented anonymous health endpoint. Never promote a
+5xx to application health and never block transport merely because a valid HTTP
+response is 5xx. No HTTP response remains a required NETWORK failure. Use the
+payload's derived `failure_phase`; do not infer PYTHON from runner chronology.
+
+Handoff requires one exact-final-head invocation only. Step2238 remains
+IMPLEMENTED/WAITING_EXTERNAL; NONE/false; no order; LIVE prohibited.
+
 ## Step2238 canonical Python runtime handoff — authoritative (2026-09-15)
 
 Runtime-selection implementation head:

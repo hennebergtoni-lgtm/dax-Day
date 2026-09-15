@@ -1,5 +1,26 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 IG HTTP transport semantics — authoritative (2026-09-15)
+
+Real Windows head `8defee400ccb40f8bde379f0d3acfed316f9d07c`
+completed 49/51 checks. The sole required failure was the old combined
+`NETWORK_IG_HTTPS=HTTP_5XX`; DNS and TLS, plus Python/imports/credentials/
+filesystem/Git/evidence/safety, passed. No login, broker query or order occurred.
+
+The old check conflated an observed HTTP response with application health. The
+V2 preflight now has 52 rows: required `NETWORK_IG_HTTPS_TRANSPORT` passes for
+any syntactically valid HTTP status class, while optional `IG_PROVIDER_HEALTH`
+remains `UNKNOWN` because IG documents the DEMO base and authenticated REST
+resources but no anonymous health endpoint. A missing HTTP response still
+blocks as NETWORK; a 5xx is never provider-health GREEN. Failure summaries now
+derive `failure_phase` from required failed dimensions instead of retaining the
+Python-launch phase.
+
+Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL** for one exact-final-head
+Windows run. M01 remains **IN_PROGRESS**; readiness remains **8 VERIFIED / 0
+IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED**. NONE/false, no order and the
+LIVE prohibition remain binding.
+
 ## Step2238 canonical Windows Python selection — authoritative (2026-09-15)
 
 Runtime-selection code head:

@@ -1,9 +1,10 @@
 """Credential-free, aggregate Windows host-lane preflight.
 
 This module performs only local capability checks, credential *shape* checks,
-and unauthenticated DNS/TLS handshakes.  It never logs credential values and
-never creates an IG session.  Results are published as a hash-bound diagnostic
-bundle when the runtime root is writable.
+and unauthenticated DNS/TLS/HTTP transport probes.  An HTTP response is never
+treated as IG application-health evidence.  It never logs credential values or
+creates an IG session.  Results are published as a hash-bound diagnostic bundle
+when the runtime root is writable.
 """
 from __future__ import annotations
 
@@ -38,8 +39,8 @@ from ig_demo_credential_contract import (  # noqa: E402
 )
 
 
-SCHEMA = "DAX_WINDOWS_HOST_PREFLIGHT_V1"
-MANIFEST_SCHEMA = "DAX_WINDOWS_HOST_PREFLIGHT_MANIFEST_V1"
+SCHEMA = "DAX_WINDOWS_HOST_PREFLIGHT_V2"
+MANIFEST_SCHEMA = "DAX_WINDOWS_HOST_PREFLIGHT_MANIFEST_V2"
 STATUSES = frozenset({"PASS", "FAIL", "BLOCKED", "UNKNOWN", "NOT_REQUIRED"})
 SAFE_EXCEPTION_CLASSES = frozenset({
     "FileNotFoundError", "PermissionError", "TimeoutError", "OSError",
@@ -90,7 +91,8 @@ CHECK_FAILURE_CODES: dict[str, str] = {
     "NETWORK_GITHUB_HTTPS": "NETWORK_GITHUB_HTTPS_FAILED",
     "NETWORK_IG_DNS": "NETWORK_IG_DNS_FAILED",
     "NETWORK_IG_TLS": "NETWORK_IG_TLS_FAILED",
-    "NETWORK_IG_HTTPS": "NETWORK_IG_HTTPS_FAILED",
+    "NETWORK_IG_HTTPS_TRANSPORT": "NETWORK_IG_HTTPS_TRANSPORT_FAILED",
+    "IG_PROVIDER_HEALTH": "IG_PROVIDER_HEALTH_NO_PUBLIC_ENDPOINT",
     "NETWORK_PROXY": "NETWORK_PROXY_PRESENT",
     "CREDENTIAL_FILE": "CREDENTIAL_FILE_UNAVAILABLE",
     "CREDENTIAL_ENCODING": "CREDENTIAL_ENCODING_INVALID",
@@ -435,9 +437,9 @@ def collect(args: argparse.Namespace) -> dict[str, object]:
                "NO_THIRD_PARTY_DEPENDENCY", "NOT_REQUIRED", required=False)
     _project_import_checks(matrix, deployment_root)
 
-    for host, prefix, url in (
-        ("github.com", "GITHUB", "https://github.com/"),
-        ("demo-api.ig.com", "IG", "https://demo-api.ig.com/gateway/deal/"),
+    for host, prefix in (
+        ("github.com", "GITHUB"),
+        ("demo-api.ig.com", "IG"),
     ):
         matrix.run("NETWORK", f"NETWORK_{prefix}_DNS", "DNS_RESOLUTION_PASS",
                    lambda host=host: _dns(host), predicate=lambda value: value > 0,
@@ -445,10 +447,37 @@ def collect(args: argparse.Namespace) -> dict[str, object]:
         matrix.run("NETWORK", f"NETWORK_{prefix}_TLS", "TLS_HANDSHAKE_PASS",
                    lambda host=host: _tls(host),
                    predicate=lambda value: value.startswith("TLS"), observed=lambda value: value)
-        matrix.run("NETWORK", f"NETWORK_{prefix}_HTTPS", "HTTPS_STACK_REACHABLE",
-                   lambda url=url: _https(url),
-                   predicate=lambda value: value in {"HTTP_2XX", "HTTP_3XX", "HTTP_4XX"},
-                   observed=lambda value: value)
+    matrix.run(
+        "NETWORK", "NETWORK_GITHUB_HTTPS", "HTTP_USABLE_RESPONSE",
+        lambda: _https("https://github.com/"),
+        predicate=lambda value: value in {"HTTP_2XX", "HTTP_3XX", "HTTP_4XX"},
+        observed=lambda value: value,
+    )
+    ig_http = matrix.run(
+        "NETWORK", "NETWORK_IG_HTTPS_TRANSPORT", "HTTP_RESPONSE_OBSERVED",
+        lambda: _https("https://demo-api.ig.com/gateway/deal/"),
+        predicate=lambda value: value in {
+            "HTTP_1XX", "HTTP_2XX", "HTTP_3XX", "HTTP_4XX", "HTTP_5XX",
+        },
+        observed=lambda value: value,
+    )
+    if ig_http is None:
+        matrix.add(
+            "NETWORK", "IG_PROVIDER_HEALTH", "BLOCKED",
+            "IG_PROVIDER_HEALTH_TRANSPORT_BLOCKED", "HTTP_TRANSPORT_BLOCKED",
+            "AUTHENTICATED_READ_ONLY_OBSERVATION_REQUIRED", required=False,
+        )
+    else:
+        # IG documents the DEMO base URL and authenticated REST resources, but
+        # no anonymous health endpoint.  A response from the unauthenticated
+        # base URL proves HTTP transport only; it cannot establish application
+        # readiness, regardless of its status class.
+        matrix.add(
+            "NETWORK", "IG_PROVIDER_HEALTH", "UNKNOWN",
+            CHECK_FAILURE_CODES["IG_PROVIDER_HEALTH"],
+            f"UNAUTHENTICATED_BASE_RESPONSE={ig_http}",
+            "AUTHENTICATED_READ_ONLY_OBSERVATION_REQUIRED", required=False,
+        )
     proxy_names = sorted(name for name in os.environ if name.casefold() in {
         "http_proxy", "https_proxy", "all_proxy", "no_proxy"
     })
@@ -493,12 +522,23 @@ def collect(args: argparse.Namespace) -> dict[str, object]:
                ), observed=lambda value: value)
 
     counts = {status: sum(item.status == status for item in matrix.checks) for status in STATUSES}
+    failure_dimensions = sorted({
+        item.dimension for item in matrix.checks
+        if item.required and item.status not in {"PASS", "NOT_REQUIRED"}
+    })
+    failure_phase = (
+        "NONE" if not failure_dimensions
+        else failure_dimensions[0] if len(failure_dimensions) == 1
+        else "PREFLIGHT"
+    )
     return {
         "schema": SCHEMA,
         "status": "PASS" if matrix.sufficient else "BLOCKED",
         "error_code": "NONE" if matrix.sufficient else "PREFLIGHT_REQUIRED_CHECK_FAILED",
         "checks": [asdict(item) for item in matrix.checks],
         "counts": counts,
+        "failure_phase": failure_phase,
+        "failure_dimensions": failure_dimensions,
         "host_fingerprint": sha256(platform.node().encode()).hexdigest(),
         "expected_head": args.expected_head,
         "linux_worker": "NOT_REQUIRED_FOR_REAL_HOST",
@@ -571,6 +611,8 @@ def main(argv: Iterable[str] | None = None) -> int:
             payload = dict(payload)
             payload["status"] = "BLOCKED"
             payload["error_code"] = "EVIDENCE_PREFLIGHT_PUBLICATION_FAILED"
+            payload["failure_phase"] = "EVIDENCE"
+            payload["failure_dimensions"] = ["EVIDENCE"]
             payload["publication_exception_class"] = _safe_exception(exc)
             namespace, fingerprint = None, None
         result = dict(payload)
@@ -581,6 +623,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             "schema": SCHEMA, "status": "BLOCKED",
             "error_code": "PREFLIGHT_INTERNAL_FAILURE",
             "exception_class": _safe_exception(exc), "checks": [],
+            "failure_phase": "PREFLIGHT", "failure_dimensions": ["PREFLIGHT"],
             "execution_capability": "NONE", "order_execution_enabled": False,
         }
     print(json.dumps(result, sort_keys=True, ensure_ascii=True))

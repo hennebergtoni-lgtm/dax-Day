@@ -1,5 +1,40 @@
 # Step2238 Windows host-lane audit
 
+## IG HTTPS semantic closeout — 2026-09-15
+
+The real run at `8defee400ccb40f8bde379f0d3acfed316f9d07c`
+proved 49/51 checks. Only the former `NETWORK_IG_HTTPS` row failed with
+`HTTP_5XX`; separate IG DNS/TLS checks passed. Python, imports, credentials,
+filesystem, Git, evidence and safety also passed. The authenticated phase was
+correctly not entered.
+
+Root cause: `_https()` correctly normalized `HTTPError` to a status class, but
+the matrix accepted only 2xx–4xx and called that mixed result
+`HTTPS_STACK_REACHABLE`. That confused transport reachability with provider
+application health. IG's published REST guide/reference identifies the DEMO
+base URL and authentication requirements but no supported anonymous health
+endpoint.
+
+Preflight schema V2/manifest V2 therefore contains 52 rows:
+
+| Check | Required | Meaning on HTTP 5xx |
+|---|---:|---|
+| `NETWORK_IG_DNS` | yes | Independent name-resolution truth |
+| `NETWORK_IG_TLS` | yes | Independent TLS-handshake truth |
+| `NETWORK_IG_HTTPS_TRANSPORT` | yes | PASS: an HTTP response was received |
+| `IG_PROVIDER_HEALTH` | no | UNKNOWN: base response is not a health contract |
+
+Connection errors with no HTTP response still fail the transport row and block
+authentication. A 5xx is not converted into provider-health PASS; the single
+authenticated read-only session remains responsible for application truth. The
+result now carries `failure_dimensions` and derives `failure_phase` as NONE, a
+sole dimension such as NETWORK, or aggregate PREFLIGHT. Publication failures
+override it to EVIDENCE. No secrets, login, retry or dealing behavior were
+added.
+
+Step2238 remains IMPLEMENTED/WAITING_EXTERNAL for one exact-final-head run;
+NONE/false and LIVE prohibition remain unchanged.
+
 ## Canonical Windows Python runtime selection — 2026-09-15
 
 Code head `30d9575fc8b8526e281a86c9717d19e9dda6b71b` owns the selection

@@ -1,5 +1,22 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: IG transport semantics (2026-09-15)
+
+Historical real-host result at head
+`8defee400ccb40f8bde379f0d3acfed316f9d07c`: 49/51 PASS, only old
+`NETWORK_IG_HTTPS` failed with `HTTP_5XX`; DNS/TLS and every other named host
+dimension passed. The lane correctly performed no IG login or broker action.
+
+Use only the new final-head runner. Its 52-row V2 matrix separates required HTTP
+transport from optional provider health. Any received HTTP status proves the
+former; it never proves the latter because no documented unauthenticated IG
+health resource exists. A true no-response remains fail-closed. Summary phase
+comes from failed required dimensions, so this class reports NETWORK, not
+PYTHON. Return the single SUMMARY/evidence result; request no manual commands.
+
+Step2238 remains IMPLEMENTED/WAITING_EXTERNAL, readiness 8/0/13/6, M01
+IN_PROGRESS, NONE/false, no order, LIVE prohibited.
+
 ## Resume: canonical Windows Python selection (2026-09-15)
 
 Runtime owner head: `30d9575fc8b8526e281a86c9717d19e9dda6b71b`;

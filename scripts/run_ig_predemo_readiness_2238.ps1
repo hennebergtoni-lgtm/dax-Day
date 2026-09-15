@@ -36,7 +36,10 @@ $SafeErrorCodes = @(
     'PREFLIGHT_INTERNAL_FAILURE', 'EVIDENCE_PREFLIGHT_PUBLICATION_FAILED',
     'HOST_UNCLASSIFIED_FAILURE', 'POWERSHELL_UNCLASSIFIED_FAILURE',
     'GIT_UNCLASSIFIED_FAILURE', 'FILESYSTEM_UNCLASSIFIED_FAILURE',
-    'PYTHON_UNCLASSIFIED_FAILURE', 'IG_SESSION_UNCLASSIFIED_FAILURE',
+    'PYTHON_UNCLASSIFIED_FAILURE', 'IMPORT_UNCLASSIFIED_FAILURE',
+    'PREFLIGHT_UNCLASSIFIED_FAILURE', 'NETWORK_UNCLASSIFIED_FAILURE',
+    'CREDENTIAL_UNCLASSIFIED_FAILURE', 'SAFETY_UNCLASSIFIED_FAILURE',
+    'IG_SESSION_UNCLASSIFIED_FAILURE',
     'EVIDENCE_UNCLASSIFIED_FAILURE', 'CLEANUP_UNCLASSIFIED_FAILURE',
     'GOVERNANCE_WINDOWS_HOST_REQUIRED', 'GOVERNANCE_INVALID_HEAD',
     'GOVERNANCE_HEAD_MISMATCH', 'GOVERNANCE_TRACKED_DRIFT',
@@ -231,6 +234,7 @@ function Invoke-Closeout {
             '--git-clone', 'PASS', '--git-checkout', 'PASS',
             '--git-long-path', 'PASS', '--git-hooks-isolation', 'PASS'
         )
+        $script:runnerPhase = 'PREFLIGHT'
         try {
             $preflight = Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
                 -ScriptPath $preflightPath -Arguments $preflightArguments `
@@ -238,7 +242,19 @@ function Invoke-Closeout {
             Write-DaxHostPreflight -Result $preflight
         } catch {
             if ($_.Exception.Data.Contains('HostLaneResult')) {
-                Write-DaxHostPreflight -Result $_.Exception.Data['HostLaneResult']
+                $preflightResult = $_.Exception.Data['HostLaneResult']
+                Write-DaxHostPreflight -Result $preflightResult
+                try {
+                    $preflightPhase = [string]$preflightResult.failure_phase
+                    if ($preflightPhase -in @(
+                            'HOST', 'POWERSHELL', 'GIT', 'FILESYSTEM', 'PYTHON',
+                            'IMPORT', 'NETWORK', 'CREDENTIAL', 'EVIDENCE', 'SAFETY',
+                            'PREFLIGHT')) {
+                        $script:runnerPhase = $preflightPhase
+                    }
+                } catch {
+                    $script:runnerPhase = 'PREFLIGHT'
+                }
             }
             throw
         }
@@ -400,6 +416,11 @@ try {
             'GIT' { 'GIT_UNCLASSIFIED_FAILURE' }
             'FILESYSTEM' { 'FILESYSTEM_UNCLASSIFIED_FAILURE' }
             'PYTHON' { 'PYTHON_UNCLASSIFIED_FAILURE' }
+            'IMPORT' { 'IMPORT_UNCLASSIFIED_FAILURE' }
+            'PREFLIGHT' { 'PREFLIGHT_UNCLASSIFIED_FAILURE' }
+            'NETWORK' { 'NETWORK_UNCLASSIFIED_FAILURE' }
+            'CREDENTIAL' { 'CREDENTIAL_UNCLASSIFIED_FAILURE' }
+            'SAFETY' { 'SAFETY_UNCLASSIFIED_FAILURE' }
             'IG_SESSION' { 'IG_SESSION_UNCLASSIFIED_FAILURE' }
             'EVIDENCE' { 'EVIDENCE_UNCLASSIFIED_FAILURE' }
             'CLEANUP' { 'CLEANUP_UNCLASSIFIED_FAILURE' }

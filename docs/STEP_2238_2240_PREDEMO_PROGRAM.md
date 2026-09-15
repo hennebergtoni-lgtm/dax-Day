@@ -1,5 +1,22 @@
- 1 file changed, 1 insertion(+), 1 deletion(-)
 # Step2238–2240 pre-DEMO readiness program
+
+## IG HTTP transport/provider-health contract — authoritative (2026-09-15)
+
+On real Windows head `8defee400ccb40f8bde379f0d3acfed316f9d07c`,
+49/51 checks passed. The old combined IG HTTPS check alone failed on HTTP 5xx
+after DNS and TLS succeeded. No login or broker call occurred.
+
+The V2 preflight expands to 52 checks and models four layers independently:
+DNS, TLS, required HTTP response transport, and optional IG provider health.
+Because IG documents no anonymous health endpoint, the base response can prove
+transport but leaves provider health UNKNOWN. Authenticated read-only Phase C
+is the first valid application observation. No response still blocks before
+login; an authenticated failure remains fail-closed with no retry. Failure
+phase is derived from required failed dimensions.
+
+Step2238 remains IMPLEMENTED/WAITING_EXTERNAL for one final-head run. Step2239,
+Step2240, M01 and the 27 gates do not advance from this semantic correction.
+NONE/false, no order and LIVE prohibition remain binding.
 
 ## Canonical Windows Python runtime selection — authoritative (2026-09-15)
 

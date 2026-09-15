@@ -50,7 +50,8 @@ FAILURE_SCENARIOS = {
     "dns_fail": "NETWORK_GITHUB_DNS_FAILED",
     "tls_fail": "NETWORK_GITHUB_TLS_FAILED",
     "github_unavailable": "NETWORK_GITHUB_HTTPS_FAILED",
-    "ig_endpoint_unavailable": "NETWORK_IG_HTTPS_FAILED",
+    "ig_http_transport_unavailable": "NETWORK_IG_HTTPS_TRANSPORT_FAILED",
+    "ig_provider_health_unauthenticated": "IG_PROVIDER_HEALTH_NO_PUBLIC_ENDPOINT",
     "proxy_interference": "NETWORK_PROXY_PRESENT",
     "credentials_file_missing": "CREDENTIAL_FILE_UNAVAILABLE",
     "credentials_malformed": "CREDENTIAL_SHAPE_INVALID",
@@ -122,7 +123,7 @@ def test_aggregate_preflight_passes_and_preserves_none_false(
     assert payload["status"] == "PASS"
     assert payload["execution_capability"] == "NONE"
     assert payload["order_execution_enabled"] is False
-    assert len(payload["checks"]) == 51
+    assert len(payload["checks"]) == 52
     assert {item["check"] for item in payload["checks"]} == set(
         preflight.CHECK_FAILURE_CODES
     )
@@ -138,6 +139,13 @@ def test_aggregate_preflight_passes_and_preserves_none_false(
     )
     assert windows_status == expected_windows_status
     assert payload["linux_worker"] == "NOT_REQUIRED_FOR_REAL_HOST"
+    assert payload["failure_phase"] == "NONE"
+    assert payload["failure_dimensions"] == []
+    provider = next(
+        item for item in payload["checks"] if item["check"] == "IG_PROVIDER_HEALTH"
+    )
+    assert provider["status"] == "UNKNOWN"
+    assert provider["required"] is False
 
 
 def test_import_origin_mismatch_is_detected_for_daxlab_and_collector(
@@ -188,7 +196,7 @@ def test_required_failure_scenarios_all_map_to_documented_fixed_codes() -> None:
             ROOT / "scripts/run_ig_predemo_readiness_2238.py",
         )
     )
-    assert len(FAILURE_SCENARIOS) == 38
+    assert len(FAILURE_SCENARIOS) == 39
     for code in FAILURE_SCENARIOS.values():
         assert code in sources
 
@@ -204,6 +212,8 @@ def test_architecture_and_git_failures_aggregate(tmp_path: Path, monkeypatch) ->
     assert failures["PYTHON_HOST_ARCHITECTURE"] == "PYTHON_HOST_ARCHITECTURE_MISMATCH"
     assert failures["GIT_CLONE"] == "GIT_CLONE_UNVERIFIED"
     assert failures["GIT_CHECKOUT"] == "GIT_CHECKOUT_UNVERIFIED"
+    assert payload["failure_phase"] == "PREFLIGHT"
+    assert payload["failure_dimensions"] == ["GIT", "PYTHON"]
 
 
 def test_network_failures_aggregate_without_credential_or_login_side_effect(
@@ -217,9 +227,59 @@ def test_network_failures_aggregate_without_credential_or_login_side_effect(
     failed = {item["check"]: item for item in payload["checks"] if item["status"] == "FAIL"}
     assert set(failed) >= {
         "NETWORK_GITHUB_DNS", "NETWORK_GITHUB_TLS", "NETWORK_GITHUB_HTTPS",
-        "NETWORK_IG_DNS", "NETWORK_IG_TLS", "NETWORK_IG_HTTPS",
+        "NETWORK_IG_DNS", "NETWORK_IG_TLS", "NETWORK_IG_HTTPS_TRANSPORT",
     }
+    provider = next(
+        item for item in payload["checks"] if item["check"] == "IG_PROVIDER_HEALTH"
+    )
+    assert provider["status"] == "BLOCKED"
+    assert provider["required"] is False
     assert payload["status"] == "BLOCKED"
+    assert "secret" not in json.dumps(payload)
+
+
+def test_ig_http_5xx_proves_transport_but_not_provider_health(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_success(monkeypatch)
+    monkeypatch.setattr(
+        preflight, "_https",
+        lambda url: "HTTP_5XX" if "demo-api.ig.com" in url else "HTTP_2XX",
+    )
+    payload = preflight.collect(_args(tmp_path))
+    checks = {item["check"]: item for item in payload["checks"]}
+    assert checks["NETWORK_IG_HTTPS_TRANSPORT"]["status"] == "PASS"
+    assert checks["NETWORK_IG_HTTPS_TRANSPORT"]["observed_contract"] == "HTTP_5XX"
+    assert checks["IG_PROVIDER_HEALTH"]["status"] == "UNKNOWN"
+    assert checks["IG_PROVIDER_HEALTH"]["reason_code"] == (
+        "IG_PROVIDER_HEALTH_NO_PUBLIC_ENDPOINT"
+    )
+    assert checks["IG_PROVIDER_HEALTH"]["required"] is False
+    assert payload["status"] == "PASS"
+    assert payload["failure_phase"] == "NONE"
+
+
+def test_ig_http_without_response_is_network_failure_with_correct_phase(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_success(monkeypatch)
+
+    def https(url: str) -> str:
+        if "demo-api.ig.com" in url:
+            raise TimeoutError("secret transport")
+        return "HTTP_2XX"
+
+    monkeypatch.setattr(preflight, "_https", https)
+    payload = preflight.collect(_args(tmp_path))
+    checks = {item["check"]: item for item in payload["checks"]}
+    assert checks["NETWORK_IG_HTTPS_TRANSPORT"]["status"] == "FAIL"
+    assert checks["NETWORK_IG_HTTPS_TRANSPORT"]["reason_code"] == (
+        "NETWORK_IG_HTTPS_TRANSPORT_FAILED"
+    )
+    assert checks["IG_PROVIDER_HEALTH"]["status"] == "BLOCKED"
+    assert payload["status"] == "BLOCKED"
+    assert payload["failure_phase"] == "NETWORK"
+    assert payload["failure_dimensions"] == ["NETWORK"]
     assert "secret" not in json.dumps(payload)
 
 
@@ -340,6 +400,8 @@ def test_publication_failure_returns_fixed_safe_code(
     assert preflight.main([]) == 2
     result = json.loads(capsys.readouterr().out)
     assert result["error_code"] == "EVIDENCE_PREFLIGHT_PUBLICATION_FAILED"
+    assert result["failure_phase"] == "EVIDENCE"
+    assert result["failure_dimensions"] == ["EVIDENCE"]
     assert result["publication_exception_class"] == "PermissionError"
     assert "secret" not in json.dumps(result)
 
@@ -361,6 +423,8 @@ def test_wrapper_orders_preflight_before_authenticated_collector() -> None:
     assert source.index("dax_windows_host_preflight.py") < source.index("AUTH READ-ONLY START")
     assert source.index("AUTH READ-ONLY START") < source.index("run_ig_predemo_readiness_2238.py")
     assert "Write-DaxHostPreflight" in source
+    assert "$script:runnerPhase = $preflightPhase" in source
+    assert "'NETWORK' { 'NETWORK_UNCLASSIFIED_FAILURE' }" in source
     assert "-I -S" not in source
     assert "execution disabled" in source
     assert "order_send" not in source and "/positions/otc" not in source

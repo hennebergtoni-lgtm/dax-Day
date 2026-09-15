@@ -1,5 +1,23 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: IG HTTP transport/provider-health split (2026-09-15)
+
+The real host at `8defee400ccb40f8bde379f0d3acfed316f9d07c`
+reached 49/51 PASS. Its only required failure was an HTTP 5xx from the
+unauthenticated IG DEMO base; DNS and TLS passed and authentication did not
+start. This is evidence of HTTP transport, not evidence of provider health.
+
+Preflight V2 now reports 52 rows: `NETWORK_IG_HTTPS_TRANSPORT` is required and
+accepts an actual HTTP response of any status class; `IG_PROVIDER_HEALTH` is
+optional `UNKNOWN` until the authenticated read-only phase because IG publishes
+no anonymous health contract. No-response/TLS/DNS failures still block. The
+wrapper now reports the actual failed dimension (`NETWORK` for a sole network
+failure) rather than stale `PYTHON` attribution.
+
+Step2238 is **IMPLEMENTED / WAITING_EXTERNAL** for exactly one replacement run.
+No gate count changes: 8/0/13/6; M01 IN_PROGRESS; NONE/false; no DEMO order;
+LIVE prohibited.
+
 ## Current: canonical Windows Python runtime selection (2026-09-15)
 
 Implementation head: `30d9575fc8b8526e281a86c9717d19e9dda6b71b`;
