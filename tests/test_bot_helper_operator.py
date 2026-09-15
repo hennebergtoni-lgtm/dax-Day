@@ -149,6 +149,51 @@ def test_operator_separates_eight_pass_raw_reads_from_blocked_derivation(ig_serv
     assert view["order_execution_enabled"] is False
 
 
+def test_operator_exposes_exact_safe_market_economics_subreason_without_raw_loss(ig_server):
+    server, path, evidence = ig_server
+    subcheck = evidence["market"]["economics_subchecks"]["PRICE_PRECISION"]
+    subcheck.update({
+        "status": "BLOCKED",
+        "reason_code": "PRICE_PRECISION_MISSING_OR_INVALID",
+        "required": True,
+    })
+    evidence["market"].update({
+        "status": "BLOCKED",
+        "reason_code": "PRICE_PRECISION_MISSING_OR_INVALID",
+        "economics_projection_complete": False,
+    })
+    evidence["derived_processing"]["MARKET_ECONOMICS"] = {
+        "status": "BLOCKED",
+        "reason_code": "PRICE_PRECISION_MISSING_OR_INVALID",
+    }
+    evidence["derived_processing_complete"] = False
+    evidence.pop("fingerprint")
+    evidence["fingerprint"] = runner._fingerprint(evidence)
+    server.ig_evidence_fingerprint = evidence["fingerprint"]
+    atomic_write_json(path, evidence)
+
+    status, _, body = request(server)
+    assert status == 200
+    view = json.loads(body)
+    assert all(row["status"] == "PASS" for row in view["read_outcomes"])
+    assert view["derivation_outcomes"]["MARKET_ECONOMICS"] == {
+        "status": "BLOCKED",
+        "reason_code": "PRICE_PRECISION_MISSING_OR_INVALID",
+    }
+    assert view["market_economics"]["subchecks"]["PRICE_PRECISION"] == {
+        "status": "BLOCKED",
+        "reason_code": "PRICE_PRECISION_MISSING_OR_INVALID",
+        "required": True,
+    }
+    checks = {row["role"]: row for row in view["helper_cycle"]["checks"]}
+    assert "BROKER_READ_FAILED" not in checks["B"]["reason_codes"]
+    assert checks["S"]["status"] == "BLOCKED"
+    assert "DEPENDENCY_MISSING" not in checks["O"]["reason_codes"]
+    assert view["helper_cycle"]["shadow_allowed"] is False
+    assert view["execution_capability"] == "NONE"
+    assert view["order_execution_enabled"] is False
+
+
 def test_operator_drops_unknown_provider_code_even_after_evidence_reseal(ig_server):
     server, path, evidence = ig_server
     row = evidence["authenticated_read_matrix"]["resources"][2]

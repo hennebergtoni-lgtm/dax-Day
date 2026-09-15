@@ -33,7 +33,11 @@ from daxlab.adapters.ig_rest_readonly import (  # noqa: E402
 )
 
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object  # noqa: E402
-from daxlab.runtime.ig_predemo_safety import IG_DERIVATION_STAGES  # noqa: E402
+from daxlab.runtime.ig_predemo_safety import (  # noqa: E402
+    IG_DERIVATION_STAGES,
+    IG_MARKET_ECONOMICS_REQUIRED_SUBCHECKS,
+    IG_MARKET_ECONOMICS_SUBCHECKS,
+)
 from daxlab.runtime.single_instance import SingleInstanceLock  # noqa: E402
 
 from ig_demo_readonly_probe import (  # noqa: E402
@@ -89,11 +93,14 @@ def _num(value: object) -> float | None:
     if isinstance(value, str):
         try:
             value = float(value)
-        except ValueError:
+        except (OverflowError, ValueError):
             return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    result = float(value)
+    try:
+        result = float(value)
+    except (OverflowError, ValueError):
+        return None
     return result if isfinite(result) else None
 
 
@@ -196,65 +203,219 @@ def _inventory_view(
 def _market_view(
     payload: Mapping[str, object], *, epic: str, observed_at: datetime
 ) -> dict[str, object]:
+    """Project v4 market truth without treating provider-optional data as fatal.
+
+    The stage ledger describes whether this projection ran.  It deliberately does
+    not claim that v4 alone supplies the quantity grid and tick-value semantics
+    required by canonical Risk V1.
+    """
+    subchecks = {
+        name: {
+            "status": "UNKNOWN",
+            "reason_code": "SUBCHECK_NOT_EVALUATED",
+            "required": name in IG_MARKET_ECONOMICS_REQUIRED_SUBCHECKS,
+        }
+        for name in IG_MARKET_ECONOMICS_SUBCHECKS
+    }
+
+    def record(name: str, status: str, reason_code: str) -> None:
+        subchecks[name] = {
+            "status": status,
+            "reason_code": reason_code,
+            "required": name in IG_MARKET_ECONOMICS_REQUIRED_SUBCHECKS,
+        }
+
     instrument = payload.get("instrument")
     rules = payload.get("dealingRules")
     snapshot = payload.get("snapshot")
     if not all(isinstance(value, Mapping) for value in (instrument, rules, snapshot)):
-        raise ValueError("market v4 response shape invalid")
+        record("MARKET_SHAPE", "BLOCKED", "MARKET_V4_SHAPE_INVALID")
+        return {
+            "status": "BLOCKED",
+            "reason_code": "MARKET_V4_SHAPE_INVALID",
+            "epic": epic,
+            "identity_bound": False,
+            "economics_projection_complete": False,
+            "economics_verified": False,
+            "economics_blockers": ["MARKET_V4_SHAPE_INVALID"],
+            "economics_subchecks": subchecks,
+        }
     assert isinstance(instrument, Mapping)
     assert isinstance(rules, Mapping)
     assert isinstance(snapshot, Mapping)
-    if instrument.get("epic") != epic and instrument.get("marketId") != epic:
-        raise ValueError("market epic mismatch")
+    record("MARKET_SHAPE", "PASS", "NONE")
+
+    provider_epic = instrument.get("epic")
+    identity_bound = provider_epic == epic
+    record(
+        "MARKET_IDENTITY",
+        "PASS" if identity_bound else "BLOCKED",
+        "NONE"
+        if identity_bound
+        else "MARKET_EPIC_MISSING"
+        if provider_epic is None
+        else "MARKET_EPIC_MISMATCH",
+    )
+
+    market_statuses = {
+        "OFFLINE", "CLOSED", "SUSPENDED", "ON_AUCTION", "ON_AUCTION_NO_EDITS",
+        "EDITS_ONLY", "CLOSINGS_ONLY", "DEAL_NO_EDIT", "TRADEABLE",
+    }
+    market_status = snapshot.get("marketStatus")
+    market_status = market_status if market_status in market_statuses else None
+    record(
+        "MARKET_STATUS",
+        "PASS" if market_status is not None else "BLOCKED",
+        "NONE" if market_status is not None else "MARKET_STATUS_MISSING_OR_INVALID",
+    )
+
+    decimal_places = _num(snapshot.get("decimalPlacesFactor"))
+    scaling_factor = _num(snapshot.get("scalingFactor"))
+    precision_valid = (
+        decimal_places is not None
+        and decimal_places >= 0
+        and decimal_places.is_integer()
+        and scaling_factor is not None
+        and scaling_factor > 0
+    )
+    record(
+        "PRICE_PRECISION",
+        "PASS" if precision_valid else "BLOCKED",
+        "NONE" if precision_valid else "PRICE_PRECISION_MISSING_OR_INVALID",
+    )
+
     quote_epoch = _num(snapshot.get("updateTimestampUTC"))
     quote_time = None
     quote_age = None
     if quote_epoch is not None:
-        quote_time = datetime.fromtimestamp(quote_epoch, tz=timezone.utc)
-        quote_age = (observed_at - quote_time).total_seconds()
-        if quote_age < 0:
+        try:
+            quote_time = datetime.fromtimestamp(quote_epoch, tz=timezone.utc)
+            quote_age = (observed_at - quote_time).total_seconds()
+            if quote_age < 0:
+                quote_age = None
+        except (OverflowError, OSError, ValueError):
+            quote_time = None
             quote_age = None
+
     minimum = _rule(rules.get("minDealSize"))
     minimum_value = None if minimum is None else minimum["value"]
     minimum_unit = None if minimum is None else minimum["unit"]
+    minimum_valid = (
+        minimum_value is not None and minimum_value > 0 and minimum_unit is not None
+    )
+    record(
+        "DEALING_RULES",
+        "PASS" if minimum_valid else "BLOCKED",
+        "NONE" if minimum_valid else "MIN_DEAL_SIZE_MISSING_OR_INVALID",
+    )
+
     stop_rules = {
         "min_normal": _rule(rules.get("minNormalStopOrLimitDistance")),
         "min_controlled": _rule(rules.get("minControlledRiskStopDistance")),
         "max_stop_or_limit": _rule(rules.get("maxStopOrLimitDistance")),
         "controlled_risk_spacing": _rule(rules.get("controlledRiskSpacing")),
     }
+
+    currencies = instrument.get("currencies")
+    currency = None
+    if isinstance(currencies, list):
+        defaults = [
+            value for value in currencies
+            if isinstance(value, Mapping) and value.get("isDefault") is True
+        ]
+        if len(defaults) == 1:
+            code = defaults[0].get("code")
+            if (
+                isinstance(code, str)
+                and len(code) == 3
+                and code.isascii()
+                and code.isupper()
+                and code.isalpha()
+            ):
+                currency = code
+    record(
+        "CURRENCY",
+        "PASS" if currency is not None else "UNKNOWN",
+        "NONE" if currency is not None else "PROVIDER_CURRENCY_UNAVAILABLE",
+    )
+
+    contract_size = _num(instrument.get("contractSize"))
+    lot_size = _num(instrument.get("lotSize"))
+    value_of_one_pip = _num(instrument.get("valueOfOnePip"))
+    contract_complete = all(
+        value is not None and value > 0
+        for value in (contract_size, lot_size, value_of_one_pip)
+    )
+    record(
+        "CONTRACT_ECONOMICS",
+        "PASS" if contract_complete else "UNKNOWN",
+        "NONE" if contract_complete else "PROVIDER_CONTRACT_ECONOMICS_INCOMPLETE",
+    )
+
+    margin_factor = _num(instrument.get("marginFactor"))
+    margin_factor_unit = instrument.get("marginFactorUnit")
+    margin_complete = (
+        margin_factor is not None
+        and margin_factor > 0
+        and margin_factor_unit in {"POINTS", "PERCENTAGE"}
+    )
+    record(
+        "MARGIN_OR_SIZE_RULES",
+        "PASS" if margin_complete else "UNKNOWN",
+        "NONE" if margin_complete else "PROVIDER_MARGIN_OR_SIZE_RULES_UNAVAILABLE",
+    )
+    record(
+        "CANONICAL_ECONOMICS_CONSTRUCTION",
+        "UNKNOWN",
+        "CANONICAL_RISK_ECONOMICS_UNVERIFIED",
+    )
+
+    blocking_subchecks = [
+        name
+        for name in IG_MARKET_ECONOMICS_SUBCHECKS
+        if subchecks[name]["required"] and subchecks[name]["status"] != "PASS"
+    ]
+    projection_complete = not blocking_subchecks
     return {
         "epic": epic,
+        "identity_bound": identity_bound,
         "instrument_type": instrument.get("type")
-        if instrument.get("type") in ("INDICES", "CURRENCIES", "COMMODITIES", "SHARES")
+        if instrument.get("type") in {
+            "BINARY", "BUNGEE_CAPPED", "BUNGEE_COMMODITIES", "BUNGEE_CURRENCIES",
+            "BUNGEE_INDICES", "COMMODITIES", "CURRENCIES", "INDICES",
+            "KNOCKOUTS_COMMODITIES", "KNOCKOUTS_CURRENCIES", "KNOCKOUTS_INDICES",
+            "KNOCKOUTS_SHARES", "OPT_COMMODITIES", "OPT_CURRENCIES", "OPT_INDICES",
+            "OPT_RATES", "OPT_SHARES", "RATES", "SECTORS", "SHARES",
+            "SPRINT_MARKET", "TEST_MARKET", "UNKNOWN",
+        }
         else None,
         "expiry": instrument.get("expiry")
         if instrument.get("expiry") in ("DFB", "-") else None,
         "unit": instrument.get("unit")
         if instrument.get("unit") in {"AMOUNT", "CONTRACTS", "SHARES"}
         else None,
-        "market_status": snapshot.get("marketStatus")
-        if snapshot.get("marketStatus") in (
-            "TRADEABLE", "CLOSED", "EDITS_ONLY", "OFFLINE", "ON_AUCTION", "SUSPENDED"
-        ) else None,
+        "market_status": market_status,
         "bid": _num(snapshot.get("bid")),
         "ask": _num(snapshot.get("ask")),
         "quote_time_utc": None if quote_time is None else quote_time.isoformat(),
         "quote_age_seconds": quote_age,
         "quote_fresh": quote_age is not None and quote_age <= 60.0,
-        "decimal_places_factor": _num(snapshot.get("decimalPlacesFactor")),
-        "scaling_factor": _num(snapshot.get("scalingFactor")),
+        "decimal_places_factor": decimal_places,
+        "scaling_factor": scaling_factor,
         "tick_size": None,
         "tick_size_reason": "NOT_DERIVED_FROM_DECIMAL_PLACES_OR_SCALING_FACTOR",
         "quantity_min": minimum_value if minimum_unit == "POINTS" else None,
         "quantity_step": None,
         "quantity_max": None,
         "cash_per_tick_per_quantity": None,
-        "value_of_one_pip": _num(instrument.get("valueOfOnePip")),
+        "currency": currency,
+        "contract_size": contract_size,
+        "lot_size": lot_size,
+        "value_of_one_pip": value_of_one_pip,
         "one_pip_means": None,  # Free provider prose is not an economics authority.
-        "margin_factor": _num(instrument.get("marginFactor")),
-        "margin_factor_unit": instrument.get("marginFactorUnit")
-        if instrument.get("marginFactorUnit") in ("POINTS", "PERCENTAGE") else None,
+        "margin_factor": margin_factor,
+        "margin_factor_unit": margin_factor_unit
+        if margin_factor_unit in ("POINTS", "PERCENTAGE") else None,
         "stops_limits_allowed": instrument.get("stopsLimitsAllowed")
         if isinstance(instrument.get("stopsLimitsAllowed"), bool)
         else None,
@@ -266,6 +427,12 @@ def _market_view(
         else None,
         "streaming_prices_available": instrument.get("streamingPricesAvailable")
         if isinstance(instrument.get("streamingPricesAvailable"), bool)
+        else None,
+        "limit_allowed": instrument.get("limitAllowed")
+        if isinstance(instrument.get("limitAllowed"), bool)
+        else None,
+        "stop_allowed": instrument.get("stopAllowed")
+        if isinstance(instrument.get("stopAllowed"), bool)
         else None,
         "stop_constraints": stop_rules,
         "native_stop_constraints_verified": all(
@@ -280,6 +447,12 @@ def _market_view(
             "MAX_SIZE_UNVERIFIED",
             "TICK_VALUE_SEMANTICS_UNVERIFIED",
         ],
+        "economics_projection_complete": projection_complete,
+        "economics_subchecks": subchecks,
+        "status": "PASS" if projection_complete else "BLOCKED",
+        "reason_code": "NONE"
+        if projection_complete
+        else subchecks[blocking_subchecks[0]]["reason_code"],
     }
 
 
@@ -587,6 +760,38 @@ def _safe_derivation_snapshot(value: object) -> dict[str, dict[str, str]]:
             reason = "DERIVATION_STATUS_UNAVAILABLE"
         result[stage] = {"status": status, "reason_code": reason}
     return result
+
+
+def _safe_market_economics_snapshot(value: object) -> dict[str, object]:
+    """Fixed subcheck projection; provider text and unknown keys never escape."""
+    market = value if isinstance(value, Mapping) else {}
+    source = market.get("economics_subchecks")
+    source = source if isinstance(source, Mapping) else {}
+    result: dict[str, dict[str, object]] = {}
+    for name in IG_MARKET_ECONOMICS_SUBCHECKS:
+        row = source.get(name)
+        row = row if isinstance(row, Mapping) else {}
+        status = row.get("status")
+        reason = row.get("reason_code")
+        if status not in {"PASS", "BLOCKED", "UNKNOWN"}:
+            status = "UNKNOWN"
+        if (
+            not isinstance(reason, str)
+            or not reason
+            or not reason.isascii()
+            or any(character not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_" for character in reason)
+        ):
+            reason = "SUBCHECK_STATUS_UNAVAILABLE"
+        result[name] = {
+            "status": status,
+            "reason_code": reason,
+            "required": name in IG_MARKET_ECONOMICS_REQUIRED_SUBCHECKS,
+        }
+    return {
+        "projection_complete": market.get("economics_projection_complete") is True,
+        "economics_verified": market.get("economics_verified") is True,
+        "subchecks": result,
+    }
 
 
 def _evidence_enrichment(
@@ -996,18 +1201,25 @@ def collect(
         if market_raw is None:
             raise ValueError("market read incomplete")
         market = _market_view(market_raw, epic=epic, observed_at=price_observed)
-        market["status"] = "PASS"
-        market["reason_code"] = "NONE"
         derived_processing["MARKET_ECONOMICS"] = {
-            "status": "PASS", "reason_code": "NONE"
+            "status": market["status"], "reason_code": market["reason_code"]
         }
     except Exception:
         market = _blocked("MARKET_ECONOMICS_READ_INCOMPLETE") | {
             "epic": epic, "economics_verified": False,
-            "economics_blockers": ["MARKET_V4_UNAVAILABLE_OR_INVALID"],
+            "economics_projection_complete": False,
+            "economics_blockers": ["MARKET_PROJECTION_UNCLASSIFIED"],
+            "economics_subchecks": {
+                name: {
+                    "status": "UNKNOWN",
+                    "reason_code": "SUBCHECK_EVALUATION_FAILED",
+                    "required": name in IG_MARKET_ECONOMICS_REQUIRED_SUBCHECKS,
+                }
+                for name in IG_MARKET_ECONOMICS_SUBCHECKS
+            },
         }
         derived_processing["MARKET_ECONOMICS"] = {
-            "status": "BLOCKED", "reason_code": "MARKET_DERIVATION_FAILED"
+            "status": "BLOCKED", "reason_code": "MARKET_PROJECTION_UNCLASSIFIED"
         }
 
     try:
@@ -1162,6 +1374,7 @@ def _publish(
         "execution_capability": "NONE",
         "order_execution_enabled": False,
         "derivation": _safe_derivation_snapshot(evidence.get("derived_processing")),
+        "market_economics": _safe_market_economics_snapshot(evidence.get("market")),
     }
     try:
         allowed_components = {
@@ -1348,6 +1561,9 @@ def main() -> int:
             failure_payload["derivation"] = _safe_derivation_snapshot(
                 evidence.get("derived_processing")
             )
+            failure_payload["market_economics"] = _safe_market_economics_snapshot(
+                evidence.get("market")
+            )
         print(json.dumps(failure_payload, sort_keys=True))
         return 2
     finally:
@@ -1367,6 +1583,7 @@ def main() -> int:
         "readiness_matrix": matrix.get("resources"),
         "readiness_matrix_row_count": matrix.get("row_count"),
         "derivation": _safe_derivation_snapshot(evidence.get("derived_processing")),
+        "market_economics": _safe_market_economics_snapshot(evidence.get("market")),
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }, sort_keys=True))

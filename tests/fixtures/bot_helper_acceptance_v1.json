@@ -287,6 +287,9 @@
         "inventory_derivation",
         "history_derivation",
         "economics_derivation",
+        "market_economics_required_subchecks",
+        "market_economics_provider_optional_subchecks",
+        "market_economics_exact_subreason",
         "m5_derivation",
         "clock_derivation",
         "dependent_conclusions_derivation",
@@ -599,6 +602,8 @@
         "wrong_version",
         "wrong_instrument",
         "unknown_economics",
+        "eight_raw_passes_market_economics_blocker",
+        "operator_market_economics_subchecks",
         "current_ig_source"
       ],
       "failure_ids": [

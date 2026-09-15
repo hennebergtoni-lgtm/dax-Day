@@ -1,5 +1,23 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2244 MARKET_ECONOMICS derivation closeout — IN_PROGRESS (2026-09-15)
+
+Pinned start head: `9f8c34adc6e359ea314a7051dffcc256efad7ba2`; branch
+`nextgen-bot-line-v1`, PR #109 OPEN/UNMERGED; main unchanged
+`e0784ebfc11bee28475fd9c3385be661af58a738`. The supplied exact-head real
+Windows/IG-DEMO run proves one login, no retry/dealing, cleanup success, all
+eight raw reads PASS and nine of ten derived stages PASS. The only observed
+derived blocker is MARKET_ECONOMICS / MARKET_DERIVATION_FAILED while MARKET_V4
+itself is PASS.
+
+Step2244 audits the existing MARKET_V4 shape/identity/projection/economics
+boundary before repair. The successful GET contract remains pinned. Because
+the prior aggregate reason did not identify the throwing invariant, no exact
+historical subcause is guessed; fixed credential-free subchecks and failure
+injection will be added within the existing collector, evidence, Operator and
+Bot-Helper owners. NONE/false, no retry/dealing/order and LIVE prohibited remain
+binding. Step2238/2239/2240/M01 and the readiness gates are not promoted.
+
 ## Current: Step2243 Bot-Helper 8/8-read derivation closeout — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
 Pinned start head: `5eca87b68b15fa5c82cb1dc1193364f28905bafe`; branch

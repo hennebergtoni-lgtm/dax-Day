@@ -88,6 +88,37 @@ def _safe_ig_derivation_outcomes(value: object) -> dict[str, dict[str, str]]:
     return result
 
 
+def _safe_ig_market_economics(value: object) -> dict[str, object]:
+    """Expose only the fixed economics subcheck contract and fixed tokens."""
+    from daxlab.runtime.ig_predemo_safety import (
+        IG_MARKET_ECONOMICS_REQUIRED_SUBCHECKS,
+        IG_MARKET_ECONOMICS_SUBCHECKS,
+    )
+
+    market = value if isinstance(value, dict) else {}
+    source = market.get("economics_subchecks")
+    source = source if isinstance(source, dict) else {}
+    token = re.compile(r"^[A-Z][A-Z0-9_]{0,95}$")
+    rows: dict[str, dict[str, object]] = {}
+    for name in IG_MARKET_ECONOMICS_SUBCHECKS:
+        row = source.get(name)
+        row = row if isinstance(row, dict) else {}
+        status = row.get("status")
+        reason = row.get("reason_code")
+        rows[name] = {
+            "status": status if status in {"PASS", "BLOCKED", "UNKNOWN"} else "UNKNOWN",
+            "reason_code": reason
+            if isinstance(reason, str) and token.fullmatch(reason)
+            else "SUBCHECK_STATUS_UNAVAILABLE",
+            "required": name in IG_MARKET_ECONOMICS_REQUIRED_SUBCHECKS,
+        }
+    return {
+        "projection_complete": market.get("economics_projection_complete") is True,
+        "economics_verified": market.get("economics_verified") is True,
+        "subchecks": rows,
+    }
+
+
 def _safe_ig_derivation_evidence(evidence: dict[str, Any]) -> dict[str, object]:
     """Bounded facts useful for stage diagnosis; no provider rows or free text."""
     matrix = evidence.get("authenticated_read_matrix")
@@ -131,11 +162,7 @@ def _safe_ig_derivation_evidence(evidence: dict[str, Any]) -> dict[str, object]:
             "entries_count": bounded_count(history.get("entries_count")),
             "scope_complete": history.get("scope_complete") is True,
         },
-        "market_economics": {
-            "status": market.get("status")
-            if market.get("status") in {"PASS", "BLOCKED", "UNKNOWN"} else "UNKNOWN",
-            "economics_verified": market.get("economics_verified") is True,
-        },
+        "market_economics": _safe_ig_market_economics(market),
         "m5": {
             "raw_rows": bounded_count(m5.get("raw_rows"), 1000),
             "closed_rows": bounded_count(m5.get("closed_rows"), 1000),
@@ -330,6 +357,7 @@ def build_ig_operator_projection(
         "read_outcomes": [_safe_ig_read_outcome(row) for row in read_rows],
         "derivation_outcomes": derivation_outcomes,
         "derivation_evidence": _safe_ig_derivation_evidence(evidence),
+        "market_economics": _safe_ig_market_economics(evidence.get("market")),
         "blockers": list(binding.blockers) + list(cycle.blockers) + ["SOURCE_FRESHNESS_POLICY_UNKNOWN"],
         "timestamps": {"snapshot_generated_at": source_time.isoformat(),
                        "snapshot_age_seconds": age, "heartbeat_observed_at": None},

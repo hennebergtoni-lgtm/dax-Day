@@ -316,7 +316,14 @@ def test_review_T07_five_green_reads_cannot_outvote_three_contract_failures():
     assert [row["resource"] for row in rows if row["status"] == "FAIL"] == list(failed)
 
 
-def test_review_T14_eight_raw_passes_cannot_outvote_one_derived_blocker():
+@pytest.mark.parametrize(
+    ("stage", "reason"),
+    (
+        ("HISTORY", "HISTORY_DERIVATION_FAILED"),
+        ("MARKET_ECONOMICS", "PRICE_PRECISION_MISSING_OR_INVALID"),
+    ),
+)
+def test_review_T14_eight_raw_passes_cannot_outvote_one_derived_blocker(stage, reason):
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
@@ -328,9 +335,9 @@ def test_review_T14_eight_raw_passes_cannot_outvote_one_derived_blocker():
     evidence, _ = runner.collect(
         MatrixClient(), epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
     )
-    evidence["derived_processing"]["HISTORY"] = {
+    evidence["derived_processing"][stage] = {
         "status": "BLOCKED",
-        "reason_code": "HISTORY_DERIVATION_FAILED",
+        "reason_code": reason,
     }
     evidence["derived_processing_complete"] = False
     evidence = runner._finalize_evidence(

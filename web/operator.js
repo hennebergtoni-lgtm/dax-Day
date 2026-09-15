@@ -42,7 +42,7 @@
     metrics('trade-plan',[['Entry',p.entry],['Stop',p.stop],['Target',p.target],['RR',p.reward_risk]]);
     list('blockers',v.blockers);
     const hd=v.helper_diagnostics||{};
-    rows('helpers',[['Source',hd.source],['Age (s)',hd.age_seconds],['Reason',hd.reason],['Dependency',hd.dependencies],['Evidence',hd.evidence],['Evidence scope',hd.evidence_scope],['Last transition',hd.last_transition],['Read outcomes',v.read_outcomes],['Role checks',hd.checks]]);
+    rows('helpers',[['Source',hd.source],['Age (s)',hd.age_seconds],['Reason',hd.reason],['Dependency',hd.dependencies],['Evidence',hd.evidence],['Evidence scope',hd.evidence_scope],['Last transition',hd.last_transition],['Raw read outcomes',v.read_outcomes],['Derived outcomes',v.derivation_outcomes],['Market economics subchecks',v.market_economics],['Role checks',hd.checks]]);
     rows('monday',Object.entries(v.monday_pre_demo?.gates||{state:'UNKNOWN'}));
     rows('health',Object.entries(v.health_matrix||{state:'UNKNOWN'}));
     rows('freshness',Object.entries(v.freshness_matrix||{state:'UNKNOWN'}));

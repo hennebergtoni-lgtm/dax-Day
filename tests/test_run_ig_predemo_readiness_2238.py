@@ -42,6 +42,36 @@ def _assert_authenticated_matrix(payload: dict[str, object]) -> None:
     ]
 
 
+def _official_market_v4(epic: str = "IX.D.DAX.IFMM.IP") -> dict[str, object]:
+    return {
+        "instrument": {
+            "epic": epic,
+            "marketId": "DAX",
+            "type": "INDICES",
+            "unit": "CONTRACTS",
+            "currencies": [{"code": "EUR", "isDefault": True}],
+            "contractSize": "1",
+            "lotSize": 1,
+            "valueOfOnePip": "1",
+            "limitAllowed": True,
+            "stopAllowed": True,
+        },
+        "dealingRules": {
+            "minDealSize": {"value": 1, "unit": "POINTS"},
+            "minNormalStopOrLimitDistance": {"value": 5, "unit": "POINTS"},
+            "maxStopOrLimitDistance": {"value": 1000, "unit": "POINTS"},
+        },
+        "snapshot": {
+            "marketStatus": "TRADEABLE",
+            "bid": 20000,
+            "ask": 20002,
+            "decimalPlacesFactor": 1,
+            "scalingFactor": 1,
+            "updateTimestampUTC": 1789466400,
+        },
+    }
+
+
 class MatrixClient:
     def __init__(
         self,
@@ -124,7 +154,13 @@ class MatrixClient:
                     "minNormalStopOrLimitDistance": {"value": 5, "unit": "POINTS"},
                     "maxStopOrLimitDistance": {"value": 1000, "unit": "POINTS"},
                 },
-                "snapshot": {"marketStatus": "TRADEABLE", "bid": 100, "ask": 102},
+                "snapshot": {
+                    "marketStatus": "TRADEABLE",
+                    "bid": 100,
+                    "ask": 102,
+                    "decimalPlacesFactor": 1,
+                    "scalingFactor": 1,
+                },
             },
         )
 
@@ -196,6 +232,185 @@ def test_market_v4_does_not_infer_tick_or_quantity_grid_from_digits() -> None:
     assert market["native_stop_constraints_verified"] is True
 
 
+def test_official_market_v4_shape_projects_without_claiming_canonical_risk_economics() -> None:
+    market = runner._market_view(
+        _official_market_v4(),
+        epic="IX.D.DAX.IFMM.IP",
+        observed_at=datetime(2026, 9, 15, 10, 0, 1, tzinfo=timezone.utc),
+    )
+    assert market["status"] == "PASS"
+    assert market["reason_code"] == "NONE"
+    assert market["identity_bound"] is True
+    assert market["currency"] == "EUR"
+    assert market["contract_size"] == 1.0
+    assert market["lot_size"] == 1.0
+    assert market["value_of_one_pip"] == 1.0
+    assert market["economics_verified"] is False
+    assert market["tick_size"] is None
+    assert market["quantity_step"] is None
+    assert market["quantity_max"] is None
+    assert market["cash_per_tick_per_quantity"] is None
+    assert tuple(market["economics_subchecks"]) == runner.IG_MARKET_ECONOMICS_SUBCHECKS
+    assert all(
+        market["economics_subchecks"][name]["status"] == "PASS"
+        for name in runner.IG_MARKET_ECONOMICS_REQUIRED_SUBCHECKS
+    )
+    assert market["economics_subchecks"]["CANONICAL_ECONOMICS_CONSTRUCTION"] == {
+        "status": "UNKNOWN",
+        "reason_code": "CANONICAL_RISK_ECONOMICS_UNVERIFIED",
+        "required": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("subcheck", "mutate", "reason"),
+    (
+        ("MARKET_SHAPE", lambda value: value.update({"instrument": None}),
+         "MARKET_V4_SHAPE_INVALID"),
+        ("MARKET_IDENTITY", lambda value: value["instrument"].pop("epic"),
+         "MARKET_EPIC_MISSING"),
+        ("MARKET_STATUS", lambda value: value["snapshot"].update({"marketStatus": "SECRET"}),
+         "MARKET_STATUS_MISSING_OR_INVALID"),
+        ("PRICE_PRECISION", lambda value: value["snapshot"].pop("scalingFactor"),
+         "PRICE_PRECISION_MISSING_OR_INVALID"),
+        ("DEALING_RULES", lambda value: value["dealingRules"].pop("minDealSize"),
+         "MIN_DEAL_SIZE_MISSING_OR_INVALID"),
+    ),
+)
+def test_required_market_economics_subcontract_failure_is_exact_and_blocking(
+    subcheck, mutate, reason
+) -> None:
+    payload = _official_market_v4()
+    mutate(payload)
+    market = runner._market_view(
+        payload,
+        epic="IX.D.DAX.IFMM.IP",
+        observed_at=datetime(2026, 9, 15, 10, 0, 1, tzinfo=timezone.utc),
+    )
+    assert market["status"] == "BLOCKED"
+    assert market["economics_projection_complete"] is False
+    assert market["economics_subchecks"][subcheck]["status"] == "BLOCKED"
+    assert market["economics_subchecks"][subcheck]["reason_code"] == reason
+    assert "SECRET" not in json.dumps(runner._safe_market_economics_snapshot(market))
+
+
+@pytest.mark.parametrize(
+    ("subcheck", "mutate", "reason"),
+    (
+        ("CURRENCY", lambda value: value["instrument"].pop("currencies"),
+         "PROVIDER_CURRENCY_UNAVAILABLE"),
+        ("CONTRACT_ECONOMICS", lambda value: value["instrument"].pop("contractSize"),
+         "PROVIDER_CONTRACT_ECONOMICS_INCOMPLETE"),
+        ("MARGIN_OR_SIZE_RULES", lambda value: value["instrument"].pop("marginFactor", None),
+         "PROVIDER_MARGIN_OR_SIZE_RULES_UNAVAILABLE"),
+        ("CANONICAL_ECONOMICS_CONSTRUCTION", lambda value: None,
+         "CANONICAL_RISK_ECONOMICS_UNVERIFIED"),
+    ),
+)
+def test_provider_dependent_market_economics_subcontract_is_visible_but_not_invented_blocker(
+    subcheck, mutate, reason
+) -> None:
+    payload = _official_market_v4()
+    mutate(payload)
+    market = runner._market_view(
+        payload,
+        epic="IX.D.DAX.IFMM.IP",
+        observed_at=datetime(2026, 9, 15, 10, 0, 1, tzinfo=timezone.utc),
+    )
+    assert market["status"] == "PASS"
+    assert market["economics_projection_complete"] is True
+    assert market["economics_subchecks"][subcheck] == {
+        "status": "UNKNOWN",
+        "reason_code": reason,
+        "required": False,
+    }
+
+
+def test_market_id_must_not_substitute_for_explicit_epic_and_bad_optional_time_is_bounded() -> None:
+    payload = _official_market_v4()
+    payload["instrument"].pop("epic")
+    payload["instrument"]["marketId"] = "IX.D.DAX.IFMM.IP"
+    payload["snapshot"]["updateTimestampUTC"] = 10**400
+    market = runner._market_view(
+        payload,
+        epic="IX.D.DAX.IFMM.IP",
+        observed_at=datetime(2026, 9, 15, 10, 0, 1, tzinfo=timezone.utc),
+    )
+    assert market["economics_subchecks"]["MARKET_IDENTITY"]["reason_code"] == (
+        "MARKET_EPIC_MISSING"
+    )
+    assert market["quote_time_utc"] is None
+    assert market["quote_age_seconds"] is None
+
+
+def test_market_economics_bool_null_empty_enum_and_finiteness_boundaries() -> None:
+    for bad_precision in (True, None, float("inf"), float("nan")):
+        payload = _official_market_v4()
+        payload["snapshot"]["decimalPlacesFactor"] = bad_precision
+        market = runner._market_view(
+            payload, epic="IX.D.DAX.IFMM.IP", observed_at=datetime.now(timezone.utc)
+        )
+        assert market["economics_subchecks"]["PRICE_PRECISION"]["status"] == "BLOCKED"
+
+    payload = _official_market_v4()
+    payload["dealingRules"]["minDealSize"]["value"] = True
+    market = runner._market_view(
+        payload, epic="IX.D.DAX.IFMM.IP", observed_at=datetime.now(timezone.utc)
+    )
+    assert market["economics_subchecks"]["DEALING_RULES"]["status"] == "BLOCKED"
+
+    payload = _official_market_v4()
+    payload["instrument"].update({
+        "currencies": [],
+        "contractSize": False,
+        "lotSize": float("nan"),
+    })
+    payload["snapshot"]["marketStatus"] = "ON_AUCTION_NO_EDITS"
+    market = runner._market_view(
+        payload, epic="IX.D.DAX.IFMM.IP", observed_at=datetime.now(timezone.utc)
+    )
+    assert market["status"] == "PASS"
+    assert market["market_status"] == "ON_AUCTION_NO_EDITS"
+    assert market["economics_subchecks"]["CURRENCY"]["status"] == "UNKNOWN"
+    assert market["economics_subchecks"]["CONTRACT_ECONOMICS"]["status"] == "UNKNOWN"
+    json.dumps(market, allow_nan=False)
+
+
+def test_eight_raw_passes_retain_nine_other_derived_passes_on_exact_economics_blocker() -> None:
+    class Client(MatrixClient):
+        def readiness_market_v4(self, epic):
+            payload = _official_market_v4(epic)
+            payload["snapshot"].pop("scalingFactor")
+            return self._result("MARKET_V4", "MARKET_V4", payload)
+
+    evidence, _ = runner.collect(
+        Client(), epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
+    )
+    assert evidence["authenticated_read_matrix"]["counts"] == {
+        "PASS": 8,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "UNKNOWN": 0,
+    }
+    assert evidence["derived_processing"]["MARKET_ECONOMICS"] == {
+        "status": "BLOCKED",
+        "reason_code": "PRICE_PRECISION_MISSING_OR_INVALID",
+    }
+    assert sum(
+        row == {"status": "PASS", "reason_code": "NONE"}
+        for name, row in evidence["derived_processing"].items()
+        if name != "MARKET_ECONOMICS"
+    ) == 9
+    safe = runner._safe_market_economics_snapshot(evidence["market"])
+    assert safe["subchecks"]["PRICE_PRECISION"] == {
+        "status": "BLOCKED",
+        "reason_code": "PRICE_PRECISION_MISSING_OR_INVALID",
+        "required": True,
+    }
+    assert evidence["execution_capability"] == "NONE"
+    assert evidence["order_execution_enabled"] is False
+
+
 def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -> None:
     source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
     owner = (SCRIPTS / "dax_windows_host_lane.psm1").read_text(encoding="utf-8")
@@ -225,6 +440,10 @@ def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -
     assert "DERIVATION: rows={0}" in source
     assert "DERIVED: stage={0}; status={1}; reason_code={2}" in source
     assert source.count("Write-IgDerivationMatrix -Result") == 2
+    assert "function Write-IgMarketEconomicsMatrix" in source
+    assert "MARKET ECONOMICS: rows={0}; projection_complete={1}" in source
+    assert "ECONOMICS_SUBCHECK: name={0}; required={1}; status={2}; reason_code={3}" in source
+    assert source.count("Write-IgMarketEconomicsMatrix -Result") == 2
 
 
 def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> None:
@@ -403,7 +622,13 @@ def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatc
                     "minNormalStopOrLimitDistance": {"value": 5, "unit": "POINTS"},
                     "maxStopOrLimitDistance": {"value": 1000, "unit": "POINTS"},
                 },
-                "snapshot": {"marketStatus": "TRADEABLE", "bid": 100, "ask": 102},
+                "snapshot": {
+                    "marketStatus": "TRADEABLE",
+                    "bid": 100,
+                    "ask": 102,
+                    "decimalPlacesFactor": 1,
+                    "scalingFactor": 1,
+                },
             }, "MARKET_V4")
 
         def readiness_account_activity(self, **kwargs):
@@ -1012,6 +1237,11 @@ def test_eight_pass_reads_publish_exact_blocked_derivation_without_raw_loss(
         "status": "BLOCKED",
         "reason_code": "HISTORY_DERIVATION_FAILED",
     }
+    assert set(result["market_economics"]["subchecks"]) == set(
+        runner.IG_MARKET_ECONOMICS_SUBCHECKS
+    )
+    assert result["market_economics"]["projection_complete"] is True
+    assert result["market_economics"]["economics_verified"] is False
     assert all(
         row["status"] == "PASS" for row in result["readiness_matrix"]
     )
@@ -1019,4 +1249,5 @@ def test_eight_pass_reads_publish_exact_blocked_derivation_without_raw_loss(
     assert published["derived_processing"] == result["derivation"]
     summary = json.loads((tmp_path / ".runtime/attempt/SUMMARY.json").read_text())
     assert summary["derivation"] == result["derivation"]
+    assert summary["market_economics"] == result["market_economics"]
     assert client.login_calls == 1 and client.logout_calls == 1

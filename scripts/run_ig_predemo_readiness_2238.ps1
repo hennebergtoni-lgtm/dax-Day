@@ -266,6 +266,40 @@ function Write-IgDerivationMatrix {
     }
 }
 
+function Write-IgMarketEconomicsMatrix {
+    param([Parameter(Mandatory = $true)]$Result)
+    $subchecks = @(
+        'MARKET_SHAPE', 'MARKET_IDENTITY', 'MARKET_STATUS', 'PRICE_PRECISION',
+        'CURRENCY', 'CONTRACT_ECONOMICS', 'DEALING_RULES',
+        'MARGIN_OR_SIZE_RULES', 'CANONICAL_ECONOMICS_CONSTRUCTION'
+    )
+    try {
+        $property = $Result.PSObject.Properties['market_economics']
+        if ($null -eq $property -or $null -eq $property.Value) { return }
+        $projection = if ($property.Value.projection_complete -eq $true) { 'true' } else { 'false' }
+        $verified = if ($property.Value.economics_verified -eq $true) { 'true' } else { 'false' }
+        Write-Host ('MARKET ECONOMICS: rows={0}; projection_complete={1}; economics_verified={2}' -f
+            $subchecks.Count, $projection, $verified)
+        foreach ($name in $subchecks) {
+            $rowProperty = $property.Value.subchecks.PSObject.Properties[$name]
+            if ($null -eq $rowProperty -or $null -eq $rowProperty.Value) {
+                throw 'INVALID_MARKET_ECONOMICS_SUBCHECK'
+            }
+            $status = [string]$rowProperty.Value.status
+            $reason = [string]$rowProperty.Value.reason_code
+            $required = if ($rowProperty.Value.required -eq $true) { 'true' } else { 'false' }
+            if ($status -notin @('PASS', 'BLOCKED', 'UNKNOWN') -or
+                $reason -notmatch '^[A-Z][A-Z0-9_]*$') {
+                throw 'INVALID_MARKET_ECONOMICS_ROW'
+            }
+            Write-Host ('ECONOMICS_SUBCHECK: name={0}; required={1}; status={2}; reason_code={3}' -f
+                $name, $required, $status, $reason)
+        }
+    } catch {
+        Write-Host 'MARKET ECONOMICS: SANITIZED_SHAPE_INVALID'
+    }
+}
+
 function Import-DaxHostRuntimeOwner {
     param(
         [Parameter(Mandatory = $true)][string]$DeploymentRoot,
@@ -552,11 +586,13 @@ function Invoke-Closeout {
                 -SafePayloadCodes $SafeErrorCodes
             Write-IgReadinessMatrix -Result $collectorResult
             Write-IgDerivationMatrix -Result $collectorResult
+            Write-IgMarketEconomicsMatrix -Result $collectorResult
             return $collectorResult
         } catch {
             if ($_.Exception.Data.Contains('HostLaneResult')) {
                 Write-IgReadinessMatrix -Result $_.Exception.Data['HostLaneResult']
                 Write-IgDerivationMatrix -Result $_.Exception.Data['HostLaneResult']
+                Write-IgMarketEconomicsMatrix -Result $_.Exception.Data['HostLaneResult']
             }
             try { $_.Exception.Data['FailurePhase'] = 'IG_SESSION' } catch { }
             throw
