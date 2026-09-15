@@ -27,7 +27,13 @@ jobs:
             $errors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
               (Join-Path $PWD $path), [ref]$tokens, [ref]$errors) | Out-Null
-            if ($errors.Count -ne 0) { throw 'WINDOWS_HOST_LANE_SYNTAX_INVALID' }
+            if ($errors.Count -ne 0) {
+              foreach ($parseError in $errors) {
+                Write-Host ('PARSER_ITEM: path={0}; error_id={1}; line={2}' -f
+                  $path, $parseError.ErrorId, $parseError.Extent.StartLineNumber)
+              }
+              throw ('WINDOWS_HOST_LANE_SYNTAX_INVALID:' + $path)
+            }
           }
       - name: Native Windows PowerShell failure matrix
         shell: pwsh

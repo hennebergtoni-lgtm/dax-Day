@@ -98,13 +98,13 @@ Assert-Code 'PREFLIGHT_REQUIRED_CHECK_FAILED' {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
         ExitCode = 2
         Lines = @('{"status":"BLOCKED","error_code":"PREFLIGHT_REQUIRED_CHECK_FAILED","checks":[]}')
-    } }
+    } } }
 }
 try {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
         ExitCode = 2
         Lines = @('{"status":"BLOCKED","error_code":"PREFLIGHT_REQUIRED_CHECK_FAILED","checks":[]}')
-    } }
+    } } }
     throw 'ASSERT_NO_ERROR:PREFLIGHT_RESULT_RETAINED'
 } catch {
     if ($_.Exception.Message -ne 'PREFLIGHT_REQUIRED_CHECK_FAILED' -or
@@ -115,7 +115,7 @@ try {
 $success = Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
     ExitCode = 0
     Lines = @('{"status":"PASS","error_code":"NONE","checks":[]}')
-} }
+} } }
 if ($success.status -ne 'PASS') { throw 'ASSERT_SUCCESS_SHAPE_FAILED' }
 
 Write-Output 'DAX Windows host lane failure injection: OK'
