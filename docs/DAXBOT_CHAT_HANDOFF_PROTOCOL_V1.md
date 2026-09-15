@@ -1,5 +1,19 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 IG readiness-matrix handoff — authoritative (2026-09-15)
+
+Treat `IG_SESSION_READ_FAILED_NO_RETRY` from real head
+`98de1476cde6667ee07f5fbc97d52de0f6da7dcd` as historical READ-lane
+evidence, not as a named endpoint diagnosis. The active v2 runner must be invoked
+once. It performs one login, up to eight no-retry GETs, one cleanup, and publishes
+`READ_MATRIX.json` plus hash manifest. An incomplete matrix returns
+`IG_READINESS_MATRIX_INCOMPLETE` while retaining the evidence namespace.
+
+Do not ask for endpoint-by-endpoint commands. Review the single sanitized matrix
+and advance only its proven dimensions. Step2238 is IMPLEMENTED/WAITING_EXTERNAL;
+M01/gates remain 8/0/13/6 and NONE/false. See
+`STEP_2238_IG_READINESS_MATRIX.md`.
+
 ## Step2238 exact-clone head handoff — authoritative (2026-09-15)
 
 The real `HEAD_MISMATCH` on

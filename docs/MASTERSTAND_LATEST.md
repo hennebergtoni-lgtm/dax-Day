@@ -1,5 +1,22 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 authenticated IG readiness matrix — authoritative (2026-09-15)
+
+Real Windows head `98de1476cde6667ee07f5fbc97d52de0f6da7dcd`
+proved the host lane and collector preconditions, then preserved
+`IG_SESSION_READ_FAILED_NO_RETRY` at phase READ with one successful cleanup. It
+did not identify the failing resource. The canonical collector now performs the
+eight ordered, independent GETs as one no-retry matrix after one login and
+publishes sanitized per-resource outcomes even when the matrix is incomplete.
+The official v2 working-order path mismatch is corrected from `/workingorders`
+to `/working-orders`; schemas and the default namespace are bumped to v2.
+
+Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL**, M01 remains **IN_PROGRESS**,
+and the 27-gate count remains **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL
+/ 6 BLOCKED** pending real exact-head matrix evidence. No Step2239 broker binding
+is inferred. NONE/false, no retry/relogin/dealing/order and the LIVE block remain
+binding. See `STEP_2238_IG_READINESS_MATRIX.md`.
+
 ## Step2238 exact-clone collector head — authoritative (2026-09-15)
 
 Real Windows head `9ae082ce094967cedc3ab6525173a68041f76965`

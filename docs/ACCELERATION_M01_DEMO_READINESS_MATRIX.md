@@ -1,5 +1,20 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 authenticated-read matrix overlay — 2026-09-15
+
+The real run at `98de1476cde6667ee07f5fbc97d52de0f6da7dcd`
+proved host/precheck/auth entry and cleanup but stopped on an unnamed READ
+failure. The v2 collector now aggregates all eight required resource outcomes in
+one authenticated session. It corrects the official `/working-orders` v2 path,
+keeps independent known failures observable, blocks only lost-auth dependents,
+and publishes incomplete evidence with a fixed sanitized code.
+
+No gate advances without the new real bundle. Counts remain **8 VERIFIED / 0
+IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED**. Step2238 is
+IMPLEMENTED/WAITING_EXTERNAL, Step2239 remains evidence-dependent, Step2240
+remains repository-partial, and DEMO readiness is NOT READY. NONE/false; no order.
+See `STEP_2238_IG_READINESS_MATRIX.md`.
+
 ## Step2238 collector-head overlay — 2026-09-15
 
 Head `9ae082ce094967cedc3ab6525173a68041f76965` supplied real host

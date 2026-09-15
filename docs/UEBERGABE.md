@@ -1,5 +1,19 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: Step2238 authenticated-read matrix (2026-09-15)
+
+Head `98de1476cde6667ee07f5fbc97d52de0f6da7dcd` proved the
+preflight/precheck lane and preserved a READ-domain failure, but the old
+collector aborted before naming the resource. The active v2 collector aggregates
+`ACCOUNTS`, both position/order brackets, `MARKET_V4`, `ACTIVITY_HISTORY` and
+`M5_PRICES` in one authenticated session, one attempt per eligible GET, then one
+cleanup. It publishes sanitized row-level failures and dependent blockers.
+
+Run exactly one new final-head wrapper command. Do not issue manual IG/Python/Git
+diagnostics. Step2238 stays IMPLEMENTED/WAITING_EXTERNAL; readiness remains
+8/0/13/6, NONE/false, no dealing/order, LIVE prohibited. See
+`STEP_2238_IG_READINESS_MATRIX.md`.
+
 ## Resume: exact-clone collector head (2026-09-15)
 
 Historical head `9ae082ce094967cedc3ab6525173a68041f76965`

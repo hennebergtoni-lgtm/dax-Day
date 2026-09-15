@@ -1,5 +1,19 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2238 authenticated-read matrix (2026-09-15)
+
+The real host at `98de1476cde6667ee07f5fbc97d52de0f6da7dcd`
+passed the host and collector preconditions and failed during authenticated READ
+with `IG_SESSION_READ_FAILED_NO_RETRY`; cleanup succeeded. The replacement v2
+collector uses one login, eight ordered GET-only resource rows, no retry, one
+cleanup and a hash-bound sanitized `READ_MATRIX.json`. Independent failures no
+longer hide later eligible reads; invalid auth blocks later rows without GET.
+
+Repository status is **IMPLEMENTED**; Step2238 is **WAITING_EXTERNAL** for one
+new immutable-head run. M01/gates stay at 8/0/13/6 and DEMO remains NOT READY.
+Use only the one wrapper command from the final handoff. NONE/false; no order.
+See `STEP_2238_IG_READINESS_MATRIX.md`.
+
 ## Current: exact-clone collector head ownership (2026-09-15)
 
 The real run on `9ae082ce094967cedc3ab6525173a68041f76965`
