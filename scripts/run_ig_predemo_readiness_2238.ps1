@@ -26,6 +26,8 @@ $SafeErrorCodes = @(
     'PYTHON_COMMAND_IDENTITY_INVALID', 'PYTHON_EXECUTABLE_PATH_FAILED',
     'PYTHON_EXECUTABLE_CHECK_FAILED', 'PYTHON_EXECUTABLE_NOT_FOUND',
     'PYTHON_DISCOVERY_INTERNAL_FAILURE', 'HOST_LANE_SCRIPT_PATH_FAILED',
+    'PYTHON_RUNTIME_NO_VALID_CANDIDATE', 'PYTHON_RUNTIME_AMBIGUOUS',
+    'PYTHON_RUNTIME_PROBE_MISSING', 'PYTHON_RUNTIME_SELECTION_INVALID',
     'HOST_LANE_SCRIPT_MISSING', 'HOST_LANE_PROCESS_START_FAILED',
     'HOST_LANE_PROCESS_NO_OUTPUT', 'HOST_LANE_PROCESS_MULTILINE_OUTPUT',
     'HOST_LANE_PROCESS_OUTPUT_TYPE_INVALID', 'HOST_LANE_PROCESS_JSON_INVALID',
@@ -194,11 +196,25 @@ function Invoke-Closeout {
         try { Import-Module -Name $modulePath -Force -ErrorAction Stop }
         catch { throw 'HOST_RUNTIME_OWNER_IMPORT_FAILED' }
         $script:runnerPhase = 'PYTHON'
-        $pythonPath = Resolve-DaxHostPython -PythonExecutable $PythonExecutable
         try { $powerShellExecutable = [System.IO.Path]::GetFileName(
                 [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) }
         catch { $powerShellExecutable = 'UNKNOWN' }
         $powerShellArchitecture = if ([Environment]::Is64BitProcess) { '64_BIT' } else { '32_BIT' }
+        try {
+            $pythonSelection = Resolve-DaxHostPython -PythonExecutable $PythonExecutable `
+                -DeploymentRoot $DeploymentRoot -PowerShellArchitecture $powerShellArchitecture
+            Write-DaxPythonSelection -Candidates $pythonSelection.Candidates
+            Write-Host ("PYTHON_SELECTION: status=SELECTED; resolver_rank={0}; basename={1}; version={2}; architecture={3}; identity_fingerprint={4}" -f
+                $pythonSelection.ResolverRank, $pythonSelection.ExecutableBasename,
+                $pythonSelection.Version, $pythonSelection.Architecture,
+                $pythonSelection.IdentityFingerprint)
+            $pythonPath = $pythonSelection.PythonPath
+        } catch {
+            if ($_.Exception.Data.Contains('PythonSelectionCandidates')) {
+                Write-DaxPythonSelection -Candidates $_.Exception.Data['PythonSelectionCandidates']
+            }
+            throw
+        }
         $preflightPath = Join-Path $DeploymentRoot 'scripts/dax_windows_host_preflight.py'
         $preflightArguments = @(
             '--expected-head', $ExpectedHead,

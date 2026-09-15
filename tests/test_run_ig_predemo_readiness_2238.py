@@ -82,6 +82,7 @@ def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -
     source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
     owner = (SCRIPTS / "dax_windows_host_lane.psm1").read_text(encoding="utf-8")
     assert "dax_windows_host_lane.psm1" in source
+    assert "dax_windows_python_runtime_probe.py" in owner
     assert "Invoke-DaxHostJsonProcess" in source
     assert "clone --quiet --no-checkout --no-hardlinks" in source
     assert "checkout --quiet --detach" in source
@@ -102,7 +103,9 @@ def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> No
     for error_code in (
         "PYTHON_COMMAND_DISCOVERY_FAILED",
         "PYTHON_COMMAND_RESULT_NULL",
-        "PYTHON_COMMAND_RESULT_MULTIPLE",
+        "PYTHON_RUNTIME_AMBIGUOUS",
+        "PYTHON_RUNTIME_NO_VALID_CANDIDATE",
+        "PYTHON_RUNTIME_PROBE_MISSING",
         "PYTHON_EXECUTABLE_PATH_FAILED",
         "HOST_LANE_SCRIPT_MISSING",
         "HOST_LANE_PROCESS_START_FAILED",
@@ -116,12 +119,15 @@ def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> No
     ):
         assert f"'{error_code}'" in source
     assert "-CommandType Application" in owner
+    assert "PYTHON_CANDIDATE_STORE_ALIAS_REJECTED" in owner
+    assert "identity_fingerprint" in owner
     assert "-I -S" not in owner
     assert "Get-HostLaneProperty" in owner
     assert "Write-DaxHostPreflight" in owner
     assert "PYTHON_START_FAILED" not in source
     assert "PYTHON_RESULT_INVALID" not in source
-    assert owner.count("2>$null") == 1
+    # Candidate probes and the final payload both suppress raw stderr.
+    assert owner.count("2>$null") == 2
 
 
 def test_python_runtime_failure_injection_is_executable_when_pwsh_exists() -> None:

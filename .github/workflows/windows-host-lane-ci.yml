@@ -42,8 +42,9 @@ jobs:
         run: >-
           pytest -q
           tests/test_dax_windows_host_preflight.py
+          tests/test_dax_windows_python_runtime_probe.py
           tests/test_run_ig_predemo_readiness_2238.py
       - name: Host-lane Ruff and syntax
         run: |
-          ruff check scripts/dax_windows_host_preflight.py scripts/ig_demo_credential_contract.py scripts/run_ig_predemo_readiness_2238.py tests/test_dax_windows_host_preflight.py tests/test_run_ig_predemo_readiness_2238.py
-          python -m py_compile scripts/dax_windows_host_preflight.py scripts/ig_demo_credential_contract.py scripts/run_ig_predemo_readiness_2238.py
+          ruff check scripts/dax_windows_host_preflight.py scripts/dax_windows_python_runtime_probe.py scripts/ig_demo_credential_contract.py scripts/run_ig_predemo_readiness_2238.py tests/test_dax_windows_host_preflight.py tests/test_dax_windows_python_runtime_probe.py tests/test_run_ig_predemo_readiness_2238.py
+          python -m py_compile scripts/dax_windows_host_preflight.py scripts/dax_windows_python_runtime_probe.py scripts/ig_demo_credential_contract.py scripts/run_ig_predemo_readiness_2238.py

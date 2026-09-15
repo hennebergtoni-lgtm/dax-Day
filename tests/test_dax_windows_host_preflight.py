@@ -19,7 +19,11 @@ sys.modules[SPEC.name] = preflight
 SPEC.loader.exec_module(preflight)
 
 FAILURE_SCENARIOS = {
-    "multiple_python_commands": "PYTHON_COMMAND_RESULT_MULTIPLE",
+    "multiple_distinct_valid_python_runtimes": "PYTHON_RUNTIME_AMBIGUOUS",
+    "multiple_resolvers_same_runtime": "NONE",
+    "microsoft_store_alias": "PYTHON_CANDIDATE_STORE_ALIAS_REJECTED",
+    "path_duplicate": "NONE",
+    "one_valid_candidate_among_many": "NONE",
     "python_missing": "PYTHON_COMMAND_RESULT_NULL",
     "python_wrong_version": "PYTHON_VERSION_UNSUPPORTED",
     "python_path_invalid": "PYTHON_EXECUTABLE_PATH_FAILED",
@@ -118,7 +122,7 @@ def test_aggregate_preflight_passes_and_preserves_none_false(
     assert payload["status"] == "PASS"
     assert payload["execution_capability"] == "NONE"
     assert payload["order_execution_enabled"] is False
-    assert len(payload["checks"]) >= 40
+    assert len(payload["checks"]) == 51
     assert {item["check"] for item in payload["checks"]} == set(
         preflight.CHECK_FAILURE_CODES
     )
@@ -184,7 +188,7 @@ def test_required_failure_scenarios_all_map_to_documented_fixed_codes() -> None:
             ROOT / "scripts/run_ig_predemo_readiness_2238.py",
         )
     )
-    assert len(FAILURE_SCENARIOS) == 34
+    assert len(FAILURE_SCENARIOS) == 38
     for code in FAILURE_SCENARIOS.values():
         assert code in sources
 

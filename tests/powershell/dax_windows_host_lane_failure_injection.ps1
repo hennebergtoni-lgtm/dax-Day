@@ -24,47 +24,196 @@ function Assert-Code {
     }
 }
 
-$command = { [pscustomobject]@{ Source = $PSHOME + [IO.Path]::DirectorySeparatorChar + 'pwsh' } }
+$deploymentRoot = $repoRoot
 $identity = { param($Path) return [string]$Path }
 $exists = { param($Path) return $true }
+$resolveBase = @{
+    PythonExecutable = 'python'
+    DeploymentRoot = $deploymentRoot
+    PowerShellArchitecture = if ([Environment]::Is64BitProcess) { '64_BIT' } else { '32_BIT' }
+}
+
+function New-ProbeResponse {
+    param(
+        [string]$Identity,
+        [string]$Executable = 'C:\canonical\python.exe',
+        [string]$Version = '3.11.9',
+        [string]$Architecture = '64_BIT',
+        [string]$Status = 'PASS',
+        [string]$ErrorCode = 'NONE'
+    )
+    $payload = [ordered]@{
+        status = $Status; error_code = $ErrorCode; executable_path = $Executable
+        executable_basename = 'python.exe'; identity_fingerprint = $Identity
+        executable_path_fingerprint = ('b' * 64)
+        version = $Version; architecture = $Architecture
+        project_origin = 'EXACT_DEPLOYMENT_SRC'; collector_origin = 'EXACT_DEPLOYMENT_SCRIPT'
+        execution_capability = 'NONE'; order_execution_enabled = $false
+    } | ConvertTo-Json -Compress
+    return [pscustomobject]@{ ExitCode = if ($Status -eq 'PASS') { 0 } else { 2 }; Lines = @($payload) }
+}
 
 Assert-Code 'PYTHON_COMMAND_DISCOVERY_FAILED' {
-    Resolve-DaxHostPython python @{ GetCommand = { throw [InvalidOperationException]::new('secret') } }
-}
-Assert-Code 'PYTHON_COMMAND_RESULT_NULL' {
-    Resolve-DaxHostPython python @{ GetCommand = { return $null } }
-}
-Assert-Code 'PYTHON_COMMAND_RESULT_MULTIPLE' {
-    Resolve-DaxHostPython python @{
-        GetCommand = { @([pscustomobject]@{ Source = '/a' }, [pscustomobject]@{ Source = '/b' }) }
-        FullPath = $identity
+    Resolve-DaxHostPython @resolveBase -Hooks @{
+        GetCommand = { throw [InvalidOperationException]::new('secret') }
     }
 }
-Assert-Code 'PYTHON_COMMAND_IDENTITY_INVALID' {
-    Resolve-DaxHostPython python @{ GetCommand = { [pscustomobject]@{ Source = @(1) } } }
+Assert-Code 'PYTHON_COMMAND_RESULT_NULL' {
+    Resolve-DaxHostPython @resolveBase -Hooks @{ GetCommand = { return $null } }
 }
-Assert-Code 'PYTHON_EXECUTABLE_PATH_FAILED' {
-    Resolve-DaxHostPython python @{
-        GetCommand = $command
+Assert-Code 'PYTHON_RUNTIME_AMBIGUOUS' {
+    Resolve-DaxHostPython @resolveBase -Hooks @{
+        GetCommand = {
+            param($Name)
+            if ($Name -eq 'python') {
+                return @([pscustomobject]@{ Source = '/a/python.exe' },
+                         [pscustomobject]@{ Source = '/b/python.exe' })
+            }
+            throw 'NOT_FOUND'
+        }
+        FullPath = $identity; TestPath = $exists
+        Probe = {
+            param($Item)
+            $identityValue = if ($Item.Source -match '/a/') { 'a' * 64 } else { 'b' * 64 }
+            New-ProbeResponse -Identity $identityValue -Executable ('C:\' + $identityValue.Substring(0, 1) + '\python.exe')
+        }
+    }
+}
+Assert-Code 'PYTHON_RUNTIME_NO_VALID_CANDIDATE' {
+    Resolve-DaxHostPython @resolveBase -Hooks @{
+        GetCommand = {
+            param($Name)
+            if ($Name -eq 'python') { return [pscustomobject]@{ Source = @(1) } }
+            throw 'NOT_FOUND'
+        }
+    }
+}
+Assert-Code 'PYTHON_RUNTIME_NO_VALID_CANDIDATE' {
+    Resolve-DaxHostPython @resolveBase -Hooks @{
+        GetCommand = {
+            param($Name)
+            if ($Name -eq 'python') { return [pscustomobject]@{ Source = '/bad-path' } }
+            throw 'NOT_FOUND'
+        }
         FullPath = { throw [ArgumentException]::new('secret') }
     }
 }
-Assert-Code 'PYTHON_EXECUTABLE_CHECK_FAILED' {
-    Resolve-DaxHostPython python @{
-        GetCommand = $command
-        FullPath = $identity
-        TestPath = { throw [IO.IOException]::new('secret') }
+Assert-Code 'PYTHON_RUNTIME_NO_VALID_CANDIDATE' {
+    Resolve-DaxHostPython @resolveBase -Hooks @{
+        GetCommand = {
+            param($Name)
+            if ($Name -eq 'python') { return [pscustomobject]@{ Source = '/missing' } }
+            throw 'NOT_FOUND'
+        }
+        FullPath = $identity; TestPath = { $false }
     }
 }
-Assert-Code 'PYTHON_EXECUTABLE_NOT_FOUND' {
-    Resolve-DaxHostPython python @{ GetCommand = $command; FullPath = $identity; TestPath = { $false } }
+
+# python + python.exe resolving to one interpreter is one identity, not ambiguity.
+$selected = Resolve-DaxHostPython @resolveBase -Hooks @{
+    GetCommand = {
+        param($Name)
+        if ($Name -in @('python', 'python.exe')) {
+            return [pscustomobject]@{ Source = '/same/python.exe' }
+        }
+        throw 'NOT_FOUND'
+    }
+    FullPath = $identity; TestPath = $exists
+    Probe = { New-ProbeResponse -Identity ('a' * 64) }
 }
-$selected = Resolve-DaxHostPython python @{
-    GetCommand = { @([pscustomobject]@{ Source = '/same' }, [pscustomobject]@{ Source = '/same' }) }
-    FullPath = $identity
-    TestPath = $exists
+if ($selected.IdentityFingerprint -ne ('a' * 64)) { throw 'ASSERT_PYTHON_EXE_SAME_FAILED' }
+
+# python and py may be different launchers for the same real sys.executable.
+$selected = Resolve-DaxHostPython @resolveBase -Hooks @{
+    GetCommand = {
+        param($Name)
+        if ($Name -eq 'python') { return [pscustomobject]@{ Source = '/bin/python.exe' } }
+        if ($Name -eq 'py') { return [pscustomobject]@{ Source = '/bin/py.exe' } }
+        throw 'NOT_FOUND'
+    }
+    FullPath = $identity; TestPath = $exists
+    Probe = { New-ProbeResponse -Identity ('a' * 64) -Executable 'C:\real\python.exe' }
 }
-if ($selected -ne '/same') { throw 'ASSERT_DEDUPLICATION_FAILED' }
+if ($selected.IdentityFingerprint -ne ('a' * 64)) { throw 'ASSERT_PY_LAUNCHER_SAME_FAILED' }
+
+# Repeated PATH entries for the same application are de-duplicated before probing.
+$probeCalls = 0
+$selected = Resolve-DaxHostPython @resolveBase -Hooks @{
+    GetCommand = {
+        param($Name)
+        if ($Name -eq 'python') {
+            return @([pscustomobject]@{ Source = '/same/python.exe' },
+                     [pscustomobject]@{ Source = '/same/python.exe' })
+        }
+        throw 'NOT_FOUND'
+    }
+    FullPath = $identity; TestPath = $exists
+    Probe = { $script:probeCalls += 1; New-ProbeResponse -Identity ('a' * 64) }
+}
+if ($probeCalls -ne 1) { throw 'ASSERT_PATH_DEDUPLICATION_FAILED' }
+
+# A Microsoft Store alias is never started when another valid runtime exists.
+$storeProbeCalled = $false
+$selected = Resolve-DaxHostPython @resolveBase -Hooks @{
+    GetCommand = {
+        param($Name)
+        if ($Name -eq 'python') {
+            return @(
+                [pscustomobject]@{ Source = 'C:\Users\runner\AppData\Local\Microsoft\WindowsApps\python.exe' },
+                [pscustomobject]@{ Source = 'C:\Python311\python.exe' }
+            )
+        }
+        throw 'NOT_FOUND'
+    }
+    FullPath = $identity; TestPath = $exists
+    Probe = {
+        param($Item)
+        if ($Item.Source -match 'WindowsApps') { $script:storeProbeCalled = $true }
+        New-ProbeResponse -Identity ('a' * 64) -Executable 'C:\Python311\python.exe'
+    }
+}
+if ($storeProbeCalled) { throw 'ASSERT_STORE_ALIAS_WAS_STARTED' }
+
+# A wrong version is rejected; the only valid identity is selected.
+$selected = Resolve-DaxHostPython @resolveBase -Hooks @{
+    GetCommand = {
+        param($Name)
+        if ($Name -eq 'python') {
+            return @([pscustomobject]@{ Source = '/old/python.exe' },
+                     [pscustomobject]@{ Source = '/good/python.exe' })
+        }
+        throw 'NOT_FOUND'
+    }
+    FullPath = $identity; TestPath = $exists
+    Probe = {
+        param($Item)
+        if ($Item.Source -match '/old/') {
+            return New-ProbeResponse -Identity ('b' * 64) -Status 'BLOCKED' `
+                -ErrorCode 'PYTHON_CANDIDATE_VERSION_UNSUPPORTED'
+        }
+        New-ProbeResponse -Identity ('a' * 64) -Executable 'C:\good\python.exe'
+    }
+}
+if ($selected.IdentityFingerprint -ne ('a' * 64)) { throw 'ASSERT_ONLY_VALID_FAILED' }
+
+# A valid configured python family outranks a different valid fallback py runtime.
+$selected = Resolve-DaxHostPython @resolveBase -Hooks @{
+    GetCommand = {
+        param($Name)
+        if ($Name -eq 'python') { return [pscustomobject]@{ Source = '/preferred/python.exe' } }
+        if ($Name -eq 'py') { return [pscustomobject]@{ Source = '/fallback/py.exe' } }
+        throw 'NOT_FOUND'
+    }
+    FullPath = $identity; TestPath = $exists
+    Probe = {
+        param($Item)
+        $identityValue = if ($Item.Resolver -eq 'python') { 'a' * 64 } else { 'b' * 64 }
+        New-ProbeResponse -Identity $identityValue -Executable ('C:\' + $Item.Resolver + '\python.exe')
+    }
+}
+if ($selected.ResolverRank -ne 0 -or $selected.IdentityFingerprint -ne ('a' * 64)) {
+    throw 'ASSERT_CANONICAL_PREFERENCE_FAILED'
+}
 
 $base = @{
     PythonPath = '/python'

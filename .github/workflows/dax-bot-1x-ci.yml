@@ -34,6 +34,7 @@ jobs:
           tests/test_broker*.py
           tests/test_ig_predemo_safety.py
           tests/test_dax_windows_host_preflight.py
+          tests/test_dax_windows_python_runtime_probe.py
           tests/test_run_ig_predemo_readiness_2238.py
           tests/test_operator_snapshot*.py
           tests/test_operator_runtime_bridge.py
@@ -46,6 +47,7 @@ jobs:
           tests/test_broker*.py
           tests/test_ig_predemo_safety.py
           tests/test_dax_windows_host_preflight.py
+          tests/test_dax_windows_python_runtime_probe.py
           tests/test_run_ig_predemo_readiness_2238.py
           tests/test_operator_snapshot*.py
           tests/test_operator_runtime_bridge.py
