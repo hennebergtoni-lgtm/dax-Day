@@ -8,6 +8,8 @@ import shutil
 import subprocess
 import sys
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -78,12 +80,12 @@ def test_market_v4_does_not_infer_tick_or_quantity_grid_from_digits() -> None:
 
 def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -> None:
     source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
-    owner = (SCRIPTS / "ig_predemo_python_runtime.psm1").read_text(encoding="utf-8")
-    assert "ig_predemo_python_runtime.psm1" in source
-    assert "Invoke-Step2238Collector" in source
+    owner = (SCRIPTS / "dax_windows_host_lane.psm1").read_text(encoding="utf-8")
+    assert "dax_windows_host_lane.psm1" in source
+    assert "Invoke-DaxHostJsonProcess" in source
     assert "clone --quiet --no-checkout --no-hardlinks" in source
     assert "checkout --quiet --detach" in source
-    assert "--runtime-root $RuntimeRoot" in owner
+    assert "'--runtime-root', $RuntimeRoot" in source
     assert "existing checkout remains untouched" in source
     assert "worktree add" not in source and "worktree prune" not in source
     assert "'reset'" not in source and "'stash'" not in source
@@ -96,38 +98,30 @@ def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -
 
 def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> None:
     source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
-    owner = (SCRIPTS / "ig_predemo_python_runtime.psm1").read_text(encoding="utf-8")
+    owner = (SCRIPTS / "dax_windows_host_lane.psm1").read_text(encoding="utf-8")
     for error_code in (
         "PYTHON_COMMAND_DISCOVERY_FAILED",
         "PYTHON_COMMAND_RESULT_NULL",
         "PYTHON_COMMAND_RESULT_MULTIPLE",
         "PYTHON_EXECUTABLE_PATH_FAILED",
-        "PYTHON_VERSION_PROBE_LAUNCH_FAILED",
-        "PYTHON_VERSION_UNSUPPORTED",
-        "PYTHON_VERSION_IDENTITY_INVALID",
-        "PYTHON_SCRIPT_MISSING",
-        "PYTHON_IMPORT_PROBE_LAUNCH_FAILED",
-        "PYTHON_IMPORT_ORIGIN_PATH_FAILED",
-        "PYTHON_IMPORT_ORIGIN_MISMATCH",
-        "PYTHON_COLLECTOR_START_FAILED",
-        "PYTHON_COLLECTOR_RESPONSE_NULL",
-        "PYTHON_COLLECTOR_NO_OUTPUT",
-        "PYTHON_COLLECTOR_MULTILINE_OUTPUT",
-        "PYTHON_COLLECTOR_JSON_INVALID",
-        "PYTHON_COLLECTOR_RESULT_INVALID",
-        "PYTHON_COLLECTOR_EXIT_MISMATCH",
-        "PYTHON_STAGE_INTERNAL_FAILURE",
+        "HOST_LANE_SCRIPT_MISSING",
+        "HOST_LANE_PROCESS_START_FAILED",
+        "HOST_LANE_PROCESS_NO_OUTPUT",
+        "HOST_LANE_PROCESS_MULTILINE_OUTPUT",
+        "HOST_LANE_PROCESS_JSON_INVALID",
+        "HOST_LANE_PROCESS_RESULT_INVALID",
+        "HOST_LANE_PROCESS_EXIT_MISMATCH",
+        "PREFLIGHT_REQUIRED_CHECK_FAILED",
+        "HOST_LANE_INTERNAL_FAILURE",
     ):
         assert f"'{error_code}'" in source
     assert "-CommandType Application" in owner
-    assert owner.count("-I -S -c") == 2
-    assert "sys.path[:0] = [str(src), str(scripts)]" in owner
-    assert "daxlab_origin" in owner and "runner_origin" in owner
+    assert "-I -S" not in owner
+    assert "Get-HostLaneProperty" in owner
+    assert "Write-DaxHostPreflight" in owner
     assert "PYTHON_START_FAILED" not in source
     assert "PYTHON_RESULT_INVALID" not in source
-    assert owner.count("2>$null") == 2
-    assert "Get-Step2238Property" in owner
-    assert "Get-Step2238FullPath" in owner
+    assert owner.count("2>$null") == 1
 
 
 def test_python_runtime_failure_injection_is_executable_when_pwsh_exists() -> None:
@@ -139,7 +133,7 @@ def test_python_runtime_failure_injection_is_executable_when_pwsh_exists() -> No
             pwsh,
             "-NoProfile",
             "-File",
-            str(ROOT / "tests/powershell/ig_predemo_python_runtime_failure_injection.ps1"),
+            str(ROOT / "tests/powershell/dax_windows_host_lane_failure_injection.ps1"),
         ],
         cwd=ROOT,
         capture_output=True,
@@ -147,7 +141,7 @@ def test_python_runtime_failure_injection_is_executable_when_pwsh_exists() -> No
         check=False,
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
-    assert "Step2238 Python runtime failure injection: OK" in completed.stdout
+    assert "DAX Windows host lane failure injection: OK" in completed.stdout
 
 
 def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatch) -> None:
@@ -232,3 +226,56 @@ def test_publication_is_exclusive_and_manifest_hashes_summary(tmp_path) -> None:
         pass
     else:
         raise AssertionError("existing evidence namespace was overwritten")
+
+
+def test_publication_failure_removes_only_owned_staging(tmp_path, monkeypatch) -> None:
+    evidence = {
+        "schema": runner.SCHEMA,
+        "fingerprint": "c" * 64,
+        "execution_capability": "NONE",
+        "order_execution_enabled": False,
+    }
+    namespace = tmp_path / ".runtime" / "attempt"
+    original = runner.json.dumps
+
+    def fail_on_readiness(value, *args, **kwargs):
+        if isinstance(value, dict) and value.get("schema") == runner.SCHEMA:
+            raise OSError("injected publication failure")
+        return original(value, *args, **kwargs)
+
+    monkeypatch.setattr(runner.json, "dumps", fail_on_readiness)
+    with pytest.raises(OSError):
+        runner._publish(namespace, evidence, {}, head="d" * 40)
+    assert not namespace.exists()
+    assert not list(namespace.parent.glob(".attempt.partial-*"))
+
+
+def test_collector_runtime_path_failure_has_fixed_code(tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path / "missing"),
+        "--namespace", ".runtime/attempt",
+    ])
+    assert runner.main() == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["error_code"] == "STATE_RUNTIME_ROOT_UNAVAILABLE"
+    assert result["execution_capability"] == "NONE"
+    assert result["order_execution_enabled"] is False
+
+
+def test_collector_head_query_failure_has_fixed_code(tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path),
+        "--namespace", ".runtime/attempt",
+    ])
+    monkeypatch.setattr(runner, "_head", lambda: (_ for _ in ()).throw(OSError("secret")))
+    assert runner.main() == 2
+    rendered = capsys.readouterr().out
+    result = json.loads(rendered)
+    assert result["error_code"] == "HEAD_QUERY_FAILED"
+    assert "secret" not in rendered

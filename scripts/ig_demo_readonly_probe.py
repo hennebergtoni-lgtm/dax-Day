@@ -27,6 +27,7 @@ from daxlab.adapters.ig_market_data import (
 )
 from daxlab.adapters.ig_rest_readonly import IgDemoCredentials, IgDemoReadOnlyClient
 from daxlab.domain.market import InstrumentId
+from ig_demo_credential_contract import load_ig_demo_credential_values
 
 
 SCHEMA = "DAXLAB_IG_DEMO_READONLY_PROBE_V2"
@@ -45,31 +46,8 @@ FORBIDDEN_OUTPUT_KEYS = {
     "token",
     "authorization", "account_id", "account_number", "database_url", "private_key",
 }
-_REQUIRED_CREDENTIAL_KEYS = {"IG_USERNAME", "IG_PASSWORD", "IG_API_KEY"}
-
-
 def _credentials_from_file(path: Path) -> IgDemoCredentials:
-    if not path.is_file():
-        raise RuntimeError("credentials file not found")
-    values: dict[str, str] = {}
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if "=" not in line:
-            raise RuntimeError("credentials file contains malformed line")
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip()
-        if key in values:
-            raise RuntimeError("duplicate credentials key")
-        values[key] = value
-    missing = sorted(_REQUIRED_CREDENTIAL_KEYS - values.keys())
-    if missing:
-        raise RuntimeError(f"credentials file missing required keys: {', '.join(missing)}")
-    unexpected = sorted(values.keys() - _REQUIRED_CREDENTIAL_KEYS)
-    if unexpected:
-        raise RuntimeError("credentials file contains unexpected keys")
+    values = load_ig_demo_credential_values(path)
     return IgDemoCredentials(
         identifier=values["IG_USERNAME"],
         password=values["IG_PASSWORD"],

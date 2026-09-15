@@ -1,0 +1,43 @@
+name: windows-host-lane-ci
+
+on:
+  pull_request:
+
+jobs:
+  windows-host-lane:
+    name: windows-host-lane-ci
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install broker-free test surface
+        run: |
+          python -m pip install -e . --no-deps
+          python -m pip install pytest ruff==0.16.2
+      - name: PowerShell parser parity
+        shell: pwsh
+        run: |
+          foreach ($path in @(
+              'scripts/run_ig_predemo_readiness_2238.ps1',
+              'scripts/dax_windows_host_lane.psm1',
+              'tests/powershell/dax_windows_host_lane_failure_injection.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Join-Path $PWD $path), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -ne 0) { throw 'WINDOWS_HOST_LANE_SYNTAX_INVALID' }
+          }
+      - name: Native Windows PowerShell failure matrix
+        shell: pwsh
+        run: tests/powershell/dax_windows_host_lane_failure_injection.ps1
+      - name: Windows path, import, output and aggregate preflight tests
+        run: >-
+          pytest -q
+          tests/test_dax_windows_host_preflight.py
+          tests/test_run_ig_predemo_readiness_2238.py
+      - name: Host-lane Ruff and syntax
+        run: |
+          ruff check scripts/dax_windows_host_preflight.py scripts/ig_demo_credential_contract.py scripts/run_ig_predemo_readiness_2238.py tests/test_dax_windows_host_preflight.py tests/test_run_ig_predemo_readiness_2238.py
+          python -m py_compile scripts/dax_windows_host_preflight.py scripts/ig_demo_credential_contract.py scripts/run_ig_predemo_readiness_2238.py

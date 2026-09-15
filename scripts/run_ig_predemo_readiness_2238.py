@@ -12,8 +12,14 @@ from hashlib import sha256
 import json
 from math import isfinite
 from pathlib import Path
+import shutil
 import subprocess
+import sys
 from typing import Mapping
+from uuid import uuid4
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from daxlab.adapters.ig_market_data import DEFAULT_MAX_AGE, closed_m5_price_rows
 from daxlab.adapters.ig_rest_readonly import IgDemoReadOnlyClient
@@ -33,13 +39,16 @@ SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_V1"
 MANIFEST_SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_MANIFEST_V1"
 ERROR_CODES = {
     "HEAD_MISMATCH",
+    "HEAD_QUERY_FAILED",
+    "STATE_RUNTIME_ROOT_UNAVAILABLE",
     "NAMESPACE_EXISTS",
+    "CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID",
     "IG_AUTHENTICATION_FAILED_NO_RETRY",
     "IG_SESSION_READ_FAILED_NO_RETRY",
     "IG_SESSION_CLEANUP_FAILED",
     "EVIDENCE_INVALID",
     "EVIDENCE_PUBLICATION_FAILED",
-    "UNEXPECTED_FAILURE",
+    "PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE",
 }
 
 
@@ -368,7 +377,9 @@ def _publish(
 ) -> None:
     if namespace.exists():
         raise FileExistsError("namespace exists")
-    namespace.mkdir(parents=True, exist_ok=False)
+    namespace.parent.mkdir(parents=True, exist_ok=True)
+    staging = namespace.with_name(f".{namespace.name}.partial-{uuid4().hex}")
+    staging.mkdir(exist_ok=False)
     summary = {
         "status": "SUCCESS",
         "error_code": "NONE",
@@ -377,23 +388,35 @@ def _publish(
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }
-    files = {"READINESS.json": evidence, **components, "SUMMARY.json": summary}
-    hashes: dict[str, str] = {}
-    for name, payload in files.items():
-        rendered = json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
-        (namespace / name).write_text(rendered, encoding="utf-8")
-        hashes[name] = sha256(rendered.encode()).hexdigest()
-    manifest = {
-        "schema": MANIFEST_SCHEMA,
-        "exact_head": head,
-        "files": hashes,
-        "execution_capability": "NONE",
-        "order_execution_enabled": False,
-    }
-    manifest["fingerprint"] = _fingerprint(manifest)
-    (namespace / "MANIFEST.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    try:
+        files = {"READINESS.json": evidence, **components, "SUMMARY.json": summary}
+        hashes: dict[str, str] = {}
+        for name, payload in files.items():
+            rendered = json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+            (staging / name).write_text(rendered, encoding="utf-8")
+            hashes[name] = sha256(rendered.encode()).hexdigest()
+        manifest = {
+            "schema": MANIFEST_SCHEMA,
+            "exact_head": head,
+            "files": hashes,
+            "execution_capability": "NONE",
+            "order_execution_enabled": False,
+        }
+        manifest["fingerprint"] = _fingerprint(manifest)
+        (staging / "MANIFEST.json").write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        for name, expected_hash in hashes.items():
+            if sha256((staging / name).read_bytes()).hexdigest() != expected_hash:
+                raise OSError("staging evidence readback mismatch")
+        staging.rename(namespace)
+        for name, expected_hash in hashes.items():
+            if sha256((namespace / name).read_bytes()).hexdigest() != expected_hash:
+                raise OSError("published evidence readback mismatch")
+    except Exception:
+        if staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
+        raise
 
 
 def main() -> int:
@@ -407,17 +430,20 @@ def main() -> int:
     parser.add_argument("--bars", type=int, default=40)
     args = parser.parse_args()
     client = None
-    phase = "HEAD"
+    phase = "VALIDATE"
     try:
         if args.namespace.is_absolute() or ".." in args.namespace.parts:
             raise RuntimeError("EVIDENCE_INVALID")
+        phase = "RUNTIME"
         runtime_root = args.runtime_root.resolve(strict=True)
         namespace = runtime_root / args.namespace
+        phase = "HEAD"
         head = _head()
         if head != args.expected_head:
             raise RuntimeError("HEAD_MISMATCH")
         if namespace.exists():
             raise RuntimeError("NAMESPACE_EXISTS")
+        phase = "CREDENTIAL"
         client = IgDemoReadOnlyClient(_credentials_from_file(args.credentials_file))
         phase = "LOGIN"
         client.login()
@@ -441,7 +467,11 @@ def main() -> int:
             "READ": "IG_SESSION_READ_FAILED_NO_RETRY",
             "CLEANUP": "IG_SESSION_CLEANUP_FAILED",
             "PUBLISH": "EVIDENCE_PUBLICATION_FAILED",
-        }.get(phase, "UNEXPECTED_FAILURE")
+            "CREDENTIAL": "CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID",
+            "RUNTIME": "STATE_RUNTIME_ROOT_UNAVAILABLE",
+            "HEAD": "HEAD_QUERY_FAILED",
+            "VALIDATE": "EVIDENCE_INVALID",
+        }.get(phase, "PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE")
         print(json.dumps({
             "status": "BLOCKED",
             "error_code": code,

@@ -20,29 +20,22 @@ $SafeErrorCodes = @(
     'ISOLATED_CHECKOUT_FAILED', 'DEPLOYMENT_HEAD_QUERY_FAILED',
     'DEPLOYMENT_HEAD_MISMATCH', 'DEPLOYMENT_STATUS_FAILED',
     'DEPLOYMENT_NOT_CLEAN', 'DEPLOYMENT_CLEANUP_FAILED_RETAINED',
-    'PYTHON_RUNTIME_OWNER_PATH_FAILED', 'PYTHON_RUNTIME_OWNER_MISSING',
-    'PYTHON_RUNTIME_OWNER_IMPORT_FAILED', 'PYTHON_COMMAND_DISCOVERY_FAILED',
+    'HOST_RUNTIME_OWNER_PATH_FAILED', 'HOST_RUNTIME_OWNER_MISSING',
+    'HOST_RUNTIME_OWNER_IMPORT_FAILED', 'PYTHON_COMMAND_DISCOVERY_FAILED',
     'PYTHON_COMMAND_RESULT_NULL', 'PYTHON_COMMAND_RESULT_MULTIPLE',
     'PYTHON_COMMAND_IDENTITY_INVALID', 'PYTHON_EXECUTABLE_PATH_FAILED',
     'PYTHON_EXECUTABLE_CHECK_FAILED', 'PYTHON_EXECUTABLE_NOT_FOUND',
-    'PYTHON_DISCOVERY_INTERNAL_FAILURE', 'PYTHON_DEPLOYMENT_PATH_BUILD_FAILED',
-    'PYTHON_SCRIPT_CHECK_FAILED', 'PYTHON_SCRIPT_MISSING',
-    'PYTHON_VERSION_PROBE_LAUNCH_FAILED', 'PYTHON_VERSION_PROBE_RESPONSE_INVALID',
-    'PYTHON_VERSION_PROBE_OUTPUT_INVALID', 'PYTHON_VERSION_PROBE_EXIT_FAILED',
-    'PYTHON_VERSION_PROBE_JSON_INVALID', 'PYTHON_VERSION_IDENTITY_INVALID',
-    'PYTHON_VERSION_UNSUPPORTED', 'PYTHON_IDENTITY_PATH_FAILED',
-    'PYTHON_EXECUTABLE_IDENTITY_MISMATCH', 'PYTHON_IMPORT_PROBE_LAUNCH_FAILED',
-    'PYTHON_IMPORT_PROBE_RESPONSE_INVALID', 'PYTHON_IMPORT_PROBE_OUTPUT_INVALID',
-    'PYTHON_IMPORT_PROBE_EXIT_FAILED', 'PYTHON_IMPORT_PROBE_JSON_INVALID',
-    'PYTHON_IMPORT_IDENTITY_INVALID', 'PYTHON_IMPORT_ORIGIN_PATH_FAILED',
-    'PYTHON_IMPORT_ORIGIN_COMPARE_FAILED', 'PYTHON_IMPORT_ORIGIN_MISMATCH',
-    'PYTHON_PARITY_INTERNAL_FAILURE', 'PYTHON_COLLECTOR_PATHS_INVALID',
-    'PYTHON_COLLECTOR_START_FAILED', 'PYTHON_COLLECTOR_RESPONSE_NULL',
-    'PYTHON_COLLECTOR_RESPONSE_INVALID', 'PYTHON_COLLECTOR_OUTPUT_TYPE_INVALID',
-    'PYTHON_COLLECTOR_NO_OUTPUT', 'PYTHON_COLLECTOR_MULTILINE_OUTPUT',
-    'PYTHON_COLLECTOR_JSON_INVALID', 'PYTHON_COLLECTOR_RESULT_INVALID',
-    'PYTHON_COLLECTOR_EXIT_MISMATCH', 'PYTHON_COLLECTOR_INTERNAL_FAILURE',
-    'PYTHON_STAGE_INTERNAL_FAILURE',
+    'PYTHON_DISCOVERY_INTERNAL_FAILURE', 'HOST_LANE_SCRIPT_PATH_FAILED',
+    'HOST_LANE_SCRIPT_MISSING', 'HOST_LANE_PROCESS_START_FAILED',
+    'HOST_LANE_PROCESS_NO_OUTPUT', 'HOST_LANE_PROCESS_MULTILINE_OUTPUT',
+    'HOST_LANE_PROCESS_OUTPUT_TYPE_INVALID', 'HOST_LANE_PROCESS_JSON_INVALID',
+    'HOST_LANE_PROCESS_RESULT_INVALID', 'HOST_LANE_PROCESS_EXIT_MISMATCH',
+    'HOST_LANE_INTERNAL_FAILURE', 'PREFLIGHT_REQUIRED_CHECK_FAILED',
+    'PREFLIGHT_INTERNAL_FAILURE', 'EVIDENCE_PREFLIGHT_PUBLICATION_FAILED',
+    'HOST_UNCLASSIFIED_FAILURE', 'POWERSHELL_UNCLASSIFIED_FAILURE',
+    'GIT_UNCLASSIFIED_FAILURE', 'FILESYSTEM_UNCLASSIFIED_FAILURE',
+    'PYTHON_UNCLASSIFIED_FAILURE', 'IG_SESSION_UNCLASSIFIED_FAILURE',
+    'EVIDENCE_UNCLASSIFIED_FAILURE', 'CLEANUP_UNCLASSIFIED_FAILURE',
     'GOVERNANCE_WINDOWS_HOST_REQUIRED', 'GOVERNANCE_INVALID_HEAD',
     'GOVERNANCE_HEAD_MISMATCH', 'GOVERNANCE_TRACKED_DRIFT',
     'GOVERNANCE_UNTRACKED_CODE', 'GOVERNANCE_IMPORT_PARITY',
@@ -51,6 +44,7 @@ $SafeErrorCodes = @(
     'STATE_RUNTIME_ROOT_UNAVAILABLE', 'STATE_PUBLICATION_FAILED',
     'STATE_READBACK_FAILED', 'STATE_CHANGED_OVERLAP',
     'STATE_ANCHOR_NOT_FOUND', 'STATE_NO_NEW_FINALIZED_M5',
+    'HEAD_QUERY_FAILED', 'PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE',
     'DATA_IG_M5_PROVIDER_CONTRACT_UNVERIFIED',
     'DATA_STALE_AT_PROCESSING', 'DATA_TEST_FAILED',
     'FRESH_START_FAILED', 'RESUME_FAILED', 'OPERATOR_FAILED',
@@ -192,22 +186,59 @@ function Test-RunnerOwnedDeployment {
 function Invoke-Closeout {
     param([Parameter(Mandatory = $true)][string]$DeploymentRoot)
     try {
-        try { $modulePath = Join-Path $DeploymentRoot 'scripts/ig_predemo_python_runtime.psm1' -ErrorAction Stop }
-        catch { throw 'PYTHON_RUNTIME_OWNER_PATH_FAILED' }
+        try { $modulePath = Join-Path $DeploymentRoot 'scripts/dax_windows_host_lane.psm1' -ErrorAction Stop }
+        catch { throw 'HOST_RUNTIME_OWNER_PATH_FAILED' }
         try { $modulePresent = Test-Path -LiteralPath $modulePath -PathType Leaf -ErrorAction Stop }
-        catch { throw 'PYTHON_RUNTIME_OWNER_MISSING' }
-        if (!$modulePresent) { throw 'PYTHON_RUNTIME_OWNER_MISSING' }
+        catch { throw 'HOST_RUNTIME_OWNER_MISSING' }
+        if (!$modulePresent) { throw 'HOST_RUNTIME_OWNER_MISSING' }
         try { Import-Module -Name $modulePath -Force -ErrorAction Stop }
-        catch { throw 'PYTHON_RUNTIME_OWNER_IMPORT_FAILED' }
-        $pythonPath = Resolve-Step2238PythonRuntime -PythonExecutable $PythonExecutable
-        $parity = Test-Step2238PythonRuntimeParity -PythonPath $pythonPath -DeploymentRoot $DeploymentRoot
-        return Invoke-Step2238Collector -PythonPath $pythonPath -Parity $parity `
-            -ExpectedHead $ExpectedHead -Namespace $Namespace `
-            -CredentialsFile $CredentialsFile -RuntimeRoot $RuntimeRoot `
-            -SafeErrorCodes $SafeErrorCodes
+        catch { throw 'HOST_RUNTIME_OWNER_IMPORT_FAILED' }
+        $script:runnerPhase = 'PYTHON'
+        $pythonPath = Resolve-DaxHostPython -PythonExecutable $PythonExecutable
+        try { $powerShellExecutable = [System.IO.Path]::GetFileName(
+                [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) }
+        catch { $powerShellExecutable = 'UNKNOWN' }
+        $powerShellArchitecture = if ([Environment]::Is64BitProcess) { '64_BIT' } else { '32_BIT' }
+        $preflightPath = Join-Path $DeploymentRoot 'scripts/dax_windows_host_preflight.py'
+        $preflightArguments = @(
+            '--expected-head', $ExpectedHead,
+            '--deployment-root', $DeploymentRoot,
+            '--deployment-source-root', $RepoRoot,
+            '--runtime-root', $RuntimeRoot,
+            '--namespace', $Namespace,
+            '--credentials-file', $CredentialsFile,
+            '--powershell-version', $PSVersionTable.PSVersion.ToString(),
+            '--powershell-edition', [string]$PSVersionTable.PSEdition,
+            '--powershell-executable', $powerShellExecutable,
+            '--powershell-language-mode', [string]$ExecutionContext.SessionState.LanguageMode,
+            '--powershell-architecture', $powerShellArchitecture,
+            '--git-clone', 'PASS', '--git-checkout', 'PASS',
+            '--git-long-path', 'PASS', '--git-hooks-isolation', 'PASS'
+        )
+        try {
+            $preflight = Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
+                -ScriptPath $preflightPath -Arguments $preflightArguments `
+                -SafePayloadCodes $SafeErrorCodes
+            Write-DaxHostPreflight -Result $preflight
+        } catch {
+            if ($_.Exception.Data.Contains('HostLaneResult')) {
+                Write-DaxHostPreflight -Result $_.Exception.Data['HostLaneResult']
+            }
+            throw
+        }
+        $script:runnerPhase = 'IG_SESSION'
+        Write-Host 'AUTH READ-ONLY START: one IG login; account; inventory bracket; market/economics; history; M5; cleanup'
+        $collectorPath = Join-Path $DeploymentRoot 'scripts/run_ig_predemo_readiness_2238.py'
+        $collectorArguments = @(
+            '--expected-head', $ExpectedHead, '--namespace', $Namespace,
+            '--credentials-file', $CredentialsFile, '--runtime-root', $RuntimeRoot
+        )
+        return Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
+            -ScriptPath $collectorPath -Arguments $collectorArguments `
+            -SafePayloadCodes $SafeErrorCodes
     } catch {
         if ($SafeErrorCodes -contains $_.Exception.Message) { throw }
-        throw 'PYTHON_STAGE_INTERNAL_FAILURE'
+        throw 'HOST_LANE_INTERNAL_FAILURE'
     }
 }
 
@@ -221,6 +252,8 @@ $primaryErrorCode = $null
 $cleanupErrorCode = $null
 $result = $null
 $legacyPartialState = 'NOT_QUERIED'
+$runnerPhase = 'HOST'
+$failureClass = 'NONE'
 $previousNoByteCode = $env:PYTHONDONTWRITEBYTECODE
 
 try {
@@ -236,6 +269,7 @@ try {
     }
 
     Write-Host 'START: isolated exact-head Step2238 deployment; existing checkout remains untouched'
+    $runnerPhase = 'GIT'
     $remote = Invoke-GitGate -ErrorCode 'REMOTE_QUERY_FAILED' -Arguments @(
         'remote', 'get-url', 'origin'
     )
@@ -259,6 +293,7 @@ try {
         'cat-file', '-e', ("{0}^{{commit}}" -f $ExpectedHead)
     ) | Out-Null
 
+    $runnerPhase = 'FILESYSTEM'
     $temporaryRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
     $legacyPartialState = Get-LegacyPartialState -TemporaryRoot $temporaryRoot
     $ownerToken = [Guid]::NewGuid().ToString('N')
@@ -328,14 +363,32 @@ try {
     if ($deploymentStatus) { throw 'DEPLOYMENT_NOT_CLEAN' }
 
     $env:PYTHONDONTWRITEBYTECODE = '1'
-    Write-Host 'WAIT: one IG read-only session; account; inventory bracket; market/economics; history; M5'
+    $runnerPhase = 'PYTHON'
+    Write-Host 'WAIT: aggregate local/network/credential-shape preflight before any IG session'
     $result = Invoke-Closeout -DeploymentRoot $deploymentRoot
 } catch {
     $candidate = [string]$_.Exception.Message
+    $exceptionName = $_.Exception.GetType().Name
+    $failureClass = if ($exceptionName -in @(
+            'UnauthorizedAccessException', 'IOException', 'ArgumentException',
+            'InvalidOperationException', 'CommandNotFoundException',
+            'RuntimeException', 'MethodInvocationException')) {
+        $exceptionName
+    } else { 'OTHER' }
     $primaryErrorCode = if ($SafeErrorCodes -contains $candidate) {
         $candidate
     } else {
-        'RUNNER_UNEXPECTED_FAILURE'
+        switch ($runnerPhase) {
+            'HOST' { 'HOST_UNCLASSIFIED_FAILURE' }
+            'POWERSHELL' { 'POWERSHELL_UNCLASSIFIED_FAILURE' }
+            'GIT' { 'GIT_UNCLASSIFIED_FAILURE' }
+            'FILESYSTEM' { 'FILESYSTEM_UNCLASSIFIED_FAILURE' }
+            'PYTHON' { 'PYTHON_UNCLASSIFIED_FAILURE' }
+            'IG_SESSION' { 'IG_SESSION_UNCLASSIFIED_FAILURE' }
+            'EVIDENCE' { 'EVIDENCE_UNCLASSIFIED_FAILURE' }
+            'CLEANUP' { 'CLEANUP_UNCLASSIFIED_FAILURE' }
+            default { 'RUNNER_UNEXPECTED_FAILURE' }
+        }
     }
 } finally {
     if ($null -eq $previousNoByteCode) {
@@ -366,8 +419,8 @@ try {
 $errorCode = if ($cleanupErrorCode) { $cleanupErrorCode } else { $primaryErrorCode }
 if ($errorCode) {
     Write-Host (
-        'SUMMARY: BLOCKED / FAIL_CLOSED; error_code={0}; legacy_partial_state={1}; existing checkout/evidence retained; execution disabled' `
-        -f $errorCode, $legacyPartialState
+        'SUMMARY: BLOCKED / FAIL_CLOSED; error_code={0}; failure_phase={1}; exception_class={2}; legacy_partial_state={3}; existing checkout/evidence retained; execution disabled' `
+        -f $errorCode, $runnerPhase, $failureClass, $legacyPartialState
     )
     exit 2
 }
