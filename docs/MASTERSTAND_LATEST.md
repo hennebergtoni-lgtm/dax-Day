@@ -1,5 +1,30 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 Windows module-load contract — authoritative (2026-09-15)
+
+The real Windows run on `5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880`
+created the isolated exact-head deployment and then stopped before preflight as
+`HOST_RUNTIME_OWNER_IMPORT_FAILED`. The module file existed, but the former
+wrapper collapsed path, parser, Windows PowerShell compatibility, import and
+export failures into one code; CI exercised the module only with PowerShell 7.
+The hidden underlying exception is therefore **UNKNOWN** and is not guessed.
+
+The active wrapper now performs a dependency-free pre-import check against the
+exact deployment path and emits only `MODULE_FILE_MISSING`,
+`MODULE_PARSE_FAILED`, `MODULE_VERSION_INCOMPATIBLE`,
+`MODULE_IMPORT_EXCEPTION` or `MODULE_EXPORT_CONTRACT_FAILED`. The shared module
+declares Windows PowerShell 5.1 as its minimum. Native Windows CI parses and
+imports the exact module with `powershell.exe`, verifies its four-function
+export/origin contract and exercises spaces, non-ASCII, LF, CRLF, bounded long
+paths and classified production-function failures; PowerShell 7 remains a
+supplemental compatibility lane. Module loading is now phase POWERSHELL, not
+PYTHON.
+
+Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL** until one new immutable-head
+real-host run produces the eight-resource matrix. M01 and the 27 gates do not
+advance. NONE/false, no retry, no broker side effect/order and LIVE prohibition
+remain binding.
+
 ## Step2238 authenticated IG readiness matrix — authoritative (2026-09-15)
 
 Real Windows head `98de1476cde6667ee07f5fbc97d52de0f6da7dcd`

@@ -1,5 +1,23 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2238 Windows module-load contract (2026-09-15)
+
+The real host on `5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880`
+proved isolated deployment and failed before preflight with the former generic
+`HOST_RUNTIME_OWNER_IMPORT_FAILED`. Its underlying module exception remains
+UNKNOWN because the old contract intentionally discarded it.
+
+The replacement performs exact-path/file/ASCII/parser/version/import/export
+checks before Python discovery and maps them to five fixed `MODULE_*` codes.
+The module declares PowerShell 5.1; `windows-host-lane-ci` now uses native
+Windows PowerShell for parser, exact import and failure tests, with PowerShell 7
+as a second compatibility check. Module errors report phase POWERSHELL. The
+eight-resource IG matrix is unchanged.
+
+Repository status is **IMPLEMENTED**; Step2238 remains **WAITING_EXTERNAL** for
+one exact-final-head run. M01/gates remain 8/0/13/6, NONE/false; no order and
+LIVE prohibited.
+
 ## Current: Step2238 authenticated-read matrix (2026-09-15)
 
 The real host at `98de1476cde6667ee07f5fbc97d52de0f6da7dcd`

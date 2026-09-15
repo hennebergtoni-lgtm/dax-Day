@@ -1,5 +1,20 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 module-load handoff — authoritative (2026-09-15)
+
+Treat `HOST_RUNTIME_OWNER_IMPORT_FAILED` from real head
+`5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880` as historical evidence only: the
+old wrapper did not preserve which module-load contract failed. Never ask for a
+manual parser/import command.
+
+The active runner owns a broker-free exact-deployment pre-import stage with the
+five fixed `MODULE_*` outcomes, validates four exact exported functions and
+labels this boundary POWERSHELL. Required CI imports the actual module using
+Windows PowerShell 5.1; PowerShell 7 is supplemental. Handoff remains one
+immutable-head command and one structured SUMMARY. The eight authenticated GET
+resources are unchanged and cannot run after a module block. Step2238 stays
+IMPLEMENTED/WAITING_EXTERNAL; NONE/false, no retry/order, LIVE prohibited.
+
 ## Step2238 IG readiness-matrix handoff — authoritative (2026-09-15)
 
 Treat `IG_SESSION_READ_FAILED_NO_RETRY` from real head

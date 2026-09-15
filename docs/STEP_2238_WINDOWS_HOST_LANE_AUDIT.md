@@ -1,5 +1,40 @@
 # Step2238 Windows host-lane audit
 
+## Windows PowerShell module-load contract — 2026-09-15
+
+Real-host head `5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880` completed
+the exact-head isolated clone and then returned
+`HOST_RUNTIME_OWNER_IMPORT_FAILED` before the 52-row preflight. The module was
+present. The former loader combined all file/path/parser/version/import/export
+conditions and suppressed the original exception, while its Windows workflow
+ran PowerShell tests under `pwsh` only. Consequently, the precise historical
+exception is UNKNOWN; the proven root-cause cluster is an incomplete
+PowerShell-module boundary and mismatched CI runtime, not an IG or Python fault.
+
+The production pre-import sequence is now:
+
+| Check | Fixed fail-closed result |
+| --- | --- |
+| Canonical exact-deployment path, leaf, no reparse point | `MODULE_FILE_MISSING` |
+| Nonempty dependency-free ASCII bytes and zero parser errors | `MODULE_PARSE_FAILED` |
+| Host PowerShell below declared 5.1 minimum | `MODULE_VERSION_INCOMPATIBLE` |
+| Exact-path `Import-Module -Force -PassThru` exception/cardinality | `MODULE_IMPORT_EXCEPTION` |
+| Four exact exports or their module origin differs | `MODULE_EXPORT_CONTRACT_FAILED` |
+
+Success emits only sanitized edition/version, encoding, line-ending class,
+exact-deployment origin, export count and dependency status. Raw import/parser
+stderr and paths are not printed. The module declares `#requires -Version 5.1`.
+The runner enters phase POWERSHELL for this boundary and changes to PYTHON only
+after successful import.
+
+`windows-host-lane-ci` now uses the native `powershell` shell for parsing, the
+exact production import and the failure matrix. It exercises the production
+pre-import function against missing, malformed, import-throwing and wrong-export
+modules, plus the canonical module under spaces, a non-ASCII directory, LF,
+CRLF and a bounded long path. A supplemental `pwsh` lane checks PowerShell 7.
+No collector, credential, network, session or eight-resource matrix behavior
+changed. Step2238 remains IMPLEMENTED/WAITING_EXTERNAL and NONE/false.
+
 ## Collector exact-root ownership — 2026-09-15
 
 The structured real-host result on

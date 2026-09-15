@@ -1,5 +1,20 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: Step2238 Windows module import (2026-09-15)
+
+Historical head `5381fd144c0fdad9b1d8c4ffc7a304f1fbe75880`
+stopped after isolated deployment and before preflight with
+`HOST_RUNTIME_OWNER_IMPORT_FAILED`. Do not infer the discarded exception and do
+not request manual module diagnostics.
+
+Use only the new exact-head command after native Windows CI. Its pre-import
+stage distinguishes file, parse, Windows PowerShell version, import and export
+contract failures; it validates the module's exact deployment origin and emits
+no raw stderr. The matching CI lane uses Windows PowerShell 5.1 semantics and
+also covers spaces/non-ASCII paths, LF/CRLF and bounded long paths. A failure is
+phase POWERSHELL and cannot reach Python, credentials or IG. Step2238 remains
+WAITING_EXTERNAL, NONE/false; no order, LIVE prohibited.
+
 ## Resume: Step2238 authenticated-read matrix (2026-09-15)
 
 Head `98de1476cde6667ee07f5fbc97d52de0f6da7dcd` proved the
