@@ -141,6 +141,50 @@ def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> No
     assert "$errorCode = if ($primaryErrorCode)" in source
 
 
+def test_windows_runtime_owner_has_classified_preimport_contract() -> None:
+    source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
+    owner = (SCRIPTS / "dax_windows_host_lane.psm1").read_text(encoding="ascii")
+    workflow = (ROOT / ".github/workflows/windows-host-lane-ci.yml").read_text(
+        encoding="utf-8"
+    )
+    import_test = (
+        ROOT / "tests/powershell/dax_windows_module_import_contract.ps1"
+    ).read_text(encoding="ascii")
+
+    for error_code in (
+        "MODULE_FILE_MISSING",
+        "MODULE_PARSE_FAILED",
+        "MODULE_VERSION_INCOMPATIBLE",
+        "MODULE_IMPORT_EXCEPTION",
+        "MODULE_EXPORT_CONTRACT_FAILED",
+    ):
+        assert f"'{error_code}'" in source
+    assert "HOST_RUNTIME_OWNER_IMPORT_FAILED" not in source
+    assert "function Import-DaxHostRuntimeOwner" in source
+    assert source.index("Parser]::ParseFile") < source.index("Import-Module -Name $modulePath")
+    assert source.index("Import-Module -Name $modulePath") < source.index("ExportedFunctions.Keys")
+    assert source.index("Import-DaxHostRuntimeOwner") < source.index("Resolve-DaxHostPython")
+    assert "path=EXACT_DEPLOYMENT" in source
+    assert "dependencies=NONE" in source
+    assert owner.startswith("#requires -Version 5.1\n")
+    assert max(owner.encode("ascii")) < 128
+
+    assert "shell: powershell" in workflow
+    assert "Windows PowerShell 5.1 exact module import contract" in workflow
+    assert "tests/powershell/dax_windows_module_import_contract.ps1" in workflow
+    assert "PowerShell 7 compatibility" in workflow
+    for contract in (
+        "ParseFile",
+        "Import-Module -Name $fullPath",
+        "ExportedFunctions.Keys",
+        "unicode-",
+        "host lane lf.psm1",
+        "host lane crlf.psm1",
+        "bounded-long-path-segment",
+    ):
+        assert contract in import_test
+
+
 def test_python_runtime_failure_injection_is_executable_when_pwsh_exists() -> None:
     pwsh = shutil.which("pwsh")
     if pwsh is None:

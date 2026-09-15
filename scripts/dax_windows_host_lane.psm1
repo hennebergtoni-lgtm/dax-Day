@@ -1,3 +1,5 @@
+#requires -Version 5.1
+
 Set-StrictMode -Version Latest
 
 $script:HostLaneCodes = @(

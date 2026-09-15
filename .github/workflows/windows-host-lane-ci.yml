@@ -17,11 +17,12 @@ jobs:
           python -m pip install -e . --no-deps
           python -m pip install pytest ruff==0.16.2
       - name: PowerShell parser parity
-        shell: pwsh
+        shell: powershell
         run: |
           foreach ($path in @(
               'scripts/run_ig_predemo_readiness_2238.ps1',
               'scripts/dax_windows_host_lane.psm1',
+              'tests/powershell/dax_windows_module_import_contract.ps1',
               'tests/powershell/dax_windows_host_lane_failure_injection.ps1')) {
             $tokens = $null
             $errors = $null
@@ -35,9 +36,17 @@ jobs:
               throw ('WINDOWS_HOST_LANE_SYNTAX_INVALID:' + $path)
             }
           }
-      - name: Native Windows PowerShell failure matrix
-        shell: pwsh
+      - name: Windows PowerShell 5.1 exact module import contract
+        shell: powershell
+        run: tests/powershell/dax_windows_module_import_contract.ps1
+      - name: Windows PowerShell 5.1 failure matrix
+        shell: powershell
         run: tests/powershell/dax_windows_host_lane_failure_injection.ps1
+      - name: PowerShell 7 compatibility
+        shell: pwsh
+        run: |
+          tests/powershell/dax_windows_module_import_contract.ps1
+          tests/powershell/dax_windows_host_lane_failure_injection.ps1
       - name: Windows path, import, output and aggregate preflight tests
         run: >-
           pytest -q

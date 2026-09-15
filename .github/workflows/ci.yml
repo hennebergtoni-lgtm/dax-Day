@@ -57,9 +57,15 @@ jobs:
           $parseErrors = $null
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'tests/powershell/dax_windows_host_lane_failure_injection.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
           if ($parseErrors.Count -ne 0) { throw 'WINDOWS_HOST_LANE_INJECTION_SYNTAX_INVALID' }
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'tests/powershell/dax_windows_module_import_contract.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -ne 0) { throw 'WINDOWS_MODULE_IMPORT_CONTRACT_SYNTAX_INVALID' }
       - name: Windows host lane PowerShell failure injection
         shell: pwsh
-        run: tests/powershell/dax_windows_host_lane_failure_injection.ps1
+        run: |
+          tests/powershell/dax_windows_module_import_contract.ps1
+          tests/powershell/dax_windows_host_lane_failure_injection.ps1
       - name: Export runner fixed fail-closed code contract
         shell: bash
         run: |

@@ -20,8 +20,9 @@ $SafeErrorCodes = @(
     'ISOLATED_CHECKOUT_FAILED', 'DEPLOYMENT_HEAD_QUERY_FAILED',
     'DEPLOYMENT_HEAD_MISMATCH', 'DEPLOYMENT_STATUS_FAILED',
     'DEPLOYMENT_NOT_CLEAN', 'DEPLOYMENT_CLEANUP_FAILED_RETAINED',
-    'HOST_RUNTIME_OWNER_PATH_FAILED', 'HOST_RUNTIME_OWNER_MISSING',
-    'HOST_RUNTIME_OWNER_IMPORT_FAILED', 'PYTHON_COMMAND_DISCOVERY_FAILED',
+    'MODULE_FILE_MISSING', 'MODULE_PARSE_FAILED',
+    'MODULE_VERSION_INCOMPATIBLE', 'MODULE_IMPORT_EXCEPTION',
+    'MODULE_EXPORT_CONTRACT_FAILED', 'PYTHON_COMMAND_DISCOVERY_FAILED',
     'PYTHON_COMMAND_RESULT_NULL', 'PYTHON_COMMAND_RESULT_MULTIPLE',
     'PYTHON_COMMAND_IDENTITY_INVALID', 'PYTHON_EXECUTABLE_PATH_FAILED',
     'PYTHON_EXECUTABLE_CHECK_FAILED', 'PYTHON_EXECUTABLE_NOT_FOUND',
@@ -231,16 +232,91 @@ function Write-IgReadinessMatrix {
     }
 }
 
+function Import-DaxHostRuntimeOwner {
+    param(
+        [Parameter(Mandatory = $true)][string]$DeploymentRoot,
+        [Parameter(Mandatory = $true)][string]$ModuleRelativePath
+    )
+    if ($PSVersionTable.PSVersion -lt [Version]'5.1') {
+        throw 'MODULE_VERSION_INCOMPATIBLE'
+    }
+    try {
+        $rootPath = [System.IO.Path]::GetFullPath($DeploymentRoot)
+        $modulePath = [System.IO.Path]::GetFullPath((Join-Path $rootPath $ModuleRelativePath))
+        $rootPrefix = $rootPath.TrimEnd([System.IO.Path]::DirectorySeparatorChar,
+            [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+        if (!$modulePath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'MODULE_FILE_MISSING'
+        }
+        $present = Test-Path -LiteralPath $modulePath -PathType Leaf -ErrorAction Stop
+        if (!$present) { throw 'MODULE_FILE_MISSING' }
+        $attributes = [System.IO.File]::GetAttributes($modulePath)
+        if (($attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw 'MODULE_FILE_MISSING'
+        }
+    } catch {
+        if ($_.Exception.Message -eq 'MODULE_FILE_MISSING') { throw }
+        throw 'MODULE_FILE_MISSING'
+    }
+    try {
+        $bytes = [System.IO.File]::ReadAllBytes($modulePath)
+        if ($bytes.Length -eq 0) { throw 'MODULE_PARSE_FAILED' }
+        foreach ($value in $bytes) {
+            if ($value -eq 0 -or $value -gt 127) { throw 'MODULE_PARSE_FAILED' }
+        }
+        $tokens = $null
+        $parseErrors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $modulePath, [ref]$tokens, [ref]$parseErrors)
+        if ($null -eq $ast -or $null -eq $parseErrors -or $parseErrors.Count -ne 0) {
+            throw 'MODULE_PARSE_FAILED'
+        }
+    } catch {
+        if ($_.Exception.Message -eq 'MODULE_PARSE_FAILED') { throw }
+        throw 'MODULE_PARSE_FAILED'
+    }
+    try {
+        $module = @(Import-Module -Name $modulePath -Force -PassThru -ErrorAction Stop)
+        if ($module.Count -ne 1) { throw 'MODULE_IMPORT_EXCEPTION' }
+    } catch {
+        if ($_.Exception.Message -eq 'MODULE_IMPORT_EXCEPTION') { throw }
+        throw 'MODULE_IMPORT_EXCEPTION'
+    }
+    try {
+        $expectedExports = @(
+            'Invoke-DaxHostJsonProcess',
+            'Resolve-DaxHostPython',
+            'Write-DaxHostPreflight',
+            'Write-DaxPythonSelection'
+        )
+        $actualExports = @($module[0].ExportedFunctions.Keys | Sort-Object)
+        if ($actualExports.Count -ne $expectedExports.Count) {
+            throw 'MODULE_EXPORT_CONTRACT_FAILED'
+        }
+        foreach ($name in $expectedExports) {
+            if ($actualExports -notcontains $name) { throw 'MODULE_EXPORT_CONTRACT_FAILED' }
+            $command = Get-Command -Name $name -CommandType Function -ErrorAction Stop
+            if ($null -eq $command -or $command.Module.Path -ne $modulePath) {
+                throw 'MODULE_EXPORT_CONTRACT_FAILED'
+            }
+        }
+    } catch {
+        if ($_.Exception.Message -eq 'MODULE_EXPORT_CONTRACT_FAILED') { throw }
+        throw 'MODULE_EXPORT_CONTRACT_FAILED'
+    }
+    $lineEndings = if ([System.Text.Encoding]::ASCII.GetString($bytes).Contains("`r`n")) {
+        'CRLF_OR_MIXED'
+    } else { 'LF' }
+    Write-Host ('MODULE_PREFLIGHT: status=PASS; edition={0}; version={1}; encoding=ASCII; line_endings={2}; path=EXACT_DEPLOYMENT; exports=4; dependencies=NONE' -f
+        [string]$PSVersionTable.PSEdition, $PSVersionTable.PSVersion.ToString(), $lineEndings)
+    return $modulePath
+}
+
 function Invoke-Closeout {
     param([Parameter(Mandatory = $true)][string]$DeploymentRoot)
     try {
-        try { $modulePath = Join-Path $DeploymentRoot 'scripts/dax_windows_host_lane.psm1' -ErrorAction Stop }
-        catch { throw 'HOST_RUNTIME_OWNER_PATH_FAILED' }
-        try { $modulePresent = Test-Path -LiteralPath $modulePath -PathType Leaf -ErrorAction Stop }
-        catch { throw 'HOST_RUNTIME_OWNER_MISSING' }
-        if (!$modulePresent) { throw 'HOST_RUNTIME_OWNER_MISSING' }
-        try { Import-Module -Name $modulePath -Force -ErrorAction Stop }
-        catch { throw 'HOST_RUNTIME_OWNER_IMPORT_FAILED' }
+        $modulePath = Import-DaxHostRuntimeOwner -DeploymentRoot $DeploymentRoot `
+            -ModuleRelativePath 'scripts/dax_windows_host_lane.psm1'
         $script:runnerPhase = 'PYTHON'
         try { $powerShellExecutable = [System.IO.Path]::GetFileName(
                 [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) }
@@ -469,7 +545,7 @@ try {
     if ($deploymentStatus) { throw 'DEPLOYMENT_NOT_CLEAN' }
 
     $env:PYTHONDONTWRITEBYTECODE = '1'
-    $runnerPhase = 'PYTHON'
+    $runnerPhase = 'POWERSHELL'
     Write-Host 'WAIT: aggregate local/network/credential-shape preflight before any IG session'
     $result = Invoke-Closeout -DeploymentRoot $deploymentRoot
 } catch {
