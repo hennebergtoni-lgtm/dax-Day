@@ -1,12 +1,38 @@
 # WORK CONTINUITY PROTOCOL — BINDING
 
 Status: BINDING
-Updated: 2026-09-13
+Updated: 2026-09-15
 Applies to: DAX Daytrading Bot project work, especially long engineering/research sequences and delegated ChatGPT Work tasks
 
 ## Purpose
 
 Protect engineering time, debugging time, research time and optimization time from avoidable interruptions. A progress report is visibility only; it is never a stop signal by itself. This document is also the canonical owner for how the main project chat delegates bounded work to ChatGPT Work.
+
+`docs/PROJECT_PHILOSOPHY.md` is binding context for why the project exists. It
+must be read for every large Architecture, Research, Filter, Risk or Workflow
+assignment. This protocol owns continuity mechanics; it does not duplicate or
+replace that philosophy.
+
+## 0. Canonical development thread
+
+Use the repository as the durable transfer path:
+
+`REPOSITORY TRUTH → CURRENT_WORK_STEP → MASTERSTAND → EVIDENCE → LESSONS LEDGER → HYPOTHESIS/TRIAL REGISTRIES → FILTER GOVERNANCE → HANDOFF → NEXT WORK`
+
+At start, Work reads the relevant authoritative owners. At closeout, it writes
+new scoped Evidence, Lessons and Handoff information back to those same owners.
+Main chat owns Architecture, Priority, Governance, Promotion and Red-Team
+review, but does not need to serve as a permanent manual data courier.
+
+For major work, preserve `EVIDENCE_BEFORE_CONFIDENCE`,
+`LEARNING_BEFORE_PROMOTION`, `DEMO_BEFORE_LIVE`, `ROOT_CAUSE_BEFORE_PATCH`,
+`ROBUSTNESS_BEFORE_OPTIMUM`,
+`ECONOMIC_VALUE_WITHOUT_UNEVIDENCED_RISK_CREEP`, `SURVIVAL_BEFORE_EGO` and
+`FAMILY_CAPITAL_PRINCIPLE`. Ask whether the proposal improves flight capability
+or merely adds machinery; NO_CHANGE is valid when benefit is unsupported.
+
+This thread does not authorize a Work daemon, background agents, unbounded
+research, runtime Internet access, self-deployment or productive mutation.
 
 ## 1. Core execution rule
 

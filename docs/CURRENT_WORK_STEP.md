@@ -1,15 +1,28 @@
 # Current Work Step — DAX Daytrading Bot
 
-## Current: Step2245 Bot-Helper Turbo V1.1 — COMPLETED / CI VERIFIED (2026-09-15)
+## Current: Step2246 Project Philosophy / unified thread — COMPLETED / GOVERNANCE VERIFIED (2026-09-15)
 
-- Last completed whole-number step: **2245**
-- Active whole-number step: **2245**
-- Active step state: **COMPLETED / CI VERIFIED**
-- Next step after successful completion: **2246**
+- Last completed whole-number step: **2246**
+- Active whole-number step: **2246**
+- Active step state: **COMPLETED / GOVERNANCE VERIFIED**
+- Next step after successful completion: **2247**
 
-2245 remains the terminal pointer. 2246 is reserved only, NOT ACTIVATED; user
-STOP applies. Lower structured step pointers are historical snapshots, not
-authority to resume an older step or start another tranche.
+Step2246 is docs/governance only. `PROJECT_PHILOSOPHY.md` is the binding owner
+for Fliegen lernen, family capital, Manual Turbo Request and the repository-led
+development thread. Step2247 is RESERVED / NOT ACTIVATED; user STOP applies.
+Likely next technical focus, only after separate authorization: the exact
+Step2239 native economics/sizing/session/admission evidence gaps, then a separate
+Step2240 native IG lifecycle tranche.
+
+No Runtime, strategy, filter, production Risk policy, costs, broker adapter,
+Execution or CI logic changed. Turbo remains research-only; NONE/false. Step2239
+remains WAITING_EXTERNAL, Step2240 BLOCKED, M01 NOT READY and the 27 gates remain
+8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED / 0 UNKNOWN.
+
+## Historical: Step2245 Bot-Helper Turbo V1.1 — COMPLETED / CI VERIFIED (2026-09-15)
+
+Step2245 final continuity anchor:
+`1f40ce0a526a79039cdd0beb875a2c89cdd97005`.
 
 Implementation authorized from PR #109 anchor
 `9491a5922eac4abc6984618585778317dd249600`. Evidence head remains
@@ -27,8 +40,7 @@ Design: `BOT_HELPER_TURBO_V1_1_DESIGN.md`; frozen U01–U40:
 `f4fbf15cd613d124849d5ce971dd84a8de6a6373`: all three required CIs green;
 U01–U40 twice on Linux and Windows (93 PASS per pass); V1 T01–T15 twice in all
 three owners (992 PASS per pass); research full suite 3589 PASS / 1 SKIP.
-This closeout commit is the new continuity anchor only after its own required
-CI succeeds; its exact SHA/checks are resolved from PR #109, never self-invented.
+The closeout commit passed its own required CI and is the Step2245 anchor.
 No open Turbo implementation defect. Global native lifecycle work remains
 separately blocked/unimplemented; no broker or profitability proof is added.
 

@@ -9,7 +9,9 @@ Purpose: make important project knowledge discoverable by topic so context loss 
 
 After context loss, compaction, long interruption, uncertainty about prior work, or any explicit `weiter` / `fortsetzen` instruction:
 
-1. Read `docs/SESSION_EXECUTION_REFRESHER.md` first.
+1. Read `docs/SESSION_EXECUTION_REFRESHER.md` first, and for any major
+   Architecture/Research/Filter/Risk/Workflow assignment read the binding
+   `docs/PROJECT_PHILOSOPHY.md`.
 2. Pin repository, branch and exact commit SHA.
 3. Read `docs/CURRENT_WORK_STEP.md` and use its canonical whole-number pointer. Reconstruct from commit evidence only if the ledger is missing/inconsistent; never infer the step number from chat memory or raw commit count.
 4. Read `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md` and confirm the Step-Close-Gate/pointer state is consistent before substantive work.
@@ -24,6 +26,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 
 | Topic | Authoritative/current source(s) | Status / usage | Historical / secondary sources |
 |---|---|---|---|
+| Project purpose / family capital / Manual Turbo Request | `docs/PROJECT_PHILOSOPHY.md` | Binding WHY and development-thread owner; economic return with capital survival, request without override, Hard-Safety veto | Technical truth/authorization remain with their existing code, evidence, readiness and safety owners |
 | Bot-Helper Turbo V1.1 | `docs/BOT_HELPER_TURBO_V1_1_DESIGN.md`, `docs/BOT_HELPER_TURBO_V1_1_ACCEPTANCE.md`, `docs/BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`, `scripts/run_turbo_acceptance.py` | Step2245 development L/E/G; partial truth, lessons, filter/autopsy/challenger, independent G and risk research only; current acceptance in closeout | V1 and Step2242–2244 history intact; no execution promotion |
 | Overall project state | `docs/MASTERSTAND.md` | Primary durable handover/source-of-truth below exact repo/code/evidence; Step 2181 refresh records current verified progress through Step 2179, truthful Step-2180 interruption, Monday target corridor and milestone logic | Older Masterstand revisions remain available through Git history |
 | Current work-step numbering | `docs/CURRENT_WORK_STEP.md` | Binding numbering pointer and reconstructed whole-number ledger; numbering only, never overrides code/evidence/safety | Commit history is reconstruction evidence when the pointer is inconsistent |

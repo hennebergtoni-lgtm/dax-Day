@@ -1,6 +1,29 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
-## Current Step2245 — Turbo V1.1 COMPLETED / CI VERIFIED (2026-09-15)
+## Current Step2246 — Project philosophy / unified thread COMPLETED (2026-09-15)
+
+`PROJECT_PHILOSOPHY.md` is now the single binding owner for **Fliegen lernen**,
+the family-capital principle, Manual Turbo Request without override and the
+repository-led development thread. The project exists to build robust positive
+economic value after realistic costs while preserving capital survival;
+financial urgency is never a trading signal. Major proposals must retain
+Evidence before confidence, Learning before promotion, DEMO before LIVE, Root
+Cause before patch, Robustness before optimum and Survival before ego.
+
+This is a governance/docs closeout only. Runtime, CAND-001, V11.2, filters,
+production Risk policy, costs, broker adapters, Execution and CI logic are
+unchanged. NORMAL/BOOST/TURBO remain research labels; Manual Turbo Request is
+only a request for independent evaluation and Hard Safety retains veto.
+`TURBO_OVERRIDE_RIGHT=NONE`, `execution_capability=NONE`,
+`order_execution_enabled=false`. Step2239 remains WAITING_EXTERNAL, Step2240
+BLOCKED, M01 NOT READY; gates remain 8/0/13/6/0. Step2247 is RESERVED / NOT
+ACTIVATED. After this closeout STOP.
+
+Likely next separately authorized technical focus: close the exact Step2239
+native economics/sizing/session/admission evidence gaps using Turbo V1.1; only
+then consider Step2240 native IG lifecycle as its own tranche. No order.
+
+## Historical Step2245 — Turbo V1.1 COMPLETED / CI VERIFIED (2026-09-15)
 
 Start/continuity anchor `9491a5922eac4abc6984618585778317dd249600`; historical
 real-host evidence remains on `ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`.
