@@ -1,6 +1,6 @@
 # Current Work Step — DAX Daytrading Bot
 
-## Current: Step2244 MARKET_ECONOMICS derivation closeout — IN_PROGRESS (2026-09-15)
+## Current: Step2244 MARKET_ECONOMICS derivation closeout — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
 Pinned start head: `9f8c34adc6e359ea314a7051dffcc256efad7ba2`; branch
 `nextgen-bot-line-v1`, PR #109 OPEN/UNMERGED; main unchanged
@@ -10,13 +10,37 @@ eight raw reads PASS and nine of ten derived stages PASS. The only observed
 derived blocker is MARKET_ECONOMICS / MARKET_DERIVATION_FAILED while MARKET_V4
 itself is PASS.
 
-Step2244 audits the existing MARKET_V4 shape/identity/projection/economics
-boundary before repair. The successful GET contract remains pinned. Because
-the prior aggregate reason did not identify the throwing invariant, no exact
-historical subcause is guessed; fixed credential-free subchecks and failure
-injection will be added within the existing collector, evidence, Operator and
-Bot-Helper owners. NONE/false, no retry/dealing/order and LIVE prohibited remain
-binding. Step2238/2239/2240/M01 and the readiness gates are not promoted.
+Accepted runtime head: `e10065c1c0008173118c894e40a8c88aed2a43bc`, tree
+`88733f151d8540043bd9fd573805857e6264f4f3`. All three required CIs are green:
+dax-bot-1x-ci #738, research-lab-ci #1522 and windows-host-lane-ci #27. Each
+owner passed two independent acceptance processes with 992 PASS, 0 SKIP and all
+T01–T15 PASS. Research full suite: 3491 passed / 1 conditional external skip.
+Native Windows PowerShell 5.1, PowerShell 7, Ruff, Python syntax and actual
+Chromium passed.
+
+The successful MARKET_V4 GET is unchanged. The root defect was a monolithic
+projection boundary: top-level shape validation, EPIC identity, timestamp
+conversion and optional provider economics shared one broad exception handler,
+which collapsed every failure into MARKET_DERIVATION_FAILED. The supplied prior
+evidence cannot distinguish its exact throwing value, so no historical
+subcause is invented. Official v4 truth also confirms that `instrument.epic`,
+not `marketId`, is the explicit instrument identity and that canonical Risk V1
+quantity-grid/tick-value inputs cannot be inferred from decimal/scaling fields.
+
+The existing collector now evaluates a fixed safe nine-row Economics ledger.
+MARKET_SHAPE, MARKET_IDENTITY, MARKET_STATUS, PRICE_PRECISION and DEALING_RULES
+are mandatory for projection; CURRENCY, CONTRACT_ECONOMICS,
+MARGIN_OR_SIZE_RULES and CANONICAL_ECONOMICS_CONSTRUCTION preserve
+provider-dependent/unsupported truth as UNKNOWN without manufacturing a stage
+failure. Number/time overflow, bool/null/empty-list/enum and finiteness cases are
+bounded. Stdout, SUMMARY, MARKET evidence and existing Operator GET expose only
+fixed statuses/reason codes. Bot-Helper dogfood preserves B=PASS for 8/8 raw
+reads, blocks S/K for a mandatory subcheck failure and leaves Candidate state
+unchanged. No internal Step2244 defect remains; FOLLOW-UP WORK
+DEBT=EXTERNAL_ONLY for one exact-final-head real-host recheck. NONE/false, no
+retry/dealing/order and LIVE prohibited remain binding. Step2238/2239/2240/M01
+and the readiness gates are not promoted. See
+`STEP_2244_MARKET_ECONOMICS_DERIVATION_CLOSEOUT.md`.
 
 ## Current: Step2243 Bot-Helper 8/8-read derivation closeout — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
