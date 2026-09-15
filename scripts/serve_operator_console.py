@@ -127,7 +127,9 @@ def build_ig_operator_projection(
     No raw provider strings, URLs, exception text or arbitrary pointers escape.
     """
     from daxlab.domain.market import InstrumentId
-    from daxlab.adapters.ig_market_data import DEFAULT_MAX_AGE
+    from daxlab.adapters.ig_market_data import (
+        DEFAULT_MAX_AGE, PROVIDER_TIMESTAMP_SEMANTICS, ig_m5_interval,
+    )
     from daxlab.runtime.bot_helper_contract import HelperSubject, observation, read_utc
     from daxlab.runtime.bot_helper import coordinate
     from daxlab.runtime.ig_predemo_safety import bind_ig_risk_session_inputs
@@ -165,7 +167,13 @@ def build_ig_operator_projection(
                 try:
                     if not isfinite(threshold) or threshold != DEFAULT_MAX_AGE.total_seconds():
                         raise ValueError("invalid source freshness policy")
+                    if (market_data.get("timestamp_semantics") != PROVIDER_TIMESTAMP_SEMANTICS
+                            or market_data.get("freshness_basis") != "TRUE_CLOSE_TIME"):
+                        raise ValueError("invalid source timestamp contract")
                     candidate_time = read_utc(latest.get("close_time"))
+                    expected_interval = ig_m5_interval({"snapshotTimeUTC": latest.get("snapshot_time_utc")})
+                    if (read_utc(latest.get("event_time")), candidate_time) != expected_interval:
+                        raise ValueError("incoherent source interval")
                     candidate_deadline = candidate_time + DEFAULT_MAX_AGE
                     if candidate_time > source_time:
                         raise ValueError("future closed bar")

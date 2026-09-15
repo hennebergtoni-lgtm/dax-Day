@@ -87,7 +87,12 @@ secret, service, tunnel, database schema or new destination was created.
 
 ## Acceptance matrix — provisional, not a final verdict
 
-Final local frozen-source snapshot: **pass 1: 899 passed / 1 skipped**;
+Repair freeze after D18–D20: local full suite **3443 passed / 8 skipped / 0 failed**;
+both fresh aggregate passes **915 passed / 1 skipped**, stable source hashes.
+The local skip is Chromium; actual CI repeats remain required.
+Evidence: `/tmp/bot-helper-repaired-ci/pass1/`, `pass2/` (sanitized JSON/JUnit).
+
+Pre-CI frozen-source snapshot (superseded by the repair run below): **pass 1: 899 passed / 1 skipped**;
 **pass 2: 899 passed / 1 skipped**, with no failed assertions. The full existing
 suite is **3427 passed / 8 skipped / 0 failed** (27.615 seconds). Local JSON/JUnit
 runs are at `/tmp/bot-helper-ci-ready/pass1/` and `pass2/`; the repository runner
@@ -161,12 +166,18 @@ Test/harness defects are explicitly distinguished from runtime defects.
 | D15 | Build | Global editable installation resolved another checkout → explicit PYTHONPATH and actual module-path pin; harness import check |
 | D16 | Build | Connected V3 review ran but was omitted from T14 attribution → include review module in T14 mapping; frozen harness attributes connected cases |
 | D17 | Failure injection | Console trusted payload-defined finite TTL → exact canonical `DEFAULT_MAX_AGE`; 601/3600/1e9-second injections preserve source bytes and all eight raw rows |
+| D18 | Independent second review | V3 timestamp semantics/basis and raw snapshot could contradict normalized interval → canonical `ig_m5_interval` and metadata binding at runtime/console; connected mutation regressions |
+| D19 | Native Windows CI | Recovery writer hashed LF text but wrote CRLF bytes → explicit UTF-8 byte publication, unchanged strict byte-hash verifier; newline injection and Windows replay |
+| D20 | Native Windows CI | Test read metadata through another descriptor while Windows mandatory byte lock held → retain held assertion, inspect metadata after release; no runtime lock weakening |
 
-Discovery counts: **6 build, 1 dogfood, 9 failure injection, 1 second pass = 17**.
-Implemented and locally retested repairs: **17**; CI confirmation remains pending. The reported three second-pass fixture failures
-are instances under D13, not three new product defects; their targeted source-bound
-fixture and frozen full second-pass retests passed. Current local runs have no
-failed assertions; mandatory browser/CI coverage is still incomplete.
+Discovery counts: **6 build, 1 dogfood, 9 failure injection, 2 second-pass/review,
+2 native Windows CI = 20**. D13/D15/D16/D20 are test/verification defects, not
+claims of trading-engine defects. All repairs are implemented; final repeat and
+native Windows confirmation remain pending. The first published runtime head
+`ca5e500285736abb2f13d81e82b43b402f453a8d` had both Linux lanes green, including
+two actual-browser passes; Windows run #18 found 11 failed assertions caused by
+D19/D20. Its failure artifact was uploaded and read back. No failure was relabeled
+PASS; the corrected whole acceptance union and all three lanes must run again.
 
 Reuse rule: test owner-to-owner contracts and actual admission before polishing
 projections; persist observations before derivation; bind source identity and

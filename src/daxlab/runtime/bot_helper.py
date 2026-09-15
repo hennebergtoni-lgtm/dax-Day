@@ -398,7 +398,9 @@ def run_ig_readiness_shadow(state, evidence, *, subject, observed_at, run_manife
     limits. Missing broker economics remain diagnostics, not a SHADOW ban. A
     missing/invalid actual price still blocks before Candidate admission.
     """
-    from daxlab.adapters.ig_market_data import canonical_ig_m5_contract
+    from daxlab.adapters.ig_market_data import (
+        PROVIDER_TIMESTAMP_SEMANTICS, canonical_ig_m5_contract, ig_m5_interval,
+    )
     from daxlab.runtime.decision import stable_fingerprint
     from daxlab.runtime.ig_predemo_safety import bind_ig_risk_session_inputs
 
@@ -418,6 +420,9 @@ def run_ig_readiness_shadow(state, evidence, *, subject, observed_at, run_manife
                 or subject.account_fingerprint != binding.account_context_fingerprint):
             raise ValueError
         market_data = evidence["market_data"]
+        if (market_data.get("timestamp_semantics") != PROVIDER_TIMESTAMP_SEMANTICS
+                or market_data.get("freshness_basis") != "TRUE_CLOSE_TIME"):
+            raise ValueError
         from math import isfinite
         age_limit = market_data["freshness_max_age_seconds"]
         if type(age_limit) not in (int, float) or not isfinite(age_limit) or age_limit < 0:
@@ -431,6 +436,10 @@ def run_ig_readiness_shadow(state, evidence, *, subject, observed_at, run_manife
         if market_data["status"] != "PASS" or row["source"] != f"IG_READ_ONLY:{epic}:MID_BID_ASK":
             raise ValueError
         source_time = read_utc(row["close_time"])
+        event_time = read_utc(row["event_time"])
+        source_interval = ig_m5_interval({"snapshotTimeUTC": row["snapshot_time_utc"]})
+        if source_interval != (event_time, source_time):
+            raise ValueError
         reads = evidence["authenticated_read_matrix"]["resources"]
         price_read = next(r for r in reads if r["resource"] == "M5_PRICES")
         if price_read["status"] != "PASS" or source_time > read_utc(price_read["request_started_at_utc"]):
@@ -438,7 +447,7 @@ def run_ig_readiness_shadow(state, evidence, *, subject, observed_at, run_manife
         received = read_utc(price_read["response_observed_at_utc"])
         candle = Candle(
             symbol=cfg.symbol, timeframe=cfg.bar_timeframe,
-            event_time=read_utc(row["event_time"]), close_time=source_time,
+            event_time=event_time, close_time=source_time,
             open=row["open"], high=row["high"], low=row["low"], close=row["close"],
             volume=row["volume"], source=row["source"], received_at=received, is_closed=True,
         )

@@ -224,3 +224,30 @@ def test_noncanonical_finite_ttl_is_data_invalid_and_preserves_raw_source(ig_ser
     assert data_check["valid_until"] is None
     assert len(view["read_outcomes"]) == 8
     assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize("field,value", [
+    ("timestamp_semantics", "INTERVAL_END"), ("timestamp_semantics", None),
+    ("freshness_basis", "RECEIPT_TIME"), ("freshness_basis", None),
+    ("snapshot_time_utc", "2026-09-15T07:00:00+00:00"),
+    ("snapshot_time_utc", None),
+])
+def test_incoherent_source_timestamp_contract_preserves_raw_matrix(ig_server, field, value):
+    server, path, evidence = ig_server
+    target = evidence["market_data"]
+    if field == "snapshot_time_utc":
+        target = target["latest_closed_m5"]
+    target[field] = value
+    evidence.pop("fingerprint")
+    evidence["fingerprint"] = runner._fingerprint(evidence)
+    server.ig_evidence_fingerprint = evidence["fingerprint"]
+    atomic_write_json(path, evidence)
+    before = path.read_bytes()
+    code, _, body = request(server)
+    assert code == 200
+    view = json.loads(body)
+    check = next(c for c in view["helper_cycle"]["checks"] if c["role"] == "D")
+    assert "DATA_INVALID" in check["reason_codes"]
+    assert check["valid_until"] is None
+    assert len(view["read_outcomes"]) == 8
+    assert path.read_bytes() == before

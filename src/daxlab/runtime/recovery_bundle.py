@@ -139,15 +139,15 @@ def write_recovery_bundle(
     }
     hashes: dict[str, str] = {}
     for name, payload in payloads.items():
-        text = _canonical_json(payload) + "\n"
+        encoded = (_canonical_json(payload) + "\n").encode("utf-8")
         tmp = directory / f".{name}.tmp"
         target = directory / name
-        tmp.write_text(text, encoding="utf-8")
+        tmp.write_bytes(encoded)
         tmp.replace(target)
-        hashes[name] = _sha256_text(text)
+        hashes[name] = sha256(encoded).hexdigest()
     checksum_text = "".join(f"{digest}  {name}\n" for name, digest in sorted(hashes.items()))
     tmp_checksums = directory / ".SHA256SUMS.tmp"
-    tmp_checksums.write_text(checksum_text, encoding="utf-8")
+    tmp_checksums.write_bytes(checksum_text.encode("utf-8"))
     tmp_checksums.replace(directory / "SHA256SUMS")
     return hashes
 

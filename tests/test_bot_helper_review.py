@@ -133,6 +133,10 @@ def test_review_bound_fresh_window_preserves_approved_historical_catchup():
 @pytest.mark.parametrize("variant, admitted", [
     ("complete", True), ("partial_inventory", True), ("partial_prices", False),
     ("partial_market", True), ("wrong_instrument", False), ("wrong_version", False),
+    ("semantics_end", False), ("basis_receipt", False),
+    ("semantics_missing", False), ("basis_missing", False),
+    ("semantics_unknown", False), ("basis_unknown", False),
+    ("snapshot_mismatch", False), ("snapshot_missing", False), ("snapshot_offgrid", False),
 ])
 def test_review_T14_actual_v3_to_safety_runtime_and_same_get_evidence(tmp_path, monkeypatch, variant, admitted):
     import json
@@ -157,6 +161,31 @@ def test_review_T14_actual_v3_to_safety_runtime_and_same_get_evidence(tmp_path, 
     if variant in {"wrong_instrument", "wrong_version"}:
         evidence["instrument_id" if variant == "wrong_instrument" else "schema"] = (
             "GOLD" if variant == "wrong_instrument" else "DAXLAB_IG_PREDEMO_READINESS_V9")
+        evidence.pop("fingerprint")
+        evidence["fingerprint"] = runner._fingerprint(evidence)
+    contract_faults = {
+        "semantics_end": ("timestamp_semantics", "INTERVAL_END"),
+        "basis_receipt": ("freshness_basis", "RECEIPT_TIME"),
+        "semantics_missing": ("timestamp_semantics", None),
+        "basis_missing": ("freshness_basis", None),
+        "semantics_unknown": ("timestamp_semantics", "UNKNOWN"),
+        "basis_unknown": ("freshness_basis", "UNKNOWN"),
+    }
+    if variant in contract_faults:
+        field, value = contract_faults[variant]
+        if value is None:
+            evidence["market_data"].pop(field)
+        else:
+            evidence["market_data"][field] = value
+    elif variant == "snapshot_mismatch":
+        evidence["market_data"]["latest_closed_m5"]["snapshot_time_utc"] = "2026-09-15T07:00:00+00:00"
+    elif variant == "snapshot_offgrid":
+        row = evidence["market_data"]["latest_closed_m5"]
+        for field in ("snapshot_time_utc", "event_time", "close_time"):
+            row[field] = (datetime.fromisoformat(row[field]) + timedelta(minutes=1)).isoformat()
+    elif variant == "snapshot_missing":
+        evidence["market_data"]["latest_closed_m5"].pop("snapshot_time_utc")
+    if variant in contract_faults or variant.startswith("snapshot_"):
         evidence.pop("fingerprint")
         evidence["fingerprint"] = runner._fingerprint(evidence)
     untouched = json.dumps(evidence, sort_keys=True)

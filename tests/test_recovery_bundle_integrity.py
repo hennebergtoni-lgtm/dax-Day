@@ -216,3 +216,32 @@ def test_invalid_json_structure_is_rejected_even_with_valid_hash(directory, raw)
     _reseal(directory)
     with pytest.raises(RuntimeError, match="invalid recovery bundle payload"):
         verify_recovery_bundle(directory)
+
+
+def test_windows_newline_translation_cannot_change_published_bundle_bytes(tmp_path, monkeypatch):
+    """Simulate Windows text writes; bundle hashes cover exact stored UTF-8 bytes."""
+    def windows_write_text(path, text, encoding=None, errors=None, newline=None):
+        encoded = text.replace("\n", "\r\n").encode(encoding or "utf-8")
+        path.write_bytes(encoded)
+        return len(text)
+
+    monkeypatch.setattr(Path, "write_text", windows_write_text)
+    control = tmp_path / "text-control"
+    control.write_text("Windows\n", encoding="utf-8")
+    assert control.read_bytes() == b"Windows\r\n"
+    destination = tmp_path / "bundle"
+    bundle, run, checkpoint, log = _surface()
+    hashes = write_recovery_bundle(
+        destination, bundle=bundle, run_manifest=run, checkpoint=checkpoint, decision_log=log,
+    )
+    assert verify_recovery_bundle(destination) is None
+    for name in (*PAYLOADS, "SHA256SUMS"):
+        stored = (destination / name).read_bytes()
+        assert stored.endswith(b"\n") and b"\r\n" not in stored
+        if name in hashes:
+            assert hashes[name] == sha256(stored).hexdigest()
+    # Verification must still detect byte changes rather than normalize CRLF.
+    target = destination / "checkpoint.json"
+    target.write_bytes(target.read_bytes().replace(b"\n", b"\r\n"))
+    with pytest.raises(RuntimeError, match="hash mismatch"):
+        verify_recovery_bundle(destination)
