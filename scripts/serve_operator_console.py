@@ -18,6 +18,7 @@ import re
 from typing import Any
 
 from daxlab.adapters.file_state_store import AtomicFileStateStore
+from daxlab.adapters.ig_rest_readonly import safe_provider_error_code
 from daxlab.domain.ports import StateStorePort
 from daxlab.runtime.demo_transport_attempt_reservation import load_reserved_demo_transport_attempt
 
@@ -38,6 +39,33 @@ _ASSETS = {
     "/research": ("index.html", "text/html; charset=utf-8"),
     "/status.json": ("status.json", "application/json; charset=utf-8"),
 }
+
+
+def _safe_ig_read_outcome(row: object) -> dict[str, object]:
+    """Project fixed diagnostic fields only; arbitrary provider text stays hidden."""
+    if not isinstance(row, dict):
+        return {
+            "resource": "UNKNOWN", "endpoint_family": "UNKNOWN", "status": "UNKNOWN",
+            "reason_code": "UNCLASSIFIED", "http_status_class": None,
+            "provider_error_code": None, "response_shape_status": "NOT_EVALUATED",
+        }
+    token = re.compile(r"^[A-Z][A-Z0-9_]{0,95}$")
+    resource = row.get("resource")
+    endpoint = row.get("endpoint_family")
+    reason = row.get("reason_code")
+    shape = row.get("response_shape_status")
+    http_class = row.get("http_status_class")
+    return {
+        "resource": resource if isinstance(resource, str) and token.fullmatch(resource) else "UNKNOWN",
+        "endpoint_family": endpoint if isinstance(endpoint, str) and token.fullmatch(endpoint) else "UNKNOWN",
+        "status": row.get("status") if row.get("status") in {"PASS", "FAIL", "BLOCKED", "UNKNOWN"} else "UNKNOWN",
+        "reason_code": reason if isinstance(reason, str) and token.fullmatch(reason) else "UNCLASSIFIED",
+        "http_status_class": http_class if http_class in {
+            None, "HTTP_1XX", "HTTP_2XX", "HTTP_3XX", "HTTP_4XX", "HTTP_5XX", "HTTP_OTHER"
+        } else None,
+        "provider_error_code": safe_provider_error_code(row.get("provider_error_code")),
+        "response_shape_status": shape if isinstance(shape, str) and token.fullmatch(shape) else "NOT_EVALUATED",
+    }
 
 
 def read_local_operator_projection(
@@ -155,8 +183,11 @@ def build_ig_operator_projection(
     events = []
     market_data = evidence.get("market_data")
     market_data = market_data if isinstance(market_data, dict) else {}
+    read_rows = evidence["authenticated_read_matrix"]["resources"]
+    read_blocked = any(row.get("status") != "PASS" for row in read_rows)
     for role, reason in (("H", "HOST_UNKNOWN"), ("D", "DEPENDENCY_MISSING"),
-                         ("B", "BROKER_UNKNOWN"), ("S", "PROTECTION_UNKNOWN"),
+                         ("B", "BROKER_READ_FAILED" if read_blocked else "BROKER_UNKNOWN"),
+                         ("S", "READINESS_BLOCKED" if read_blocked else "PROTECTION_UNKNOWN"),
                          ("O", "DEPENDENCY_MISSING")):
         event_time, valid_until, status, reasons = source_time, None, "UNKNOWN", (reason,)
         if role == "D" and market_data.get("status") == "PASS":
@@ -194,8 +225,7 @@ def build_ig_operator_projection(
     view.update({
         "state": "BLOCKED" if binding.blockers or cycle.blockers else "UNKNOWN",
         "source_available": True, "queried_at_utc": queried_at.isoformat(),
-        "read_outcomes": [{"resource": row["resource"], "status": row["status"] if row.get("status") in {"PASS", "FAIL", "BLOCKED", "UNKNOWN"} else "UNKNOWN"}
-                          for row in evidence["authenticated_read_matrix"]["resources"]],
+        "read_outcomes": [_safe_ig_read_outcome(row) for row in read_rows],
         "blockers": list(binding.blockers) + list(cycle.blockers) + ["SOURCE_FRESHNESS_POLICY_UNKNOWN"],
         "timestamps": {"snapshot_generated_at": source_time.isoformat(),
                        "snapshot_age_seconds": age, "heartbeat_observed_at": None},

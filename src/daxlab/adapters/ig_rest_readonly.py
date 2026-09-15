@@ -631,7 +631,11 @@ def _header_fingerprint_or_none(
 def _safe_provider_error(payload: object) -> str | None:
     if not isinstance(payload, Mapping):
         return None
-    candidate = payload.get("errorCode")
+    return safe_provider_error_code(payload.get("errorCode"))
+
+
+def safe_provider_error_code(candidate: object) -> str | None:
+    """Return only an exact documented, credential-free provider code."""
     return candidate if isinstance(candidate, str) and candidate in _SAFE_ERROR_CODES else None
 
 

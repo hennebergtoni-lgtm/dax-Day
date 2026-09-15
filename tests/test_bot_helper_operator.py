@@ -68,6 +68,58 @@ def test_partial_producer_preserves_blockers_without_mt5(failed):
     assert next(row for row in view["read_outcomes"] if row["resource"] == failed)["status"] == "UNKNOWN"
 
 
+def test_operator_projects_all_safe_5_pass_3_fail_diagnostics(ig_server):
+    server, path, evidence = ig_server
+    codes = {
+        "WORKING_ORDERS_A": "error.security.api-key-restricted",
+        "ACTIVITY_HISTORY": "error.request.invalid.date-range",
+        "WORKING_ORDERS_B": "error.security.api-key-revoked",
+    }
+    rows = evidence["authenticated_read_matrix"]["resources"]
+    for row in rows:
+        if row["resource"] in codes:
+            row.update({
+                "status": "FAIL", "reason_code": f"IG_READ_{row['resource']}_HTTP_FAILED",
+                "http_status_class": "HTTP_4XX", "provider_error_code": codes[row["resource"]],
+                "response_shape_status": "NOT_EVALUATED",
+            })
+    evidence["authenticated_read_matrix"].update({
+        "status": "BLOCKED",
+        "counts": {"PASS": 5, "FAIL": 3, "BLOCKED": 0, "UNKNOWN": 0},
+    })
+    evidence.pop("fingerprint")
+    evidence["fingerprint"] = runner._fingerprint(evidence)
+    server.ig_evidence_fingerprint = evidence["fingerprint"]
+    atomic_write_json(path, evidence)
+    status, _, body = request(server)
+    assert status == 200
+    view = json.loads(body)
+    assert len(view["read_outcomes"]) == 8
+    assert sum(row["status"] == "PASS" for row in view["read_outcomes"]) == 5
+    failures = [row for row in view["read_outcomes"] if row["status"] == "FAIL"]
+    assert [row["resource"] for row in failures] == list(codes)
+    assert [row["provider_error_code"] for row in failures] == list(codes.values())
+    assert all(row["http_status_class"] == "HTTP_4XX" for row in failures)
+    checks = {row["role"]: row for row in view["helper_cycle"]["checks"]}
+    assert "BROKER_READ_FAILED" in checks["B"]["reason_codes"]
+    assert "READINESS_BLOCKED" in checks["S"]["reason_codes"]
+    assert view["helper_cycle"]["shadow_allowed"] is False
+
+
+def test_operator_drops_unknown_provider_code_even_after_evidence_reseal(ig_server):
+    server, path, evidence = ig_server
+    row = evidence["authenticated_read_matrix"]["resources"][2]
+    row.update({"status": "FAIL", "provider_error_code": "error.private.account-secret"})
+    evidence.pop("fingerprint")
+    evidence["fingerprint"] = runner._fingerprint(evidence)
+    server.ig_evidence_fingerprint = evidence["fingerprint"]
+    atomic_write_json(path, evidence)
+    _, _, body = request(server)
+    assert b"account-secret" not in body
+    projected = json.loads(body)["read_outcomes"][2]
+    assert projected["provider_error_code"] is None
+
+
 def test_v3_source_time_future_unknown_schema_or_instrument_rejected():
     evidence = producer()
     now = datetime.fromisoformat(evidence["collected_at_utc"])
