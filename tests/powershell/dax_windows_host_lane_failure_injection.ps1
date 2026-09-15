@@ -258,16 +258,51 @@ Assert-Code 'HOST_LANE_PROCESS_JSON_INVALID' {
 Assert-Code 'HOST_LANE_PROCESS_RESULT_INVALID' {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{ ExitCode = 0; Lines = @('{"status":"PASS"}') } } }
 }
+$readinessResources = @(
+    'ACCOUNTS', 'POSITIONS_A', 'WORKING_ORDERS_A', 'MARKET_V4',
+    'ACTIVITY_HISTORY', 'M5_PRICES', 'POSITIONS_B', 'WORKING_ORDERS_B'
+)
+$readinessRows = @($readinessResources | ForEach-Object {
+    [ordered]@{
+        resource = $_
+        endpoint_family = if ($_ -eq 'ACCOUNTS') { 'ACCOUNTS_V1' } elseif (
+            $_ -like 'POSITIONS_*') { 'POSITIONS_V2' } elseif (
+            $_ -like 'WORKING_ORDERS_*') { 'WORKING_ORDERS_V2' } elseif (
+            $_ -eq 'MARKET_V4') { 'MARKET_V4' } elseif (
+            $_ -eq 'ACTIVITY_HISTORY') { 'ACTIVITY_HISTORY_V3' } else { 'PRICES_V3' }
+        status = 'UNKNOWN'
+        reason_code = ('IG_READ_{0}_UNCLASSIFIED' -f $_)
+        http_status_class = $null
+        provider_error_code = $null
+        response_shape_status = 'NOT_EVALUATED'
+        request_started_at_utc = $null
+        response_observed_at_utc = $null
+        request_id_fingerprint = $null
+        server_date_utc = $null
+    }
+})
+$readinessFailureJson = ([ordered]@{
+    status = 'BLOCKED'
+    error_code = 'IG_READINESS_MATRIX_INCOMPLETE'
+    failure_phase = 'READ'
+    login_success = $true
+    readiness_matrix_row_count = 8
+    readiness_matrix_counts = @{ PASS = 0; FAIL = 0; BLOCKED = 0; UNKNOWN = 8 }
+    readiness_matrix = $readinessRows
+    execution_capability = 'NONE'
+    order_execution_enabled = $false
+} | ConvertTo-Json -Compress -Depth 8)
 try {
     Invoke-DaxHostJsonProcess @base -Hooks @{ Process = { [pscustomobject]@{
         ExitCode = 2
-        Lines = @('{"status":"BLOCKED","error_code":"IG_READINESS_MATRIX_INCOMPLETE","failure_phase":"READ","readiness_matrix_counts":{"PASS":6,"FAIL":1,"BLOCKED":0,"UNKNOWN":1},"execution_capability":"NONE","order_execution_enabled":false}')
+        Lines = @($readinessFailureJson)
     } } }
     throw 'ASSERT_NO_ERROR:READINESS_MATRIX_RESULT'
 } catch {
     if ($_.Exception.Message -ne 'IG_READINESS_MATRIX_INCOMPLETE' -or
         !$_.Exception.Data.Contains('HostLaneResult') -or
-        [int]$_.Exception.Data['HostLaneResult'].readiness_matrix_counts.PASS -ne 6) {
+        [int]$_.Exception.Data['HostLaneResult'].readiness_matrix_row_count -ne 8 -or
+        @($_.Exception.Data['HostLaneResult'].readiness_matrix).Count -ne 8) {
         throw 'ASSERT_READINESS_MATRIX_RESULT_NOT_PRESERVED'
     }
 }

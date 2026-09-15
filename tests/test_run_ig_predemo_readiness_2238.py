@@ -7,7 +7,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-from types import SimpleNamespace
 
 import pytest
 
@@ -31,6 +30,124 @@ def _price_row(open_time: datetime, value: float) -> dict[str, object]:
         "lowPrice": {"bid": value - 4, "ask": value - 2},
         "closePrice": {"bid": value + 1, "ask": value + 3},
     }
+
+
+def _assert_authenticated_matrix(payload: dict[str, object]) -> None:
+    assert payload["login_success"] is True
+    assert payload["readiness_matrix_row_count"] == 8
+    rows = payload["readiness_matrix"]
+    assert isinstance(rows, list) and len(rows) == 8
+    assert [row["resource"] for row in rows] == [
+        resource for resource, _ in runner.READ_RESOURCE_CONTRACTS
+    ]
+
+
+class MatrixClient:
+    def __init__(
+        self,
+        *,
+        raise_resource: str | None = None,
+        invalid_resource: str | None = None,
+        lose_auth_resource: str | None = None,
+    ) -> None:
+        self.raise_resource = raise_resource
+        self.invalid_resource = invalid_resource
+        self.lose_auth_resource = lose_auth_resource
+        self.calls: list[str] = []
+        self._authenticated = True
+        self.login_calls = 0
+        self.logout_calls = 0
+        self._login_context = {
+            "environment": "IG_DEMO",
+            "currency": "EUR",
+            "account_context_fingerprint": "b" * 64,
+            "timezone_offset_hours": 1.0,
+        }
+
+    @property
+    def login_context(self):
+        return self._login_context
+
+    @property
+    def authenticated(self) -> bool:
+        return self._authenticated
+
+    def login(self):
+        self.login_calls += 1
+        self._authenticated = True
+
+    def logout(self):
+        self.logout_calls += 1
+        self._authenticated = False
+
+    def _result(self, resource: str, endpoint: str, payload: dict[str, object]):
+        self.calls.append(resource)
+        if resource == self.lose_auth_resource:
+            self._authenticated = False
+        if resource == self.raise_resource:
+            raise OSError("credential-and-account-secret")
+        if resource == self.invalid_resource:
+            return {"unsafe": "credential-and-account-secret"}
+        now = datetime(2026, 9, 15, 9, 2, 59, tzinfo=timezone.utc)
+        return runner.IgReadinessRead(
+            resource=resource,
+            endpoint_family=endpoint,
+            status="PASS",
+            reason_code="NONE",
+            response_shape_status="VALID",
+            request_started_at=now,
+            response_observed_at=now,
+            http_status_class="HTTP_2XX",
+            provider_error_code=None,
+            request_id_fingerprint=None,
+            server_date_utc=now,
+            payload=payload,
+        )
+
+    def readiness_accounts(self):
+        return self._result("ACCOUNTS", "ACCOUNTS_V1", {"accounts": []})
+
+    def readiness_positions(self, resource):
+        return self._result(resource, "POSITIONS_V2", {"positions": []})
+
+    def readiness_working_orders(self, resource):
+        return self._result(resource, "WORKING_ORDERS_V2", {"workingOrders": []})
+
+    def readiness_market_v4(self, epic):
+        return self._result(
+            "MARKET_V4",
+            "MARKET_V4",
+            {
+                "instrument": {"epic": epic, "type": "INDICES", "unit": "CONTRACTS"},
+                "dealingRules": {
+                    "minDealSize": {"value": 1, "unit": "POINTS"},
+                    "minNormalStopOrLimitDistance": {"value": 5, "unit": "POINTS"},
+                    "maxStopOrLimitDistance": {"value": 1000, "unit": "POINTS"},
+                },
+                "snapshot": {"marketStatus": "TRADEABLE", "bid": 100, "ask": 102},
+            },
+        )
+
+    def readiness_account_activity(self, **kwargs):
+        return self._result(
+            "ACTIVITY_HISTORY",
+            "ACTIVITY_HISTORY_V3",
+            {"activities": [], "metadata": {"paging": {}}},
+        )
+
+    def readiness_m5_prices(self, epic, *, max_bars):
+        start = datetime(2026, 9, 15, 8, 20, tzinfo=timezone.utc)
+        return self._result(
+            "M5_PRICES",
+            "PRICES_V3",
+            {
+                "prices": [
+                    _price_row(start + timedelta(minutes=5 * index), 100 + index)
+                    for index in range(9)
+                ],
+                "metadata": {"pageData": {"totalPages": 1}},
+            },
+        )
 
 
 def test_inventory_bracket_hashes_identifiers_and_detects_foreign_inventory() -> None:
@@ -245,20 +362,19 @@ def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatc
             "timezone_offset_hours": 1.0,
         }
         def result(self, resource, payload, endpoint):
-            return SimpleNamespace(
-                resource=resource, endpoint_family=endpoint, status="PASS",
-                reason_code="NONE", response_shape_status="VALID",
-                request_started_at=now, response_observed_at=now,
-                http_status_class="HTTP_2XX", provider_error_code=None,
-                request_id_fingerprint=None, server_date_utc=now, payload=payload,
-                safe_view=lambda: {
-                    "resource": resource, "endpoint_family": endpoint, "status": "PASS",
-                    "reason_code": "NONE", "response_shape_status": "VALID",
-                    "request_started_at_utc": now.isoformat(),
-                    "response_observed_at_utc": now.isoformat(),
-                    "http_status_class": "HTTP_2XX", "provider_error_code": None,
-                    "request_id_fingerprint": None, "server_date_utc": now.isoformat(),
-                },
+            return runner.IgReadinessRead(
+                resource=resource,
+                endpoint_family=endpoint,
+                status="PASS",
+                reason_code="NONE",
+                response_shape_status="VALID",
+                request_started_at=now,
+                response_observed_at=now,
+                http_status_class="HTTP_2XX",
+                provider_error_code=None,
+                request_id_fingerprint=None,
+                server_date_utc=now,
+                payload=payload,
             )
 
         def readiness_accounts(self):
@@ -306,6 +422,214 @@ def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatc
     assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
     assert set(components) == {"READ_MATRIX.json", "ACCOUNT.json", "INVENTORY.json",
                                "MARKET.json", "CLOCK.json", "HISTORY_SCOPE.json"}
+
+
+@pytest.mark.parametrize(
+    "failed_resource", [resource for resource, _ in runner.READ_RESOURCE_CONTRACTS]
+)
+def test_outer_guard_keeps_all_eight_rows_for_every_resource_exception(
+    failed_resource: str,
+) -> None:
+    client = MatrixClient(raise_resource=failed_resource)
+    raw_rows = runner._initial_readiness_rows()
+    evidence, _ = runner.collect(
+        client,
+        epic="IX.D.DAX.IFMM.IP",
+        instrument_id="DAX",
+        bars=40,
+        raw_rows=raw_rows,
+    )
+    matrix = evidence["authenticated_read_matrix"]
+    assert matrix["row_count"] == 8
+    assert len(matrix["resources"]) == 8
+    failed = next(row for row in matrix["resources"] if row["resource"] == failed_resource)
+    assert failed["status"] == "UNKNOWN"
+    assert failed["reason_code"] == f"IG_READ_{failed_resource}_UNCLASSIFIED"
+    assert len(client.calls) == 8
+    assert "credential-and-account-secret" not in json.dumps(evidence)
+
+
+@pytest.mark.parametrize(
+    "invalid_resource", [resource for resource, _ in runner.READ_RESOURCE_CONTRACTS]
+)
+def test_outer_guard_normalizes_every_invalid_resource_result(
+    invalid_resource: str,
+) -> None:
+    client = MatrixClient(invalid_resource=invalid_resource)
+    evidence, _ = runner.collect(
+        client, epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
+    )
+    matrix = evidence["authenticated_read_matrix"]
+    row = next(item for item in matrix["resources"] if item["resource"] == invalid_resource)
+    assert matrix["row_count"] == 8
+    assert row["status"] == "UNKNOWN"
+    assert row["reason_code"] == f"IG_READ_{invalid_resource}_UNCLASSIFIED"
+    assert len(client.calls) == 8
+    assert "credential-and-account-secret" not in json.dumps(evidence)
+
+
+def test_definitive_auth_loss_blocks_remaining_rows_without_erasing_matrix() -> None:
+    client = MatrixClient(lose_auth_resource="MARKET_V4")
+    evidence, _ = runner.collect(
+        client, epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
+    )
+    matrix = evidence["authenticated_read_matrix"]
+    assert matrix["row_count"] == 8
+    assert client.calls == ["ACCOUNTS", "POSITIONS_A", "WORKING_ORDERS_A", "MARKET_V4"]
+    assert [row["status"] for row in matrix["resources"][4:]] == [
+        "BLOCKED", "BLOCKED", "BLOCKED", "BLOCKED"
+    ]
+    assert {row["reason_code"] for row in matrix["resources"][4:]} == {
+        "IG_READ_AUTH_PRECONDITION_BLOCKED"
+    }
+
+
+def test_unreadable_auth_health_is_not_misclassified_as_definitive_loss() -> None:
+    class Client(MatrixClient):
+        @property
+        def authenticated(self):
+            raise RuntimeError("credential-and-account-secret")
+
+    client = Client()
+    evidence, _ = runner.collect(
+        client, epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
+    )
+    assert evidence["authenticated_read_matrix"]["row_count"] == 8
+    assert len(client.calls) == 8
+
+
+@pytest.mark.parametrize(
+    ("stage", "target"),
+    (
+        ("MATRIX_CONSTRUCTION", "_matrix_from_rows"),
+        ("INVENTORY", "_inventory_view"),
+        ("MARKET_ECONOMICS", "_market_view"),
+        ("M5", "_closed_candles"),
+        ("CLOCK", "_clock_projection"),
+        ("DEPENDENT_CONCLUSIONS", "_dependent_projection"),
+        ("COMPONENT_CONSTRUCTION", "_build_components"),
+    ),
+)
+def test_each_derived_processing_exception_preserves_raw_eight_row_matrix(
+    monkeypatch, stage: str, target: str
+) -> None:
+    def fail(*args, **kwargs):
+        raise RuntimeError("credential-and-account-secret")
+
+    monkeypatch.setattr(runner, target, fail)
+    evidence, _ = runner.collect(
+        MatrixClient(), epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
+    )
+    assert evidence["authenticated_read_matrix"]["row_count"] == 8
+    assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
+    assert evidence["derived_processing"][stage]["status"] == "BLOCKED"
+    assert evidence["derived_processing_complete"] is False
+    assert "credential-and-account-secret" not in json.dumps(evidence)
+
+
+def test_login_context_projection_exception_preserves_raw_eight_row_matrix() -> None:
+    class Client(MatrixClient):
+        @property
+        def login_context(self):
+            raise RuntimeError("credential-and-account-secret")
+
+    evidence, _ = runner.collect(
+        Client(), epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
+    )
+    assert evidence["authenticated_read_matrix"]["row_count"] == 8
+    assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
+    assert evidence["derived_processing"]["LOGIN_CONTEXT"]["status"] == "BLOCKED"
+
+
+def test_history_projection_exception_preserves_raw_eight_row_matrix() -> None:
+    class Client(MatrixClient):
+        def readiness_account_activity(self, **kwargs):
+            return self._result(
+                "ACTIVITY_HISTORY",
+                "ACTIVITY_HISTORY_V3",
+                {"activities": "wrong-type", "metadata": {"paging": {}}},
+            )
+
+    evidence, _ = runner.collect(
+        Client(), epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
+    )
+    assert evidence["authenticated_read_matrix"]["row_count"] == 8
+    assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
+    assert evidence["derived_processing"]["HISTORY"]["status"] == "BLOCKED"
+
+
+@pytest.mark.parametrize(
+    ("target", "expected_phase", "expected_code"),
+    (
+        ("_finalize_evidence", "EVIDENCE", "EVIDENCE_INVALID"),
+        ("_publish", "PUBLISH", "EVIDENCE_PUBLICATION_FAILED"),
+    ),
+)
+def test_post_read_failure_always_emits_raw_eight_row_matrix(
+    tmp_path, monkeypatch, capsys, target: str, expected_phase: str, expected_code: str
+) -> None:
+    client = MatrixClient()
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path),
+        "--namespace", ".runtime/attempt",
+    ])
+    monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
+    monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
+    monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
+
+    def fail(*args, **kwargs):
+        raise OSError("credential-and-account-secret")
+
+    monkeypatch.setattr(runner, target, fail)
+    assert runner.main() == 2
+    rendered = capsys.readouterr().out
+    result = json.loads(rendered)
+    assert result["failure_phase"] == expected_phase
+    assert result["error_code"] == expected_code
+    _assert_authenticated_matrix(result)
+    assert result["readiness_matrix_counts"]["PASS"] == 8
+    assert client.login_calls == 1 and client.logout_calls == 1
+    assert "credential-and-account-secret" not in rendered
+
+
+def test_matrix_builder_failure_after_login_still_emits_exactly_eight_rows(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    client = MatrixClient()
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path),
+        "--namespace", ".runtime/attempt",
+    ])
+    monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
+    monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
+    monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
+    monkeypatch.setattr(
+        runner,
+        "_matrix_from_rows",
+        lambda *_: (_ for _ in ()).throw(RuntimeError("credential-and-account-secret")),
+    )
+    assert runner.main() == 2
+    rendered = capsys.readouterr().out
+    result = json.loads(rendered)
+    _assert_authenticated_matrix(result)
+    assert result["readiness_matrix_counts"]["PASS"] == 8
+    assert "credential-and-account-secret" not in rendered
+
+
+def test_emergency_matrix_drops_corrupt_row_instead_of_leaking_it() -> None:
+    rows = runner._initial_readiness_rows()
+    rows[0]["provider_error_code"] = "credential-and-account-secret"
+    matrix = runner._emergency_matrix(rows)
+    assert matrix["row_count"] == 8
+    assert matrix["resources"][0]["status"] == "UNKNOWN"
+    assert matrix["resources"][0]["provider_error_code"] is None
+    assert "credential-and-account-secret" not in json.dumps(matrix)
 
 
 def test_publication_is_exclusive_and_manifest_hashes_summary(tmp_path) -> None:
@@ -480,14 +804,13 @@ def test_authenticated_read_failure_emits_one_structured_line_and_exit_two(
     lines = capsys.readouterr().out.splitlines()
     assert len(lines) == 1
     result = json.loads(lines[0])
-    assert result == {
-        "cleanup_error_code": "NONE",
-        "error_code": "IG_SESSION_READ_FAILED_NO_RETRY",
-        "execution_capability": "NONE",
-        "failure_phase": "READ",
-        "order_execution_enabled": False,
-        "status": "BLOCKED",
-    }
+    assert result["cleanup_error_code"] == "NONE"
+    assert result["error_code"] == "IG_SESSION_READ_FAILED_NO_RETRY"
+    assert result["execution_capability"] == "NONE"
+    assert result["failure_phase"] == "READ"
+    assert result["order_execution_enabled"] is False
+    assert result["status"] == "BLOCKED"
+    _assert_authenticated_matrix(result)
     assert client.logout_calls == 1
     assert "secret" not in lines[0]
 
@@ -526,6 +849,7 @@ def test_read_failure_preserves_primary_code_when_logout_cleanup_fails(
     assert result["error_code"] == "IG_SESSION_READ_FAILED_NO_RETRY"
     assert result["cleanup_error_code"] == "IG_SESSION_CLEANUP_FAILED"
     assert result["failure_phase"] == "READ"
+    _assert_authenticated_matrix(result)
     assert client.logout_calls == 1
     assert "secret" not in lines[0]
 
@@ -533,12 +857,7 @@ def test_read_failure_preserves_primary_code_when_logout_cleanup_fails(
 def test_logout_failure_after_successful_collection_is_structured_cleanup_failure(
     tmp_path, monkeypatch, capsys
 ) -> None:
-    class Client:
-        logout_calls = 0
-
-        def login(self):
-            return None
-
+    class Client(MatrixClient):
         def logout(self):
             self.logout_calls += 1
             raise OSError("secret logout")
@@ -554,14 +873,14 @@ def test_logout_failure_after_successful_collection_is_structured_cleanup_failur
     monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
     monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
     monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
-    monkeypatch.setattr(runner, "collect", lambda *_, **__: ({}, {}))
     assert runner.main() == 2
     lines = capsys.readouterr().out.splitlines()
     assert len(lines) == 1
     result = json.loads(lines[0])
     assert result["error_code"] == "IG_SESSION_CLEANUP_FAILED"
-    assert result["cleanup_error_code"] == "NONE"
+    assert result["cleanup_error_code"] == "IG_SESSION_CLEANUP_FAILED"
     assert result["failure_phase"] == "CLEANUP"
+    _assert_authenticated_matrix(result)
     assert client.logout_calls == 1
     assert "secret" not in lines[0]
 
@@ -577,17 +896,22 @@ def test_incomplete_read_matrix_is_published_after_one_cleanup(
             self.logout_calls += 1
 
     client = Client()
-    matrix = {
-        "status": "BLOCKED", "required_resources": 8,
-        "counts": {"PASS": 7, "FAIL": 1, "BLOCKED": 0, "UNKNOWN": 0},
-        "resources": [{"resource": "MARKET_V4", "status": "FAIL",
-                       "reason_code": "IG_READ_MARKET_V4_HTTP_FAILED"}],
-        "no_retry": True, "single_login": True, "single_cleanup": True,
-    }
+    raw_rows = [
+        runner._fallback_read(resource, endpoint, status="PASS", reason_code="NONE").safe_view()
+        for resource, endpoint in runner.READ_RESOURCE_CONTRACTS
+    ]
+    raw_rows[3] = runner._fallback_read(
+        "MARKET_V4",
+        "MARKET_V4",
+        status="FAIL",
+        reason_code="IG_READ_MARKET_V4_HTTP_FAILED",
+    ).safe_view()
+    matrix = runner._matrix_from_rows(raw_rows)
     evidence = {
         "schema": runner.SCHEMA, "account": {}, "inventory": {}, "market": {},
         "clock": {}, "history_scope": {}, "authenticated_read_matrix": matrix,
         "dependent_conclusions": {"economics": "BLOCKED"},
+        "derived_processing_complete": True,
         "execution_capability": "NONE", "order_execution_enabled": False,
     }
     monkeypatch.setattr(sys, "argv", [
@@ -598,11 +922,16 @@ def test_incomplete_read_matrix_is_published_after_one_cleanup(
     monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
     monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
     monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
-    monkeypatch.setattr(runner, "collect", lambda *_, **__: (evidence, {}))
+    def collect(*args, raw_rows, **kwargs):
+        raw_rows[:] = matrix["resources"]
+        return evidence, {}
+
+    monkeypatch.setattr(runner, "collect", collect)
     assert runner.main() == 2
     result = json.loads(capsys.readouterr().out)
     assert result["error_code"] == "IG_READINESS_MATRIX_INCOMPLETE"
     assert result["readiness_matrix_counts"]["PASS"] == 7
+    _assert_authenticated_matrix(result)
     assert result["cleanup_error_code"] == "NONE"
     assert client.logout_calls == 1
     published = json.loads((tmp_path / ".runtime/attempt/READ_MATRIX.json").read_text())

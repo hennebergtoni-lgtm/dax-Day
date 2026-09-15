@@ -27,7 +27,10 @@ from daxlab.adapters.ig_market_data import (  # noqa: E402
     DEFAULT_MAX_AGE,
     closed_m5_price_rows,
 )
-from daxlab.adapters.ig_rest_readonly import IgDemoReadOnlyClient  # noqa: E402
+from daxlab.adapters.ig_rest_readonly import (  # noqa: E402
+    IgDemoReadOnlyClient,
+    IgReadinessRead,
+)
 
 from ig_demo_readonly_probe import (  # noqa: E402
     DEFAULT_EPIC,
@@ -40,8 +43,8 @@ from ig_demo_readonly_probe import (  # noqa: E402
 )
 
 
-SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_V2"
-MANIFEST_SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_MANIFEST_V2"
+SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_V3"
+MANIFEST_SCHEMA = "DAXLAB_IG_PREDEMO_READINESS_MANIFEST_V3"
 ERROR_CODES = {
     "HEAD_MISMATCH",
     "HEAD_QUERY_FAILED",
@@ -51,11 +54,23 @@ ERROR_CODES = {
     "IG_AUTHENTICATION_FAILED_NO_RETRY",
     "IG_SESSION_READ_FAILED_NO_RETRY",
     "IG_READINESS_MATRIX_INCOMPLETE",
+    "IG_READINESS_DERIVATION_INCOMPLETE",
     "IG_SESSION_CLEANUP_FAILED",
     "EVIDENCE_INVALID",
     "EVIDENCE_PUBLICATION_FAILED",
     "PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE",
 }
+
+READ_RESOURCE_CONTRACTS = (
+    ("ACCOUNTS", "ACCOUNTS_V1"),
+    ("POSITIONS_A", "POSITIONS_V2"),
+    ("WORKING_ORDERS_A", "WORKING_ORDERS_V2"),
+    ("MARKET_V4", "MARKET_V4"),
+    ("ACTIVITY_HISTORY", "ACTIVITY_HISTORY_V3"),
+    ("M5_PRICES", "PRICES_V3"),
+    ("POSITIONS_B", "POSITIONS_V2"),
+    ("WORKING_ORDERS_B", "WORKING_ORDERS_V2"),
+)
 
 
 def _fingerprint(value: object) -> str:
@@ -254,22 +269,317 @@ def _result_payload(results: Mapping[str, Any], name: str) -> Mapping[str, objec
     return result.payload if result.status == "PASS" else None
 
 
-def _matrix_summary(results: list[Any]) -> dict[str, object]:
-    counts = {status: sum(item.status == status for item in results)
-              for status in ("PASS", "FAIL", "BLOCKED", "UNKNOWN")}
+def _fallback_read(
+    resource: str,
+    endpoint_family: str,
+    *,
+    status: str = "UNKNOWN",
+    reason_code: str | None = None,
+    started: datetime | None = None,
+    observed: datetime | None = None,
+) -> IgReadinessRead:
+    return IgReadinessRead(
+        resource=resource,
+        endpoint_family=endpoint_family,
+        status=status,
+        reason_code=reason_code or f"IG_READ_{resource}_UNCLASSIFIED",
+        response_shape_status="NOT_EVALUATED",
+        request_started_at=started,
+        response_observed_at=observed,
+        http_status_class=None,
+        provider_error_code=None,
+        request_id_fingerprint=None,
+        server_date_utc=None,
+        payload=None,
+    )
+
+
+def _initial_readiness_rows() -> list[dict[str, object]]:
+    return [
+        _fallback_read(resource, endpoint).safe_view()
+        for resource, endpoint in READ_RESOURCE_CONTRACTS
+    ]
+
+
+def _sanitized_raw_row(
+    row: object, *, resource: str, endpoint_family: str
+) -> dict[str, object]:
+    if not isinstance(row, dict):
+        raise ValueError("raw readiness row must be an object")
+    status = row.get("status")
+    reason = row.get("reason_code")
+    shape = row.get("response_shape_status")
+    http_class = row.get("http_status_class")
+    provider_code = row.get("provider_error_code")
+    request_id = row.get("request_id_fingerprint")
+    if row.get("resource") != resource or row.get("endpoint_family") != endpoint_family:
+        raise ValueError("raw readiness identity mismatch")
+    if status not in {"PASS", "FAIL", "BLOCKED", "UNKNOWN"}:
+        raise ValueError("raw readiness status invalid")
+    if not isinstance(reason, str) or not reason or not reason.isascii() or any(
+        character not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_" for character in reason
+    ):
+        raise ValueError("raw readiness reason invalid")
+    if not isinstance(shape, str) or not shape or not shape.isascii() or any(
+        character not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_" for character in shape
+    ):
+        raise ValueError("raw readiness shape invalid")
+    if http_class not in {
+        None, "HTTP_1XX", "HTTP_2XX", "HTTP_3XX", "HTTP_4XX", "HTTP_5XX", "HTTP_OTHER"
+    }:
+        raise ValueError("raw readiness HTTP class invalid")
+    if provider_code is not None and (
+        not isinstance(provider_code, str)
+        or not provider_code
+        or len(provider_code) > 96
+        or not provider_code.isascii()
+        or not provider_code.startswith(("error.", "endpoint.", "invalid.", "system."))
+        or any(character not in "abcdefghijklmnopqrstuvwxyz0123456789.-" for character in provider_code)
+    ):
+        raise ValueError("raw readiness provider code invalid")
+    if request_id is not None and (
+        not isinstance(request_id, str)
+        or len(request_id) != 64
+        or any(character not in "0123456789abcdef" for character in request_id)
+    ):
+        raise ValueError("raw readiness request fingerprint invalid")
+    timestamps: dict[str, str | None] = {}
+    for key in (
+        "request_started_at_utc", "response_observed_at_utc", "server_date_utc"
+    ):
+        value = row.get(key)
+        if value is not None and (
+            not isinstance(value, str)
+            or len(value) > 64
+            or any(character not in "0123456789T:+.-" for character in value)
+        ):
+            raise ValueError("raw readiness timestamp invalid")
+        timestamps[key] = value
     return {
-        "status": "PASS" if counts["PASS"] == len(results) else "BLOCKED",
-        "required_resources": len(results),
+        "resource": resource,
+        "endpoint_family": endpoint_family,
+        "status": status,
+        "reason_code": reason,
+        "http_status_class": http_class,
+        "provider_error_code": provider_code,
+        "response_shape_status": shape,
+        "request_started_at_utc": timestamps["request_started_at_utc"],
+        "response_observed_at_utc": timestamps["response_observed_at_utc"],
+        "request_id_fingerprint": request_id,
+        "server_date_utc": timestamps["server_date_utc"],
+    }
+
+
+def _matrix_from_rows(rows: list[dict[str, object]]) -> dict[str, object]:
+    safe_rows: list[dict[str, object]] = []
+    for index, (resource, endpoint) in enumerate(READ_RESOURCE_CONTRACTS):
+        try:
+            row = rows[index]
+            safe_rows.append(
+                _sanitized_raw_row(row, resource=resource, endpoint_family=endpoint)
+            )
+        except Exception:
+            safe_rows.append(_fallback_read(resource, endpoint).safe_view())
+    counts = {
+        status: sum(row["status"] == status for row in safe_rows)
+        for status in ("PASS", "FAIL", "BLOCKED", "UNKNOWN")
+    }
+    return {
+        "status": "PASS" if counts["PASS"] == len(READ_RESOURCE_CONTRACTS) else "BLOCKED",
+        "required_resources": len(READ_RESOURCE_CONTRACTS),
+        "row_count": len(safe_rows),
         "counts": counts,
-        "resources": [item.safe_view() for item in results],
+        "resources": safe_rows,
         "no_retry": True,
         "single_login": True,
         "single_cleanup": True,
     }
 
 
+def _emergency_matrix(
+    preserved_rows: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    fallback_rows = [
+        {
+            "resource": resource,
+            "endpoint_family": endpoint,
+            "status": "UNKNOWN",
+            "reason_code": f"IG_READ_{resource}_UNCLASSIFIED",
+            "http_status_class": None,
+            "provider_error_code": None,
+            "response_shape_status": "NOT_EVALUATED",
+            "request_started_at_utc": None,
+            "response_observed_at_utc": None,
+            "request_id_fingerprint": None,
+            "server_date_utc": None,
+        }
+        for resource, endpoint in READ_RESOURCE_CONTRACTS
+    ]
+    rows = fallback_rows
+    if isinstance(preserved_rows, list) and len(preserved_rows) == 8:
+        preserved: list[dict[str, object]] = []
+        for index, (resource, endpoint) in enumerate(READ_RESOURCE_CONTRACTS):
+            try:
+                preserved.append(
+                    _sanitized_raw_row(
+                        preserved_rows[index], resource=resource, endpoint_family=endpoint
+                    )
+                )
+            except Exception:
+                preserved.append(fallback_rows[index])
+        rows = preserved
+    counts = {
+        status: sum(row.get("status") == status for row in rows)
+        for status in ("PASS", "FAIL", "BLOCKED", "UNKNOWN")
+    }
+    return {
+        "status": "BLOCKED",
+        "required_resources": 8,
+        "row_count": 8,
+        "counts": counts,
+        "resources": rows,
+        "no_retry": True,
+        "single_login": True,
+        "single_cleanup": True,
+    }
+
+
+def _safe_matrix_snapshot(rows: list[dict[str, object]]) -> dict[str, object]:
+    try:
+        return _matrix_from_rows(rows)
+    except Exception:
+        return _emergency_matrix(rows)
+
+
+def _authenticated_after_read(client: IgDemoReadOnlyClient) -> bool:
+    try:
+        return client.authenticated is True
+    except AttributeError:
+        # Minimal collector test doubles represent an already authenticated owner.
+        return True
+    except Exception:
+        # Failure to inspect a local health property is not proof that the
+        # authenticated session was lost. The next independent GET stays guarded.
+        return True
+
+
+def _safe_utc_now() -> datetime:
+    try:
+        return datetime.now(timezone.utc)
+    except Exception:
+        # Diagnostic fallback only. A local clock API exception must not suppress
+        # the eight rows that were allocated before authentication.
+        return datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def _guarded_resource_read(
+    client: IgDemoReadOnlyClient,
+    *,
+    resource: str,
+    endpoint_family: str,
+    epic: str,
+    history_from: datetime,
+    history_to: datetime,
+    bars: int,
+    authentication_available: bool,
+) -> IgReadinessRead:
+    if not authentication_available:
+        return _fallback_read(
+            resource,
+            endpoint_family,
+            status="BLOCKED",
+            reason_code="IG_READ_AUTH_PRECONDITION_BLOCKED",
+        )
+    started = _safe_utc_now()
+    try:
+        if resource == "ACCOUNTS":
+            result = client.readiness_accounts()
+        elif resource in {"POSITIONS_A", "POSITIONS_B"}:
+            result = client.readiness_positions(resource)
+        elif resource in {"WORKING_ORDERS_A", "WORKING_ORDERS_B"}:
+            result = client.readiness_working_orders(resource)
+        elif resource == "MARKET_V4":
+            result = client.readiness_market_v4(epic)
+        elif resource == "ACTIVITY_HISTORY":
+            result = client.readiness_account_activity(
+                from_utc=history_from, to_utc=history_to
+            )
+        elif resource == "M5_PRICES":
+            result = client.readiness_m5_prices(epic, max_bars=bars)
+        else:  # pragma: no cover - immutable contract exhaustiveness
+            raise RuntimeError("unknown readiness resource")
+        if (
+            not isinstance(result, IgReadinessRead)
+            or result.resource != resource
+            or result.endpoint_family != endpoint_family
+        ):
+            raise TypeError("readiness resource result contract invalid")
+        result.safe_view()
+        return result
+    except Exception:
+        return _fallback_read(
+            resource,
+            endpoint_family,
+            reason_code=f"IG_READ_{resource}_UNCLASSIFIED",
+            started=started,
+            observed=_safe_utc_now(),
+        )
+
+
 def _blocked(reason: str) -> dict[str, object]:
     return {"status": "BLOCKED", "reason_code": reason}
+
+
+def _clock_projection(
+    reads: list[IgReadinessRead], account: Mapping[str, object]
+) -> dict[str, object]:
+    server_dates = [
+        item.server_date_utc.isoformat() for item in reads if item.server_date_utc
+    ]
+    return {
+        "local_clock": "UTC_AWARE",
+        "provider_server_dates_observed": len(server_dates),
+        "server_date_values_utc": server_dates,
+        "broker_timezone_offset_hours": account.get("timezone_offset_hours"),
+        "session_clock_verified": bool(server_dates)
+        and account.get("timezone_offset_hours") is not None,
+    }
+
+
+def _dependent_projection(
+    inventory: Mapping[str, object],
+    history_scope: Mapping[str, object],
+    market: Mapping[str, object],
+    market_data: Mapping[str, object],
+) -> dict[str, dict[str, object]]:
+    economics_status = (
+        "PASS"
+        if market.get("economics_verified") is True
+        else "UNKNOWN"
+        if market.get("status") == "PASS"
+        else "BLOCKED"
+    )
+    return {
+        "inventory_stability": {
+            "status": inventory["status"], "reason_code": inventory["reason_code"]
+        },
+        "history_completeness": {
+            "status": history_scope["status"],
+            "reason_code": history_scope["reason_code"],
+        },
+        "economics": {
+            "status": economics_status,
+            "reason_code": "NONE"
+            if economics_status == "PASS"
+            else "NATIVE_ECONOMICS_FIELDS_UNVERIFIED"
+            if economics_status == "UNKNOWN"
+            else "MARKET_V4_READ_INCOMPLETE",
+        },
+        "m5_freshness": {
+            "status": market_data["status"],
+            "reason_code": market_data["reason_code"],
+        },
+    }
 
 
 def _build_components(evidence: Mapping[str, object]) -> dict[str, dict[str, object]]:
@@ -304,34 +614,82 @@ def _finalize_evidence(
 
 
 def collect(
-    client: IgDemoReadOnlyClient, *, epic: str, instrument_id: str, bars: int
+    client: IgDemoReadOnlyClient,
+    *,
+    epic: str,
+    instrument_id: str,
+    bars: int,
+    raw_rows: list[dict[str, object]] | None = None,
 ) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
-    """Collect all Step2238 evidence in one already-authenticated session."""
-    started = datetime.now(timezone.utc)
-    account = dict(client.login_context)
+    """Collect eight guarded raw reads, then independently derive conclusions."""
+    if raw_rows is None:
+        raw_rows = _initial_readiness_rows()
+    if len(raw_rows) != len(READ_RESOURCE_CONTRACTS):
+        raise ValueError("raw readiness sink must contain exactly eight rows")
+    started = _safe_utc_now()
     history_from = started - timedelta(days=7)
-    reads = [
-        client.readiness_accounts(),
-        client.readiness_positions("POSITIONS_A"),
-        client.readiness_working_orders("WORKING_ORDERS_A"),
-        client.readiness_market_v4(epic),
-        client.readiness_account_activity(from_utc=history_from, to_utc=started),
-        client.readiness_m5_prices(epic, max_bars=bars),
-        client.readiness_positions("POSITIONS_B"),
-        client.readiness_working_orders("WORKING_ORDERS_B"),
-    ]
+    reads: list[IgReadinessRead] = []
+    authentication_available = True
+    for index, (resource, endpoint_family) in enumerate(READ_RESOURCE_CONTRACTS):
+        result = _guarded_resource_read(
+            client,
+            resource=resource,
+            endpoint_family=endpoint_family,
+            epic=epic,
+            history_from=history_from,
+            history_to=started,
+            bars=bars,
+            authentication_available=authentication_available,
+        )
+        reads.append(result)
+        try:
+            raw_rows[index] = result.safe_view()
+        except Exception:
+            replacement = _fallback_read(resource, endpoint_family)
+            reads[-1] = replacement
+            raw_rows[index] = replacement.safe_view()
+        if authentication_available and not _authenticated_after_read(client):
+            authentication_available = False
+
     results = {item.resource: item for item in reads}
-    matrix = _matrix_summary(reads)
-    price_observed = results["M5_PRICES"].response_observed_at or datetime.now(timezone.utc)
+    derived_processing: dict[str, dict[str, str]] = {}
+    try:
+        matrix = _matrix_from_rows(raw_rows)
+        derived_processing["MATRIX_CONSTRUCTION"] = {
+            "status": "PASS", "reason_code": "NONE"
+        }
+    except Exception:
+        matrix = _emergency_matrix(raw_rows)
+        derived_processing["MATRIX_CONSTRUCTION"] = {
+            "status": "BLOCKED", "reason_code": "READ_MATRIX_CONSTRUCTION_FAILED"
+        }
+    try:
+        price_observed = results["M5_PRICES"].response_observed_at or _safe_utc_now()
+    except Exception:
+        price_observed = started
 
-    accounts = _result_payload(results, "ACCOUNTS")
-    account_evidence: dict[str, object] = account | {
-        "accounts": [] if accounts is None else _safe_accounts(accounts),
-        "active_context_bound_to_single_session": True,
-        "resource_status": results["ACCOUNTS"].status,
-    }
+    try:
+        account = dict(client.login_context)
+        accounts = _result_payload(results, "ACCOUNTS")
+        account_evidence: dict[str, object] = account | {
+            "accounts": [] if accounts is None else _safe_accounts(accounts),
+            "active_context_bound_to_single_session": True,
+            "resource_status": results["ACCOUNTS"].status,
+        }
+        derived_processing["LOGIN_CONTEXT"] = {
+            "status": "PASS", "reason_code": "NONE"
+        }
+    except Exception:
+        account = {}
+        account_evidence = _blocked("LOGIN_CONTEXT_PROJECTION_FAILED") | {
+            "accounts": [],
+            "active_context_bound_to_single_session": False,
+            "resource_status": results["ACCOUNTS"].status,
+        }
+        derived_processing["LOGIN_CONTEXT"] = {
+            "status": "BLOCKED", "reason_code": "LOGIN_CONTEXT_PROJECTION_FAILED"
+        }
 
-    inventory: dict[str, object]
     try:
         position_a = _result_payload(results, "POSITIONS_A")
         order_a = _result_payload(results, "WORKING_ORDERS_A")
@@ -357,7 +715,10 @@ def collect(
             "atomic": False,
             "scope": "TWO_STABLE_READS_IN_ONE_AUTHENTICATED_SESSION",
         }
-    except (AssertionError, KeyError, RuntimeError, TypeError, ValueError):
+        derived_processing["INVENTORY"] = {
+            "status": "PASS", "reason_code": "NONE"
+        }
+    except Exception:
         inventory = _blocked("INVENTORY_BRACKET_READS_INCOMPLETE") | {
             "stable_across_bracket": False,
             "stable_inventory_fingerprint": None,
@@ -367,41 +728,66 @@ def collect(
             "atomic": False,
             "scope": "UNPROVEN",
         }
+        derived_processing["INVENTORY"] = {
+            "status": "BLOCKED", "reason_code": "INVENTORY_DERIVATION_FAILED"
+        }
 
-    history = _result_payload(results, "ACTIVITY_HISTORY")
-    if history is None:
+    try:
+        history = _result_payload(results, "ACTIVITY_HISTORY")
+        if history is None:
+            raise ValueError("activity history read incomplete")
+        paging = history.get("metadata")
+        next_page = (
+            paging.get("paging", {}).get("next")
+            if isinstance(paging, Mapping)
+            and isinstance(paging.get("paging"), Mapping)
+            else None
+        )
+        activities = history["activities"]
+        if not isinstance(activities, list):
+            raise TypeError("activity history entries invalid")
+        history_scope = {
+            "status": "PASS" if not next_page else "UNKNOWN",
+            "reason_code": "NONE"
+            if not next_page
+            else "ACTIVITY_HISTORY_NEXT_PAGE_PRESENT",
+            "from_utc": history_from.isoformat(),
+            "to_utc": started.isoformat(),
+            "entries_count": len(activities),
+            "scope_complete": not next_page,
+            "absolute_complete": False,
+        }
+        derived_processing["HISTORY"] = {"status": "PASS", "reason_code": "NONE"}
+    except Exception:
         history_scope = _blocked("ACTIVITY_HISTORY_READ_INCOMPLETE") | {
             "from_utc": history_from.isoformat(), "to_utc": started.isoformat(),
             "entries_count": None, "scope_complete": False, "absolute_complete": False,
         }
-    else:
-        paging = history.get("metadata")
-        next_page = paging.get("paging", {}).get("next") if isinstance(paging, Mapping) and isinstance(paging.get("paging"), Mapping) else None
-        activities = history["activities"]
-        assert isinstance(activities, list)
-        history_scope = {
-            "status": "PASS" if not next_page else "UNKNOWN",
-            "reason_code": "NONE" if not next_page else "ACTIVITY_HISTORY_NEXT_PAGE_PRESENT",
-            "from_utc": history_from.isoformat(), "to_utc": started.isoformat(),
-            "entries_count": len(activities), "scope_complete": not next_page,
-            "absolute_complete": False,
+        derived_processing["HISTORY"] = {
+            "status": "BLOCKED", "reason_code": "HISTORY_DERIVATION_FAILED"
         }
 
-    market_raw = _result_payload(results, "MARKET_V4")
     try:
+        market_raw = _result_payload(results, "MARKET_V4")
         if market_raw is None:
             raise ValueError("market read incomplete")
         market = _market_view(market_raw, epic=epic, observed_at=price_observed)
         market["status"] = "PASS"
         market["reason_code"] = "NONE"
-    except (KeyError, RuntimeError, TypeError, ValueError):
+        derived_processing["MARKET_ECONOMICS"] = {
+            "status": "PASS", "reason_code": "NONE"
+        }
+    except Exception:
         market = _blocked("MARKET_ECONOMICS_READ_INCOMPLETE") | {
             "epic": epic, "economics_verified": False,
             "economics_blockers": ["MARKET_V4_UNAVAILABLE_OR_INVALID"],
         }
+        derived_processing["MARKET_ECONOMICS"] = {
+            "status": "BLOCKED", "reason_code": "MARKET_DERIVATION_FAILED"
+        }
 
-    prices = _result_payload(results, "M5_PRICES")
     try:
+        prices = _result_payload(results, "M5_PRICES")
         if prices is None or results["M5_PRICES"].request_started_at is None:
             raise ValueError("M5 read incomplete")
         price_started = results["M5_PRICES"].request_started_at
@@ -420,44 +806,59 @@ def collect(
             "fresh": (price_observed - latest_close) <= DEFAULT_MAX_AGE,
             "timestamp_semantics": "INTERVAL_START", "freshness_basis": "TRUE_CLOSE_TIME",
         }
-    except (IndexError, KeyError, RuntimeError, TypeError, ValueError):
+        derived_processing["M5"] = {"status": "PASS", "reason_code": "NONE"}
+    except Exception:
         market_data = _blocked("M5_FRESHNESS_READ_INCOMPLETE") | {
             "raw_rows": None, "closed_rows": None, "latest_closed_m5": None,
             "latest_closed_age_seconds": None,
             "freshness_max_age_seconds": DEFAULT_MAX_AGE.total_seconds(), "fresh": False,
             "timestamp_semantics": "INTERVAL_START", "freshness_basis": "TRUE_CLOSE_TIME",
         }
+        derived_processing["M5"] = {
+            "status": "BLOCKED", "reason_code": "M5_DERIVATION_FAILED"
+        }
 
-    server_dates = [item.server_date_utc.isoformat() for item in reads if item.server_date_utc]
-    clock = {
-        "local_clock": "UTC_AWARE", "provider_server_dates_observed": len(server_dates),
-        "server_date_values_utc": server_dates,
-        "broker_timezone_offset_hours": account.get("timezone_offset_hours"),
-        "session_clock_verified": bool(server_dates) and account.get("timezone_offset_hours") is not None,
-    }
-    economics_status = (
-        "PASS" if market.get("economics_verified") is True
-        else "UNKNOWN" if market.get("status") == "PASS"
-        else "BLOCKED"
-    )
-    dependent = {
-        "inventory_stability": {
-            "status": inventory["status"], "reason_code": inventory["reason_code"]
-        },
-        "history_completeness": {
-            "status": history_scope["status"], "reason_code": history_scope["reason_code"]
-        },
-        "economics": {
-            "status": economics_status,
-            "reason_code": "NONE" if economics_status == "PASS" else (
-                "NATIVE_ECONOMICS_FIELDS_UNVERIFIED" if economics_status == "UNKNOWN"
-                else "MARKET_V4_READ_INCOMPLETE"
-            ),
-        },
-        "m5_freshness": {
-            "status": market_data["status"], "reason_code": market_data["reason_code"]
-        },
-    }
+    try:
+        clock = _clock_projection(reads, account)
+        derived_processing["CLOCK"] = {"status": "PASS", "reason_code": "NONE"}
+    except Exception:
+        clock = {
+            "local_clock": "UNKNOWN",
+            "provider_server_dates_observed": 0,
+            "server_date_values_utc": [],
+            "broker_timezone_offset_hours": None,
+            "session_clock_verified": False,
+        }
+        derived_processing["CLOCK"] = {
+            "status": "BLOCKED", "reason_code": "CLOCK_DERIVATION_FAILED"
+        }
+    try:
+        dependent = _dependent_projection(inventory, history_scope, market, market_data)
+        derived_processing["DEPENDENT_CONCLUSIONS"] = {
+            "status": "PASS", "reason_code": "NONE"
+        }
+    except Exception:
+        dependent = {
+            name: {"status": "BLOCKED", "reason_code": "DERIVATION_FAILED"}
+            for name in (
+                "inventory_stability", "history_completeness", "economics", "m5_freshness"
+            )
+        }
+        derived_processing["DEPENDENT_CONCLUSIONS"] = {
+            "status": "BLOCKED", "reason_code": "DEPENDENT_DERIVATION_FAILED"
+        }
+    try:
+        provider_queries = sum(item.request_started_at is not None for item in reads)
+        derived_processing["EVIDENCE_ENRICHMENT"] = {
+            "status": "PASS", "reason_code": "NONE"
+        }
+    except Exception:
+        provider_queries = sum(
+            row.get("request_started_at_utc") is not None for row in raw_rows
+        )
+        derived_processing["EVIDENCE_ENRICHMENT"] = {
+            "status": "BLOCKED", "reason_code": "EVIDENCE_ENRICHMENT_FAILED"
+        }
     evidence: dict[str, object] = {
         "schema": SCHEMA,
         "environment": "IG_DEMO",
@@ -473,12 +874,27 @@ def collect(
         "market_data": market_data,
         "authenticated_read_matrix": matrix,
         "dependent_conclusions": dependent,
-        "provider_queries": sum(item.request_started_at is not None for item in reads),
+        "derived_processing": derived_processing,
+        "derived_processing_complete": False,
+        "provider_queries": provider_queries,
         "single_authenticated_session": True,
         "session_cleanup": {"status": "PENDING", "error_code": "NONE", "attempts": 0},
         "unknowns_preserved": True,
     }
-    return _finalize_evidence(evidence, cleanup_status="PENDING", cleanup_error_code="NONE")
+    try:
+        components = _build_components(evidence)
+        derived_processing["COMPONENT_CONSTRUCTION"] = {
+            "status": "PASS", "reason_code": "NONE"
+        }
+    except Exception:
+        components = {}
+        derived_processing["COMPONENT_CONSTRUCTION"] = {
+            "status": "BLOCKED", "reason_code": "COMPONENT_CONSTRUCTION_FAILED"
+        }
+    evidence["derived_processing_complete"] = all(
+        value["status"] == "PASS" for value in derived_processing.values()
+    )
+    return evidence, components
 
 
 def _head(repo_root: Path = REPO_ROOT) -> str:
@@ -560,6 +976,8 @@ def main() -> int:
     parser.add_argument("--pre-auth-precheck", action="store_true")
     args = parser.parse_args()
     client = None
+    login_succeeded = False
+    raw_rows = _initial_readiness_rows()
     phase = "VALIDATE"
     try:
         if args.namespace.is_absolute() or ".." in args.namespace.parts:
@@ -588,9 +1006,14 @@ def main() -> int:
         client = IgDemoReadOnlyClient(credentials)
         phase = "LOGIN"
         client.login()
+        login_succeeded = True
         phase = "READ"
         evidence, components = collect(
-            client, epic=args.epic, instrument_id=args.instrument_id, bars=args.bars
+            client,
+            epic=args.epic,
+            instrument_id=args.instrument_id,
+            bars=args.bars,
+            raw_rows=raw_rows,
         )
         phase = "CLEANUP"
         cleanup_error_code = "NONE"
@@ -599,6 +1022,8 @@ def main() -> int:
         except Exception:
             cleanup_error_code = "IG_SESSION_CLEANUP_FAILED"
         client = None
+        phase = "EVIDENCE"
+        evidence["authenticated_read_matrix"] = _safe_matrix_snapshot(raw_rows)
         evidence, components = _finalize_evidence(
             evidence,
             cleanup_status="PASS" if cleanup_error_code == "NONE" else "FAIL",
@@ -606,9 +1031,16 @@ def main() -> int:
         )
         matrix = evidence["authenticated_read_matrix"]
         assert isinstance(matrix, Mapping)
-        matrix_complete = matrix.get("status") == "PASS"
+        matrix_complete = (
+            matrix.get("status") == "PASS"
+            and matrix.get("row_count") == len(READ_RESOURCE_CONTRACTS)
+        )
+        derivation_complete = evidence.get("derived_processing_complete") is True
         result_code = (
-            "IG_READINESS_MATRIX_INCOMPLETE" if not matrix_complete
+            "IG_READINESS_MATRIX_INCOMPLETE"
+            if not matrix_complete
+            else "IG_READINESS_DERIVATION_INCOMPLETE"
+            if not derivation_complete
             else cleanup_error_code
         )
         result_status = "SUCCESS" if result_code == "NONE" else "BLOCKED"
@@ -629,20 +1061,28 @@ def main() -> int:
             "LOGIN": "IG_AUTHENTICATION_FAILED_NO_RETRY",
             "READ": "IG_SESSION_READ_FAILED_NO_RETRY",
             "CLEANUP": "IG_SESSION_CLEANUP_FAILED",
+            "EVIDENCE": "EVIDENCE_INVALID",
             "PUBLISH": "EVIDENCE_PUBLICATION_FAILED",
             "CREDENTIAL": "CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID",
             "RUNTIME": "STATE_RUNTIME_ROOT_UNAVAILABLE",
             "HEAD": "HEAD_QUERY_FAILED",
             "VALIDATE": "EVIDENCE_INVALID",
         }.get(failed_phase, "PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE")
-        print(json.dumps({
+        failure_payload: dict[str, object] = {
             "status": "BLOCKED",
             "error_code": code,
             "failure_phase": failed_phase,
             "cleanup_error_code": cleanup_error_code,
+            "login_success": login_succeeded,
             "execution_capability": "NONE",
             "order_execution_enabled": False,
-        }, sort_keys=True))
+        }
+        if login_succeeded:
+            failure_matrix = _safe_matrix_snapshot(raw_rows)
+            failure_payload["readiness_matrix_counts"] = failure_matrix["counts"]
+            failure_payload["readiness_matrix"] = failure_matrix["resources"]
+            failure_payload["readiness_matrix_row_count"] = failure_matrix["row_count"]
+        print(json.dumps(failure_payload, sort_keys=True))
         return 2
     matrix_counts = matrix.get("counts") if isinstance(matrix.get("counts"), Mapping) else {}
     print(json.dumps({
@@ -650,11 +1090,13 @@ def main() -> int:
         "error_code": result_code,
         "namespace": str(namespace),
         "failure_phase": None if result_status == "SUCCESS" else (
-            "READ" if not matrix_complete else "CLEANUP"
+            "READ" if not matrix_complete or not derivation_complete else "CLEANUP"
         ),
         "cleanup_error_code": cleanup_error_code,
+        "login_success": login_succeeded,
         "readiness_matrix_counts": matrix_counts,
         "readiness_matrix": matrix.get("resources"),
+        "readiness_matrix_row_count": matrix.get("row_count"),
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }, sort_keys=True))

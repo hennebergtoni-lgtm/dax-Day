@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ExpectedHead,
     [string]$RepoRoot = 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck',
     [string]$RuntimeRoot = 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck',
-    [string]$Namespace = '.runtime/ig_predemo_readiness_2238_v2_attempt_01',
+    [string]$Namespace = '.runtime/ig_predemo_readiness_2238_v3_attempt_01',
     [string]$CredentialsFile = 'C:\Users\Mandy\ig_demo.env',
     [string]$PythonExecutable = 'python'
 )
@@ -59,6 +59,7 @@ $SafeErrorCodes = @(
     'SESSION_SETUP_FAILED', 'CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID',
     'IG_AUTHENTICATION_FAILED_NO_RETRY',
     'IG_SESSION_READ_FAILED_NO_RETRY', 'IG_READINESS_MATRIX_INCOMPLETE',
+    'IG_READINESS_DERIVATION_INCOMPLETE',
     'IG_SESSION_CLEANUP_FAILED',
     'CLOCK_INVALID_UTC', 'CLOCK_MOVED_BACKWARDS',
     'CLOCK_DISCONTINUITY', 'SAFETY_EXECUTION_CAPABILITY',
@@ -198,6 +199,9 @@ function Write-IgReadinessMatrix {
         $property = $Result.PSObject.Properties['readiness_matrix']
         if ($null -eq $property -or $null -eq $property.Value) { return }
         $rows = @($property.Value)
+        $loginSucceeded = $Result.PSObject.Properties['login_success']
+        if ($null -ne $loginSucceeded -and $loginSucceeded.Value -eq $true -and
+            $rows.Count -ne 8) { throw 'INVALID_AUTHENTICATED_COUNT' }
         if ($rows.Count -gt 8) { throw 'INVALID_COUNT' }
         Write-Host ('IG READINESS MATRIX: rows={0}' -f $rows.Count)
         foreach ($row in $rows) {
