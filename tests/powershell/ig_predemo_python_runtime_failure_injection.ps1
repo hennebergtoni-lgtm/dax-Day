@@ -140,8 +140,11 @@ Assert-Code 'PYTHON_COLLECTOR_RESPONSE_NULL' {
 Assert-Code 'PYTHON_COLLECTOR_RESPONSE_INVALID' {
     Invoke-Step2238Collector @collectorArgs -Hooks @{ Collector = { [pscustomobject]@{ ExitCode = '0'; Lines = @('{}') } } }
 }
-Assert-Code 'PYTHON_COLLECTOR_OUTPUT_TYPE_INVALID' {
+Assert-Code 'PYTHON_COLLECTOR_RESPONSE_INVALID' {
     Invoke-Step2238Collector @collectorArgs -Hooks @{ Collector = { [pscustomobject]@{ ExitCode = 0; Lines = '{}' } } }
+}
+Assert-Code 'PYTHON_COLLECTOR_OUTPUT_TYPE_INVALID' {
+    Invoke-Step2238Collector @collectorArgs -Hooks @{ Collector = { [pscustomobject]@{ ExitCode = 0; Lines = @(42) } } }
 }
 Assert-Code 'PYTHON_COLLECTOR_JSON_INVALID' {
     Invoke-Step2238Collector @collectorArgs -Hooks @{ Collector = { [pscustomobject]@{ ExitCode = 0; Lines = @('{') } } }
