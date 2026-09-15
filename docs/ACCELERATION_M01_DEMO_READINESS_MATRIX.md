@@ -1,131 +1,136 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
-## Step2237 Windows worktree-add hardening — authoritative overlay (2026-09-15)
+## Step2233/2237 real-host closeout — authoritative (2026-09-15)
 
-The real Windows run at
-`78fb8cf8648e51de964f09e205f7f278193c5439` reached START and then stopped
-fail-closed with
-`WORKTREE_ADD_FAILED_DEPLOYMENT_RETAINED`. WAIT, Python, IG login and
-market-data requests were not reached; the existing checkout and all Evidence
-remained unchanged. The exact Windows leaf cause is **UNKNOWN** because the
-wrapper intentionally suppressed Git stderr. No host-specific explanation is
-invented.
+**Formal decision:** Step2233 and Step2237 are **COMPLETED / VERIFIED** on the
+accepted runtime-evidence head
+`62029df3353b74cc58884f06cd0c296ddd8d73cc`.
 
-The repository audit identifies the unsafe dependency class: `git worktree add`
-shares administrative state with the source repository and can fail after
-creating some combination of the temporary directory, checkout files, a
-worktree `.git` pointer, and `.git/worktrees/<id>` metadata. Windows path
-limits, ACLs, antivirus/indexing locks, or stale partial registration are
-possible causes, but none is claimed as the observed cause.
+The user-supplied real Windows console record is:
 
-Implementation head
-`47d2bffc9a6b0dab527f77726d606796cf1c1de2` retires worktree creation and
-removal. The V3 deployment owner now:
+- START: isolated exact-head local clone; existing checkout untouched;
+- WAIT: one IG read-only session; Fresh Start; next true M5 close; Resume;
+  Operator;
+- SUMMARY: `SUCCESS / error_code=NONE`;
+- namespace:
+  `.runtime/ig_m5_contract_2237_interval_start_v2_attempt_03`;
+- deployment cleaned; `execution_capability=NONE`;
+  `order_execution_enabled=false`; no broker order and no LIVE authorization;
+- `legacy_partial_state=DETECTED_RETAINED`.
 
-- applies the origin, fetched published-head, ancestry and exact-commit gates
-  before deployment;
-- creates a short unique `%TEMP%\d2237-<128-bit-token>` parent and writes a
-  head-bound `DAX_STEP2237_DEPLOYMENT_OWNER_V1` marker;
-- creates an independent local clone with `--no-checkout --no-hardlinks`,
-  Windows long-path handling and an empty hooks path, then checks out only the
-  immutable expected commit inside that disposable clone;
-- proves the deployed HEAD and clean tree before Python, while keeping durable
-  State/Evidence in the caller-owned runtime root and exclusive `attempt_03`
-  namespace;
-- detects old Step2237 worktree registrations/directories read-only and reports
-  only `NONE_DETECTED`, `DETECTED_RETAINED` or
-  `QUERY_INCOMPLETE_RETAINED`; it never prunes or deletes them;
-- recursively removes a new partial or complete clone only when temp-root,
-  short-name pattern, allowed top-level layout, non-reparse paths, expected
-  head and the in-memory ownership token all match. Otherwise it retains the
-  deployment with `DEPLOYMENT_CLEANUP_FAILED_RETAINED`.
+This is sufficient for the two step closeouts because the exact runner emits
+SUCCESS only after the published-head and isolated deployment gates, Windows and
+import-parity checks, canonical INTERVAL_START contract check, an exclusive
+fresh namespace, one login, two complete authenticated read-only probe cycles,
+true-close freshness, strict unchanged-overlap and resume-anchor validation,
+current Operator projection/fingerprint validation, one logout and
+ownership-bound clone cleanup. The detected legacy partial worktree was
+correctly retained and is **non-blocking contained technical debt**; it was not
+pruned, deleted, migrated or used by the successful clone.
 
-There is no `worktree add/remove/prune`, in-place checkout, reset, clean,
-stash, merge, force operation, dealing route or retry. All errors exposed to the
-operator remain fixed and credential-free. Code validation is green: focused
-271, full 3103, Ruff, Python syntax, PowerShell parser, fixed fail-closed tests,
-eight safety/recovery gates, `dax-bot-1x-ci` #702 and
-`research-lab-ci` #1486.
+This closes the repeated market-data/session/state-resume evidence cycle. It
+does **not** prove account identity, atomic flat inventory, broker/server clock,
+DST/session policy, quote status, economics, native tick/quantity grids,
+stop/target rules, broker history, execution reconciliation or dealing
+lifecycle. M01 therefore advances to **IN_PROGRESS**, not COMPLETED. The current
+27-gate result is **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL /
+6 BLOCKED**. Effective execution remains NONE/false; no DEMO order; LIVE
+prohibited.
 
-Step2233/2237 remain **IMPLEMENTED / WAITING_EXTERNAL** until the new one-command
-Windows run proves exact-head Fresh Start, next true M5 close, Resume, Operator
-and cleanup. M01 and the 27-gate readiness tally do not advance from this
-deployment-only change. Effective capability remains
-`execution_capability=NONE`, `order_execution_enabled=false`; no DEMO order;
-LIVE prohibited. Any lower section describing the temporary worktree or
-`attempt_02` is superseded implementation history, not the current runner.
+The accepted runtime commit and runner blobs remain immutable evidence:
+PowerShell `cfad3ca6b4effb24fdd6dc0fa7ef0d7cb9fae63b`; Python
+`8274ac096f33c8c2f2321964352e68ba3a59fb10`. A later documentation-only
+closeout commit does not claim a different host run and does not alter these
+runner blobs.
+
+**Next work package:** Step2238 — M01 native IG read-only account, inventory,
+clock, market-rules and economics evidence. Repository owners must first be
+extended to validate and hash-bind those dimensions; afterwards exactly one new
+Windows runner is required for that new evidence package. Re-running the
+Step2237 runner is not required. Sentinel, Helperbot and Multi-Market expansion
+remain deferred.
+
+All lower sections that still describe Step2233/2237 as WAITING_EXTERNAL are
+historical and superseded by this section.
 
 
-Step2237 V2 review promotes the original Attempt03 structure to the canonical operational INTERVAL_START contract. The first Windows bootstrap then failed before Python with DETACHED_CHECKOUT_FAILED; isolated exact-head worktree deployment is now implemented, while the corrected host result remains WAITING_EXTERNAL. The historical OTHER_UNKNOWN review remains preserved. Current effective execution NONE/false. One small first bounded diagnostic IG DEMO order is conditionally user-authorized; LIVE unauthorized. Matrix statuses describe actual current evidence, with local software scope explicit. Old MT5 terminal/retcode/session/MQL owner details cannot substitute for native IG truth. Full details and limits: ACCELERATION_PROGRAM_FINAL_2026_09_14.md.
+## M01 current evidence
 
-## M01
-
-| M01 requirement | Status | Current evidence / limit |
+| M01 requirement | Status | Current evidence / remaining limit |
 | --- | --- | --- |
-| Exact code head | WAITING_EXTERNAL | GitHub CI exact head locally verifiable; final Windows runtime must be exported. |
-| Windows runtime identity | WAITING_EXTERNAL | Path/old runtime supplied; final machine/Python/import identity missing. |
-| IG DEMO environment/account/server | WAITING_EXTERNAL | DEMO-only client and reported IG lane; reviewed current context original source missing. |
-| EPIC/instrument/symbol mapping | WAITING_EXTERNAL | IX.D.DAX.IFMM.IP supplied; DE40/5m adapter reused; full actual instrument context required. |
-| Market status/fresh quote | WAITING_EXTERNAL | Earlier TRADEABLE/FRESH supplied, not current final-head snapshot. |
-| Finalized M5 | IMPLEMENTED | Original bundle received; V2 structural review promotes INTERVAL_START. Canonical event=T/close=T+5, active tail excluded,60s workaround retired. Final-head Windows cycles remain external. |
-| Broker/UTC/session clock | WAITING_EXTERNAL | Explicit UTC diagnostic guards; actual independent clock observations absent. |
-| DST/session semantics | WAITING_EXTERNAL | Broker-neutral gate retained; no inferred MT5 server offset transferred to IG. |
-| Full inventory/working orders/positions | WAITING_EXTERNAL | GET owners exist; earlier reported zero is not final negative-evidence flatness proof. |
-| History scope | WAITING_EXTERNAL | Native IG broker history/confirmation conformance scope not observed. |
-| Economics/precision/min size/margin | WAITING_EXTERNAL | PTC requires explicit point value/tick/increment/size; no provider values invented. |
-| Stops/freeze/protection | WAITING_EXTERNAL | Existing risk/protection + native-grid/collar PTC prepared; actual IG rules/integration missing. |
-| Feed freshness | WAITING_EXTERNAL | 600s unchanged, never treated as finality/stability proof. |
-| Risk/loss/session policy | WAITING_EXTERNAL | Canonical owners retained; reviewed actual policy/source binding required. |
-| Reconciliation | WAITING_EXTERNAL | Generic local conformance is not IG real broker truth. |
-| Restart/resume | IMPLEMENTED | V3 state/manifest/new namespace, strict overlap and single fresh/resume/Operator runner implemented; real Windows result WAITING_EXTERNAL. |
+| Exact code head | VERIFIED | Real wrapper proved deployed HEAD `62029df3353b74cc58884f06cd0c296ddd8d73cc` and a clean isolated tree before Python. |
+| Windows runtime identity | VERIFIED | SUCCESS required Windows, exact Git identity and daxlab import parity from the isolated clone. Detailed OS/Python version remains useful release metadata but is not needed to re-open Step2237. |
+| IG DEMO environment/account/server | WAITING_EXTERNAL | Real authentication to the hard-pinned IG DEMO endpoint is verified. The credential-free evidence deliberately omits account identifiers and does not bind a selected account/server context. |
+| EPIC/instrument/symbol mapping | VERIFIED | Both real cycles required `/markets/IX.D.DAX.IFMM.IP` to return that exact EPIC and processed it through the pinned DE40/M5 mapping. |
+| Market status/fresh quote | WAITING_EXTERNAL | Market detail was fetched twice, but SUCCESS does not require non-null TRADEABLE/bid/offer/update-time values or prove quote-time freshness. |
+| Finalized M5 | VERIFIED | Real Fresh Start and Resume validated INTERVAL_START, true close, active-tail exclusion, continuity, uniqueness and no mutable finalized overlap. |
+| Broker/UTC/session clock | WAITING_EXTERNAL | Local UTC ordering, monotonic wait and discontinuity guards passed. Independent broker/server clock and session binding were not established. |
+| DST/session semantics | WAITING_EXTERNAL | No real session-calendar/DST boundary evidence was captured. |
+| Full inventory/working orders/positions | WAITING_EXTERNAL | Both GET families succeeded, but inventory is explicitly non-atomic, history-incomplete and the reported SUMMARY contains no reviewed counts. Negative evidence is not flatness proof. |
+| History scope | WAITING_EXTERNAL | No complete IG activity/deal/order-history scope was validated. |
+| Economics/precision/min size/margin | WAITING_EXTERNAL | Market detail was read, but optional values were neither required nor bound to a reviewed broker economics contract. |
+| Stops/freeze/protection | WAITING_EXTERNAL | Native dealing-rule values and request-time protection binding remain unverified. |
+| Feed freshness | VERIFIED | Both cycles required finalized M5 age between 0 and 600 seconds from true `close_time`. |
+| Risk/loss/session policy | WAITING_EXTERNAL | Existing policy owners are not yet bound to reviewed IG account/economics values. |
+| Reconciliation | BLOCKED | Candidate overlap/resume is verified; native IG order/deal/position/history reconciliation is not integrated. |
+| Restart/resume | VERIFIED | Real durable Fresh Start → later true close → state readback → exact anchor resume → Operator flow succeeded. Unresolved execution-attempt recovery remains Gate25, not this read-only M5 proof. |
 
-##27 Pre-DEMO gates
+**M01 status: IN_PROGRESS.** Six rows are VERIFIED, nine remain
+WAITING_EXTERNAL and native execution reconciliation is BLOCKED. M01 is not
+closed.
 
-| Gate | Requirement | Status | Evidence / limit |
+## 27 Pre-DEMO gates
+
+| Gate | Requirement | Status | Evidence / remaining limit |
 | --- | --- | --- | --- |
-| 1 | Exact final runtime head | WAITING_EXTERNAL | Final GitHub head must be proven on Windows; old Attempt03 head remains provenance. |
-| 2 | IG DEMO environment | WAITING_EXTERNAL | DEMO URL hard-pinned and transport rechecked locally; final real session source required. |
-| 3 | DEMO account identity | WAITING_EXTERNAL | Reviewed actual account identity/context pins absent. |
-| 4 | Instrument identity | WAITING_EXTERNAL | Supplied EPIC IX.D.DAX.IFMM.IP; final market/account observation binding required. |
-| 5 | Finalized market-data contract | IMPLEMENTED | Original bundle received; canonical INTERVAL_START V2 plus true close/600s freshness separation implemented and tested. Real final-head fresh/resume remains external. |
-| 6 | Feed freshness | WAITING_EXTERNAL | 600s separate from finality; final venue source age not proven. |
-| 7 | Clock/session | WAITING_EXTERNAL | UTC availability tests implemented; actual host/broker drift/DST/session evidence absent. |
-| 8 | Understood inventory | WAITING_EXTERNAL | Earlier empty inventory supplied; not current final-head flatness proof. |
-| 9 | Working-order truth | WAITING_EXTERNAL | Final full source query/context/history required. |
-| 10 | Economics | WAITING_EXTERNAL | Broker-native point value/currency/margin evidence required. |
-| 11 | Tick size | WAITING_EXTERNAL | Native grid PTC tested; real IG tick size not manufactured from digits/scaling. |
-| 12 | Quantity increment | WAITING_EXTERNAL | Explicit native increment required; policy diagnostic has no inferred default. |
-| 13 | Min/max size | WAITING_EXTERNAL | Actual IG bounds/policy scope required. |
-| 14 | Stop/target constraints | WAITING_EXTERNAL | Provider geometry/guaranteed-stop/freeze rules require actual market evidence. |
-| 15 | Fixed-Cash Risk | WAITING_EXTERNAL | Canonical risk owner reused; reviewed broker-aware policy/calculation still absent. |
-| 16 | Loss/exposure admission | WAITING_EXTERNAL | Existing owner plus independent PTC; current account exposure/equity source required. |
-| 17 | Session guard | WAITING_EXTERNAL | Canonical guard/checkpoint implemented; real broker/UTC/session observation required. |
-| 18 | One-trade-per-session guard | WAITING_EXTERNAL | Existing durable guard reused; IG real restart/session evidence required. |
-| 19 | Attempt reservation | BLOCKED | Existing durable reservation owner; IG context/native ID adaptation not verified. Native IG integration/review must be completed; external evidence alone does not auto-enable transport. |
-| 20 | Idempotency | BLOCKED | No blind resubmit; IG dealReference is not proven exactly-once broker submission. Native IG integration/review must be completed; external evidence alone does not auto-enable transport. |
-| 21 | Reconciliation | BLOCKED | Existing generic owner tested synthetically; native IG positions/orders/history conformance absent. Native IG integration/review must be completed; external evidence alone does not auto-enable transport. |
-| 22 | Protection | BLOCKED | Independent PTC implemented and tested; request-time bounded transport integration not verified. Native IG integration/review must be completed; external evidence alone does not auto-enable transport. |
-| 23 | Telemetry | IMPLEMENTED | Existing operator/telemetry owner retained; fresh final-head real lifecycle evidence required. |
-| 24 | Operator visibility | IMPLEMENTED | Credential-free mobile console reused; actual mobile/IG order truth remains external. |
-| 25 | Restart/recovery | BLOCKED | Quarantine/strict overlap intact; final contract fresh-start/resume + unresolved IG recovery unproven. Native IG integration/review must be completed; external evidence alone does not auto-enable transport. |
-| 26 | Explicit DEMO_ONLY capability | BLOCKED | User target authorized; effective NONE/false. No scoped bounded transport activated. |
-| 27 | Hard LIVE block | VERIFIED | LOCAL SOFTWARE SCOPE: constructor and per-request endpoint/dealing veto tests; no LIVE call made. |
+| 1 | Exact final runtime head | VERIFIED | Real exact-head isolated run on `62029df3353b74cc58884f06cd0c296ddd8d73cc`; subsequent closeout publication is documentation-only and retains the tested runner blobs. |
+| 2 | IG DEMO environment | VERIFIED | Successful real authentication and reads through the client hard-pinned to the IG DEMO API endpoint. |
+| 3 | DEMO account identity | WAITING_EXTERNAL | Account identifiers are intentionally excluded; no pseudonymous account-context fingerprint or selected-account binding exists. |
+| 4 | Instrument identity | VERIFIED | Real market detail returned the configured DAX EPIC exactly; DE40/M5 mapping was consumed by both cycles. |
+| 5 | Finalized market-data contract | VERIFIED | INTERVAL_START V2, `event_time=T`, `close_time=T+5m`, no extra grace and strict overlap all passed on the real host. |
+| 6 | Feed freshness | VERIFIED | True-close-based maximum age 600 seconds passed twice. |
+| 7 | Clock/session | WAITING_EXTERNAL | Local UTC/monotonic checks passed; broker/server clock, DST and session-calendar truth remain external. |
+| 8 | Understood inventory | WAITING_EXTERNAL | Positions were queried twice, but values/atomicity/history were not reviewed; no flatness claim. |
+| 9 | Working-order truth | WAITING_EXTERNAL | Working orders were queried twice, but values/history completeness were not reviewed. |
+| 10 | Economics | WAITING_EXTERNAL | Point value, currency, margin and cost binding remain unverified. |
+| 11 | Tick size | WAITING_EXTERNAL | No required native tick-size value was proven; digits are not a substitute. |
+| 12 | Quantity increment | WAITING_EXTERNAL | No required native increment was proven. |
+| 13 | Min/max size | WAITING_EXTERNAL | Broker minimum/maximum and policy bounds remain unbound. |
+| 14 | Stop/target constraints | WAITING_EXTERNAL | Native minimum distances, controlled/guaranteed/trailing rules and price geometry remain unbound. |
+| 15 | Fixed-Cash Risk | WAITING_EXTERNAL | Canonical owner exists but lacks a reviewed IG economics/account binding. |
+| 16 | Loss/exposure admission | WAITING_EXTERNAL | Requires reviewed equity, inventory and exposure inputs plus policy binding. |
+| 17 | Session guard | WAITING_EXTERNAL | Owner exists; real IG clock/session/calendar binding remains missing. |
+| 18 | One-trade-per-session guard | WAITING_EXTERNAL | Durable guard exists but is not verified against the final IG session identity. |
+| 19 | Attempt reservation | BLOCKED | Native IG attempt/deal-reference context is not integrated. |
+| 20 | Idempotency | BLOCKED | No blind resubmit remains enforced, but native IG submission/idempotency semantics are not integrated. |
+| 21 | Reconciliation | BLOCKED | Native IG orders/deals/positions/history conformance is absent. |
+| 22 | Protection | BLOCKED | Independent PTC exists; native IG request-time enforcement is absent. |
+| 23 | Telemetry | VERIFIED | Real fresh/resume evidence, fingerprints, current runtime health and credential-free persisted summary validated. |
+| 24 | Operator visibility | VERIFIED | Real Operator snapshot and browser projection validation succeeded on the resumed current bar. |
+| 25 | Restart/recovery | BLOCKED | Read-only Candidate resume is verified; process restart with unresolved native reservation/outcome is not. |
+| 26 | Explicit DEMO_ONLY capability | BLOCKED | Conditional authorization exists, but capability remains deliberately NONE/false and no bounded transport is activated. |
+| 27 | Hard LIVE block | VERIFIED | Hard DEMO endpoint/read-only boundary remained active on the real run; no order or LIVE call occurred. |
 
-Current27-gate tally:1 VERIFIED,3 IMPLEMENTED,17 WAITING_EXTERNAL and6 BLOCKED. No all-VERIFIED readiness, no DEMO_ONLY promotion and no order. Existing PTC/risk/reservation/reconciliation/lifecycle owners remain canonical; native IG transport/context/evidence gaps still need completion. The received source bundle closes the contract-decision dependency, not the broker-readiness set.
+**Current tally: 8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL /
+6 BLOCKED.** Readiness is not complete. There is no DEMO_ONLY promotion and no
+order authorization is exercised.
 
-## Roadmap
+## Smallest coherent remaining work packages
 
-| Milestone | Scope | Status | Next evidence |
+| Package | Gates / M01 dimensions | Deliverable | Windows requirement |
 | --- | --- | --- | --- |
-| M01 | Real-host evidence | WAITING_EXTERNAL | Market-data contract implemented; one final-head fresh/resume/Operator run plus IG host/context/economics/clock/inventory evidence remains. |
-| M02 | First bounded DEMO | BLOCKED | 27 VERIFIED gates required; one diagnostic order authorized conditionally but not executed. |
-| M03 | Broker lifecycle truth | IN_PROGRESS | Generic conformance/failure mapping reused; real IG native lifecycle still external. |
-| M04 | Expected vs Observed | IN_PROGRESS | Complete component-pin dimensional diagnostic implemented; real paired artifacts missing. |
-| M05 | TCA / latency / cost | IN_PROGRESS | Pre-request/native-decimal attribution implemented; actual quote/request/fill source missing. |
-| M06 | Data / clock parity | IN_PROGRESS | Canonical raw/event/close mapping is fixed; paired research/broker dataset and independent clock/session evidence remain. |
-| M07 | Continuous-DEMO safety | BLOCKED | Independent PTC prepared; real startup recon/kill/watchdog/reconnect/restore/DR evidence required. |
-| M08 | Tail / risk survival | IN_PROGRESS | Five seeded resampling modes/three cost stresses + cash/floor/horizon implemented; pinned ledger absent. |
-| M09 | Strategy robustness | IN_PROGRESS | 40 hypotheses staged; causal hysteresis feature tested, no economic/OOS claim or CAND mutation. |
-| M10 | Parameter plateau / multiple testing | IN_PROGRESS | Existing DSR/PBO/SPA/trial registry reused; aligned trial-family ledger missing. |
-| M11 | New filters / research efficiency | IN_PROGRESS | Cheap-reject/staged screening plan and complete source/owner register; numerical screening not executed. |
-| M12 | Capital scaling / PRE-LIVE | PLANNED | No capital expansion/PRE-LIVE promotion; LIVE remains unauthorized. |
+| Step2238 — native IG read-only readiness evidence | 3, 7–14 and evidence inputs for 16 | One canonical credential-free, hash-bound account-context/inventory/clock/market-rules/economics/history bundle using the existing session, probe and market owners. | **Exactly one new runner after repository implementation.** |
+| Step2239 — broker-bound risk and session admission | 15–18 and completion of 16 | Bind Fixed-Cash, loss/exposure, session and one-trade owners to reviewed Step2238 values; deterministic policy tests. | No Windows run until the repository binding is complete; one combined verification can follow if needed. |
+| Step2240 — native IG transport/lifecycle safety | 19–22, 25–26 | Existing reservation/PTC/reconciliation/protection owners adapted to IG; unknown outcome → QUERY_REQUIRED; partial/duplicate/out-of-order/restart tests; capability remains NONE. | Read-only conformance runner later; no order in these packages. |
+
+## Roadmap impact
+
+| Milestone | Status | Current truth |
+| --- | --- | --- |
+| M01 Real-host evidence | IN_PROGRESS | Step2233/2237 data/session/resume evidence closed; broker context/economics/inventory/history remain. |
+| M02 First bounded DEMO | BLOCKED | Requires all 27 gates VERIFIED; no order now. |
+| M03 Broker lifecycle truth | IN_PROGRESS | Local generic owners exist; native IG integration and real DEMO lifecycle evidence remain. |
+| M04–M11 | IN_PROGRESS / PLANNED | Unchanged by this closeout. Reuse existing acceleration work. |
+| M12 PRE-LIVE | PLANNED | No scaling or LIVE promotion. |
+
+Sentinel, Helperbot and Multi-Market work are explicitly deferred.

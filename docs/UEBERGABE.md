@@ -1,5 +1,58 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Step2233/2237 real-host closeout — authoritative (2026-09-15)
+
+**Formal decision:** Step2233 and Step2237 are **COMPLETED / VERIFIED** on the
+accepted runtime-evidence head
+`62029df3353b74cc58884f06cd0c296ddd8d73cc`.
+
+The user-supplied real Windows console record is:
+
+- START: isolated exact-head local clone; existing checkout untouched;
+- WAIT: one IG read-only session; Fresh Start; next true M5 close; Resume;
+  Operator;
+- SUMMARY: `SUCCESS / error_code=NONE`;
+- namespace:
+  `.runtime/ig_m5_contract_2237_interval_start_v2_attempt_03`;
+- deployment cleaned; `execution_capability=NONE`;
+  `order_execution_enabled=false`; no broker order and no LIVE authorization;
+- `legacy_partial_state=DETECTED_RETAINED`.
+
+This is sufficient for the two step closeouts because the exact runner emits
+SUCCESS only after the published-head and isolated deployment gates, Windows and
+import-parity checks, canonical INTERVAL_START contract check, an exclusive
+fresh namespace, one login, two complete authenticated read-only probe cycles,
+true-close freshness, strict unchanged-overlap and resume-anchor validation,
+current Operator projection/fingerprint validation, one logout and
+ownership-bound clone cleanup. The detected legacy partial worktree was
+correctly retained and is **non-blocking contained technical debt**; it was not
+pruned, deleted, migrated or used by the successful clone.
+
+This closes the repeated market-data/session/state-resume evidence cycle. It
+does **not** prove account identity, atomic flat inventory, broker/server clock,
+DST/session policy, quote status, economics, native tick/quantity grids,
+stop/target rules, broker history, execution reconciliation or dealing
+lifecycle. M01 therefore advances to **IN_PROGRESS**, not COMPLETED. The current
+27-gate result is **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL /
+6 BLOCKED**. Effective execution remains NONE/false; no DEMO order; LIVE
+prohibited.
+
+The accepted runtime commit and runner blobs remain immutable evidence:
+PowerShell `cfad3ca6b4effb24fdd6dc0fa7ef0d7cb9fae63b`; Python
+`8274ac096f33c8c2f2321964352e68ba3a59fb10`. A later documentation-only
+closeout commit does not claim a different host run and does not alter these
+runner blobs.
+
+**Next work package:** Step2238 — M01 native IG read-only account, inventory,
+clock, market-rules and economics evidence. Repository owners must first be
+extended to validate and hash-bind those dimensions; afterwards exactly one new
+Windows runner is required for that new evidence package. Re-running the
+Step2237 runner is not required. Sentinel, Helperbot and Multi-Market expansion
+remain deferred.
+
+All lower sections that still describe Step2233/2237 as WAITING_EXTERNAL are
+historical and superseded by this section.
+
 ## Step2237 Windows worktree-add hardening — authoritative overlay (2026-09-15)
 
 The real Windows run at
