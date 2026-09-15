@@ -1,11 +1,13 @@
 # Step2242 — IG read-contract real-host closeout
 
-Status: IMPLEMENTED / WAITING_FINAL_HEAD_CI / REAL_HOST_RECHECK_REQUIRED  
+Status: COMPLETED / TECHNICALLY VERIFIED / REAL_HOST_RECHECK_REQUIRED
 Date: 2026-09-15  
 Start head: `d7ad273e71a9ae993d8c28031e8c20d3a84e32d2`  
 Branch: `nextgen-bot-line-v1`  
 PR: #109 OPEN / UNMERGED  
 Main at start: `e0784ebfc11bee28475fd9c3385be661af58a738`
+
+Accepted runtime head: `20b1c86b5af771757d3557b6910e26501a419984`.
 
 ## Real-host finding retained
 
@@ -97,6 +99,14 @@ The Candidate state is unchanged, no SHADOW step is admitted from the blocked
 readiness evidence, and NONE/false remain typed and unchanged. This adds no new
 truth, risk, state, execution, broker connection, or console owner.
 
+The existing Operator GET now projects the safe fields `resource`,
+`endpoint_family`, `status`, `reason_code`, `http_status_class`,
+`provider_error_code`, and `response_shape_status` for every row. Provider codes
+pass through the same exact allowlist as the adapter; a resealed unknown code is
+dropped. The wrapper summary remains the owner for its primary error and the
+secondary deployment cleanup code because deployment cleanup occurs after the
+collector evidence has been finalized.
+
 ## Internal verification before publication
 
 - focused IG/readiness/Bot-Helper suites: PASS;
@@ -108,13 +118,24 @@ truth, risk, state, execution, broker connection, or console owner.
 - full local suite: PASS with environment-dependent skips only;
 - Ruff full repository: PASS;
 - Python syntax: PASS;
-- local two-pass acceptance: 970 PASS / 1 browser SKIP per pass; T01–T11,
+- final local two-pass acceptance: 972 PASS / 1 browser SKIP per pass; T01–T11,
   T13 and T15 PASS, T12/T14 locally INCOMPLETE solely because Chromium is not
   installed. CI sets the browser-required contract and must produce zero skips;
-- native Windows PowerShell 5.1 and PowerShell 7 parity: pending required
-  `windows-host-lane-ci` on the published final implementation head.
+- dax-bot-1x-ci #734: PASS; both acceptance passes 973 PASS / 0 SKIP and all
+  T01–T15 PASS;
+- research-lab-ci #1518: PASS; both acceptance passes 973 PASS / 0 SKIP, all
+  T01–T15 PASS, full suite 3472 passed / 1 conditional external skip;
+- windows-host-lane-ci #23: PASS; both acceptance passes 973 PASS / 0 SKIP,
+  native Windows PowerShell 5.1, PowerShell 7, host-focused tests, Ruff and syntax
+  PASS.
 
-No internal defect is intentionally deferred. FOLLOW-UP WORK DEBT may become
-`EXTERNAL_ONLY` only after all required final-head CIs are green. Real provider
-acceptance remains external and must use the single final-head-bound wrapper
-invocation in the final handoff.
+The publication path initially based the first remote implementation commit on
+an older Step2241 runtime tree, which reverted three accepted Step2241 documents.
+The byte comparison caught this before acceptance. A normal fast-forward repair
+commit restored those files; the repaired remote tree was proven byte-identical
+to the locally accepted tree. No force update or historical rewrite occurred,
+and only the later exact-head CIs above count as evidence.
+
+No internal defect is deferred. FOLLOW-UP WORK DEBT=`EXTERNAL_ONLY`. Real
+provider acceptance remains external and must use the single final-head-bound
+wrapper invocation in the final handoff.

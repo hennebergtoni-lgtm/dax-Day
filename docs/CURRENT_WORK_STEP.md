@@ -1,6 +1,6 @@
 # Current Work Step — DAX Daytrading Bot
 
-## Current: Step2242 Bot-Helper real-host IG read-contract closeout — IN_PROGRESS (2026-09-15)
+## Current: Step2242 Bot-Helper real-host IG read-contract closeout — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
 Pinned start head: `d7ad273e71a9ae993d8c28031e8c20d3a84e32d2`; branch
 `nextgen-bot-line-v1`, PR #109 OPEN/UNMERGED; main unchanged
@@ -13,7 +13,7 @@ Bot-Helper dogfood, regressions and acceptance; prior 2238/2239/2240/M01 status
 is not promoted.
 
 Official-source and repository comparison found three shared request/diagnostic
-defects and one independent wrapper cleanup defect. The deployed adapter used
+defects and one independent wrapper cleanup defect. The prior adapter used
 `/working-orders`, while both official IG Java and .NET runtime samples use
 `/workingorders` for VERSION 2 with the same `workingOrders` /
 `workingOrderData` response family. Activity v3 emitted Python `isoformat()`
@@ -22,7 +22,31 @@ values with `+00:00`; the documented/sample request contract uses UTC
 allowlist omitted documented date/page/security/public-API codes. Finally, the
 wrapper materialized its imported module inside the deployment parent but did
 not include or remove that file before its exact ownership check, so cleanup
-could reject runner-owned state. Implementation and two-pass acceptance follow.
+rejected runner-owned state.
+
+Accepted runtime head: `20b1c86b5af771757d3557b6910e26501a419984`.
+All three required CIs are green on that exact head: dax-bot-1x-ci #734,
+research-lab-ci #1518 and windows-host-lane-ci #23. Every lane passed two
+independent acceptance runs with 973 PASS, 0 SKIP, 0 FAIL and all T01–T15 PASS.
+Research full suite: 3472 passed / 1 external conditional skip. Native Windows
+PowerShell 5.1, PowerShell 7, Ruff, Python syntax and required browser acceptance
+passed. Local full suite passed 3465 / 8 environment-dependent skips; final local
+acceptance passed 972 plus the single explicitly incomplete missing-browser case
+per pass before CI supplied Chromium.
+
+The canonical adapter now sends one `/workingorders` v2 request, serializes
+activity v3 as UTC `yyyy-MM-ddTHH:mm:ss` with exact four-key query and seven-day /
+10–500 bounds, preserves only explicit documented provider codes, and projects
+all safe row diagnostics through the existing Operator GET. Bot-Helper dogfood
+proves H=PASS, D=PASS, B=BLOCKED, S=BLOCKED, O=PASS and K=BLOCKED for the real
+5-PASS/3-FAIL shape; Candidate state remains unchanged. The wrapper removes its
+own temporary module before exact cleanup ownership evaluation.
+
+No internal Step2242 defect remains. FOLLOW-UP WORK DEBT=EXTERNAL_ONLY for one
+exact-final-head real Windows/provider recheck. That recheck is not yet claimed;
+2238/2239/2240/M01 and the 27 gates are not silently promoted. NONE/false, one
+login, no retry, no dealing endpoint, no order and LIVE prohibited remain binding.
+See `STEP_2242_IG_READ_CONTRACT_CLOSEOUT.md`.
 
 ## Current: Step2241 Bot-Helper-Kollektiv V1 — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
