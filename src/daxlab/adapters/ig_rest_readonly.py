@@ -12,6 +12,9 @@ transport without network access.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from hashlib import sha256
 import json
 from math import isfinite
 from typing import Mapping, Protocol
@@ -65,6 +68,29 @@ class JsonResponse:
     status: int
     headers: Mapping[str, str]
     payload: object
+
+
+@dataclass(frozen=True, slots=True)
+class IgReadObservation:
+    """Credential-free timing/provenance for one completed read."""
+
+    resource: str
+    request_started_at: datetime
+    response_observed_at: datetime
+    server_date_utc: datetime | None
+    request_id_fingerprint: str | None
+
+    def __post_init__(self) -> None:
+        for value in (self.request_started_at, self.response_observed_at):
+            if value.tzinfo is None or value.utcoffset() is None:
+                raise ValueError("IG read observation timestamps must be timezone-aware")
+        if self.response_observed_at < self.request_started_at:
+            raise ValueError("IG read observation clock moved backwards")
+        if self.server_date_utc is not None and (
+            self.server_date_utc.tzinfo is None
+            or self.server_date_utc.utcoffset() is None
+        ):
+            raise ValueError("IG server date must be timezone-aware")
 
 
 class JsonTransport(Protocol):
@@ -133,6 +159,9 @@ class IgDemoReadOnlyClient:
     _tokens: IgSessionTokens | None = field(default=None, init=False, repr=False)
     _session_state: str = field(default="NEW", init=False)
     _read_count: int = field(default=0, init=False)
+    _account_context_fingerprint: str | None = field(default=None, init=False, repr=False)
+    _login_context: dict[str, object] = field(default_factory=dict, init=False, repr=False)
+    _read_observations: list[IgReadObservation] = field(default_factory=list, init=False, repr=False)
 
     def __post_init__(self) -> None:
         if self.base_url != IG_DEMO_BASE_URL:
@@ -162,6 +191,17 @@ class IgDemoReadOnlyClient:
                 "execution_capability": EXECUTION_CAPABILITY,
                 "order_execution_enabled": ORDER_EXECUTION_ENABLED}
 
+    @property
+    def login_context(self) -> Mapping[str, object]:
+        """Redacted context captured from the single login response."""
+        if not self.authenticated or self._account_context_fingerprint is None:
+            raise IgReadOnlyError("IG authenticated account context unavailable")
+        return dict(self._login_context)
+
+    @property
+    def read_observations(self) -> tuple[IgReadObservation, ...]:
+        return tuple(self._read_observations)
+
     def login(self) -> None:
         if self._session_state != "NEW":
             raise IgReadOnlyError("IG session owner already consumed; no relogin")
@@ -178,6 +218,7 @@ class IgDemoReadOnlyClient:
             cst = _header(response.headers, "CST")
             security_token = _header(response.headers, "X-SECURITY-TOKEN")
             self._tokens = IgSessionTokens(cst=cst, security_token=security_token)
+            self._capture_login_context(response.payload)
             self._session_state = "AUTHENTICATED"
         except Exception:
             self._session_state = "QUERY_REQUIRED"
@@ -211,6 +252,34 @@ class IgDemoReadOnlyClient:
     def market(self, epic: str) -> Mapping[str, object]:
         clean_epic = _clean_epic(epic)
         return self._get_json(f"/markets/{clean_epic}", version="3")
+
+    def market_v4(self, epic: str) -> Mapping[str, object]:
+        """Read v4 market metadata, including epoch quote time when supplied."""
+        clean_epic = _clean_epic(epic)
+        return self._get_json(f"/markets/{clean_epic}", version="4")
+
+    def account_activity(
+        self, *, from_utc: datetime, to_utc: datetime, page_size: int = 500
+    ) -> Mapping[str, object]:
+        """Read bounded account activity; never follows an unknown paging link."""
+        for value, name in ((from_utc, "from_utc"), (to_utc, "to_utc")):
+            if value.tzinfo is None or value.utcoffset() is None:
+                raise ValueError(f"{name} must be timezone-aware")
+        if to_utc <= from_utc:
+            raise ValueError("account activity interval must be positive")
+        if type(page_size) is not int or not 1 <= page_size <= 500:
+            raise ValueError("page_size must be between 1 and 500")
+        payload = self._get_json(
+            "/history/activity",
+            version="3",
+            query={
+                "from": from_utc.astimezone(timezone.utc).isoformat(),
+                "to": to_utc.astimezone(timezone.utc).isoformat(),
+                "detailed": "true",
+                "pageSize": str(page_size),
+            },
+        )
+        return payload
 
     def m5_prices(self, epic: str, *, max_bars: int = 40) -> Mapping[str, object]:
         clean_epic = _clean_epic(epic)
@@ -256,6 +325,7 @@ class IgDemoReadOnlyClient:
     ) -> Mapping[str, object]:
         if self._session_state != "AUTHENTICATED":
             raise IgReadOnlyError("IG read-only client is not authenticated; session query required")
+        started = datetime.now(timezone.utc)
         try:
             response = self._request(
                 method="GET", url=f"{self.base_url}{path}",
@@ -268,8 +338,43 @@ class IgDemoReadOnlyClient:
         except Exception:
             self._session_state = "QUERY_REQUIRED"
             raise
+        observed = datetime.now(timezone.utc)
+        self._read_observations.append(
+            IgReadObservation(
+                resource=path,
+                request_started_at=started,
+                response_observed_at=observed,
+                server_date_utc=_http_date_or_none(response.headers),
+                request_id_fingerprint=_header_fingerprint_or_none(
+                    response.headers, "X-REQUEST-ID"
+                ),
+            )
+        )
         self._read_count += 1
         return response.payload
+
+    def _capture_login_context(self, payload: object) -> None:
+        if not isinstance(payload, Mapping):
+            raise IgReadOnlyError("IG login response must be a JSON object")
+        account_id = payload.get("currentAccountId") or payload.get("accountId")
+        context = {
+            "environment": "IG_DEMO",
+            "account_type": _safe_token(payload.get("accountType")),
+            "currency": _safe_token(payload.get("currencyIsoCode")),
+            "dealing_enabled": payload.get("dealingEnabled")
+            if isinstance(payload.get("dealingEnabled"), bool)
+            else None,
+            "timezone_offset_hours": _finite_number_or_none(payload.get("timezoneOffset")),
+        }
+        if isinstance(account_id, str) and account_id:
+            identity = json.dumps(
+                {"environment": "IG_DEMO", "active_account_id": account_id},
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            self._account_context_fingerprint = sha256(identity.encode()).hexdigest()
+            context["account_context_fingerprint"] = self._account_context_fingerprint
+        self._login_context = context
 
     def _base_headers(self, *, version: str) -> dict[str, str]:
         return {
@@ -313,3 +418,40 @@ def _clean_epic(epic: str) -> str:
     if any(character in epic for character in ("/", "?", "#")):
         raise ValueError("epic contains invalid path characters")
     return epic
+
+
+def _safe_token(value: object) -> str | None:
+    if not isinstance(value, str) or not value or value != value.strip():
+        return None
+    return value if len(value) <= 32 and value.replace("_", "").isalnum() else None
+
+
+def _finite_number_or_none(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    result = float(value)
+    return result if isfinite(result) else None
+
+
+def _http_date_or_none(headers: Mapping[str, str]) -> datetime | None:
+    try:
+        raw = next(
+            value
+            for key, value in headers.items()
+            if key.casefold() == "date" and isinstance(value, str)
+        )
+        parsed = parsedate_to_datetime(raw)
+    except (StopIteration, TypeError, ValueError, OverflowError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _header_fingerprint_or_none(
+    headers: Mapping[str, str], name: str
+) -> str | None:
+    for key, value in headers.items():
+        if key.casefold() == name.casefold() and isinstance(value, str) and value:
+            return sha256(value.encode()).hexdigest()
+    return None

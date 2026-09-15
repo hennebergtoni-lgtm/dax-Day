@@ -134,6 +134,60 @@ def test_authenticated_headers_are_bound_after_login() -> None:
     assert headers["X-IG-API-KEY"] == "super-secret-api-key"
 
 
+def test_login_context_is_hashed_and_reads_capture_server_clock_provenance() -> None:
+    transport = FakeTransport([
+        JsonResponse(
+            200,
+            {"CST": "secret-cst", "X-SECURITY-TOKEN": "secret-security-token"},
+            {
+                "currentAccountId": "ABC123",
+                "accountType": "CFD",
+                "currencyIsoCode": "EUR",
+                "dealingEnabled": True,
+                "timezoneOffset": 1,
+            },
+        ),
+        JsonResponse(
+            200,
+            {"Date": "Tue, 15 Sep 2026 10:00:00 GMT", "X-REQUEST-ID": "private-id"},
+            {"accounts": []},
+        ),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    client.accounts()
+
+    context = client.login_context
+    assert context["currency"] == "EUR" and context["dealing_enabled"] is True
+    assert len(context["account_context_fingerprint"]) == 64
+    assert "ABC123" not in repr(context)
+    observation = client.read_observations[0]
+    assert observation.server_date_utc.isoformat() == "2026-09-15T10:00:00+00:00"
+    assert len(observation.request_id_fingerprint) == 64
+    assert "private-id" not in repr(observation)
+
+
+def test_v4_market_and_bounded_activity_are_get_only() -> None:
+    transport = FakeTransport([
+        _login_response(),
+        JsonResponse(200, {}, {"instrument": {}, "dealingRules": {}, "snapshot": {}}),
+        JsonResponse(200, {}, {"activities": [], "metadata": {"paging": {}}}),
+    ])
+    client = IgDemoReadOnlyClient(_credentials(), transport)
+    client.login()
+    from datetime import datetime, timezone
+
+    client.market_v4("IX.D.DAX.IFMM.IP")
+    client.account_activity(
+        from_utc=datetime(2026, 9, 8, tzinfo=timezone.utc),
+        to_utc=datetime(2026, 9, 15, tzinfo=timezone.utc),
+    )
+    assert [call["method"] for call in transport.calls] == ["POST", "GET", "GET"]
+    assert transport.calls[1]["headers"]["VERSION"] == "4"
+    assert transport.calls[2]["url"].endswith("/history/activity")
+    assert transport.calls[2]["query"]["detailed"] == "true"
+
+
 def test_unauthenticated_read_is_fail_closed() -> None:
     client = IgDemoReadOnlyClient(credentials=_credentials(), transport=FakeTransport([]))
 

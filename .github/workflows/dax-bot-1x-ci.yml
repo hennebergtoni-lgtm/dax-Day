@@ -26,11 +26,14 @@ jobs:
           ruff check
           src/daxlab/runtime/candidate_*.py
           src/daxlab/runtime/broker_*.py
+          src/daxlab/runtime/ig_predemo_safety.py
           src/daxlab/runtime/operator_snapshot.py
           src/daxlab/runtime/operator_runtime_bridge.py
           src/daxlab/strategies/cand001/*.py
           tests/test_candidate*.py
           tests/test_broker*.py
+          tests/test_ig_predemo_safety.py
+          tests/test_run_ig_predemo_readiness_2238.py
           tests/test_operator_snapshot*.py
           tests/test_operator_runtime_bridge.py
           tests/test_nextgen_cand001_strategy_adapter.py
@@ -40,6 +43,8 @@ jobs:
           pytest -q
           tests/test_candidate*.py
           tests/test_broker*.py
+          tests/test_ig_predemo_safety.py
+          tests/test_run_ig_predemo_readiness_2238.py
           tests/test_operator_snapshot*.py
           tests/test_operator_runtime_bridge.py
           tests/test_nextgen_cand001_strategy_adapter.py
