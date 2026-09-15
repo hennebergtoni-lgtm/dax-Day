@@ -220,6 +220,7 @@ def test_publication_is_exclusive_and_manifest_hashes_summary(tmp_path) -> None:
     manifest = json.loads((namespace / "MANIFEST.json").read_text())
     assert "SUMMARY.json" in manifest["files"]
     assert manifest["execution_capability"] == "NONE"
+    assert b"\r\n" not in (namespace / "SUMMARY.json").read_bytes()
     try:
         runner._publish(namespace, evidence, {}, head="d" * 40)
     except FileExistsError:

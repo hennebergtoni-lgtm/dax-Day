@@ -516,14 +516,14 @@ def publish(runtime_root: Path, payload: Mapping[str, object]) -> tuple[str, str
     try:
         rendered = json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
         preflight_hash = sha256(rendered.encode("utf-8")).hexdigest()
-        (staging / "PREFLIGHT.json").write_text(rendered, encoding="utf-8")
+        (staging / "PREFLIGHT.json").write_bytes(rendered.encode("utf-8"))
         manifest = {
             "schema": MANIFEST_SCHEMA, "exact_head": payload["expected_head"],
             "files": {"PREFLIGHT.json": preflight_hash},
             "execution_capability": "NONE", "order_execution_enabled": False,
         }
         manifest_rendered = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
-        (staging / "MANIFEST.json").write_text(manifest_rendered, encoding="utf-8")
+        (staging / "MANIFEST.json").write_bytes(manifest_rendered.encode("utf-8"))
         os.replace(staging, final)
         observed = sha256((final / "PREFLIGHT.json").read_bytes()).hexdigest()
         if observed != preflight_hash:

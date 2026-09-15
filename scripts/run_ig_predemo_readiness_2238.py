@@ -393,7 +393,7 @@ def _publish(
         hashes: dict[str, str] = {}
         for name, payload in files.items():
             rendered = json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
-            (staging / name).write_text(rendered, encoding="utf-8")
+            (staging / name).write_bytes(rendered.encode("utf-8"))
             hashes[name] = sha256(rendered.encode()).hexdigest()
         manifest = {
             "schema": MANIFEST_SCHEMA,
@@ -403,8 +403,8 @@ def _publish(
             "order_execution_enabled": False,
         }
         manifest["fingerprint"] = _fingerprint(manifest)
-        (staging / "MANIFEST.json").write_text(
-            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        (staging / "MANIFEST.json").write_bytes(
+            (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode("utf-8")
         )
         for name, expected_hash in hashes.items():
             if sha256((staging / name).read_bytes()).hexdigest() != expected_hash:

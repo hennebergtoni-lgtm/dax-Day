@@ -126,7 +126,13 @@ def test_aggregate_preflight_passes_and_preserves_none_false(
         "HOST", "POWERSHELL", "GIT", "FILESYSTEM", "PYTHON",
         "IMPORT", "NETWORK", "CREDENTIAL", "EVIDENCE", "SAFETY",
     }
-    assert next(item for item in payload["checks"] if item["check"] == "WINDOWS_IDENTITY")["status"] == "NOT_REQUIRED"
+    windows_status = next(
+        item for item in payload["checks"] if item["check"] == "WINDOWS_IDENTITY"
+    )["status"]
+    expected_windows_status = (
+        "PASS" if preflight.platform.system() == "Windows" else "NOT_REQUIRED"
+    )
+    assert windows_status == expected_windows_status
     assert payload["linux_worker"] == "NOT_REQUIRED_FOR_REAL_HOST"
 
 
@@ -303,6 +309,7 @@ def test_publish_is_hash_bound_exclusive_and_readable(tmp_path: Path) -> None:
     assert manifest["files"]["PREFLIGHT.json"] == fingerprint
     assert manifest["execution_capability"] == "NONE"
     assert manifest["order_execution_enabled"] is False
+    assert b"\r\n" not in (root / "PREFLIGHT.json").read_bytes()
 
 
 def test_publish_handles_spaces_and_non_ascii_runtime_path(tmp_path: Path) -> None:
