@@ -30,7 +30,7 @@ def test_actual_http_response_rejects_contradictory_projection(console_server, m
     monkeypatch.setattr(module, 'read_local_operator_projection', lambda *a, **kw: deepcopy(view))
     code, _, body = request(server)
     assert code == 503
-    assert json.loads(body)['system']['EXECUTION']['state'] == 'BLOCKED'
+    assert json.loads(body)['system']['EXECUTION']['state'] == 'DISABLED'
 
 
 def test_javascript_runs_validator_and_rejects_green_execution():

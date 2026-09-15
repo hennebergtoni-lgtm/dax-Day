@@ -114,3 +114,38 @@ No benchmark, test pass, CI pass, reference hash or workflow name may promote th
 **RETAIN HYBRID CI / CLARIFY OWNERSHIP.**
 
 Do not split `research-lab-ci` merely because it contains multiple evidence families. Its broad integration role is intentional. Keep focused `dax-bot-1x-ci` for fast Candidate/runtime safety feedback and `reference-payload-export` for immutable reference-source integrity. Revisit further CI decomposition only when a concrete runtime, latency, reliability or ownership defect appears.
+
+
+## 7. Step 2241 — Bot Helper V1 acceptance ownership (2026-09-15)
+
+The existing three required workflows retain their names, responsibilities and
+prior checks. No workflow is replaced or weakened. The defect addressed here is
+cross-owner behavior escaping component-only test runs: the fixed V1 acceptance
+union now runs twice in separate Python processes on all three owners through
+`scripts/run_bot_helper_acceptance.py`. Pass 2 uses a different synthetic session
+and price sequence. The actual imported source must resolve inside this checkout.
+
+- `research-lab-ci`: broad integration remains primary; V1 cross-owner acceptance
+  and the full existing repository suite are both retained.
+- `dax-bot-1x-ci`: focused product and no-order behavior plus the V1 acceptance union.
+- `windows-host-lane-ci`: native Windows Python, required PowerShell 5.1 and
+  supplementary PowerShell 7; the same V1 assertions verify platform parity.
+- Chromium at a 390px viewport is a required CI acceptance dependency. A missing
+  browser fails this check; local browser skips remain INCOMPLETE, never PASS.
+
+Each acceptance invocation records actual pytest/JUnit outcomes, selected tests,
+source hashes, checkout/import identity and per-group counts. Expected scenarios
+and assertions are independently fixed in the acceptance fixture/tests. Matching a
+registry/test name alone never promotes a failure facet or proves broker behavior.
+A skipped selected test makes its acceptance group INCOMPLETE. Existing external
+DB skips remain separate SKIPPED/WAITING_EXTERNAL observations.
+
+Sanitized JSON/JUnit artifacts are uploaded with `if: always()` and 30-day retention
+using the existing GitHub artifact mechanism. Only function identifiers, hashed case
+identifiers and fixed statuses are retained, without arbitrary assertion output.
+The upload step separately determines transfer success; a local report does not
+claim artifact upload. Missing artifacts fail the upload step. GitHub artifacts
+are CI evidence, not a proven transport from the user's Windows host.
+
+These runs provide SYNTHETIC technical acceptance only. Native Windows CI is not
+user-host evidence; no test grants execution, merge or formal project acceptance.

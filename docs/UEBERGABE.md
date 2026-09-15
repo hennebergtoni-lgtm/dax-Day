@@ -1,5 +1,28 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume Step2241 — finish internal V1 acceptance before host handoff (2026-09-15)
+
+Status IN_PROGRESS / CI_PENDING. The recovered mandate is complete; do not ask
+for another implementation authorization. Start head is
+`aa11dc32fbd91c84edea19816e13fb6dc613a964`, branch `nextgen-bot-line-v1`, PR #109
+OPEN/UNMERGED, main `e0784ebfc11bee28475fd9c3385be661af58a738`.
+
+Use `BOT_HELPER_KOLLEKTIV_V1_ACCEPTANCE.md` and the current code as the live
+handoff. Both frozen local helper passes have 899 passed / 1 skipped; the full suite has
+3427 passed / 8 skipped / 0 failed. Verify all three CI runs/native Windows parity
+and complete mandatory browser acceptance. Earlier second-pass fixture defects
+are repaired and retested. The local browser skip must not become PASS or an
+external host gate by relabeling. Confirmed raw evidence and historical records stay intact.
+
+Only after those gates may the prepared one-call exact-final-head existing Windows
+collector handoff be released, with a new namespace. No endpoint series, routine
+ZIP-upload request, broker retry, new credential/channel or execution activation.
+A real automatic user-host transfer channel remains unproved. It blocks only its
+own lane. Step2238/2239/2240 and M01 are not silently closed by Step2241.
+
+Safety remains NONE/false, authorized SHADOW only, LIVE forbidden; frozen V11.2,
+CAND-001 and costs/risk/loss policy unchanged. Historical entries below are retained.
+
 ## Active Step2238 handoff — eight-row post-login invariant (2026-09-15)
 
 The real Windows lane is proven through AUTH READ START, but the most recent

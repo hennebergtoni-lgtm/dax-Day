@@ -45,6 +45,10 @@ from daxlab.runtime.manifests import RunManifest  # noqa: E402
 from daxlab.runtime.operator_snapshot import parse_operator_snapshot_payload  # noqa: E402
 from daxlab.runtime.paper_contracts import PaperFillModelConfig  # noqa: E402
 from daxlab.runtime.single_instance import SingleInstanceLock  # noqa: E402
+from daxlab.domain.market import InstrumentId  # noqa: E402
+from daxlab.runtime.bot_helper import coordinate  # noqa: E402
+from daxlab.runtime.bot_helper_contract import HelperSubject, observation, parse_event  # noqa: E402
+from daxlab.runtime.time import to_berlin  # noqa: E402
 
 SCHEMA = "DAX_IG_CAND001_REAL_HOST_SHADOW_E2E_V3"
 STATE_CONTRACT = "DAX_IG_CAND001_STATE_INTERVAL_START_V3"
@@ -139,7 +143,7 @@ def runtime_candles(rows: list[dict[str, Any]], observed: datetime) -> list[Cand
 
 
 def validate_evidence(payload: dict[str, Any], *, head: str, now: datetime,
-                      current: bool = True) -> Cand001ShadowState:
+                      current: bool = True, expected_helper_scope: str = "REPLAY") -> Cand001ShadowState:
     """Read back the persisted source evidence, never trust only its display DTO."""
     _assert_credential_free(payload)
     unhashed = dict(payload)
@@ -212,6 +216,18 @@ def validate_evidence(payload: dict[str, Any], *, head: str, now: datetime,
             "TELEMETRY_STALE",
         )
     snapshot = payload["operator_snapshot"]
+    if "helper_events" in payload or "helper_projection" in payload:
+        # Legacy evidence remains readable; new helper evidence must prove its own
+        # original projection, and a later fetch never changes its source times.
+        helper_events = tuple(parse_event(json.dumps(item), evidence_scope=expected_helper_scope)
+                              for item in payload["helper_events"])
+        require(bool(helper_events), "HELPER_EVIDENCE_INCOMPLETE")
+        bound = helper_events[0].subject
+        require(bound.code_head == head and bound.run_id == manifest(head).manifest_fingerprint,
+                "HELPER_EVIDENCE_IDENTITY")
+        original_cycle = coordinate(helper_events, subject=bound, now=processed)
+        require(original_cycle.as_dict() == payload["helper_projection"] and original_cycle.shadow_allowed,
+                "HELPER_EVIDENCE_PROJECTION")
     parse_operator_snapshot_payload(snapshot)
     validate_candidate_operator_snapshot(snapshot)
     require(payload["operator_projection"] == browser_operator_snapshot(snapshot),
@@ -254,7 +270,8 @@ def validate_evidence(payload: dict[str, Any], *, head: str, now: datetime,
 
 
 def process_live_window(probe: dict[str, Any], rows: list[dict[str, Any]], *, head: str,
-                        observed_at: datetime, prior: dict[str, Any] | None = None) -> dict[str, Any]:
+                        observed_at: datetime, prior: dict[str, Any] | None = None,
+                        evidence_scope: str = "REPLAY") -> dict[str, Any]:
     """Pure connection to existing owners. Only the CLI collects live host input."""
     received = utc(probe["observed_at_utc"])
     requested = utc(probe["price_request_started_at_utc"])
@@ -286,7 +303,30 @@ def process_live_window(probe: dict[str, Any], rows: list[dict[str, Any]], *, he
         recovery = "RESUME_ANCHOR_RECONCILED"
     decisions = []
     for candle in pending:
-        result = process_cand001_shadow_candle(state, candle, observed_at=observed_at, run_manifest=run)
+        # The existing adapter validated the complete current window, ordering,
+        # true closes and overlap before any Candidate mutation. Historical catchup
+        # remains explicitly REPLAY; source receipt never refreshes candle time.
+        subject = HelperSubject(
+            run_id=run.manifest_fingerprint, provider="IG", environment="DEMO",
+            account_fingerprint=None, instrument_id=InstrumentId(DEFAULT_INSTRUMENT_ID),
+            market_contract_fingerprint=stable_fingerprint(canonical_ig_m5_contract()),
+            session_id=to_berlin(candle.event_time).date().isoformat(),
+            code_head=head, config_fingerprint=run.config_fingerprint,
+        )
+        scope = evidence_scope if candle is pending[-1] else "REPLAY"
+        helper_events = tuple(observation(
+            subject, role, "PASS", source_time=candles[-1].close_time,
+            observed_at=received, valid_until=candles[-1].close_time + DEFAULT_MAX_AGE,
+            evidence_scope=scope, evidence_refs=(probe["fingerprint"],),
+        ) for role in ("H", "D"))
+        helper_cycle = coordinate(helper_events, subject=subject, now=observed_at)
+        require(helper_cycle.shadow_allowed, "HELPER_ADMISSION_BLOCKED")
+        result = process_cand001_shadow_candle(
+            state, candle, observed_at=observed_at, run_manifest=run,
+            helper_events=helper_events, helper_subject=subject,
+            helper_window=tuple(candles), helper_max_receive_delay=DEFAULT_MAX_AGE,
+            helper_instrument_id=InstrumentId(DEFAULT_INSTRUMENT_ID),
+        )
         state = result.state
         pipeline = result.pipeline_result
         decisions.append({
@@ -317,6 +357,8 @@ def process_live_window(probe: dict[str, Any], rows: list[dict[str, Any]], *, he
         "ig_probe": probe, "ig_closed_m5_observation": rows, "input_window": eligible, "decisions": decisions,
         "checkpoint": candidate_shadow_checkpoint_payload(state, run_manifest=run),
         "operator_snapshot": snapshot, "operator_projection": browser_operator_snapshot(snapshot),
+        "helper_projection": helper_cycle.as_dict(),
+        "helper_events": [event.as_dict() for event in helper_events],
         "errors": [], "warnings": ["HISTORICAL_CATCHUP_IS_NOT_CURRENT_DECISION_EVIDENCE"],
     }
     if not state.pipeline.signal.or_complete:

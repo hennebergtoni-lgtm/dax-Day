@@ -7,7 +7,7 @@ remain owned by their existing modules.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from daxlab.runtime.bar_identity import closed_bar_identity
 from daxlab.runtime.candidate_active_trade_state import Cand001ActiveTradeState
@@ -88,12 +88,31 @@ def process_cand001_shadow_candle(
     sizing: Cand001SimulationSizingPolicy | None = None,
     fill_model: PaperFillModelConfig | None = None,
     runtime_context: OperatorRuntimeContext | None = None,
+    helper_events: tuple | None = None,
+    helper_subject=None,
+    helper_window: tuple[Candle, ...] | None = None,
+    helper_max_receive_delay: timedelta = timedelta(minutes=2),
+    helper_instrument_id=None,
 ) -> Cand001ShadowStepResult:
     """Advance one CLOSED candle through strategy, virtual trade and evidence state."""
     if observed_at.tzinfo is None:
         raise ValueError("observed_at must be timezone-aware")
     if run_manifest.mode is not RuntimeMode.SHADOW:
         raise ValueError("CAND-001 shadow orchestrator requires SHADOW RunManifest")
+    if helper_events is not None or helper_subject is not None:
+        # Recompute at the actual entrance; a cached GREEN DTO is not authority.
+        from daxlab.runtime.bot_helper import coordinate, runtime_data_reasons
+        cycle = coordinate(helper_events, subject=helper_subject, now=observed_at)
+        data_blockers = runtime_data_reasons(
+            state, candle, observed_at=observed_at, subject=helper_subject,
+            config=config or Cand001Config(), window=helper_window,
+            max_receive_delay=helper_max_receive_delay, instrument_id=helper_instrument_id,
+        )
+        if (not cycle.shadow_allowed
+                or data_blockers
+                or helper_subject.run_id != run_manifest.manifest_fingerprint
+                or helper_subject.config_fingerprint != run_manifest.config_fingerprint):
+            raise ValueError("HELPER_ADMISSION_BLOCKED")
 
     cfg = config or Cand001Config()
     size = sizing or Cand001SimulationSizingPolicy()

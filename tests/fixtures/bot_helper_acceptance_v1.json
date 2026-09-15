@@ -1,0 +1,1630 @@
+{
+  "schema": "DAX_BOT_HELPER_ACCEPTANCE_SPEC_V1",
+  "anchor_code_head": "aa11dc32fbd91c84edea19816e13fb6dc613a964",
+  "expectation_authority": "INDEPENDENT_FIXED_ACCEPTANCE_SPEC_NOT_PRODUCTION_REDUCER",
+  "evidence_scope": "SYNTHETIC",
+  "real_host_coverage": "NOT_PROVEN",
+  "real_broker_coverage": "NOT_PROVEN",
+  "execution_capability": "NONE",
+  "order_execution_enabled": false,
+  "global_forbidden_calls": {
+    "broker_order": 0,
+    "broker_cancel": 0,
+    "broker_modify": 0,
+    "broker_retry": 0,
+    "broker_resubmit": 0,
+    "reservation_release": 0,
+    "login_from_helper": 0
+  },
+  "expected_roles": [
+    "H",
+    "D",
+    "B",
+    "S",
+    "O"
+  ],
+  "expected_raw_slots": [
+    "ACCOUNTS",
+    "POSITIONS_A",
+    "WORKING_ORDERS_A",
+    "MARKET_V4",
+    "ACTIVITY_HISTORY",
+    "M5_PRICES",
+    "POSITIONS_B",
+    "WORKING_ORDERS_B"
+  ],
+  "groups": [
+    {
+      "id": "T01",
+      "name": "HEALTHY_AND_NO_TRADE",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "healthy_session",
+        "valid_no_trade",
+        "isolated_shadow_broker_unknown"
+      ],
+      "failure_ids": [
+        "F099",
+        "F100"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/candidate_shadow_orchestrator.py",
+        "src/daxlab/runtime/candidate_pipeline.py",
+        "src/daxlab/runtime/candidate_admission.py"
+      ],
+      "expected_main_system_reaction": "CANONICAL_SHADOW_ONLY",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T02",
+      "name": "DATA_ADMISSION",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "stale_source_new_receive",
+        "open_bar",
+        "gap",
+        "duplicate_delivery",
+        "out_of_order",
+        "nan",
+        "positive_inf",
+        "negative_inf",
+        "invalid_ohlc",
+        "provider_revision",
+        "missing_history",
+        "clock_contract",
+        "dst_session"
+      ],
+      "failure_ids": [
+        "F001",
+        "F002",
+        "F003",
+        "F004",
+        "F005",
+        "F006",
+        "F007",
+        "F008",
+        "F011",
+        "F012",
+        "F016"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/quality.py",
+        "src/daxlab/runtime/contracts.py",
+        "src/daxlab/runtime/bar_identity.py",
+        "src/daxlab/runtime/shadow_resume_anchor.py",
+        "src/daxlab/runtime/candidate_shadow_orchestrator.py"
+      ],
+      "expected_main_system_reaction": "NO_ADMISSION_NO_INTENT_STATE_UNCHANGED",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T03",
+      "name": "BROKER_TRUTH",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "unknown",
+        "none_inventory",
+        "manual_position",
+        "foreign_order",
+        "inconsistent_brackets",
+        "bounded_history"
+      ],
+      "failure_ids": [
+        "F020",
+        "F023",
+        "F024",
+        "F036",
+        "F043",
+        "F045",
+        "F052",
+        "F053"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/ig_predemo_safety.py",
+        "src/daxlab/runtime/broker_reconciliation.py"
+      ],
+      "expected_main_system_reaction": "BROKER_QUERY_REQUIRED_NO_EXECUTION",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T04",
+      "name": "LIFECYCLE_CONFLICT",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "flat_unresolved",
+        "ack_without_fill",
+        "partial",
+        "timeout",
+        "duplicate_report",
+        "out_of_order_report"
+      ],
+      "failure_ids": [
+        "F030",
+        "F040",
+        "F043",
+        "F045",
+        "F096"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/broker_reconciliation.py",
+        "src/daxlab/runtime/broker_order_lifecycle.py",
+        "src/daxlab/runtime/ig_predemo_safety.py"
+      ],
+      "expected_main_system_reaction": "QUERY_OR_BLOCK_NO_RESUBMIT_CANCEL_MODIFY_RELEASE",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T05",
+      "name": "SUBJECT_BINDING",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "account",
+        "provider",
+        "instrument",
+        "environment_live",
+        "missing_account",
+        "session",
+        "run",
+        "code",
+        "policy",
+        "contract"
+      ],
+      "failure_ids": [
+        "F023",
+        "F060",
+        "F061",
+        "F087"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/bot_helper_contract.py",
+        "src/daxlab/runtime/bot_helper.py"
+      ],
+      "expected_main_system_reaction": "REJECT_CROSS_WIRED_EVIDENCE",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T06",
+      "name": "INDEPENDENT_PTC",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "quantity_low",
+        "quantity_high",
+        "quantity_grid",
+        "price_grid",
+        "notional",
+        "collar",
+        "age",
+        "attempt",
+        "duplicate",
+        "inventory",
+        "session",
+        "reservation",
+        "emergency",
+        "account",
+        "instrument",
+        "live",
+        "missing_environment"
+      ],
+      "failure_ids": [
+        "F060",
+        "F061",
+        "F085",
+        "F096"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/broker_execution_protection.py",
+        "src/daxlab/runtime/candidate_shadow_orchestrator.py"
+      ],
+      "expected_main_system_reaction": "PTC_VETO_REACHES_ADMISSION_AND_OPERATOR",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T07",
+      "name": "COMPLETE_CHECK_MATRIX",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "52_preflight",
+        "eight_resource_exceptions",
+        "eight_malformed_results",
+        "definitive_auth_loss",
+        "unreadable_auth_status",
+        "login_context",
+        "matrix_builder",
+        "inventory_derivation",
+        "history_derivation",
+        "economics_derivation",
+        "m5_derivation",
+        "clock_derivation",
+        "components",
+        "finalization",
+        "cleanup",
+        "publication",
+        "python_start_failure"
+      ],
+      "failure_ids": [
+        "F020",
+        "F023",
+        "F076",
+        "F086"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/ig_predemo_safety.py",
+        "scripts/run_ig_predemo_readiness_2238.py",
+        "scripts/dax_windows_host_preflight.py",
+        "scripts/dax_windows_host_lane.psm1"
+      ],
+      "expected_main_system_reaction": "ALL_EXPECTED_ROWS_PRIMARY_AND_SECONDARY_FAILURES_RETAINED",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T08",
+      "name": "FAILURE_ISOLATION",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "broken_helper",
+        "unexpected_type",
+        "operator_failure",
+        "disk_full",
+        "read_only_store",
+        "publisher_failure",
+        "multi_fault"
+      ],
+      "failure_ids": [
+        "F068",
+        "F072",
+        "F073",
+        "F074",
+        "F075",
+        "F078"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/bot_helper.py",
+        "src/daxlab/runtime/atomic_json.py",
+        "scripts/run_ig_predemo_readiness_2238.py",
+        "scripts/serve_operator_console.py"
+      ],
+      "expected_main_system_reaction": "INDEPENDENT_RESULTS_RETAINED_CRITICAL_BLOCKED",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T09",
+      "name": "DURABLE_RESTART",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "before_raw_commit",
+        "after_raw_commit",
+        "before_derivation",
+        "after_derivation",
+        "before_delivery_ack",
+        "after_delivery_ack",
+        "during_publication",
+        "torn_record",
+        "empty_hash_list",
+        "missing_file",
+        "schema_drift",
+        "namespace_drift",
+        "nan_restore",
+        "session_mismatch",
+        "time_geometry",
+        "buy_geometry",
+        "sell_geometry"
+      ],
+      "failure_ids": [
+        "F065",
+        "F066",
+        "F067",
+        "F068",
+        "F069",
+        "F070",
+        "F079",
+        "F087",
+        "F088"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/atomic_json.py",
+        "src/daxlab/runtime/single_instance.py",
+        "src/daxlab/runtime/candidate_shadow_checkpoint.py",
+        "src/daxlab/runtime/recovery_bundle.py",
+        "scripts/run_ig_predemo_readiness_2238.py"
+      ],
+      "expected_main_system_reaction": "ONLY_CONFIRMED_RECORDS_RECOVER_NO_DUPLICATE_EFFECT_NO_PROMOTION",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T10",
+      "name": "BOUNDED_EVENTS",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "two_writers",
+        "identical_delivery",
+        "identity_contradiction",
+        "source_sequence_backwards",
+        "stale_without_new_event",
+        "future_time",
+        "clock_rollback",
+        "new_epoch",
+        "missing_dependency",
+        "256_events",
+        "257_events",
+        "64kib_envelope",
+        "32_dependencies",
+        "33_dependencies",
+        "cycle",
+        "eight_routing_stages"
+      ],
+      "failure_ids": [
+        "F003",
+        "F013",
+        "F065",
+        "F069",
+        "F078",
+        "F088"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/bot_helper_contract.py",
+        "src/daxlab/runtime/bot_helper.py",
+        "src/daxlab/runtime/single_instance.py"
+      ],
+      "expected_main_system_reaction": "DETERMINISTIC_BOUNDED_CONTRADICTIONS_RETAINED",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T11",
+      "name": "NO_CREDENTIAL_LEAKAGE",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "bearer",
+        "api_token",
+        "cst",
+        "x_security_token",
+        "password",
+        "db_url",
+        "private_key",
+        "mixed_case",
+        "nested_dict_list",
+        "unknown_key",
+        "exception",
+        "stdout",
+        "stderr",
+        "url_pointer",
+        "html",
+        "manifest"
+      ],
+      "failure_ids": [
+        "F058",
+        "F098",
+        "F099",
+        "F100"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/bot_helper_contract.py",
+        "src/daxlab/runtime/ig_predemo_safety.py",
+        "scripts/serve_operator_console.py",
+        "scripts/run_ig_predemo_readiness_2238.py"
+      ],
+      "expected_main_system_reaction": "SECRET_ABSENT_IN_ALL_OUTPUTS",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T12",
+      "name": "EXISTING_OPERATOR",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "390px_actual_dom",
+        "actual_get_route",
+        "source_age",
+        "reason",
+        "dependency",
+        "evidence",
+        "last_transition",
+        "web_alive_runtime_stale",
+        "none_false_disabled",
+        "get_only",
+        "same_origin",
+        "loopback"
+      ],
+      "failure_ids": [
+        "F016",
+        "F068",
+        "F072",
+        "F073",
+        "F074",
+        "F085",
+        "F098",
+        "F099",
+        "F100"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/operator_snapshot.py",
+        "scripts/serve_operator_console.py",
+        "web/operator.js",
+        "web/operator.html"
+      ],
+      "expected_main_system_reaction": "VISIBLE_SCOPE_FRESHNESS_DEPENDENCIES_EXECUTION_DISABLED",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T13",
+      "name": "EVIDENCE_TRANSFER",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "sink_failure",
+        "duplicate_transfer",
+        "bad_receipt",
+        "incomplete_readback",
+        "unauthorized_target",
+        "local_original_retained"
+      ],
+      "failure_ids": [
+        "F066",
+        "F068",
+        "F070",
+        "F079"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/atomic_json.py",
+        "scripts/run_ig_predemo_readiness_2238.py"
+      ],
+      "expected_main_system_reaction": "LOCAL_ORIGINAL_RETAINED_SYNTHETIC_SINK_NOT_REAL_TRANSFER",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T14",
+      "name": "ACTUAL_V3_PRODUCER_CONSUMER",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "complete_matrix",
+        "partial_matrix",
+        "wrong_version",
+        "wrong_instrument",
+        "unknown_economics",
+        "current_ig_source"
+      ],
+      "failure_ids": [
+        "F020",
+        "F023",
+        "F058",
+        "F087",
+        "F088",
+        "F099",
+        "F100"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "src/daxlab/runtime/ig_predemo_safety.py",
+        "src/daxlab/runtime/candidate_shadow_orchestrator.py",
+        "scripts/run_ig_predemo_readiness_2238.py",
+        "scripts/serve_operator_console.py"
+      ],
+      "expected_main_system_reaction": "COLLECTOR_TO_RISK_PROTECTION_GATE_OPERATOR_UNKNOWN_PRESERVED",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    },
+    {
+      "id": "T15",
+      "name": "REGISTRY_SEMANTICS",
+      "input_scope": "SYNTHETIC",
+      "variants": [
+        "exact_100_ids",
+        "unchanged_trigger_meanings",
+        "separate_coverage_facets",
+        "no_test_name_promotion"
+      ],
+      "failure_ids": [
+        "F001",
+        "F002",
+        "F003",
+        "F004",
+        "F005",
+        "F006",
+        "F007",
+        "F008",
+        "F009",
+        "F010",
+        "F011",
+        "F012",
+        "F013",
+        "F014",
+        "F015",
+        "F016",
+        "F017",
+        "F018",
+        "F019",
+        "F020",
+        "F021",
+        "F022",
+        "F023",
+        "F024",
+        "F025",
+        "F026",
+        "F027",
+        "F028",
+        "F029",
+        "F030",
+        "F031",
+        "F032",
+        "F033",
+        "F034",
+        "F035",
+        "F036",
+        "F037",
+        "F038",
+        "F039",
+        "F040",
+        "F041",
+        "F042",
+        "F043",
+        "F044",
+        "F045",
+        "F046",
+        "F047",
+        "F048",
+        "F049",
+        "F050",
+        "F051",
+        "F052",
+        "F053",
+        "F054",
+        "F055",
+        "F056",
+        "F057",
+        "F058",
+        "F059",
+        "F060",
+        "F061",
+        "F062",
+        "F063",
+        "F064",
+        "F065",
+        "F066",
+        "F067",
+        "F068",
+        "F069",
+        "F070",
+        "F071",
+        "F072",
+        "F073",
+        "F074",
+        "F075",
+        "F076",
+        "F077",
+        "F078",
+        "F079",
+        "F080",
+        "F081",
+        "F082",
+        "F083",
+        "F084",
+        "F085",
+        "F086",
+        "F087",
+        "F088",
+        "F089",
+        "F090",
+        "F091",
+        "F092",
+        "F093",
+        "F094",
+        "F095",
+        "F096",
+        "F097",
+        "F098",
+        "F099",
+        "F100"
+      ],
+      "required_checks": "ALL_EXPECTED_SLOTS_OR_EXPLICIT_DEPENDENCY_NOT_RUN",
+      "allowed_external_broker_calls": 0,
+      "owner_paths": [
+        "research/acceleration_program_v1.json",
+        "scripts/check_acceleration_program.py"
+      ],
+      "expected_main_system_reaction": "EXISTING_STATUS_AND_REAL_BROKER_SCOPE_NOT_PROMOTED",
+      "state_digest_expectation": "CANONICAL_SHADOW_ONLY_WHEN_ELIGIBLE_OTHERWISE_UNCHANGED",
+      "evidence_durability": "CONFIRMED_RAW_RECORDS_RETAINED_NO_SCOPE_OR_SOURCE_TIME_UPGRADE",
+      "operator_expectation": {
+        "execution": "DISABLED",
+        "execution_capability": "NONE",
+        "order_execution_enabled": false
+      },
+      "coverage_status": "REQUIRES_EXECUTED_ASSERTIONS_NOT_SPEC_EXISTENCE"
+    }
+  ],
+  "ptc_variants": [
+    {
+      "id": "quantity_low",
+      "observation_change": {
+        "quantity": "0.1"
+      },
+      "expected_blocker": "PTC_QUANTITY_BOUND_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "quantity_high",
+      "observation_change": {
+        "quantity": "3"
+      },
+      "expected_blocker": "PTC_QUANTITY_BOUND_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "quantity_grid",
+      "observation_change": {
+        "quantity": "0.3"
+      },
+      "expected_blocker": "PTC_NATIVE_QUANTITY_GRID_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "price_grid",
+      "observation_change": {
+        "request_price": "100.25"
+      },
+      "expected_blocker": "PTC_NATIVE_PRICE_GRID_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "notional",
+      "observation_change": {
+        "cash_per_point_per_unit": "100"
+      },
+      "expected_blocker": "PTC_NOTIONAL_BOUND_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "collar",
+      "observation_change": {
+        "request_price": "101.5"
+      },
+      "expected_blocker": "PTC_PRICE_COLLAR_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "age",
+      "observation_change": {
+        "quote_age_seconds": 3
+      },
+      "expected_blocker": "PTC_STALE_PRICE_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "attempt",
+      "observation_change": {
+        "attempts_used": 1
+      },
+      "expected_blocker": "PTC_ATTEMPT_BOUND_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "duplicate",
+      "observation_change": {
+        "duplicate": true
+      },
+      "expected_blocker": "PTC_DUPLICATE_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "inventory",
+      "observation_change": {
+        "inventory_clear": false
+      },
+      "expected_blocker": "PTC_INVENTORY_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "session",
+      "observation_change": {
+        "session_allowed": false
+      },
+      "expected_blocker": "PTC_SESSION_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "reservation",
+      "observation_change": {
+        "reservation_unknown": true
+      },
+      "expected_blocker": "PTC_UNKNOWN_RESERVATION_QUERY_REQUIRED",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "emergency",
+      "observation_change": {
+        "emergency_latched": true
+      },
+      "expected_blocker": "PTC_EMERGENCY_AUTHORITY_LATCHED",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "account",
+      "observation_change": {
+        "account_identity_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "expected_blocker": "PTC_ACCOUNT_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "instrument",
+      "observation_change": {
+        "instrument_identity_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "expected_blocker": "PTC_INSTRUMENT_VETO",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "live",
+      "observation_change": {
+        "environment": "LIVE"
+      },
+      "expected_blocker": "PTC_HARD_LIVE_OR_UNKNOWN_ENVIRONMENT_BLOCK",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    },
+    {
+      "id": "missing_environment",
+      "observation_change": {
+        "environment": null
+      },
+      "expected_blocker": "PTC_HARD_LIVE_OR_UNKNOWN_ENVIRONMENT_BLOCK",
+      "expected_candidate_calls": 0,
+      "expected_state_digest": "UNCHANGED",
+      "expected_execution": "DISABLED"
+    }
+  ],
+  "registry_baseline": [
+    {
+      "id": "F001",
+      "trigger": "Alte Venue-Quote neu empfangen → scheinbar frisch",
+      "safe_reaction": "Source-age UNKNOWN/block",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F002",
+      "trigger": "Fehlende M5-Bar → Lücke",
+      "safe_reaction": "Gap klassifizieren, kein erfundenes OHLC",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F003",
+      "trigger": "Doppeltes Bar-Event → doppelte Decision",
+      "safe_reaction": "Idempotent, kein neuer Attempt",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F004",
+      "trigger": "Bars out of order → Feature springt",
+      "safe_reaction": "Reject/reorder nur klarer Replay-Scope",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F005",
+      "trigger": "High<Low/OHLC außerhalb → falscher ATR",
+      "safe_reaction": "Data block",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F006",
+      "trigger": "Maxbars zu klein → historischer Ausschnitt fehlt",
+      "safe_reaction": "Coverage UNKNOWN",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F007",
+      "trigger": "Mid-Bar als CLOSED-M5 → Future-Info",
+      "safe_reaction": "Decision nicht auf open bar",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F008",
+      "trigger": "Corporate/data revision → Backtestabweichung",
+      "safe_reaction": "Revision getrennt reporten",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F009",
+      "trigger": "Bid/ask/mid verwechselt → Kostenedge",
+      "safe_reaction": "Parity UNKNOWN, keine Cost-Promotion",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F010",
+      "trigger": "Indikator-Warmup zu kurz → andere Signale",
+      "safe_reaction": "Warmup readiness block",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F011",
+      "trigger": "UTC als Broker-Wallclock interpretiert → Offset",
+      "safe_reaction": "Unresolved clock block",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F012",
+      "trigger": "DST falsch → falscher Session-Open",
+      "safe_reaction": "Session UNKNOWN",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F013",
+      "trigger": "Wallclock rückwärts → negative Duration",
+      "safe_reaction": "Invalidate clock evidence",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F014",
+      "trigger": "NTP nicht synchron → Host/Broker drift",
+      "safe_reaction": "Keine erfundene Toleranz",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F015",
+      "trigger": "Scheduled task vor neuem Bar → stale Price",
+      "safe_reaction": "Stale source reject",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F016",
+      "trigger": "Snapshot generated_at = fetch time → falsche Age",
+      "safe_reaction": "UNKNOWN/STale anzeigen",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F017",
+      "trigger": "Tick/Bar Zeitsemantik gemischt → falscher Close",
+      "safe_reaction": "Keine silent normalization",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F018",
+      "trigger": "Spätere Publikation rückdatiert → News Leakage",
+      "safe_reaction": "Beobachtungszeit maßgeblich",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F019",
+      "trigger": "Replay nutzt live time → Locks re-armed",
+      "safe_reaction": "State replay isolieren",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F020",
+      "trigger": "Broker reconnect, Daten verloren → connected aber stale",
+      "safe_reaction": "Re-observe/resubscribe + reconcile",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F021",
+      "trigger": "Public Feed lebt, Private Stream tot → keine Fills",
+      "safe_reaction": "Inventory/recon UNKNOWN",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F022",
+      "trigger": "Auto-discovery falsches Terminal → anderer Kontext",
+      "safe_reaction": "Identity block",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F023",
+      "trigger": "Account vor/nach Query geändert → mixed envelope",
+      "safe_reaction": "Bundle contradiction",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F024",
+      "trigger": "Orders query None → fälschlich flat",
+      "safe_reaction": "QUERY_REQUIRED",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F025",
+      "trigger": "History nur kurzer Zeitraum → Outcome fehlt",
+      "safe_reaction": "UNKNOWN, kein Release",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F026",
+      "trigger": "Trade/Fill vor History → temporärer Widerspruch",
+      "safe_reaction": "Bounded grace, kein retry",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F027",
+      "trigger": "Tick value/lot contract geändert → sizing falsch",
+      "safe_reaction": "Neue Review/Admission block",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F028",
+      "trigger": "Market closed/maintenance → feed scheinbar tot",
+      "safe_reaction": "Closed vs unhealthy getrennt",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F029",
+      "trigger": "API-Version unsupported → Mappingfehler",
+      "safe_reaction": "Unsupported block",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F030",
+      "trigger": "Disconnect nach Transport vor ACK → unknown",
+      "safe_reaction": "QUERY, nie resubmit",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F031",
+      "trigger": "Request timeout → Outcome unklar",
+      "safe_reaction": "UNKNOWN; bounded query",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F032",
+      "trigger": "Reconnect nur Preisabos → private state fehlt",
+      "safe_reaction": "Broker truth UNKNOWN",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F033",
+      "trigger": "Duplicate sessions → EOF/disconnect",
+      "safe_reaction": "Stop new admission, inspect owner",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F034",
+      "trigger": "Reporting channel down, transport up → blinder Betrieb",
+      "safe_reaction": "Continuous execution block",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F035",
+      "trigger": "Resend außerhalb retained window → verlorene Reports",
+      "safe_reaction": "Incomplete evidence/query escalation",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F036",
+      "trigger": "Offene Order beim Start → untracked exposure",
+      "safe_reaction": "Inventory review block",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F037",
+      "trigger": "Manuelle Order → ownership unknown",
+      "safe_reaction": "Sichtbar, kein Auto-Cancel",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F038",
+      "trigger": "Doppelter Report → Qty zweimal addiert",
+      "safe_reaction": "Exactly-once state application",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F039",
+      "trigger": "Status out of order → terminal zurück aktiv",
+      "safe_reaction": "Contradiction/query",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F040",
+      "trigger": "Partial fill → „voll gefüllt“",
+      "safe_reaction": "Unapplied difference blocks",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F041",
+      "trigger": "Pending cancel während Fill → Fill ignoriert",
+      "safe_reaction": "Fill evidencen, outcome query",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F042",
+      "trigger": "Replace rejected → alte Order vergessen",
+      "safe_reaction": "Original state erhalten",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F043",
+      "trigger": "Order History da, Deal fehlt → falsa Fillproof",
+      "safe_reaction": "UNKNOWN, nicht fabricate Fill",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F044",
+      "trigger": "Open Orders leer, Deal da → falsch notsubmitted",
+      "safe_reaction": "Reconcile observed fill",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F045",
+      "trigger": "Leerer Einzelreport als Terminalbeweis → Slot frei",
+      "safe_reaction": "Reject inference",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F046",
+      "trigger": "Duplicate Intent ID/ID-Regress → Order abgewiesen",
+      "safe_reaction": "Block/query, keine neue ID",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F047",
+      "trigger": "Stop-limit Gap → keine Absicherungsausführung",
+      "safe_reaction": "Non-fill risk klar zeigen",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F048",
+      "trigger": "Venue Stop manuell entfernt → restart crash",
+      "safe_reaction": "Incident/query, kein DB delete",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F049",
+      "trigger": "Fehlende Order amount als 0 → Fill verloren",
+      "safe_reaction": "Reject malformed, preserve evidence",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F050",
+      "trigger": "Native Orderpreis digits-valid, tick-invalid",
+      "safe_reaction": "Precision block",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F051",
+      "trigger": "MQL Handler überläuft → Events verloren",
+      "safe_reaction": "Query authoritative state",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F052",
+      "trigger": "Position bereits bei Startup → Bot glaubt flat",
+      "safe_reaction": "Review/block",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F053",
+      "trigger": "Fremde Position → local journal leer",
+      "safe_reaction": "Origin unknown, keine Aktion",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F054",
+      "trigger": "Reconnect Fill fehlt lokal → Qty mismatch",
+      "safe_reaction": "Reconcile/query; no retry",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F055",
+      "trigger": "Netting aggregiert Orders → falsche Einzelposition",
+      "safe_reaction": "Semantik block bei unbekannt",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F056",
+      "trigger": "Hedging mehrere Positionen → eine überschrieben",
+      "safe_reaction": "ID-bound inventory",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F057",
+      "trigger": "Average Price off native grid → falsche Contradiction",
+      "safe_reaction": "Preisarten unterscheiden",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F058",
+      "trigger": "Reconciliation synthetischer Fill → „realer“ P&L",
+      "safe_reaction": "Nicht zu Brokertruth promoten",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F059",
+      "trigger": "Trade bust/correction → alte Equity bleibt",
+      "safe_reaction": "History behalten, reclassify",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F060",
+      "trigger": "LIVE statt DEMO → falsche Modeanzeige",
+      "safe_reaction": "Hard block",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F061",
+      "trigger": "Server falsch trotz gleicher Symbolnamen",
+      "safe_reaction": "Context mismatch block",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F062",
+      "trigger": "Unrealized P&L fehlt → Null angenommen",
+      "safe_reaction": "Loss/exposure UNKNOWN",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F063",
+      "trigger": "Ein-/Auszahlung → scheinbarer DD/Profit",
+      "safe_reaction": "Equity/strategy P&L trennen",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F064",
+      "trigger": "Account Exposure nicht in Routerlimits → Überexposure",
+      "safe_reaction": "Aggregate controls before transport",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F065",
+      "trigger": "Crash vor durable reservation → duplicate risk",
+      "safe_reaction": "Durable-before-transport barrier",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F066",
+      "trigger": "ACK commit noch nicht durable → nach Crash fehlt",
+      "safe_reaction": "Unresolved query, no resubmit",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F067",
+      "trigger": "Checkpoint beschädigt → default flat",
+      "safe_reaction": "Fail closed",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F068",
+      "trigger": "DB down, console alive → fehlende current truth",
+      "safe_reaction": "UNKNOWN, no cached GREEN",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F069",
+      "trigger": "Replay doppelt → Lifecycle doppelt angewendet",
+      "safe_reaction": "Idempotent replay",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F070",
+      "trigger": "Backup ungeprüft → Restore verliert Schema/State",
+      "safe_reaction": "Keine Wiederaufnahme vor reconcile",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F071",
+      "trigger": "Reset SeqNum/Store → unresolved vergessen",
+      "safe_reaction": "Business evidence erhalten",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F072",
+      "trigger": "Candidate hung, MT5 lebt → stale decisions",
+      "safe_reaction": "Candidate UNKNOWN/stale",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F073",
+      "trigger": "Runtime lebt, MT5 tot → heartbeat GREEN",
+      "safe_reaction": "Readiness block, liveness separat",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F074",
+      "trigger": "Web läuft, runtime tot → stale cached truth",
+      "safe_reaction": "Stale/unknown prominently",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F075",
+      "trigger": "Crash loop nach unresolved state → repeated starts",
+      "safe_reaction": "Backoff/escalate, keine Rearm",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F076",
+      "trigger": "Falsche venv/cwd → andere Config/Dependencies",
+      "safe_reaction": "Build/context block",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F077",
+      "trigger": "Prozess stirbt mit working Order → unowned risk",
+      "safe_reaction": "Operator recovery; no auto action",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F078",
+      "trigger": "Lange grid mirror logic → Updates verpasst",
+      "safe_reaction": "Bound work, semantic health",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F079",
+      "trigger": "Sessionlogs bei Restart überschrieben → Incident verloren",
+      "safe_reaction": "Existing journal retain",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F080",
+      "trigger": "Symbolalias falsch → anderer Kontrakt",
+      "safe_reaction": "Mismatch block",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F081",
+      "trigger": "Wrong server defaults aus initialize",
+      "safe_reaction": "No implicit account promotion",
+      "status": "WAITING_EXTERNAL",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F082",
+      "trigger": "Fixed-Fraction Research als Cash Policy → sizing drift",
+      "safe_reaction": "Policy UNKNOWN, no substitution",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F083",
+      "trigger": "API verb setzt/modifiziert gleichermaßen → accidental modify",
+      "safe_reaction": "Separate authorized control paths",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F084",
+      "trigger": "Docker/public bind → Console exponiert",
+      "safe_reaction": "Localhost/VPN, kein public API",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F085",
+      "trigger": "Caller limit ungeprüft als kanonisch → falsche Freshness",
+      "safe_reaction": "UNVERIFIED_THRESHOLD",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F086",
+      "trigger": "Uneinheitliches Deployment → alter Router aktiv",
+      "safe_reaction": "Deployment block",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F087",
+      "trigger": "Code SHA gleich, Config anders → falsche Evidence",
+      "safe_reaction": "Bundle mismatch block",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F088",
+      "trigger": "Schema downgrade unvereinbar → State verloren",
+      "safe_reaction": "Stop, retain state",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F089",
+      "trigger": "Rollback löscht consumed Slot → duplicate admission",
+      "safe_reaction": "No state reset",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F090",
+      "trigger": "Changed precision/reconnect ohne Conformance → hidden drift",
+      "safe_reaction": "Specific environment review",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F091",
+      "trigger": "GitHub unavailable → unbekannter Deploy-Head",
+      "safe_reaction": "Keine neue Promotion",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F092",
+      "trigger": "Execution GREEN trotz NONE/false → falsche Freigabe",
+      "safe_reaction": "DISABLED/BLOCKED",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F093",
+      "trigger": "Heartbeat verschluckt Blocker → Readiness falsch",
+      "safe_reaction": "Liveness≠Readiness",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F094",
+      "trigger": "Best parameter nach vielen Trials → overfit",
+      "safe_reaction": "Exploratory, no promotion",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F095",
+      "trigger": "Unlimited averaging/rescue → Exposure eskaliert",
+      "safe_reaction": "REJECT strategy pattern",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F096",
+      "trigger": "Operator ACK released unknown slot → duplicate risk",
+      "safe_reaction": "Query/block remains",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F097",
+      "trigger": "Fehleremails ohne Action → Incident eskaliert",
+      "safe_reaction": "Benannter Operator/triage",
+      "status": "GAP",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F098",
+      "trigger": "Secret in logs/screenshots/JSON → Leakage",
+      "safe_reaction": "Fail-closed projection, secure rotation",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F099",
+      "trigger": "Static Research als current Host → falsches Vertrauen",
+      "safe_reaction": "Sichtbar getrennt",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    },
+    {
+      "id": "F100",
+      "trigger": "UNKNOWN als GREEN gelesen → Freigabefehler",
+      "safe_reaction": "Keine implicit OK, Runbook",
+      "status": "SYNTHETIC_ONLY",
+      "real_broker_coverage": "NOT_PROVEN"
+    }
+  ]
+}

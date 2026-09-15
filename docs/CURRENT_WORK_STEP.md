@@ -1,5 +1,30 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2241 Bot-Helper-Kollektiv V1 — IN_PROGRESS (2026-09-15)
+
+One bounded implementation/acceptance unit; start head
+`aa11dc32fbd91c84edea19816e13fb6dc613a964`, PR #109 OPEN/UNMERGED;
+main `e0784ebfc11bee28475fd9c3385be661af58a738`.
+The complete 449-line META_DESIGN_UND_ASTRA_AUFTRAG source, section 11,
+including T01–T15, was recovered from the named Library document. The current
+user autonomy addendum takes precedence. MANDATE_RECOVERED=YES;
+T01_T15_PRESENT=YES; AUTONOMY_ADDENDUM_APPLIED=YES;
+IMPLEMENTATION_SCOPE=BOT_HELPER_KOLLEKTIV_V1_ONLY.
+
+Next unused implementation integer is 2241; the lower 2236/2237 pointer is
+historical and superseded by the authoritative 2238–2240 entries below.
+Step2233/2237 stay COMPLETED/VERIFIED; 2238/2239 stay
+IMPLEMENTED/WAITING_EXTERNAL; 2240 stays IN_PROGRESS/BLOCKED.
+M01 IN_PROGRESS; 27 gates remain 8 VERIFIED / 0 IMPLEMENTED /
+13 WAITING_EXTERNAL / 6 BLOCKED. This unit does not close those lanes.
+
+Plan: fixed acceptance scenarios; canonical producer/consumer and runtime
+integration; dogfood/failure injection; independent second pass; three required
+CIs; bounded handoff. Internal V1 defects must be repaired before acceptance.
+SHADOW only; execution_capability=NONE, order_execution_enabled=false.
+No broker order/retry/release, risk/strategy/cost/reference change, merge,
+force-push, historical Acceptance refresh or new external publication target.
+
 ## Current: Step2238 login-to-matrix invariant (2026-09-15)
 
 The latest real Windows run proved the exact-head host lane, 50/52 preflight,

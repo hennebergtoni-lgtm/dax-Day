@@ -15,7 +15,25 @@ jobs:
       - name: Install broker-free test surface
         run: |
           python -m pip install -e . --no-deps
-          python -m pip install pytest ruff==0.16.2
+          python -m pip install pytest ruff==0.16.2 tzdata
+      - name: Install actual browser acceptance dependency
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bot-helper-browser" --no-save --package-lock=false playwright
+          "$RUNNER_TEMP/bot-helper-browser/node_modules/.bin/playwright" install chromium
+      - name: Bot Helper V1 first acceptance pass
+        shell: bash
+        env:
+          BOT_HELPER_REQUIRE_BROWSER: '1'
+          NODE_PATH: ${{ runner.temp }}/bot-helper-browser/node_modules
+        run: python scripts/run_bot_helper_acceptance.py --output-dir bot-helper-acceptance --pass-name pass1
+      - name: Bot Helper V1 independent second acceptance pass
+        if: always()
+        shell: bash
+        env:
+          BOT_HELPER_REQUIRE_BROWSER: '1'
+          NODE_PATH: ${{ runner.temp }}/bot-helper-browser/node_modules
+        run: python scripts/run_bot_helper_acceptance.py --output-dir bot-helper-acceptance --pass-name pass2
       - name: PowerShell parser parity
         shell: powershell
         run: |
@@ -59,3 +77,11 @@ jobs:
         run: |
           ruff check src/daxlab/adapters/ig_rest_readonly.py scripts/dax_windows_host_preflight.py scripts/dax_windows_python_runtime_probe.py scripts/ig_demo_credential_contract.py scripts/run_ig_predemo_readiness_2238.py tests/test_dax_windows_host_preflight.py tests/test_dax_windows_python_runtime_probe.py tests/test_ig_rest_readonly.py tests/test_ig_rest_readonly_inventory.py tests/test_run_ig_predemo_readiness_2238.py
           python -m py_compile src/daxlab/adapters/ig_rest_readonly.py scripts/dax_windows_host_preflight.py scripts/dax_windows_python_runtime_probe.py scripts/ig_demo_credential_contract.py scripts/run_ig_predemo_readiness_2238.py
+      - name: Retain sanitized Bot Helper acceptance evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bot-helper-v1-windows-host-lane-ci-${{ github.sha }}
+          path: bot-helper-acceptance/
+          retention-days: 30
+          if-no-files-found: error

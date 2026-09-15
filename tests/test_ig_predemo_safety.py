@@ -111,3 +111,19 @@ def test_evidence_tampering_and_live_context_fail_closed() -> None:
     payload["environment"] = "LIVE"
     with pytest.raises(ValueError, match="environment mismatch"):
         bind_ig_risk_session_inputs(payload, instrument_id=InstrumentId("DAX"))
+
+
+@pytest.mark.parametrize("flag", [0, 1, None, "false", "", [], {}])
+def test_ig_binding_and_lifecycle_require_typed_false(flag) -> None:
+    from daxlab.runtime.ig_predemo_safety import IgLifecycleDirective, IgRiskSessionBinding
+
+    with pytest.raises(ValueError, match="cannot authorize"):
+        IgRiskSessionBinding(
+            source_fingerprint=SHA, instrument=None, account_context_fingerprint=None,
+            inventory_fingerprint=None, blockers=("UNKNOWN",), order_execution_enabled=flag,
+        )
+    with pytest.raises(ValueError, match="cannot authorize"):
+        IgLifecycleDirective(
+            observation=IgTransportObservation.ACK, next_action="WAIT_OR_QUERY",
+            terminal_truth=False, order_execution_enabled=flag,
+        )

@@ -10,12 +10,12 @@
   const metrics = (id, values) => { el(id).replaceChildren(...values.map(([label,value])=>{const n=node('div','','metric');n.append(node('div',label,'metric-label'),node('div',value,'metric-value'));return n;})); };
   const clear = reason => {
     el('system').replaceChildren(...LABELS.map(label=>{
-      const n=node('div','','system-tile '+(label==='EXECUTION'?'BLOCKED':'UNKNOWN'));
-      n.append(node('div',label,'system-label'),node('div',label==='EXECUTION'?'BLOCKED':'UNKNOWN','system-state'),node('div','Quelle nicht bestätigt','system-value'));return n;
+      const n=node('div','','system-tile '+(label==='EXECUTION'?'DISABLED':'UNKNOWN'));
+      n.append(node('div',label,'system-label'),node('div',label==='EXECUTION'?'DISABLED':'UNKNOWN','system-state'),node('div','Quelle nicht bestätigt','system-value'));return n;
     }));
     el('commit').textContent='UNKNOWN';el('build-note').textContent='Laufender Bot-Commit nicht bestätigt.';
     el('decision').textContent='UNKNOWN';el('strategy').replaceChildren();el('trade-plan').replaceChildren();
-    for(const id of ['decision-evidence','risk','session','reservation','reconciliation','virtual','recovery','context','times','provenance','inventory','monday','health','freshness']) rows(id,[['Quelle','UNKNOWN']]);
+    for(const id of ['helpers','decision-evidence','risk','session','reservation','reconciliation','virtual','recovery','context','times','provenance','inventory','monday','health','freshness']) rows(id,[['Quelle','UNKNOWN']]);
     list('blockers',[reason,'EXECUTION_SAFETY_UNCONFIRMED']);list('events',[]);list('timeline',[]);
     el('connection').textContent='UNKNOWN · Laufzeitdaten fehlen oder sind ungültig';
   };
@@ -29,7 +29,7 @@
   const render = v => {
     validate(v);
     el('system').replaceChildren(...LABELS.map(label=>{
-      const t=v.system[label];const n=node('div','','system-tile '+t.state);
+      const t=label==='EXECUTION'?{state:'DISABLED',value:'NONE / disabled'}:v.system[label];const n=node('div','','system-tile '+t.state);
       const value=label==='SNAPSHOT AGE'&&Number.isFinite(v.timestamps?.snapshot_age_seconds)?`${v.timestamps.snapshot_age_seconds.toFixed(1)} s · UNVERIFIED_THRESHOLD`:t.value;
       n.append(node('div',label,'system-label'),node('div',t.state,'system-state'),node('div',value,'system-value'));return n;
     }));
@@ -41,6 +41,8 @@
     rows('decision-evidence',[['Signal',c?.signal?.direction],['Reason',c?.signal?.reason],['Risk result',c?.decision?.risk_result],['Decision ID',c?.decision?.decision_id],['Snapshot',c?.generated_at]]);
     metrics('trade-plan',[['Entry',p.entry],['Stop',p.stop],['Target',p.target],['RR',p.reward_risk]]);
     list('blockers',v.blockers);
+    const hd=v.helper_diagnostics||{};
+    rows('helpers',[['Source',hd.source],['Age (s)',hd.age_seconds],['Reason',hd.reason],['Dependency',hd.dependencies],['Evidence',hd.evidence],['Evidence scope',hd.evidence_scope],['Last transition',hd.last_transition],['Read outcomes',v.read_outcomes],['Role checks',hd.checks]]);
     rows('monday',Object.entries(v.monday_pre_demo?.gates||{state:'UNKNOWN'}));
     rows('health',Object.entries(v.health_matrix||{state:'UNKNOWN'}));
     rows('freshness',Object.entries(v.freshness_matrix||{state:'UNKNOWN'}));

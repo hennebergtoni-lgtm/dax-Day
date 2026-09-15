@@ -15,7 +15,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 from uuid import uuid4
 
 COLLECTOR_PATH = Path(__file__).resolve()
@@ -31,6 +31,9 @@ from daxlab.adapters.ig_rest_readonly import (  # noqa: E402
     IgDemoReadOnlyClient,
     IgReadinessRead,
 )
+
+from daxlab.runtime.atomic_json import atomic_write_json, read_json_object  # noqa: E402
+from daxlab.runtime.single_instance import SingleInstanceLock  # noqa: E402
 
 from ig_demo_readonly_probe import (  # noqa: E402
     DEFAULT_EPIC,
@@ -58,6 +61,7 @@ ERROR_CODES = {
     "IG_SESSION_CLEANUP_FAILED",
     "EVIDENCE_INVALID",
     "EVIDENCE_PUBLICATION_FAILED",
+    "RAW_PERSISTENCE_FAILED",
     "PYTHON_COLLECTOR_UNCLASSIFIED_FAILURE",
 }
 
@@ -106,6 +110,38 @@ def _hashed_identifier(value: object) -> str | None:
     return sha256(value.encode()).hexdigest() if isinstance(value, str) and value else None
 
 
+def _safe_epic(value: object) -> str | None:
+    # Provider identifiers, never arbitrary URLs, exception text or credentials.
+    if isinstance(value, str) and len(value) <= 64 and value.startswith("IX.D.") and all(
+        c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789." for c in value
+    ):
+        return value
+    return None
+
+
+def _safe_login_context(value: object) -> dict[str, object]:
+    if not isinstance(value, Mapping):
+        raise ValueError("login context invalid")
+    fingerprint = value.get("account_context_fingerprint")
+    if not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(
+        c not in "0123456789abcdef" for c in fingerprint
+    ):
+        fingerprint = None
+    return {
+        "environment": "IG_DEMO" if value.get("environment") == "IG_DEMO" else None,
+        "account_type": value.get("account_type")
+        if value.get("account_type") in ("CFD", "SPREADBET", "STOCKBROKING") else None,
+        "currency": value.get("currency") if value.get("currency") in (
+            "EUR", "GBP", "USD", "CHF", "JPY", "AUD", "CAD", "NZD", "SGD",
+            "HKD", "SEK", "NOK", "DKK", "ZAR",
+        ) else None,
+        "dealing_enabled": value.get("dealing_enabled")
+        if type(value.get("dealing_enabled")) is bool else None,
+        "timezone_offset_hours": _num(value.get("timezone_offset_hours")),
+        "account_context_fingerprint": fingerprint,
+    }
+
+
 def _position_view(entry: object) -> dict[str, object]:
     if not isinstance(entry, Mapping):
         raise ValueError("position entry must be an object")
@@ -115,7 +151,7 @@ def _position_view(entry: object) -> dict[str, object]:
         raise ValueError("position entry shape invalid")
     return {
         "deal_fingerprint": _hashed_identifier(position.get("dealId")),
-        "epic": market.get("epic") if isinstance(market.get("epic"), str) else None,
+        "epic": _safe_epic(market.get("epic")),
         "direction": position.get("direction")
         if position.get("direction") in {"BUY", "SELL"}
         else None,
@@ -134,7 +170,7 @@ def _order_view(entry: object) -> dict[str, object]:
         raise ValueError("working-order entry shape invalid")
     return {
         "deal_fingerprint": _hashed_identifier(order.get("dealId")),
-        "epic": order.get("epic") if isinstance(order.get("epic"), str) else None,
+        "epic": _safe_epic(order.get("epic")),
         "direction": order.get("direction")
         if order.get("direction") in {"BUY", "SELL"}
         else None,
@@ -189,17 +225,17 @@ def _market_view(
     return {
         "epic": epic,
         "instrument_type": instrument.get("type")
-        if isinstance(instrument.get("type"), str)
+        if instrument.get("type") in ("INDICES", "CURRENCIES", "COMMODITIES", "SHARES")
         else None,
         "expiry": instrument.get("expiry")
-        if isinstance(instrument.get("expiry"), str)
-        else None,
+        if instrument.get("expiry") in ("DFB", "-") else None,
         "unit": instrument.get("unit")
         if instrument.get("unit") in {"AMOUNT", "CONTRACTS", "SHARES"}
         else None,
         "market_status": snapshot.get("marketStatus")
-        if isinstance(snapshot.get("marketStatus"), str)
-        else None,
+        if snapshot.get("marketStatus") in (
+            "TRADEABLE", "CLOSED", "EDITS_ONLY", "OFFLINE", "ON_AUCTION", "SUSPENDED"
+        ) else None,
         "bid": _num(snapshot.get("bid")),
         "ask": _num(snapshot.get("ask")),
         "quote_time_utc": None if quote_time is None else quote_time.isoformat(),
@@ -214,13 +250,10 @@ def _market_view(
         "quantity_max": None,
         "cash_per_tick_per_quantity": None,
         "value_of_one_pip": _num(instrument.get("valueOfOnePip")),
-        "one_pip_means": instrument.get("onePipMeans")
-        if isinstance(instrument.get("onePipMeans"), str)
-        else None,
+        "one_pip_means": None,  # Free provider prose is not an economics authority.
         "margin_factor": _num(instrument.get("marginFactor")),
         "margin_factor_unit": instrument.get("marginFactorUnit")
-        if isinstance(instrument.get("marginFactorUnit"), str)
-        else None,
+        if instrument.get("marginFactorUnit") in ("POINTS", "PERCENTAGE") else None,
         "stops_limits_allowed": instrument.get("stopsLimitsAllowed")
         if isinstance(instrument.get("stopsLimitsAllowed"), bool)
         else None,
@@ -354,6 +387,10 @@ def _sanitized_raw_row(
             or any(character not in "0123456789T:+.-" for character in value)
         ):
             raise ValueError("raw readiness timestamp invalid")
+        if value is not None:
+            parsed = datetime.fromisoformat(value)
+            if parsed.tzinfo is None or parsed.utcoffset() != timedelta(0):
+                raise ValueError("raw readiness timestamp must be UTC-aware")
         timestamps[key] = value
     return {
         "resource": resource,
@@ -613,6 +650,139 @@ def _finalize_evidence(
     return evidence, _build_components(evidence)
 
 
+OBSERVATION_SCHEMA = "DAXLAB_IG_READINESS_OBSERVATION_V1"
+
+
+class ReadinessObservationWriter:
+    """One collector writer: immutable sanitized slots, retained after publication.
+
+    A receipt commits a byte hash only after readback. Unreceipted slots remain
+    UNKNOWN on recovery. No broker I/O, state migration or namespace reuse.
+    """
+
+    def __init__(self, namespace: Path, *, head: str, evidence_scope: str) -> None:
+        if len(head) != 40 or any(c not in "0123456789abcdef" for c in head):
+            raise ValueError("invalid observation head")
+        if evidence_scope not in {"SYNTHETIC", "REAL_BROKER_READ"}:
+            raise ValueError("invalid observation scope")
+        self.namespace = namespace
+        self.head = head
+        self.scope = evidence_scope
+        self.lock = SingleInstanceLock(namespace.with_suffix(".lock"), head)
+        self.confirmed: list[int] = []
+        self.failed = False
+
+    def start(self) -> None:
+        try:
+            self.lock.acquire()
+            self.namespace.mkdir(parents=True, exist_ok=False)
+            header = {
+                "schema": OBSERVATION_SCHEMA, "exact_head": self.head,
+                "namespace_fingerprint": _fingerprint(str(self.namespace.resolve())),
+                "evidence_scope": self.scope,
+                "resources": [name for name, _ in READ_RESOURCE_CONTRACTS],
+                "execution_capability": "NONE", "order_execution_enabled": False,
+            }
+            atomic_write_json(self.namespace / "MANIFEST.json", header, overwrite=False)
+        except Exception:
+            self.failed = True
+            self.lock.release()
+            raise
+
+    def close(self) -> None:
+        self.lock.release()
+
+    def record(self, index: int, row: dict[str, object]) -> None:
+        if not self.lock.held or type(index) is not int or not 0 <= index < 8:
+            raise ValueError("observation writer ownership invalid")
+        resource, endpoint = READ_RESOURCE_CONTRACTS[index]
+        safe = _sanitized_raw_row(row, resource=resource, endpoint_family=endpoint)
+        _assert_credential_free(safe)
+        record = {
+            "schema": OBSERVATION_SCHEMA, "exact_head": self.head,
+            "evidence_scope": self.scope, "slot": index, "row": safe,
+            "payload_hash": _fingerprint(safe),
+        }
+        path = self.namespace / f"{index:02d}.json"
+        atomic_write_json(path, record, overwrite=False)
+        if read_json_object(path) != record:
+            raise OSError("observation readback mismatch")
+        receipt = {"file": path.name, "sha256": sha256(path.read_bytes()).hexdigest()}
+        atomic_write_json(self.namespace / f"{index:02d}.receipt.json", receipt, overwrite=False)
+        self.confirmed.append(index)
+
+    def seal(self) -> None:
+        if not self.lock.held or self.confirmed != list(range(8)):
+            raise ValueError("observation set incomplete")
+        files = {
+            f"{i:02d}.receipt.json": sha256(
+                (self.namespace / f"{i:02d}.receipt.json").read_bytes()
+            ).hexdigest() for i in range(8)
+        }
+        atomic_write_json(self.namespace / "COMPLETE.json", {"files": files}, overwrite=False)
+
+    def status(self) -> dict[str, object]:
+        return {
+            "status": "BLOCKED" if self.failed else "PASS",
+            "reason_code": "RAW_PERSISTENCE_FAILED" if self.failed else "NONE",
+            "confirmed_slots": list(self.confirmed),
+            "evidence_scope": self.scope,
+        }
+
+
+def recover_readiness_observations(
+    namespace: Path, *, expected_head: str
+) -> dict[str, object]:
+    """Read committed raw outcomes only; never repeat provider reads or re-date."""
+    with SingleInstanceLock(namespace.with_suffix(".lock"), expected_head):
+        header = read_json_object(namespace / "MANIFEST.json")
+        if (
+            header.get("schema") != OBSERVATION_SCHEMA
+            or header.get("exact_head") != expected_head
+            or header.get("namespace_fingerprint") != _fingerprint(str(namespace.resolve()))
+            or header.get("resources") != [name for name, _ in READ_RESOURCE_CONTRACTS]
+            or header.get("evidence_scope") not in {"SYNTHETIC", "REAL_BROKER_READ"}
+            or header.get("execution_capability") != "NONE"
+            or header.get("order_execution_enabled") is not False
+        ):
+            raise ValueError("observation manifest binding invalid")
+        seal_path = namespace / "COMPLETE.json"
+        if seal_path.exists():
+            seal = read_json_object(seal_path)
+            expected_files = {
+                f"{i:02d}.receipt.json": sha256(
+                    (namespace / f"{i:02d}.receipt.json").read_bytes()
+                ).hexdigest() for i in range(8)
+            }
+            if seal != {"files": expected_files}:
+                raise ValueError("observation complete hash list mismatch")
+        rows = _initial_readiness_rows()
+        confirmed = []
+        for index, (resource, endpoint) in enumerate(READ_RESOURCE_CONTRACTS):
+            receipt_path = namespace / f"{index:02d}.receipt.json"
+            if not receipt_path.exists():
+                continue
+            receipt = read_json_object(receipt_path)
+            path = namespace / f"{index:02d}.json"
+            if receipt != {"file": path.name, "sha256": sha256(path.read_bytes()).hexdigest()}:
+                raise ValueError("observation byte hash mismatch")
+            record = read_json_object(path)
+            safe = _sanitized_raw_row(record.get("row"), resource=resource, endpoint_family=endpoint)
+            if record != {
+                "schema": OBSERVATION_SCHEMA, "exact_head": expected_head,
+                "evidence_scope": header["evidence_scope"], "slot": index,
+                "row": safe, "payload_hash": _fingerprint(safe),
+            }:
+                raise ValueError("observation source binding mismatch")
+            rows[index] = safe
+            confirmed.append(index)
+        return {
+            "authenticated_read_matrix": _safe_matrix_snapshot(rows),
+            "confirmed_slots": confirmed, "evidence_scope": header["evidence_scope"],
+            "replayed": True, "execution_capability": "NONE", "order_execution_enabled": False,
+        }
+
+
 def collect(
     client: IgDemoReadOnlyClient,
     *,
@@ -620,6 +790,7 @@ def collect(
     instrument_id: str,
     bars: int,
     raw_rows: list[dict[str, object]] | None = None,
+    observation_writer: ReadinessObservationWriter | None = None,
 ) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
     """Collect eight guarded raw reads, then independently derive conclusions."""
     if raw_rows is None:
@@ -648,9 +819,19 @@ def collect(
             replacement = _fallback_read(resource, endpoint_family)
             reads[-1] = replacement
             raw_rows[index] = replacement.safe_view()
+        if observation_writer is not None:
+            try:
+                observation_writer.record(index, raw_rows[index])
+            except Exception:
+                observation_writer.failed = True
         if authentication_available and not _authenticated_after_read(client):
             authentication_available = False
 
+    if observation_writer is not None:
+        try:
+            observation_writer.seal()
+        except Exception:
+            observation_writer.failed = True
     results = {item.resource: item for item in reads}
     derived_processing: dict[str, dict[str, str]] = {}
     try:
@@ -669,7 +850,7 @@ def collect(
         price_observed = started
 
     try:
-        account = dict(client.login_context)
+        account = _safe_login_context(client.login_context)
         accounts = _result_payload(results, "ACCOUNTS")
         account_evidence: dict[str, object] = account | {
             "accounts": [] if accounts is None else _safe_accounts(accounts),
@@ -861,6 +1042,8 @@ def collect(
         }
     evidence: dict[str, object] = {
         "schema": SCHEMA,
+        "raw_persistence": (observation_writer.status() if observation_writer is not None
+                            else {"status": "UNKNOWN", "reason_code": "NOT_REQUESTED"}),
         "environment": "IG_DEMO",
         "instrument_id": instrument_id,
         "collected_at_utc": price_observed.isoformat(),
@@ -919,6 +1102,7 @@ def _publish(
     head: str,
     status: str = "SUCCESS",
     error_code: str = "NONE",
+    synthetic_sink: Callable[[Mapping[str, bytes]], Mapping[str, object]] | None = None,
 ) -> None:
     if namespace.exists():
         raise FileExistsError("namespace exists")
@@ -934,9 +1118,16 @@ def _publish(
         "order_execution_enabled": False,
     }
     try:
+        allowed_components = {
+            "READ_MATRIX.json", "ACCOUNT.json", "INVENTORY.json", "MARKET.json",
+            "CLOCK.json", "HISTORY_SCOPE.json",
+        }
+        if set(components) - allowed_components:
+            raise ValueError("unapproved evidence component")
         files = {"READINESS.json": evidence, **components, "SUMMARY.json": summary}
         hashes: dict[str, str] = {}
         for name, payload in files.items():
+            _assert_credential_free(payload)
             rendered = json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
             (staging / name).write_bytes(rendered.encode("utf-8"))
             hashes[name] = sha256(rendered.encode()).hexdigest()
@@ -958,6 +1149,17 @@ def _publish(
         for name, expected_hash in hashes.items():
             if sha256((namespace / name).read_bytes()).hexdigest() != expected_hash:
                 raise OSError("published evidence readback mismatch")
+        if synthetic_sink is not None:
+            # A fixed injected acceptance channel, never a new remote publisher.
+            original = {name: (namespace / name).read_bytes() for name in (*hashes, "MANIFEST.json")}
+            expected = {
+                "target": "SYNTHETIC_ACCEPTANCE",
+                "receipt": {name: sha256(data).hexdigest() for name, data in original.items()},
+                "readback": dict(original),
+            }
+            readback = synthetic_sink(dict(original))
+            if not isinstance(readback, Mapping) or dict(readback) != expected:
+                raise OSError("synthetic transfer receipt or readback incomplete")
     except Exception:
         if staging.exists():
             shutil.rmtree(staging, ignore_errors=True)
@@ -977,6 +1179,7 @@ def main() -> int:
     args = parser.parse_args()
     client = None
     login_succeeded = False
+    observation_writer = None
     raw_rows = _initial_readiness_rows()
     phase = "VALIDATE"
     try:
@@ -1003,6 +1206,12 @@ def main() -> int:
                 "order_execution_enabled": False,
             }, sort_keys=True))
             return 0
+        phase = "PERSISTENCE"
+        observation_writer = ReadinessObservationWriter(
+            namespace.with_name(namespace.name + ".observations"),
+            head=head, evidence_scope="REAL_BROKER_READ",
+        )
+        observation_writer.start()
         client = IgDemoReadOnlyClient(credentials)
         phase = "LOGIN"
         client.login()
@@ -1014,6 +1223,7 @@ def main() -> int:
             instrument_id=args.instrument_id,
             bars=args.bars,
             raw_rows=raw_rows,
+            observation_writer=observation_writer,
         )
         phase = "CLEANUP"
         cleanup_error_code = "NONE"
@@ -1037,7 +1247,9 @@ def main() -> int:
         )
         derivation_complete = evidence.get("derived_processing_complete") is True
         result_code = (
-            "IG_READINESS_MATRIX_INCOMPLETE"
+            "RAW_PERSISTENCE_FAILED"
+            if observation_writer.failed
+            else "IG_READINESS_MATRIX_INCOMPLETE"
             if not matrix_complete
             else "IG_READINESS_DERIVATION_INCOMPLETE"
             if not derivation_complete
@@ -1063,6 +1275,7 @@ def main() -> int:
             "CLEANUP": "IG_SESSION_CLEANUP_FAILED",
             "EVIDENCE": "EVIDENCE_INVALID",
             "PUBLISH": "EVIDENCE_PUBLICATION_FAILED",
+            "PERSISTENCE": "RAW_PERSISTENCE_FAILED",
             "CREDENTIAL": "CREDENTIALS_FILE_UNAVAILABLE_OR_INVALID",
             "RUNTIME": "STATE_RUNTIME_ROOT_UNAVAILABLE",
             "HEAD": "HEAD_QUERY_FAILED",
@@ -1077,6 +1290,8 @@ def main() -> int:
             "execution_capability": "NONE",
             "order_execution_enabled": False,
         }
+        if observation_writer is not None:
+            failure_payload["raw_persistence"] = observation_writer.status()
         if login_succeeded:
             failure_matrix = _safe_matrix_snapshot(raw_rows)
             failure_payload["readiness_matrix_counts"] = failure_matrix["counts"]
@@ -1084,6 +1299,9 @@ def main() -> int:
             failure_payload["readiness_matrix_row_count"] = failure_matrix["row_count"]
         print(json.dumps(failure_payload, sort_keys=True))
         return 2
+    finally:
+        if observation_writer is not None:
+            observation_writer.close()
     matrix_counts = matrix.get("counts") if isinstance(matrix.get("counts"), Mapping) else {}
     print(json.dumps({
         "status": result_status,

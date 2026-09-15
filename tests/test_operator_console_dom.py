@@ -43,7 +43,7 @@ globalThis.fetch=async()=>{throw new Error('unreachable');};
  check(!text(elements.inventory).includes('EXTERNAL'),'old inventory cleared');
  check(!text(elements.system).includes('GREEN'),'old green cleared');
  check(text(elements.blockers).includes('RUNTIME_SOURCE_UNAVAILABLE_OR_INVALID'),'failure blocker');
- check(text(elements.system).includes('EXECUTION BLOCKED'),'disabled while disconnected');
+ check(text(elements.system).includes('EXECUTION DISABLED'),'disabled while disconnected');
 })().catch(e=>{console.error(e);process.exitCode=1;});
 '''
     subprocess.run([node,'-e',setup+source+'\nconst v='+json.dumps(v)+';'+checks],check=True,capture_output=True,text=True)

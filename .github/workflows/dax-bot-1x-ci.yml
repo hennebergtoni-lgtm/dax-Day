@@ -21,6 +21,24 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e . --no-deps
           python -m pip install pytest ruff==0.16.2
+      - name: Install actual browser acceptance dependency
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bot-helper-browser" --no-save --package-lock=false playwright
+          "$RUNNER_TEMP/bot-helper-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Bot Helper V1 first acceptance pass
+        shell: bash
+        env:
+          BOT_HELPER_REQUIRE_BROWSER: '1'
+          NODE_PATH: ${{ runner.temp }}/bot-helper-browser/node_modules
+        run: python scripts/run_bot_helper_acceptance.py --output-dir bot-helper-acceptance --pass-name pass1
+      - name: Bot Helper V1 independent second acceptance pass
+        if: always()
+        shell: bash
+        env:
+          BOT_HELPER_REQUIRE_BROWSER: '1'
+          NODE_PATH: ${{ runner.temp }}/bot-helper-browser/node_modules
+        run: python scripts/run_bot_helper_acceptance.py --output-dir bot-helper-acceptance --pass-name pass2
       - name: Candidate and broker-safety Ruff
         run: >-
           ruff check
@@ -66,3 +84,11 @@ jobs:
           name: dax-bot-cand001-benchmark-${{ github.sha }}
           path: candidate-benchmark.json
           retention-days: 30
+      - name: Retain sanitized Bot Helper acceptance evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bot-helper-v1-dax-bot-1x-ci-${{ github.sha }}
+          path: bot-helper-acceptance/
+          retention-days: 30
+          if-no-files-found: error

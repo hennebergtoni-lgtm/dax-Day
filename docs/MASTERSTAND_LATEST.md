@@ -1,5 +1,28 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2241 Bot-Helper-Kollektiv V1 — IN_PROGRESS / CI_PENDING (2026-09-15)
+
+The complete recovered V1 mandate is implemented as one bounded unit at start
+head `aa11dc32fbd91c84edea19816e13fb6dc613a964`; final runtime/PR pins and CI
+results are pending. See `BOT_HELPER_KOLLEKTIV_V1_ACCEPTANCE.md` for the provisional
+architecture, T01–T15 matrix, defect ledger and remaining gates. Existing owners
+remain authoritative: typed H/D/B/S/O observations and a bounded coordinator feed
+the actual Candidate entrance; IG V3 safety/console integration preserves UNKNOWN;
+early sanitized raw receipts survive confirmed local commits and publication faults.
+
+This is not a completed acceptance. Measured frozen local runs: each helper pass
+899 passed / 1 skipped / 0 failed; full repository suite 3427 passed / 8 skipped /
+0 failed. The earlier alternate-pass fixture defects are repaired and retested.
+T12/T14 remain INCOMPLETE because actual Chromium is unavailable locally; all
+three required CIs/native Windows 5.1 and the mandatory CI browser test remain
+pending. No real-host, broker, transfer-channel or profitability proof follows.
+
+M01 remains IN_PROGRESS, 27 gates 8 VERIFIED / 0 IMPLEMENTED /
+13 WAITING_EXTERNAL / 6 BLOCKED. Step2233/2237 historical VERIFIED stands;
+2238/2239 remain WAITING_EXTERNAL; 2240 remains BLOCKED. V11.2, CAND-001,
+cost/risk/loss policy and NONE/false remain unchanged. Current follow-up debt is
+INTERNAL_REMAINING while acceptance is unfinished; no merge or execution approval.
+
 ## Step2238 authenticated matrix availability invariant — authoritative (2026-09-15)
 
 The latest real Windows evidence reaches successful login and authenticated READ
