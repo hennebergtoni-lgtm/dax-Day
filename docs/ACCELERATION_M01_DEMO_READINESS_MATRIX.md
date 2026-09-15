@@ -1,5 +1,31 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 Python-start hardening — authoritative (2026-09-15)
+
+The real Windows run on `60539746383cbf0753d282f149d447d6e63c1130`
+passed exact-head isolated deployment and reached WAIT, then stopped fail-closed
+with `PYTHON_START_FAILED`. `legacy_partial_state=NONE_DETECTED`; existing
+checkout and evidence were retained; execution remained disabled. Because STDERR
+was intentionally suppressed, this record proves only that failure occurred at
+the former undifferentiated Python launch boundary. It does not prove a Python
+version, import failure, credential failure or IG failure. No login, broker read
+or side effect is claimed.
+
+The hardened wrapper now resolves exactly one application executable, verifies
+Python 3.11+, checks executable identity, verifies that both `daxlab` and the
+Step2238 collector import from the isolated exact-head clone, and launches the
+collector through an isolated `-I -S` bootstrap with explicit clone-owned
+`src` and `scripts` roots. All checks run before the credentials file is
+consumed by the collector or any IG login occurs. STDERR remains suppressed.
+
+The former umbrella codes are retired. Discovery, ambiguity, executable,
+version, identity, missing script, import, import-origin, collector start,
+missing/multiline/invalid result and exit-status mismatch each have a fixed
+credential-free code. Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL** until
+the replacement exact-head run succeeds. M01, the 27 gates and NONE/false do not
+advance. No DEMO order; LIVE prohibited.
+
+
 ## Step2238–2240 pre-DEMO program — authoritative (2026-09-15)
 
 The exact-head one-session Step2238 collector, hash-bound credential-free

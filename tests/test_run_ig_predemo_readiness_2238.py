@@ -76,7 +76,8 @@ def test_market_v4_does_not_infer_tick_or_quantity_grid_from_digits() -> None:
 
 def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -> None:
     source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
-    assert source.count("run_ig_predemo_readiness_2238.py") == 1
+    assert source.count("'run_ig_predemo_readiness_2238.py'") == 2
+    assert "$collectorPath" in source
     assert "clone --quiet --no-checkout --no-hardlinks" in source
     assert "checkout --quiet --detach" in source
     assert "--runtime-root $RuntimeRoot" in source
@@ -88,6 +89,33 @@ def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -
     assert "order_send" not in source and "/positions/otc" not in source
     assert "DAX_STEP2238_DEPLOYMENT_OWNER_V1" in source
     assert "SUMMARY: BLOCKED / FAIL_CLOSED; error_code=" in source
+
+
+def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> None:
+    source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
+    for error_code in (
+        "PYTHON_COMMAND_NOT_FOUND",
+        "PYTHON_EXECUTABLE_INVALID",
+        "PYTHON_VERSION_PROBE_FAILED",
+        "PYTHON_VERSION_UNSUPPORTED",
+        "PYTHON_IDENTITY_INVALID",
+        "PYTHON_SCRIPT_MISSING",
+        "PYTHON_IMPORT_PROBE_FAILED",
+        "PYTHON_IMPORT_ORIGIN_MISMATCH",
+        "PYTHON_COLLECTOR_START_FAILED",
+        "PYTHON_COLLECTOR_NO_OUTPUT",
+        "PYTHON_COLLECTOR_MULTILINE_OUTPUT",
+        "PYTHON_COLLECTOR_RESULT_INVALID",
+        "PYTHON_COLLECTOR_EXIT_MISMATCH",
+    ):
+        assert f"'{error_code}'" in source
+    assert "-CommandType Application" in source
+    assert source.count("-I -S -c") == 3
+    assert "sys.path[:0] = [str(src), str(scripts)]" in source
+    assert "daxlab_origin" in source and "runner_origin" in source
+    assert "PYTHON_START_FAILED" not in source
+    assert "PYTHON_RESULT_INVALID" not in source
+    assert source.count("2>$null") >= 3
 
 
 def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatch) -> None:
