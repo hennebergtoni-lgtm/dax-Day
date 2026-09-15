@@ -2,9 +2,13 @@ import json
 from pathlib import Path
 
 
-def test_web_soak_marker_and_no_order_action_are_explicit() -> None:
+def test_static_web_excludes_synthetic_soak_runtime_markers() -> None:
     root = Path(__file__).resolve().parents[1]
-    soak = json.loads((root / "web/status.json").read_text())["synthetic_shadow_soak"]
-    assert soak["evidence_state"] == "SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE"
-    assert soak["action"] == "NO_ORDER_ONLY"
-    assert soak["order_execution_enabled"] is False
+    web = json.loads((root / "web/status.json").read_text())
+
+    assert web["status_scope"] == "STATIC_VERSIONED_EVIDENCE_ONLY"
+    assert web["runtime_truth_included"] is False
+    assert "synthetic_shadow_soak" not in web
+    assert web["runtime_boundary"]["current_candidate_contract"] == (
+        "docs/CAND001_OPERATOR_TELEMETRY_V1.md"
+    )

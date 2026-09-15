@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from math import isfinite
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,8 +58,8 @@ def build_mt5_watchdog_snapshot(
         "max_feed_age_seconds": max_feed_age_seconds,
     }
     for name, value in values.items():
-        if value < 0:
-            raise ValueError(f"{name} must be non-negative")
+        if not isfinite(value) or value < 0:
+            raise ValueError(f"{name} must be finite and non-negative")
 
     blockers: list[str] = []
     if not terminal_connected:

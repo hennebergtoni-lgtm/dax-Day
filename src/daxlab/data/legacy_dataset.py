@@ -74,10 +74,7 @@ def berlin_session(raw: pd.DataFrame) -> pd.DataFrame:
     return session
 
 
-def audit_and_fingerprint_m5(directory: str | Path) -> LegacyDatasetReport:
-    """Validate and fingerprint the recovered M5 session dataset deterministically."""
-    raw = load_recovered_m5(directory)
-    session = berlin_session(raw)
+def _audit_loaded_session(raw: pd.DataFrame, session: pd.DataFrame) -> LegacyDatasetReport:
     validation = validate_ohlc(session)
     if not validation.valid:
         raise ValueError(f"invalid recovered session data: {validation}")
@@ -96,3 +93,23 @@ def audit_and_fingerprint_m5(directory: str | Path) -> LegacyDatasetReport:
         session_rows=len(session),
         fingerprint=fingerprint_ohlc(session),
     )
+
+
+def load_audited_recovered_session(
+    directory: str | Path,
+) -> tuple[pd.DataFrame, LegacyDatasetReport]:
+    """Load, sessionize, validate and fingerprint the recovered M5 surface once.
+
+    This is the canonical reusable owner for consumers that need both the audited
+    Berlin-session frame and its evidence report. It avoids rereading all daily
+    CSV files merely to obtain the frame after ``audit_and_fingerprint_m5``.
+    """
+    raw = load_recovered_m5(directory)
+    session = berlin_session(raw)
+    return session, _audit_loaded_session(raw, session)
+
+
+def audit_and_fingerprint_m5(directory: str | Path) -> LegacyDatasetReport:
+    """Validate and fingerprint the recovered M5 session dataset deterministically."""
+    _, report = load_audited_recovered_session(directory)
+    return report

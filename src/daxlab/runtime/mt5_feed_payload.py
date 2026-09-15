@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import hashlib
 import json
+from math import isfinite
 from typing import Any, Mapping
 
 from daxlab.runtime.mt5_readonly import Mt5Bar, closed_rates_start_pos
@@ -22,6 +23,10 @@ class ClosedM5Feed:
     discontinuities: tuple[str, ...]
     broker_timezone: str | None = None
     timestamp_interpretation: str | None = None
+
+    def __post_init__(self) -> None:
+        if not isfinite(self.age_seconds) or self.age_seconds < 0:
+            raise ValueError("age_seconds must be finite and non-negative")
 
 
 _REQUIRED = {"observed_at", "requested_start_pos", "max_age_seconds", "bars"}
@@ -173,6 +178,8 @@ def _number(value: Any, field: str, allow_zero: bool = False) -> float:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise ValueError(f"{field} must be numeric")
     parsed = float(value)
+    if not isfinite(parsed):
+        raise ValueError(f"{field} must be finite")
     if field == "max_age_seconds" and (
         parsed < 0 or (parsed == 0 and not allow_zero)
     ):
@@ -191,5 +198,6 @@ def _fingerprint(bar: Mt5Bar) -> str:
         },
         sort_keys=True,
         separators=(",", ":"),
+        allow_nan=False,
     )
     return hashlib.sha256(canonical.encode()).hexdigest()

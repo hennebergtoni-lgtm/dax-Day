@@ -24,6 +24,18 @@ def test_configured_symbol_requires_exact_match() -> None:
     assert result.broker_symbol is None
 
 
+def test_configured_non_dax_symbol_resolves_exactly_for_read_only_probe() -> None:
+    result = resolve_dax_symbol(
+        [_symbol("BTCUSD")],
+        configured_symbol="BTCUSD",
+        allow_data_only=True,
+    )
+    assert result.state == "CONFIGURED_EXACT"
+    assert result.broker_symbol is not None
+    assert result.broker_symbol.name == "BTCUSD"
+    assert result.candidates == ("BTCUSD",)
+
+
 def test_ambiguous_aliases_fail_closed() -> None:
     result = resolve_dax_symbol([_symbol("DAX40"), _symbol("GER40")])
     assert result.state == "AMBIGUOUS"
@@ -108,3 +120,13 @@ def test_health_green_requires_every_read_only_gate() -> None:
     health = Mt5Health(True, True, True, True, True, True, True)
     assert health.green
     assert not Mt5Health(True, True, True, True, True, False, True).green
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_freshness_watchdog_rejects_non_finite_limit(value):
+    t0 = datetime(2026, 1, 2, 9, 0, tzinfo=timezone.utc)
+    with pytest.raises(ValueError, match="max_age_seconds must be finite and non-negative"):
+        market_data_is_fresh(
+            latest_closed_bar_open=t0, timeframe_minutes=5,
+            observed_at=t0 + timedelta(minutes=6), max_age_seconds=value,
+        )

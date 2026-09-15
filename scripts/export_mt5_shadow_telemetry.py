@@ -3,8 +3,8 @@
 
 This exporter is observation-only. It never imports MetaTrader5, never calls an
 order API, and has no control path back to the Windows SHADOW supervisor. It
-reads already-persisted local heartbeat/bundle/Decision artifacts and appends
-deduplicated telemetry to PostgreSQL.
+reads already-persisted local heartbeat/bundle/Decision/Candidate operator
+artifacts and appends deduplicated telemetry to PostgreSQL.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from typing import Any, Mapping
 import psycopg
 
 from daxlab.runtime.atomic_json import read_json_object
+from daxlab.runtime.candidate_operator_telemetry import validate_candidate_operator_snapshot
 from daxlab.runtime.mt5_windows_bundle import parse_windows_mt5_bundle
 
 _HEARTBEAT_SCHEMA = "DAXLAB_MT5_SHADOW_HEARTBEAT_V1"
@@ -258,9 +259,64 @@ def _insert_decision(conn: psycopg.Connection, payload: Mapping[str, Any]) -> in
     return 1 if result is not None else 0
 
 
+def _insert_candidate_operator_snapshot(
+    conn: psycopg.Connection,
+    payload: Mapping[str, Any],
+) -> int:
+    validate_candidate_operator_snapshot(payload)
+    decision = payload["decision"]
+    runtime = payload["runtime"]
+    virtual_position = payload["virtual_position"]
+    outcome = payload["outcome"]
+    safety = payload["safety"]
+    payload_hash = _payload_sha256(payload)
+    result = conn.execute(
+        """
+        insert into cand001_operator_snapshots (
+            generated_at, schema_version, core_version, candidate_id,
+            config_fingerprint, decision_action, decision_id,
+            last_bar_id, last_bar_close_time, freshness_seconds, health_state,
+            virtual_status, outcome_id, outcome_net_r, snapshot_fingerprint,
+            execution_capability, order_execution_enabled, payload_sha256, payload
+        ) values (
+            %s, %s, %s, %s,
+            %s, %s, %s,
+            %s, %s, %s, %s,
+            %s, %s, %s, %s,
+            %s, %s, %s, %s::jsonb
+        )
+        on conflict (snapshot_fingerprint) do nothing
+        returning id
+        """,
+        (
+            payload["generated_at"],
+            payload["schema_version"],
+            payload["core_version"],
+            payload["candidate_id"],
+            payload["config_fingerprint"],
+            decision["action"],
+            decision["decision_id"],
+            runtime.get("last_bar_id"),
+            runtime.get("last_bar_close_time"),
+            runtime.get("freshness_seconds"),
+            runtime.get("health_state"),
+            virtual_position.get("status"),
+            outcome.get("outcome_id"),
+            outcome.get("net_r"),
+            payload["snapshot_fingerprint"],
+            safety["execution_capability"],
+            safety["order_execution_enabled"],
+            payload_hash,
+            _canonical(payload),
+        ),
+    ).fetchone()
+    return 1 if result is not None else 0
+
+
 def export_once(*, state_dir: Path, database_url: str) -> tuple[int, int, int]:
     heartbeat_path = state_dir / "heartbeat.json"
     bundle_path = state_dir / "latest_bundle.json"
+    candidate_operator_path = state_dir / "candidate_operator_snapshot.json"
     if not heartbeat_path.exists():
         raise FileNotFoundError(f"heartbeat missing: {heartbeat_path}")
     if not bundle_path.exists():
@@ -269,6 +325,13 @@ def export_once(*, state_dir: Path, database_url: str) -> tuple[int, int, int]:
     heartbeat = read_json_object(heartbeat_path)
     bundle_payload = read_json_object(bundle_path)
     decision_items = _load_decision_outbox(state_dir)
+    candidate_operator = (
+        read_json_object(candidate_operator_path)
+        if candidate_operator_path.exists()
+        else None
+    )
+    if candidate_operator is not None:
+        validate_candidate_operator_snapshot(candidate_operator)
 
     with psycopg.connect(database_url, connect_timeout=15) as conn:
         with conn.transaction():
@@ -277,6 +340,8 @@ def export_once(*, state_dir: Path, database_url: str) -> tuple[int, int, int]:
             decisions_inserted = sum(
                 _insert_decision(conn, payload) for _, payload in decision_items
             )
+            if candidate_operator is not None:
+                _insert_candidate_operator_snapshot(conn, candidate_operator)
 
         # The transaction has committed. Removing a staged file is now only an
         # acknowledgement. A crash before unlink is harmless: the next export
@@ -284,6 +349,7 @@ def export_once(*, state_dir: Path, database_url: str) -> tuple[int, int, int]:
         for path, _ in decision_items:
             path.unlink()
 
+    # Preserve the established public return contract for existing callers.
     return heartbeats_inserted, bars_inserted, decisions_inserted
 
 
@@ -303,7 +369,7 @@ def main() -> None:
     print(
         "MT5 SHADOW telemetry export OK | "
         f"heartbeats_inserted={heartbeats} | bars_inserted={bars} | "
-        f"decisions_inserted={decisions} | "
+        f"decisions_inserted={decisions} | candidate_operator_snapshot=OPTIONAL | "
         "execution_capability=NONE | order_execution_enabled=false"
     )
 

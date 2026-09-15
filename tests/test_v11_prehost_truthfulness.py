@@ -39,18 +39,17 @@ def _web_status() -> dict[str, object]:
     return json.loads((root / "web/status.json").read_text())
 
 
-def test_synthetic_evidence_never_satisfies_real_host_readiness() -> None:
+def test_static_web_cannot_be_used_to_satisfy_real_host_readiness() -> None:
     web = _web_status()
-    assert web["synthetic_shadow_soak"]["evidence_state"] == "SYNTHETIC_ONLY_NOT_BROKER_EVIDENCE"
-    assert web["host_readiness"]["real_host_evidence_present"] is False
-    assert web["host_readiness"]["state"] == "AWAITING_REAL_WINDOWS_HOST"
-    assert web["pre_host_gate"]["synthetic_evidence_satisfies_real_host_readiness"] is False
-    assert web["pre_host_gate"]["external_mt5_milestones_102_110_complete"] is False
+    assert web["runtime_truth_included"] is False
+    assert "synthetic_shadow_soak" not in web
+    assert "host_readiness" not in web
+    assert "pre_host_gate" not in web
+    assert web["runtime_boundary"]["static_file_must_not_be_used_for_current_health"] is True
 
 
-def test_paper_remains_not_started_without_real_windows_host() -> None:
+def test_paper_remains_blocked_in_static_governance() -> None:
     web = _web_status()
-    assert web["pre_host_gate"]["paper_started"] is False
     assert web["paper_preparation"]["paper_started"] is False
     assert web["paper_preparation"]["broker_adapter_present"] is False
     assert web["readiness"]["paper"] == "BLOCKED"
@@ -62,12 +61,11 @@ def test_live_remains_blocked_even_after_successful_synthetic_soak() -> None:
     assert result.blocked == 0
     assert all(decision.action == "NO_ORDER" for decision in result.decisions)
     web = _web_status()
-    assert web["pre_host_gate"]["live_authorized"] is False
     assert web["readiness"]["live"] == "BLOCKED"
-    assert web["pre_host_gate"]["order_execution_enabled"] is False
+    assert web["runtime_truth_included"] is False
 
 
-def test_v11_status_and_recovery_payloads_are_credential_free() -> None:
+def test_v11_static_status_and_recovery_payloads_are_credential_free() -> None:
     web = _web_status()
     recovery = soak_recovery_payload(run_shadow_soak(build_bars()[:3]))
     assert not (_walk_keys(web) & FORBIDDEN_CREDENTIAL_KEYS)

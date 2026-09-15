@@ -1,138 +1,421 @@
-# MASTERSTAND — DAX Daytrading Bot
+# DAX-BOT MASTERSTAND — NEXT-CHAT HANDOVER
 
-Updated: 2026-09-10
+## Current override — Step2245 Turbo V1.1 (2026-09-15)
 
-This document is the durable project handover/source-of-truth. New work must preserve verified findings and must keep VERIFIED / IMPLEMENTED / RESEARCH / PLANNED / UNVERIFIED states separate.
+The authoritative current handoff is `MASTERSTAND_LATEST.md` together with
+`CURRENT_WORK_STEP.md` and `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`. Turbo V1.1 is
+development-only, COMPLETED / CI VERIFIED on implementation head
+`f4fbf15cd613d124849d5ce971dd84a8de6a6373`. Its closeout commit is the new
+continuity anchor after exact-head CI, not new provider evidence. The start anchor
+is `9491a5922eac4abc6984618585778317dd249600`; the real-host evidence head remains
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`. No second real-host run or productive
+risk/strategy/execution change. Step2239 remains waiting external, Step2240
+blocked, M01 not ready; 27 gates remain 8/0/13/6/0. Older status snapshots below
+remain historical; they do not override this current pointer or authorize work.
 
-## 1. Repository and recovery anchors
-- Repository: `hennebergtoni-lgtm/dax-Day`, default branch `main`.
-- Verified 2026-09-10 handoff anchor before the forward-degradation work: `ff38849978112ca25cec91aa5246cfa56bbed30c` (merge of PR #67).
-- PR #68 added the descriptive backtest→forward degradation layer and passed PR CI plus the full `main` push CI.
-- PR #69 binds that degradation layer to the canonical V11.2 active-reference identity; its PR CI passed before merge.
-- Historical anchors remain valid recovery points even after newer `main` commits are created.
+Status: **BINDING HANDOVER / REPOSITORY TRUTH FIRST**  
+Updated: **2026-09-13 — Step 2186 Work/chat-capacity handoff**  
+Repository: `hennebergtoni-lgtm/dax-Day`  
+Working branch: `nextgen-bot-line-v1`  
+Pull request: `#109` -> `main`
 
-## 2. Immutable V11.2 active reference — VERIFIED
-V11.2 remains unchanged and frozen. New hypotheses, filters, diagnostics or forward evidence never silently become the bot.
+This is the canonical durable handover for the DAX Daytrading Bot project. It exists so a new ChatGPT conversation can recover the project after chat-length limits, context compaction, reconnects or ordinary chat changes without relying on conversational memory.
 
-Canonical active result source:
-`research/V112_REFERENCE_V1/reference_result.json`
+If this prose disagrees with fresh evidence, precedence is:
+1. exact code/tests/machine evidence/current runtime telemetry;
+2. `docs/CURRENT_WORK_STEP.md` for official numbering;
+3. binding safety/governance contracts;
+4. this Masterstand;
+5. chat memory.
 
-Audited data source:
-`data/manifests/dax_m5_2014_2019_audited.json`
+---
 
-Verified historical surface:
-- Research period: 2014–2019.
-- 1,673 valid Europe/Berlin session days.
-- 481,824 raw M5 rows.
-- 172,319 Berlin-session M5 bars.
-- 103 M5 session bars/day, session 09:00–17:30 Europe/Berlin.
-- 0 invalid OHLC rows; 0 duplicate UTC timestamps.
-- Session OHLC SHA256: `e51bba6cb2befe5e7eb0376318e43b096a3e2ecaae3f556019862975c60286a2`.
-- Audited migration ZIP SHA256: `c46c09a391ee83a19a117fb43628cb75ab0a75703701ed7a84731d2963b24870`.
-- V11.2 exact-candidate engine SHA256: `b3d62e0cad72420d36ade523857d024d4a334298be51a8313069e36614bda888`.
-- Oracle source SHA256: `62adde1ccd630d01e9500b20c0efa88a0a8bd277e74c1a2c932ec6fc6efd3a0f`.
-- 144 variants.
-- Walk-forward: 81 windows, Train 45d, OOS 20d, Step 20d.
-- Normal OOS: 856 trades, `-31.309210619787684 R`, 37 positive / 44 negative / 0 flat WFs, median WF PF `0.905769310256018`.
-- Stress 1.5×: 856 trades, `-40.921695023387514 R`.
-- Stress 2×: 856 trades, `-48.424611963007294 R`.
+## 1. Resume command — BINDING
 
-The older values 1,384 trades / -68.10950257808015 R / 36 positive / 45 negative WFs belong to `LEGACY_EVIDENCE_ONLY` (`V4.0-FIX1`). They are retained for provenance and are not the active V11.2 reference.
+Canonical codeword:
 
-## 3. Scientific governance — IMPLEMENTED / RESEARCH
-The research layer now includes Git-based predeclaration/chronology, multiple-testing preflight, statistics readiness, classical DSR, CSCV/PBO research, K_eff diagnostics, SPA using the established `arch.bootstrap.SPA` implementation, block-length diagnostics, filter efficiency/ablation, filter overlap, backward elimination, Pareto diagnostics and simulated EUR-cash analysis.
+`Weiter mit dem DAXBot`
 
-These methods reduce the risk of fooling ourselves with backtests. DSR, PBO, K_eff, SPA or any other robustness statistic is not proof of profitability and does not create edge.
+Alias:
 
-Current filter doctrine: do not accumulate filters merely because they look plausible. A filter must be shown to activate, remove trades in a meaningful way, improve relevant R/Cash/DD evidence where claimed, and be checked for redundancy/overlap with other filters.
+`Weiter mit DAXbot`
 
-Research families and tools — Bollinger, Fibonacci, close gaps, ATR/ATR25, liquidity sweeps, momentum, volatility, TWAP/anchored price, CPR, macro events, session filters, stop/trailing variants and related ideas — remain research unless explicitly promoted through the governed process.
+On either phrase in a new chat:
+1. read `docs/SESSION_EXECUTION_REFRESHER.md`;
+2. pin repo, branch, PR #109, **fresh exact HEAD** and current CI;
+3. read `docs/CURRENT_WORK_STEP.md`;
+4. read `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`;
+5. read this Masterstand;
+6. read `docs/PROJECT_KNOWLEDGE_INDEX.md`, `docs/WORK_CONTINUITY_PROTOCOL.md` and the problem/solution registries;
+7. reconcile `WAITING_EXTERNAL`, `INTERRUPTED`, `BLOCKED` and out-of-band Work evidence separately;
+8. inspect only active-step code/docs/tests;
+9. continue automatically when Step-Close-Gate permits it.
 
-Decision architecture remains:
-`REGIME -> STRUCTURE -> ENTRY`.
+Do not ask the user to paste the old chat when repository access is available.
 
-## 4. Forward evidence — SHADOW only
-The forward layer contains per-window SHADOW performance, rolling summaries, positive/negative window streak diagnostics and an explicit Forward Stability Gate.
+---
 
-The stability gate:
-- requires explicit caller thresholds;
-- has no invented default promotion limits;
-- has no automatic promotion;
-- is `research_only=true`;
-- preserves `execution_capability=NONE`;
-- preserves `order_execution_enabled=false`.
+## 2. Working style and explicit chat-handoff rule
 
-Backtest→forward degradation is a descriptive diagnostic built on this same forward architecture, not a parallel strategy architecture. It compares normalized historical OOS expectations with forward SHADOW evidence and deliberately has no composite score or automatic pass/fail promotion rule. The canonical V11.2 helper is bound to the active-reference source identity, repository blob identity, audited session fingerprint and engine SHA.
+Required visible cadence:
 
-Forward cash curves remain simulated. Broker balances are not treated as research capital.
+`Step N -> short activity -> 1–2 sentence Zwischenstand -> ✅ / ⚠️ / ❌ -> actual next action`
 
-## 5. Execution authorization — BINDING
-- SHADOW: AUTHORIZED.
-- PAPER: NOT AUTHORIZED.
-- LIVE: NOT AUTHORIZED.
-- `execution_capability=NONE`.
-- `order_execution_enabled=false`.
+Intermediate reports are visibility points, not stops. A file discovery, warning, CI poll, partial result or green sub-check does not justify ending the turn while safe executable work remains.
 
-No code, research result, stability/degradation metric or CI result changes this authorization. PAPER or LIVE requires an explicit later user decision.
+The repeated premature-stop incidents in the preceding chat were workflow failures, not DAX-BOT technical blockers. `WORK_CONTINUITY_PROTOCOL.md` and `SESSION_EXECUTION_REFRESHER.md` contain the durable correction.
 
-## 6. MT5 / Windows host state
-VERIFIED:
-- Windows MT5 Python IPC/bridge works.
-- DE40 is detected.
-- `trade_mode=0`, digits=2, point=0.01, contract size=1, profit currency EUR.
-- Current MetaQuotes demo DE40 is suitable for read-only/SHADOW work, not assumed tradeable.
+Exception: an **explicit user STOP/chat-switch request** is a valid sequence interruption. In that case, reconcile pointer/Masterstand/CI first when possible, then actually stop. This Step-2186 handoff exists because the user explicitly requested a new chat due conversation length.
 
-UNVERIFIED / OPEN:
-- Actual MT5 broker/server timezone relative to `Europe/Berlin` remains an open gate.
-- Windows-specific runtime paths are not VERIFIED merely because code/CI exists; host behavior must be tested on the Windows machine.
+---
 
-Windows host operating rule: exactly one concrete PowerShell/host command at a time; inspect the returned result before issuing the next command.
+## 3. Exact repository truth entering Step 2186
 
-## 7. Runtime / reliability architecture
-Repository infrastructure includes substantial support for Windows autostart, single-instance locking, heartbeat history, resume, cross-cycle integrity, gap diagnostics and forward-evidence handling. Treat a Windows-specific behavior as VERIFIED only after host execution evidence.
+Verified Work/base head before handoff documentation:
 
-Research execution should avoid blind 12–14-hour grids. Prefer FAST screening, targeted stages, checkpoints/resume and efficient/vectorized evaluation where scientifically appropriate.
+`76251e0e52567f61d3c6015d22266be4bc977395`
 
-## 8. Open-source research doctrine
-Public/open-source research remains part of development. Relevant projects/methods include LEAN, NautilusTrader, vectorbt, Freqtrade, VN.PY, purged cross-validation implementations, RiskLabAI, ml4t/diagnostic, `arch` and related projects.
+At that head:
+- PR #109: **OPEN / UNMERGED**;
+- base: `main`;
+- branch: `nextgen-bot-line-v1`;
+- `dax-bot-1x-ci` #555: **GREEN**;
+- `research-lab-ci` #1339: **GREEN**;
+- no Acceptance refresh by Work;
+- no merge;
+- `main` unchanged by the Work task.
 
-Do not copy external systems blindly. Reuse established, tested methods when they solve a defined need better than inventing a private replacement; `arch.bootstrap.SPA` is an example.
+Step-2186 documentation commits create newer heads. Therefore the next chat MUST re-pin the fresh branch head and CI rather than treating `76251e0e...` as the final handoff commit.
 
-## 9. Promotion architecture
-The high-level path remains:
+`main` remains protected by ruleset `Projekt main`: PR required, strict checks `dax-bot-1x-ci` + `research-lab-ci`, deletion/non-fast-forward blocked, bypass list empty. This governance never authorizes trading or merge by itself.
 
-`DATA INTEGRITY -> FROZEN BASELINE -> RESEARCH LAB -> ROBUST OOS / MULTIPLE-TESTING CHECKS -> SHADOW -> PAPER -> POSSIBLE LIVE`
+---
 
-PAPER and LIVE stages are future states, not current permissions.
+## 4. Safety / execution authorization — BINDING
 
-The economic objective remains a systematic DAX daytrading bot that can eventually earn money under robust real-world conditions. Profitability is currently NOT proven. Starting-capital discussions around roughly EUR 1,000–2,000 are planning context only and are not live-trading authorization.
+- SHADOW: authorized only inside existing no-order contracts;
+- PAPER/demo broker execution: **NOT AUTHORIZED**;
+- LIVE: **NOT AUTHORIZED**;
+- `execution_capability=NONE` where applicable;
+- `order_execution_enabled=false`;
+- no broker order-submission path is authorized;
+- CI/backtest/research results never grant PAPER/LIVE authority;
+- explicit later user authorization is required before PAPER/LIVE;
+- `NO_STRATEGY_AUTO_PROMOTION` unchanged;
+- frozen V11.2 evidence/fingerprints unchanged.
 
-## 10. Source precedence
-For active V11.2 facts, prefer in this order:
-1. `research/V112_REFERENCE_V1/reference_result.json`
-2. `data/manifests/dax_m5_2014_2019_audited.json` for audited data identity
-3. current passing CI and specific audit documents
-4. this consolidated handover document
-5. older legacy prose/documents only for provenance
+The Monday demo goal does not override these gates.
 
-If older prose conflicts with the canonical active-reference artifact, do not rewrite scientific history to make the documents look consistent: preserve the legacy record and use the active reference for current work.
+---
 
-## 11. Recurring 500-step full-project audit — BINDING
-In addition to normal per-change tests and intermediate checks, a full-project hygiene and integrity audit must be performed at least once every 500 numbered project steps, and may be triggered earlier after major architecture, data, database, recovery or research changes.
+## 5. Product destination — modular DAX Bot 1.0
 
-The audit is a stop/go governance gate, not a cosmetic review. If a material contradiction, stale truth source, ambiguous entity, broken provenance chain or unsafe runtime/data path is found, the relevant issue must be corrected and re-verified before the next major development block continues.
+The product is not “V11.2 directly attached to MT5”. It is a maintainable modular DAX Bot 1.0 built like a puzzle so one weak piece can be replaced without discarding the system.
 
-The recurring audit must cover:
-- **Identity / entities:** modules, tests, research artifacts, datasets, evidence objects and runtime components have unambiguous names and ownership; parallel objects with effectively identical meaning are detected.
-- **Searchability:** canonical project objects must be reliably discoverable using expected repository search terms, filenames, registries and ledgers; search/index limitations must not be mistaken for missing implementation.
-- **Code ↔ test ↔ registry mapping:** relevant implementations are mapped to their tests and registry/ledger entries; stale tests or fixtures expecting historical values are identified explicitly.
-- **Reference integrity:** frozen V11.2 values, engine/data fingerprints and other VERIFIED constants are reconciled against tests, fixtures, manifests and documentation without rewriting legacy scientific history.
-- **Data/database integrity:** migrations, schemas, keys, provenance, fingerprints, import/restore paths, evidence rows and backup/recovery assumptions are checked for consistency and recoverability.
-- **Duplication / stale / dead paths:** overlapping implementations, superseded scripts, stale configs, duplicate truth stores and dead code are reviewed using compatibility-first migration; nothing is deleted solely because it appears unused.
-- **Runtime / recovery / safety:** fail-closed behavior, checkpoints, restart/resume, reconciliation, stale-data handling, write boundaries and `execution_capability=NONE` / `order_execution_enabled=false` invariants are checked.
-- **Performance / simplification:** redundant work, repeated expensive checks, avoidable long-running paths and unnecessary complexity are identified, while safety/provenance checks are not removed merely for speed.
-- **Public-project comparison:** selected mature open-source systems may be reviewed for proven architecture, recovery, data-integrity and testing patterns, but external designs do not override project evidence or create new work without a defined need.
+Replaceable boundaries include:
+- strategy/entry;
+- filters/regime logic;
+- risk sizing/policy;
+- loss/exposure/session admission;
+- data/feed adapters;
+- broker/execution adapters;
+- lifecycle/state/recovery/reconciliation;
+- operator/web presentation.
 
-Each full audit must end with an explicit classification of material findings using `VERIFIED`, `FIX REQUIRED`, `STALE`, `DUPLICATE`, or `UNVERIFIED`, plus a short remediation decision where applicable. The audit result itself becomes durable project evidence.
+Legacy/V11.2/CAND-001 remain reference, evidence and compatibility inputs rather than architecture constraints. Canonical owner: `docs/NEXTGEN_GREENFIELD_ARCHITECTURE_V1.md`.
 
-The existing architecture-hygiene safety principle remains binding: consolidation is compatibility-first, not deletion-first, and one canonical truth source may be protected by multiple boundary-specific assertions.
+---
+
+## 6. Frozen scientific reference — REF-V11.2
+
+V11.2 remains immutable reference evidence:
+- 2014–2019;
+- 1,673 valid Europe/Berlin session days;
+- 172,319 Berlin-session M5 bars;
+- 103 bars/session;
+- session 09:00–17:30;
+- 144 variants;
+- 81 WF windows;
+- Train 45d / OOS 20d / Step 20d;
+- 856 OOS trades;
+- OOS total `-31.309210619787684 R`;
+- 37 positive / 44 negative WFs;
+- median WF PF `0.905769310256018`.
+
+Never relabel these as NextGen profitability evidence.
+
+---
+
+## 7. Implemented NextGen foundation through the current line
+
+Major verified/implemented blocks include:
+- canonical broker/storage-neutral domain + ports;
+- immutable Parquet/Arrow catalog direction;
+- Strategy Plugin V1 + CAND-001 compatibility adapter;
+- deterministic product replay and restart/resume;
+- research experiment/promotion + product conformance;
+- read-only MT5 market-data adapter;
+- atomic generic `StateStorePort`;
+- operator read model;
+- canonical Risk Decision V1 and fixed-cash risk policy;
+- broker economics→risk inputs;
+- Risk→ExecutionIntent;
+- lifecycle/reconciliation/protection reuse;
+- canonical loss/exposure admission + restart/freshness evidence;
+- canonical session admission;
+- deterministic session-consumption ledger;
+- atomic `SessionAdmissionGuardCheckpoint`;
+- typed NextGen protection bound to authoritative guard;
+- Step-2182 commit-boundary audit selecting conservative local write-ahead PREPARED ordering.
+
+Architecture rule: reuse/adapt existing owners before creating duplicate lifecycle, state, broker or recovery stacks.
+
+---
+
+## 8. Official step state at this handoff
+
+Recent sequence:
+- 2174–2179: completed session-admission/guard/protection chain;
+- 2180: **INTERRUPTED**, later completed through 2182;
+- 2181: Masterstand/Monday-target reconciliation **COMPLETED**;
+- 2182: commit-boundary audit continuation **COMPLETED**;
+- 2183: atomic PREPARED checkpoint **INTERRUPTED** immediately after pointer preparation;
+- 2184: chat-capacity continuity hardening **COMPLETED**;
+- 2185: PREPARED checkpoint continuation **INTERRUPTED before substantive implementation** because Work/out-of-band hardening and then explicit chat-switch intervention took precedence;
+- 2186: current handoff/Work-evidence reconciliation;
+- 2187: reserved continuation of the interrupted PREPARED-checkpoint scope after successful 2186 close.
+
+`CURRENT_WORK_STEP.md` is authoritative if this summary becomes stale.
+
+---
+
+## 9. Step-2182 binding commit-boundary decision
+
+Required future ordering:
+
+`typed protection ALLOW evidence -> deterministic local session consumption using intent_id -> post-consumption authoritative SessionAdmissionGuardCheckpoint + REQUESTED lifecycle/protection provenance bound into one local PREPARED state -> only later may a separately authorized external submission be attempted -> restart/reconciliation before retry`
+
+Shared identity:
+
+`ExecutionIntent.intent_id == lifecycle client_order_id == session consumption_id`
+
+Because broker and local filesystem cannot share one transaction, the product prefers conservative under-trading over duplicate exposure.
+
+Step 2187 must implement the smallest evidence-neutral atomic PREPARED checkpoint over existing owners. It must not submit broker orders, infer broker acceptance, auto-release consumed slots, derive session reset/timezone semantics or authorize PAPER/LIVE.
+
+---
+
+## 10. VERIFIED out-of-band ChatGPT Work hardening after Step 2184
+
+Four Work commits landed on PR #109 while the official pointer still named unfinished Step 2185. They are repository-verified evidence but are **not retroactively relabeled as Step 2185**.
+
+1. `643e6741da601cce708fa301a90664e4a5137149` — finite market-data, recovery-integrity and required-CI hardening. Remote CI: DAX #552 GREEN / Research #1336 GREEN.
+2. `2e60cd7d3966754ee6e67637c3d01774d24c41ab` — reject non-finite persisted Candidate state before restore. DAX #553 GREEN / Research #1337 GREEN.
+3. `7281bc489c15a7c75c7a0cb7d2e590a094aaca34` — coherent restored CAND-001 session state, canonical session/admission behavior. DAX #554 GREEN / Research #1338 GREEN.
+4. `76251e0e52567f61d3c6015d22266be4bc977395` — lifecycle semantic restore hardening. DAX #555 GREEN / Research #1339 GREEN.
+
+Latest lifecycle Work result VERIFIED:
+- existing `filled_at >= requested_at`;
+- existing `closed_at >= filled_at`;
+- OPEN: existing `last_close_time >= filled_at`;
+- CLOSED: existing `last_close_time >= closed_at`;
+- equality remains allowed;
+- shared `_validate_intent_geometry()`:
+  - BUY: `stop_price < requested_price < target_price`;
+  - SELL: `target_price < requested_price < stop_price`;
+- checks apply to direct construction and restore envelopes;
+- focused 157 passed, expanded Candidate 552 passed, local full pytest 2,159 passed with 6 missing-pwsh skips, remote research 2,165 passed; Ruff/diff/offline gates passed;
+- no strategy/cost/V11.2/order-authority changes.
+
+External evidence NOT supplied by these Work runs:
+- five Neon/DB gates were skipped where the environment lacked them;
+- real Windows/MT5 host evidence was not executed.
+
+These remain `WAITING_EXTERNAL`, not green-by-inference.
+
+---
+
+## 11. ChatGPT Work / “WERKS” operating contract — BINDING
+
+Canonical owner: `docs/WORK_CONTINUITY_PROTOCOL.md` sections 12–16.
+
+Roles:
+- **main chat** = architect, prioritizer, task decomposer, reviewer, acceptance/merge owner;
+- **ChatGPT Work** = bounded independent audit/Red-Team/implementation workbench.
+
+Use Work mainly at high-leverage boundaries: CI/truth layers, persistence/restore/recovery, execution safety, pre-merge and pre-PAPER. Avoid uncontrolled parallel Work jobs.
+
+Every Work task should state:
+- repo / branch / PR / exact starting HEAD and mandatory re-pin;
+- READ-ONLY versus IMPLEMENTATION permission;
+- exact scope/non-goals/forbidden actions;
+- safety/frozen-reference constraints;
+- validation/CI/evidence requirements;
+- branch-drift behavior;
+- expected final report.
+
+Preferred header format:
+
+`👷 WORK-AUFTRAG — MODELL: GPT-5.6 SOL — DENKSTUFE: MITTEL — IMPLEMENTIERUNG ERLAUBT — 💳 CREDIT-BUDGET: NIEDRIG–MITTEL`
+
+Use current available model/configuration rather than inventing an unavailable one. Thinking level is task-driven:
+- LEICHT/LOW: narrow/mechanical/isolated;
+- MITTEL/MEDIUM: bounded multi-file implementation or focused architecture audit;
+- HOCH/HIGH: cross-cutting Red-Team, recovery/safety, pre-merge/pre-PAPER review.
+
+Credit discipline:
+- NIEDRIG: narrow fix/audit;
+- MITTEL: focused multi-file/composition work;
+- HOCH: whole-PR/cross-cutting hardening and independent high-risk review;
+- ranges allowed;
+- use the smallest Work assignment that buys meaningful independent evidence;
+- do not spend Work credits on repetitive status polling or cheap main-chat steering;
+- never substitute simulated/missing external evidence for real host/provider evidence.
+
+Work results are not auto-accepted. Main chat re-pins exact repo truth, validates diff/CI/skips, classifies evidence, and owns Acceptance/merge decisions. Work must not merge or refresh Acceptance unless explicitly authorized.
+
+If Work lands commits outside the currently active numbered step, record them as out-of-band evidence and reconcile prospectively with the next unused whole integer rather than falsifying history.
+
+---
+
+## 12. Acceptance and PR state
+
+`docs/DAX_BOT_1X_ALPHA_ACCEPTANCE_STATUS.md` is **stale relative to current PR head**. Work explicitly did not refresh Acceptance.
+
+Therefore:
+- do not claim current head accepted merely because CI is green;
+- do not merge PR #109 during this handoff;
+- a deliberate future Acceptance reconciliation against the then-current exact head is required before any merge decision.
+
+PR #109 remains open/unmerged at the verified Work head.
+
+---
+
+## 13. MT5 / external host lane
+
+Python↔MT5 plumbing and read-only integration exist; NextGen has a read-only MT5 market-data adapter.
+
+Host lane originating at Step 2122 remains `WAITING_EXTERNAL`:
+- host wiring/parity/fail-closed repository evidence exists;
+- market-open clock/GREEN/candidate/restart evidence still requires the real Windows/MT5 host under appropriate conditions.
+
+This lane does not block independent repository engineering. MT5 connectivity alone does not authorize broker submission.
+
+---
+
+## 14. Monday demo target
+
+Preferred milestone corridor:
+1. finish atomic PREPARED local boundary;
+2. prove restart/idempotency/reconciliation around it;
+3. obtain current Windows/MT5 market-open evidence;
+4. run end-to-end SHADOW;
+5. audit PAPER readiness and broker economics;
+6. obtain explicit PAPER authorization before any demo order submission.
+
+A meaningful SHADOW milestone is preferred over weakening safety just to satisfy the calendar.
+
+---
+
+## 15. Filter database / research governance
+
+Filters must not accumulate until they suppress almost every trade or mask each other.
+
+Binding principles:
+- filters remain research artifacts until promoted;
+- measure incremental contribution, not only standalone performance;
+- use ablation, overlap, backward elimination and Pareto-style analysis where applicable;
+- measure trade-count loss and interaction effects;
+- test redundancy/mutual suppression;
+- preserve OOS/WF/multiple-testing/overfitting discipline;
+- no automatic promotion from a good-looking backtest.
+
+Long-term filter records should carry identity/version, definition, family/regime, dependencies, sample/trade counts, overlap/redundancy, incremental contribution, robustness/OOS evidence, interactions, promotion state and retirement reason.
+
+---
+
+## 16. Knowledge / error database
+
+This is a core project pillar. Durable owners include:
+- this Masterstand;
+- `CURRENT_WORK_STEP.md` + archive;
+- `PROJECT_KNOWLEDGE_INDEX.md`;
+- `WORK_CONTINUITY_PROTOCOL.md`;
+- workflow-integrity and chat-handoff contracts;
+- session refresher;
+- problem/solution registries;
+- architecture/evidence/audit docs;
+- regression tests preserving important invariants.
+
+Every non-obvious solved problem should leave:
+
+`Problem -> Root Cause -> Fix/Decision -> Regression Evidence -> Reuse Rule`
+
+Purpose: avoid rediscovery, find ownership quickly and maintain VERIFIED / IMPLEMENTED / RESEARCH / PLANNED / UNVERIFIED distinctions.
+
+---
+
+## 17. Public/open-source learning
+
+Regularly compare relevant architecture/methodology patterns from established systems such as NautilusTrader, Freqtrade, QuantConnect LEAN and vectorbt.
+
+Focus on lifecycle/state machines, recovery/reconciliation, persistence, forward testing, data integrity, research efficiency, overfitting control, governance and operator design. Do not copy strategies blindly and do not rewrite working components merely because an external project is popular.
+
+Step 2500 is the next mandatory full Architecture & Learning Review; obvious structural problems discovered earlier must still be addressed earlier.
+
+---
+
+## 18. Web/operator and Boost/Turbo ideas
+
+Operator/read-model foundations exist; the visual web product intentionally trails execution/recovery core work.
+
+Desired UI eventually shows mode banner, broker/data/clock readiness, strategy/filter/risk identities, session/lifecycle/reconciliation/checkpoint state, fail-closed reasons and evidence/performance views separated from live runtime truth.
+
+Boost/Turbo is a future explicit replaceable risk policy/mode, not an implicit escalation. Current canonical product logic intentionally does not auto-promote old BASE/BOOST/HIGH research names/values.
+
+---
+
+## 19. Checkpoint governance
+
+- Next 250-step Masterstand checkpoint: **2250**.
+- Next 500-step full audit: **2500**.
+- Next 500-step Architecture & Learning Review: **2500**.
+
+Step 2500 must critique architecture/process using new evidence, repeated failures, runtime/research cost, duplication/coupling, recovery/test/operator quality and refreshed public knowledge. Outcomes: KEEP / IMPROVE / REFACTOR / RETIRE / DEFER. KEEP/no-change is valid; the checkpoint itself never justifies a rewrite.
+
+---
+
+## 20. Next-chat quick start
+
+User writes:
+
+`Weiter mit dem DAXBot`
+
+Expected behavior:
+- re-pin repo/branch/PR/fresh head/CI;
+- read refresher, current pointer, workflow gate, Masterstand, Knowledge Index and Work protocol;
+- report recovered state briefly;
+- do not ask for old-chat paste;
+- continue from the pointer, expected after successful Step-2186 close to be **Step 2187: atomic local NextGen PREPARED checkpoint continuation**;
+- preserve stale Acceptance and all `WAITING_EXTERNAL` lanes separately.
+
+---
+
+## 21. Truth labels
+
+- **VERIFIED** — explicit supporting evidence/tests/runtime evidence as applicable;
+- **IMPLEMENTED** — code exists, not automatically host/profitability proof;
+- **RESEARCH** — experiment/hypothesis, not product truth;
+- **PLANNED** — intended, not implemented;
+- **UNVERIFIED** — insufficient evidence;
+- **WAITING_EXTERNAL** — repository work cannot manufacture the required external evidence.
+
+---
+
+## 22. Bottom line
+
+The project has materially moved beyond V11.2 toward a modular DAX Bot 1.0. The next technical frontier remains the safe atomic local PREPARED boundary connecting canonical protection/session/lifecycle/state/reconciliation pieces without a duplicate stack.
+
+The four recent Work hardening commits materially strengthen restore semantics, finite-value handling, session coherence, recovery/CI integrity and lifecycle geometry/time invariants, but they do not constitute Acceptance refresh, broker execution authorization or Windows/MT5 proof.
+
+This Step-2186 handoff deliberately stops technical progression after continuity is green because the user requested a new chat. The next chat resumes from repository truth with `Weiter mit dem DAXBot`.

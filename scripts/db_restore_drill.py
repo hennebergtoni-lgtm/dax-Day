@@ -22,7 +22,9 @@ EXPECTED_TABLES = {
     "mt5_shadow_heartbeats",
     "mt5_shadow_bars",
     "mt5_shadow_decisions",
+    "cand001_operator_snapshots",
 }
+EXPECTED_VIEWS = {"cand001_operator_current"}
 EXPECTED_VERSIONS = {
     "0001_research_core",
     "0002_reference_provenance",
@@ -31,6 +33,8 @@ EXPECTED_VERSIONS = {
     "0005_reproduced_detail_sources",
     "0006_detail_evidence_rows",
     "0007_mt5_shadow_telemetry",
+    "0008_cand001_operator_telemetry",
+    "0009_cand001_operator_current_view",
 }
 EXPECTED_DETAIL_SOURCES = {
     "WF_METRICS": "v112_reproduced_wf_metrics_20260908",
@@ -65,6 +69,15 @@ def main() -> None:
             if missing:
                 raise RuntimeError(f"restore drill missing tables: {sorted(missing)}")
 
+            view_rows = conn.execute(
+                "select table_name from information_schema.views where table_schema = %s",
+                (schema,),
+            ).fetchall()
+            views = {str(row[0]) for row in view_rows}
+            missing_views = EXPECTED_VIEWS - views
+            if missing_views:
+                raise RuntimeError(f"restore drill missing views: {sorted(missing_views)}")
+
             versions = {str(row[0]) for row in conn.execute("select version from schema_migrations").fetchall()}
             if versions != EXPECTED_VERSIONS:
                 raise RuntimeError(f"restore drill migration registry mismatch: {sorted(versions)}")
@@ -98,22 +111,27 @@ def main() -> None:
             if evidence_rows != 0:
                 raise RuntimeError("restore drill must start with zero imported detail evidence rows")
 
+            telemetry_tables = (
+                "mt5_shadow_heartbeats",
+                "mt5_shadow_bars",
+                "mt5_shadow_decisions",
+                "cand001_operator_snapshots",
+            )
             telemetry_counts = {
                 table: conn.execute(sql.SQL("select count(*) from {}").format(sql.Identifier(table))).fetchone()[0]
-                for table in (
-                    "mt5_shadow_heartbeats",
-                    "mt5_shadow_bars",
-                    "mt5_shadow_decisions",
-                )
+                for table in telemetry_tables
             }
             if any(telemetry_counts.values()):
                 raise RuntimeError("restore drill telemetry tables must start empty")
+            current_rows = conn.execute("select count(*) from cand001_operator_current").fetchone()[0]
+            if current_rows != 0:
+                raise RuntimeError("restore drill Candidate current view must start empty")
 
             print(
                 "Database restore drill OK | "
                 f"schema={schema} | migrations={len(versions)} | tables={len(tables)} | "
-                "active_reference=VERIFIED | detail_sources=3 VERIFIED | "
-                "detail_rows=0 | telemetry_rows=0 | detail=NOT_IMPORTED"
+                f"views={len(views)} | active_reference=VERIFIED | detail_sources=3 VERIFIED | "
+                "detail_rows=0 | telemetry_rows=0 | candidate_current_rows=0 | detail=NOT_IMPORTED"
             )
         finally:
             conn.execute("set search_path to public")

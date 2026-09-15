@@ -6,4 +6,5 @@ def test_synthetic_soak_does_not_claim_broker_session_metadata() -> None:
     smoke = (root / "scripts/shadow_soak_smoke.py").read_text(encoding="utf-8")
     assert "broker_timezone" not in smoke
     assert "BROKER_OBSERVED" not in smoke
-    assert "Real MT5 broker evidence: NOT PRESENT" in smoke
+    assert "Evidence scope: SYNTHETIC_OFFLINE_ONLY" in smoke
+    assert "Real MT5 broker evidence: OUT_OF_SCOPE" in smoke

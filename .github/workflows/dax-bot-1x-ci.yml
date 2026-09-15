@@ -1,0 +1,94 @@
+name: dax-bot-1x-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  candidate-core:
+    name: dax-bot-1x-ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+      - name: Install lean candidate test surface
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . --no-deps
+          python -m pip install pytest ruff==0.16.2
+      - name: Install actual browser acceptance dependency
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bot-helper-browser" --no-save --package-lock=false playwright
+          "$RUNNER_TEMP/bot-helper-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Bot Helper V1 first acceptance pass
+        shell: bash
+        env:
+          BOT_HELPER_REQUIRE_BROWSER: '1'
+          NODE_PATH: ${{ runner.temp }}/bot-helper-browser/node_modules
+        run: python scripts/run_bot_helper_acceptance.py --output-dir bot-helper-acceptance --pass-name pass1
+      - name: Bot Helper V1 independent second acceptance pass
+        if: always()
+        shell: bash
+        env:
+          BOT_HELPER_REQUIRE_BROWSER: '1'
+          NODE_PATH: ${{ runner.temp }}/bot-helper-browser/node_modules
+        run: python scripts/run_bot_helper_acceptance.py --output-dir bot-helper-acceptance --pass-name pass2
+      - name: Candidate and broker-safety Ruff
+        run: >-
+          ruff check
+          src/daxlab/runtime/candidate_*.py
+          src/daxlab/runtime/broker_*.py
+          src/daxlab/runtime/ig_predemo_safety.py
+          src/daxlab/runtime/operator_snapshot.py
+          src/daxlab/runtime/operator_runtime_bridge.py
+          src/daxlab/strategies/cand001/*.py
+          tests/test_candidate*.py
+          tests/test_broker*.py
+          tests/test_ig_predemo_safety.py
+          tests/test_ig_rest_readonly.py
+          tests/test_ig_rest_readonly_inventory.py
+          tests/test_dax_windows_host_preflight.py
+          tests/test_dax_windows_python_runtime_probe.py
+          tests/test_run_ig_predemo_readiness_2238.py
+          tests/test_operator_snapshot*.py
+          tests/test_operator_runtime_bridge.py
+          tests/test_nextgen_cand001_strategy_adapter.py
+          scripts/benchmark_cand001_pipeline.py
+      - name: Candidate correctness, restart and broker-neutral safety tests
+        run: >-
+          pytest -q
+          tests/test_candidate*.py
+          tests/test_broker*.py
+          tests/test_ig_predemo_safety.py
+          tests/test_ig_rest_readonly.py
+          tests/test_ig_rest_readonly_inventory.py
+          tests/test_dax_windows_host_preflight.py
+          tests/test_dax_windows_python_runtime_probe.py
+          tests/test_run_ig_predemo_readiness_2238.py
+          tests/test_operator_snapshot*.py
+          tests/test_operator_runtime_bridge.py
+          tests/test_nextgen_cand001_strategy_adapter.py
+      - name: Candidate performance observation
+        run: |
+          python scripts/benchmark_cand001_pipeline.py --sessions 50 --repeats 3 > candidate-benchmark.json
+          cat candidate-benchmark.json
+      - name: Upload candidate benchmark evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: dax-bot-cand001-benchmark-${{ github.sha }}
+          path: candidate-benchmark.json
+          retention-days: 30
+      - name: Retain sanitized Bot Helper acceptance evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bot-helper-v1-dax-bot-1x-ci-${{ github.sha }}
+          path: bot-helper-acceptance/
+          retention-days: 30
+          if-no-files-found: error

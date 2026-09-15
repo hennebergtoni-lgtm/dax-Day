@@ -1,6 +1,6 @@
 """Credential-free, read-only MT5 desktop probe for the Windows host.
 
-Run this only where MetaTrader 5 Desktop is already open and logged into a demo
+Run this only where MetaTrader 5 Desktop is already open and logged into a trading
 account. The script never accepts login/password fields and never calls order APIs.
 """
 from __future__ import annotations
@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from daxlab.runtime.mt5_broker_session import server_wall_clock_epoch_to_utc
+from daxlab.runtime.mt5_demo_account_context import normalize_mt5_demo_account_context
 from daxlab.runtime.mt5_readonly import BrokerSymbol, closed_rates_start_pos, resolve_dax_symbol
 
 FORBIDDEN_OUTPUT_KEYS = {"login", "password", "token", "secret", "email", "phone", "account_id"}
@@ -29,15 +30,49 @@ def _trade_mode_name(mt5: Any, value: Any) -> str:
     return mapping.get(value, str(value))
 
 
+def _positive_attr(info: Any, name: str) -> float | None:
+    raw = getattr(info, name, None)
+    if raw is None:
+        return None
+    value = float(raw)
+    return value if value > 0 else None
+
+
+def _nonnegative_attr(info: Any, name: str) -> float | None:
+    raw = getattr(info, name, None)
+    if raw is None:
+        return None
+    value = float(raw)
+    return value if value >= 0 else None
+
+
+def _text_attr(info: Any, name: str) -> str | None:
+    raw = getattr(info, name, None)
+    if raw is None:
+        return None
+    value = str(raw).strip()
+    return value or None
+
+
 def _safe_symbol(mt5: Any, info: Any) -> BrokerSymbol:
     return BrokerSymbol(
         name=str(info.name),
         digits=int(info.digits),
         point=float(info.point),
         trade_mode=_trade_mode_name(mt5, info.trade_mode),
-        contract_size=float(info.trade_contract_size),
-        volume_min=float(info.volume_min),
-        volume_step=float(info.volume_step),
+        contract_size=_positive_attr(info, "trade_contract_size"),
+        volume_min=_positive_attr(info, "volume_min"),
+        volume_step=_positive_attr(info, "volume_step"),
+        volume_max=_positive_attr(info, "volume_max"),
+        volume_limit=_nonnegative_attr(info, "volume_limit"),
+        tick_size=_positive_attr(info, "trade_tick_size"),
+        tick_value=_nonnegative_attr(info, "trade_tick_value"),
+        tick_value_profit=_nonnegative_attr(info, "trade_tick_value_profit"),
+        tick_value_loss=_nonnegative_attr(info, "trade_tick_value_loss"),
+        currency_profit=_text_attr(info, "currency_profit"),
+        currency_margin=_text_attr(info, "currency_margin"),
+        margin_initial=_nonnegative_attr(info, "margin_initial"),
+        margin_maintenance=_nonnegative_attr(info, "margin_maintenance"),
     )
 
 
@@ -105,10 +140,40 @@ def collect_probe(
                 "contract_size": s.contract_size,
                 "volume_min": s.volume_min,
                 "volume_step": s.volume_step,
+                "volume_max": s.volume_max,
+                "volume_limit": s.volume_limit,
+                "tick_size": s.tick_size,
+                "tick_value": s.tick_value,
+                "tick_value_profit": s.tick_value_profit,
+                "tick_value_loss": s.tick_value_loss,
+                "currency_profit": s.currency_profit,
+                "currency_margin": s.currency_margin,
+                "margin_initial": s.margin_initial,
+                "margin_maintenance": s.margin_maintenance,
             }
             for s in symbols
             if s.name in resolution.candidates or (selected and s.name == selected.name)
         ]
+
+        demo_account_context = None
+        demo_account_context_state = "UNAVAILABLE"
+        if account is not None and selected is not None:
+            try:
+                normalized_account = normalize_mt5_demo_account_context(
+                    raw_login=getattr(account, "login", None),
+                    raw_server=getattr(account, "server", None),
+                    raw_trade_mode=getattr(account, "trade_mode", None),
+                    trade_allowed=getattr(account, "trade_allowed", None),
+                    resolved_symbol=selected.name,
+                    demo_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_DEMO", None),
+                    contest_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_CONTEST", None),
+                    real_trade_mode=getattr(mt5, "ACCOUNT_TRADE_MODE_REAL", None),
+                )
+            except ValueError:
+                demo_account_context_state = "UNAVAILABLE_FAIL_CLOSED"
+            else:
+                demo_account_context = normalized_account.to_payload()
+                demo_account_context_state = "AVAILABLE_REDACTED"
 
         raw_tick_delta_seconds = None
         normalized_tick_delta_seconds = None
@@ -159,7 +224,17 @@ def collect_probe(
             "broker_timezone": broker_timezone,
             "symbols": safe_symbols,
         }
-        notes = ["READ_ONLY", "BAR_0_EXCLUDED", "NO_CREDENTIALS", "NO_ORDER_API"]
+        if demo_account_context is not None:
+            host_probe["demo_account_context"] = demo_account_context
+
+        notes = [
+            "READ_ONLY",
+            "BAR_0_EXCLUDED",
+            "NO_CREDENTIALS",
+            "NO_ORDER_API",
+            "BROKER_ECONOMICS_OBSERVATION_ONLY",
+            f"DEMO_ACCOUNT_CONTEXT_STATE={demo_account_context_state}",
+        ]
         if raw_tick_delta_seconds is not None:
             notes.append(f"RAW_TICK_CLOCK_DELTA_SECONDS={raw_tick_delta_seconds:.3f}")
         if normalized_tick_delta_seconds is not None:

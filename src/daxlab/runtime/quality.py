@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from math import isfinite
 
 from daxlab.runtime.contracts import Candle, DataQualityState
 from daxlab.runtime.time import to_berlin
@@ -60,6 +61,8 @@ def classify_session_sequence(
 
 def source_agrees(left: Candle, right: Candle, *, tolerance: float = 0.0) -> DataQualityState:
     """Compare two source candles for the same bar."""
+    if not isfinite(tolerance) or tolerance < 0:
+        raise ValueError("tolerance must be finite and non-negative")
     if left.event_time != right.event_time or left.timeframe != right.timeframe:
         return DataQualityState.SOURCE_DISAGREEMENT
     values_left = (left.open, left.high, left.low, left.close)

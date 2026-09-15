@@ -41,12 +41,14 @@ def test_stale_lock_file_does_not_block_restart(tmp_path: Path) -> None:
     lock.acquire()
     try:
         assert lock.held
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        assert payload["identity"] == "DAX"
-        assert isinstance(payload["pid"], int)
-        assert payload["pid"] != 999999
     finally:
         lock.release()
+    # Windows byte-range locks also deny reads through a different descriptor.
+    # Metadata is not the ownership signal: inspect it after the OS lock releases.
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload["identity"] == "DAX"
+    assert isinstance(payload["pid"], int)
+    assert payload["pid"] != 999999
 
 
 def test_context_manager_releases_os_lock_but_keeps_metadata(tmp_path: Path) -> None:

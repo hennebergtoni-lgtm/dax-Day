@@ -6,6 +6,10 @@ import hashlib
 import json
 from typing import Any, Mapping
 
+from daxlab.runtime.mt5_demo_account_context import (
+    Mt5DemoAccountContextEvidence,
+    parse_mt5_demo_account_context_payload,
+)
 from daxlab.runtime.mt5_feed_payload import ClosedM5Feed, feed_blocker, parse_closed_m5_feed
 from daxlab.runtime.mt5_host_contract import Mt5HostObservation, validate_read_only_host
 from daxlab.runtime.mt5_probe_payload import parse_mt5_probe_payload
@@ -22,6 +26,7 @@ class WindowsMt5Bundle:
     symbol_resolution_state: str
     fingerprint: str
     blockers: tuple[str, ...]
+    demo_account_context: Mt5DemoAccountContextEvidence | None = None
 
     @property
     def green(self) -> bool:
@@ -74,7 +79,13 @@ def parse_windows_mt5_bundle(payload: Mapping[str, Any]) -> WindowsMt5Bundle:
     if not required_notes.issubset(set(notes)):
         raise ValueError("Windows MT5 bundle safety notes incomplete")
 
-    host = parse_mt5_probe_payload(payload["host_probe"])
+    host_payload = payload["host_probe"]
+    host = parse_mt5_probe_payload(host_payload)
+    demo_account_context = None
+    if isinstance(host_payload, Mapping) and "demo_account_context" in host_payload:
+        demo_account_context = parse_mt5_demo_account_context_payload(
+            host_payload["demo_account_context"]
+        )
     raw_feed = payload["closed_m5_feed"]
     feed = None if raw_feed is None else parse_closed_m5_feed(raw_feed)
 
@@ -101,6 +112,7 @@ def parse_windows_mt5_bundle(payload: Mapping[str, Any]) -> WindowsMt5Bundle:
     return WindowsMt5Bundle(
         host=host,
         feed=feed,
+        demo_account_context=demo_account_context,
         symbol_resolution_state=state,
         fingerprint=expected,
         blockers=tuple(dict.fromkeys(blockers)),

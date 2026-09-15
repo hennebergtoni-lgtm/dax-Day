@@ -2,7 +2,10 @@ import json
 from pathlib import Path
 
 
-def test_web_exposes_synthetic_shadow_as_no_order_only() -> None:
+def test_static_web_does_not_publish_synthetic_shadow_runtime_state() -> None:
     root = Path(__file__).resolve().parents[1]
-    soak = json.loads((root / "web/status.json").read_text())["synthetic_shadow_soak"]
-    assert soak["action"] == "NO_ORDER_ONLY"
+    web = json.loads((root / "web/status.json").read_text())
+
+    assert "synthetic_shadow_soak" not in web
+    assert web["runtime_truth_included"] is False
+    assert web["historical_sequential_replay"]["action"] == "NO_ORDER_ONLY"

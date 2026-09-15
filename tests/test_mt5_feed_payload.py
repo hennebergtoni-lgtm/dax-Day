@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import replace
+from itertools import combinations
+
 import pytest
 
 from daxlab.runtime.mt5_feed_payload import feed_blocker, parse_closed_m5_feed
@@ -137,3 +140,29 @@ def test_gap_is_diagnostic_not_filled() -> None:
     assert len(feed.bars) == 2
     assert feed.discontinuities
     assert feed_blocker(feed) == "MARKET_DATA_DISCONTINUITY"
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("fields", [
+    fields for size in range(1, 5)
+    for fields in combinations(("open", "high", "low", "close"), size)
+])
+def test_feed_parser_rejects_non_finite_ohlc(value, fields):
+    item = payload()
+    item["bars"][0].update(dict.fromkeys(fields, value))
+    with pytest.raises(ValueError, match="must be finite"):
+        parse_closed_m5_feed(item)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_feed_parser_rejects_non_finite_freshness_limit(value):
+    item = payload()
+    item["max_age_seconds"] = value
+    with pytest.raises(ValueError, match="max_age_seconds must be finite"):
+        parse_closed_m5_feed(item)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf"), -1.0])
+def test_feed_contract_rejects_invalid_observed_age(value):
+    with pytest.raises(ValueError, match="age_seconds must be finite and non-negative"):
+        replace(parse_closed_m5_feed(payload()), age_seconds=value)
