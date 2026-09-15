@@ -1,5 +1,21 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2243 Bot-Helper 8/8-read derivation closeout — IN_PROGRESS (2026-09-15)
+
+Pinned start head: `5eca87b68b15fa5c82cb1dc1193364f28905bafe`; branch
+`nextgen-bot-line-v1`, PR #109 OPEN/UNMERGED; main unchanged
+`e0784ebfc11bee28475fd9c3385be661af58a738`. The supplied real Windows/IG-DEMO
+run proves one login, no retry/dealing, cleanup success and all eight required
+read rows PASS. Its outer result proves only that at least one mandatory derived
+stage did not pass; the prior stdout did not expose the stage identity, so no
+specific historical stage is guessed from raw-read success.
+
+Step2243 owns the bounded Raw-vs-Derived diagnostic/coordination repair,
+ten-stage failure injection, regression and required CI. It does not change an
+endpoint, provider request, strategy, risk/loss policy, execution authorization
+or older VERIFIED evidence. NONE/false, no order and LIVE prohibited remain
+binding. Step2238/2239/2240/M01 and the 27 gates are not promoted.
+
 ## Current: Step2242 Bot-Helper real-host IG read-contract closeout — COMPLETED / TECHNICALLY VERIFIED (2026-09-15)
 
 Pinned start head: `d7ad273e71a9ae993d8c28031e8c20d3a84e32d2`; branch

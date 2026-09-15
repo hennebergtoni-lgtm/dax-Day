@@ -402,7 +402,10 @@ def run_ig_readiness_shadow(state, evidence, *, subject, observed_at, run_manife
         PROVIDER_TIMESTAMP_SEMANTICS, canonical_ig_m5_contract, ig_m5_interval,
     )
     from daxlab.runtime.decision import stable_fingerprint
-    from daxlab.runtime.ig_predemo_safety import bind_ig_risk_session_inputs
+    from daxlab.runtime.ig_predemo_safety import (
+        IG_DERIVATION_STAGES,
+        bind_ig_risk_session_inputs,
+    )
 
     now = read_utc(utc(observed_at))
     cfg = Cand001Config()
@@ -456,20 +459,31 @@ def run_ig_readiness_shadow(state, evidence, *, subject, observed_at, run_manife
                                     evidence_scope=evidence_scope, evidence_refs=(binding.source_fingerprint,),
                                     evidence_schema="DAXLAB_IG_PREDEMO_READINESS_V3"))
         read_blocked = any(row.get("status") != "PASS" for row in reads)
-        findings.append(observation(subject, "B", "BLOCKED" if read_blocked else
-                                    ("UNKNOWN" if binding.blockers else "PASS"),
-                                    source_time=received, observed_at=received, valid_until=None,
+        derived = evidence.get("derived_processing")
+        derived_blocked = (
+            evidence.get("derived_processing_complete") is not True
+            or not isinstance(derived, dict)
+            or any(
+                not isinstance(derived.get(stage), dict)
+                or derived[stage].get("status") != "PASS"
+                for stage in IG_DERIVATION_STAGES
+            )
+        )
+        findings.append(observation(subject, "B", "BLOCKED" if read_blocked else "PASS",
+                                    source_time=received, observed_at=received,
+                                    valid_until=received,
                                     evidence_scope=evidence_scope,
                                     reason_codes=("BROKER_READ_FAILED",)
-                                    if read_blocked
-                                    else (("BROKER_UNKNOWN",) if binding.blockers else ()),
+                                    if read_blocked else (),
                                     evidence_refs=(binding.source_fingerprint,),
                                     evidence_schema="DAXLAB_IG_PREDEMO_READINESS_V3"))
         findings.append(observation(
-            subject, "S", "BLOCKED" if read_blocked else "PASS",
+            subject, "S",
+            "BLOCKED" if read_blocked or derived_blocked else "PASS",
             source_time=received, observed_at=received, valid_until=source_time + delay,
             evidence_scope=evidence_scope,
-            reason_codes=("READINESS_BLOCKED",) if read_blocked else (),
+            reason_codes=("READINESS_BLOCKED",)
+            if read_blocked or derived_blocked else (),
             evidence_refs=(binding.source_fingerprint,),
             evidence_schema="DAXLAB_IG_PREDEMO_READINESS_V3",
         ))

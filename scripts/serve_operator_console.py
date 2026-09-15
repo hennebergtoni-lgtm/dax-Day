@@ -68,6 +68,89 @@ def _safe_ig_read_outcome(row: object) -> dict[str, object]:
     }
 
 
+def _safe_ig_derivation_outcomes(value: object) -> dict[str, dict[str, str]]:
+    """Project the fixed stage ledger only; never arbitrary diagnostic text."""
+    from daxlab.runtime.ig_predemo_safety import IG_DERIVATION_STAGES
+
+    source = value if isinstance(value, dict) else {}
+    token = re.compile(r"^[A-Z][A-Z0-9_]{0,95}$")
+    result: dict[str, dict[str, str]] = {}
+    for stage in IG_DERIVATION_STAGES:
+        row = source.get(stage)
+        status = row.get("status") if isinstance(row, dict) else None
+        reason = row.get("reason_code") if isinstance(row, dict) else None
+        result[stage] = {
+            "status": status if status in {"PASS", "BLOCKED", "UNKNOWN"} else "UNKNOWN",
+            "reason_code": reason
+            if isinstance(reason, str) and token.fullmatch(reason)
+            else "DERIVATION_STATUS_UNAVAILABLE",
+        }
+    return result
+
+
+def _safe_ig_derivation_evidence(evidence: dict[str, Any]) -> dict[str, object]:
+    """Bounded facts useful for stage diagnosis; no provider rows or free text."""
+    matrix = evidence.get("authenticated_read_matrix")
+    matrix = matrix if isinstance(matrix, dict) else {}
+    account = evidence.get("account")
+    account = account if isinstance(account, dict) else {}
+    inventory = evidence.get("inventory")
+    inventory = inventory if isinstance(inventory, dict) else {}
+    history = evidence.get("history_scope")
+    history = history if isinstance(history, dict) else {}
+    market = evidence.get("market")
+    market = market if isinstance(market, dict) else {}
+    m5 = evidence.get("market_data")
+    m5 = m5 if isinstance(m5, dict) else {}
+    clock = evidence.get("clock")
+    clock = clock if isinstance(clock, dict) else {}
+
+    def bounded_count(value: object, maximum: int | None = None) -> int | None:
+        return value if type(value) is int and value >= 0 and (maximum is None or value <= maximum) else None
+
+    counts = matrix.get("counts")
+    counts = counts if isinstance(counts, dict) else {}
+    return {
+        "raw_counts": {
+            name: bounded_count(counts.get(name), 8)
+            for name in ("PASS", "FAIL", "BLOCKED", "UNKNOWN")
+        },
+        "login_context": {
+            "environment": "IG_DEMO" if account.get("environment") == "IG_DEMO" else None,
+            "resource_status": account.get("resource_status")
+            if account.get("resource_status") in {"PASS", "FAIL", "BLOCKED", "UNKNOWN"}
+            else None,
+            "context_bound": isinstance(account.get("account_context_fingerprint"), str),
+        },
+        "inventory": {
+            "stable": inventory.get("stable_across_bracket") is True,
+            "positions_count": bounded_count(inventory.get("positions_count")),
+            "working_orders_count": bounded_count(inventory.get("working_orders_count")),
+        },
+        "history": {
+            "entries_count": bounded_count(history.get("entries_count")),
+            "scope_complete": history.get("scope_complete") is True,
+        },
+        "market_economics": {
+            "status": market.get("status")
+            if market.get("status") in {"PASS", "BLOCKED", "UNKNOWN"} else "UNKNOWN",
+            "economics_verified": market.get("economics_verified") is True,
+        },
+        "m5": {
+            "raw_rows": bounded_count(m5.get("raw_rows"), 1000),
+            "closed_rows": bounded_count(m5.get("closed_rows"), 1000),
+            "fresh": m5.get("fresh") is True,
+        },
+        "clock": {
+            "provider_server_dates_observed": bounded_count(
+                clock.get("provider_server_dates_observed"), 8
+            ),
+            "session_clock_verified": clock.get("session_clock_verified") is True,
+        },
+        "provider_queries": bounded_count(evidence.get("provider_queries"), 8),
+    }
+
+
 def read_local_operator_projection(
     state_dir: Path, *, queried_at: datetime, attempt_store: StateStorePort | None = None,
     attempt_key: str | None = None, reservation_fingerprint: str | None = None,
@@ -185,11 +268,30 @@ def build_ig_operator_projection(
     market_data = market_data if isinstance(market_data, dict) else {}
     read_rows = evidence["authenticated_read_matrix"]["resources"]
     read_blocked = any(row.get("status") != "PASS" for row in read_rows)
-    for role, reason in (("H", "HOST_UNKNOWN"), ("D", "DEPENDENCY_MISSING"),
-                         ("B", "BROKER_READ_FAILED" if read_blocked else "BROKER_UNKNOWN"),
-                         ("S", "READINESS_BLOCKED" if read_blocked else "PROTECTION_UNKNOWN"),
-                         ("O", "DEPENDENCY_MISSING")):
-        event_time, valid_until, status, reasons = source_time, None, "UNKNOWN", (reason,)
+    derivation_outcomes = _safe_ig_derivation_outcomes(
+        evidence.get("derived_processing")
+    )
+    derived_blocked = (
+        evidence.get("derived_processing_complete") is not True
+        or any(row["status"] != "PASS" for row in derivation_outcomes.values())
+    )
+    safety_blocked = read_blocked or derived_blocked
+    role_defaults = (
+        ("H", "UNKNOWN", ("HOST_UNKNOWN",)),
+        ("D", "UNKNOWN", ("DEPENDENCY_MISSING",)),
+        ("B", "BLOCKED" if read_blocked else "PASS",
+         ("BROKER_READ_FAILED",) if read_blocked else ()),
+        ("S", "BLOCKED" if safety_blocked else "UNKNOWN",
+         ("READINESS_BLOCKED",) if safety_blocked else ("PROTECTION_UNKNOWN",)),
+        ("O", "PASS", ()),
+    )
+    for role, default_status, default_reasons in role_defaults:
+        event_time, valid_until, status, reasons = (
+            source_time,
+            None,
+            default_status,
+            default_reasons,
+        )
         if role == "D" and market_data.get("status") == "PASS":
             latest = market_data.get("latest_closed_m5", {})
             threshold = market_data.get("freshness_max_age_seconds")
@@ -226,6 +328,8 @@ def build_ig_operator_projection(
         "state": "BLOCKED" if binding.blockers or cycle.blockers else "UNKNOWN",
         "source_available": True, "queried_at_utc": queried_at.isoformat(),
         "read_outcomes": [_safe_ig_read_outcome(row) for row in read_rows],
+        "derivation_outcomes": derivation_outcomes,
+        "derivation_evidence": _safe_ig_derivation_evidence(evidence),
         "blockers": list(binding.blockers) + list(cycle.blockers) + ["SOURCE_FRESHNESS_POLICY_UNKNOWN"],
         "timestamps": {"snapshot_generated_at": source_time.isoformat(),
                        "snapshot_age_seconds": age, "heartbeat_observed_at": None},

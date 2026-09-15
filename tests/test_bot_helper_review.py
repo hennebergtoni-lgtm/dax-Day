@@ -209,7 +209,7 @@ def test_review_T14_actual_v3_to_safety_runtime_and_same_get_evidence(tmp_path, 
     if admitted:
         assert result.shadow_result is not None
         assert result.shadow_result.intent_to_publish is None
-        assert "BROKER_UNKNOWN" in result.cycle.blockers
+        assert "BROKER_READ_FAILED" not in result.cycle.blockers
         assert evidence["market"].get("quantity_step") is None
         assert evidence["market"]["economics_verified"] is False
     else:
@@ -314,3 +314,62 @@ def test_review_T07_five_green_reads_cannot_outvote_three_contract_failures():
     assert result.shadow_result is None and result.state == state
     assert result.cycle.evidence_scopes == ("REPLAY",)
     assert [row["resource"] for row in rows if row["status"] == "FAIL"] == list(failed)
+
+
+def test_review_T14_eight_raw_passes_cannot_outvote_one_derived_blocker():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from daxlab.adapters.ig_market_data import canonical_ig_m5_contract
+    from daxlab.runtime.bot_helper import run_ig_readiness_shadow
+    from daxlab.runtime.decision import stable_fingerprint
+    from test_run_ig_predemo_readiness_2238 import MatrixClient, runner
+
+    evidence, _ = runner.collect(
+        MatrixClient(), epic="IX.D.DAX.IFMM.IP", instrument_id="DAX", bars=40
+    )
+    evidence["derived_processing"]["HISTORY"] = {
+        "status": "BLOCKED",
+        "reason_code": "HISTORY_DERIVATION_FAILED",
+    }
+    evidence["derived_processing_complete"] = False
+    evidence = runner._finalize_evidence(
+        evidence, cleanup_status="PASS", cleanup_error_code="NONE"
+    )[0]
+    observed = datetime.fromisoformat(evidence["collected_at_utc"])
+    source_session = observed.astimezone(ZoneInfo("Europe/Berlin")).date().isoformat()
+    bound = replace(
+        subject(),
+        provider="IG",
+        environment="DEMO",
+        instrument_id=InstrumentId("DAX"),
+        session_id=source_session,
+        market_contract_fingerprint=stable_fingerprint(canonical_ig_m5_contract()),
+        account_fingerprint=evidence["account"]["account_context_fingerprint"],
+    )
+    state = Cand001ShadowState()
+    result = run_ig_readiness_shadow(
+        state,
+        evidence,
+        subject=bound,
+        observed_at=observed,
+        run_manifest=manifest(),
+        instrument_id=InstrumentId("DAX"),
+        epic="IX.D.DAX.IFMM.IP",
+    )
+    checks = {check.role: check for check in result.cycle.checks}
+    assert evidence["authenticated_read_matrix"]["counts"] == {
+        "PASS": 8,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "UNKNOWN": 0,
+    }
+    assert checks["H"].status == "PASS"
+    assert checks["D"].status == "PASS"
+    assert checks["B"].status == "PASS"
+    assert "BROKER_READ_FAILED" not in checks["B"].reason_codes
+    assert checks["S"].status == "BLOCKED"
+    assert "READINESS_BLOCKED" in checks["S"].reason_codes
+    assert checks["O"].status == "PASS"
+    assert result.cycle.shadow_allowed is False
+    assert result.shadow_result is None and result.state == state

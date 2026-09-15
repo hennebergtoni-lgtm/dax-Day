@@ -106,6 +106,49 @@ def test_operator_projects_all_safe_5_pass_3_fail_diagnostics(ig_server):
     assert view["helper_cycle"]["shadow_allowed"] is False
 
 
+def test_operator_separates_eight_pass_raw_reads_from_blocked_derivation(ig_server):
+    server, path, evidence = ig_server
+    evidence["derived_processing"]["HISTORY"] = {
+        "status": "BLOCKED",
+        "reason_code": "HISTORY_DERIVATION_FAILED",
+    }
+    evidence["derived_processing_complete"] = False
+    evidence.pop("fingerprint")
+    evidence["fingerprint"] = runner._fingerprint(evidence)
+    server.ig_evidence_fingerprint = evidence["fingerprint"]
+    atomic_write_json(path, evidence)
+
+    status, _, body = request(server)
+    assert status == 200
+    view = json.loads(body)
+    assert len(view["read_outcomes"]) == 8
+    assert all(row["status"] == "PASS" for row in view["read_outcomes"])
+    assert set(view["derivation_outcomes"]) == set(runner.IG_DERIVATION_STAGES)
+    assert len(view["derivation_outcomes"]) == len(runner.IG_DERIVATION_STAGES)
+    assert view["derivation_outcomes"]["HISTORY"] == {
+        "status": "BLOCKED",
+        "reason_code": "HISTORY_DERIVATION_FAILED",
+    }
+    assert view["derivation_evidence"]["raw_counts"] == {
+        "PASS": 8,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "UNKNOWN": 0,
+    }
+    assert view["derivation_evidence"]["history"] == {
+        "entries_count": 0,
+        "scope_complete": True,
+    }
+    checks = {row["role"]: row for row in view["helper_cycle"]["checks"]}
+    assert "BROKER_READ_FAILED" not in checks["B"]["reason_codes"]
+    assert checks["S"]["status"] == "BLOCKED"
+    assert "READINESS_BLOCKED" in checks["S"]["reason_codes"]
+    assert "DEPENDENCY_MISSING" not in checks["O"]["reason_codes"]
+    assert view["helper_cycle"]["shadow_allowed"] is False
+    assert view["execution_capability"] == "NONE"
+    assert view["order_execution_enabled"] is False
+
+
 def test_operator_drops_unknown_provider_code_even_after_evidence_reseal(ig_server):
     server, path, evidence = ig_server
     row = evidence["authenticated_read_matrix"]["resources"][2]

@@ -19,6 +19,18 @@ from daxlab.domain.risk import InstrumentRiskInputs
 
 
 IG_PREDEMO_SAFETY_SCHEMA = "DAXLAB_IG_PREDEMO_SAFETY_V1"
+IG_DERIVATION_STAGES = (
+    "MATRIX_CONSTRUCTION",
+    "LOGIN_CONTEXT",
+    "INVENTORY",
+    "HISTORY",
+    "MARKET_ECONOMICS",
+    "M5",
+    "CLOCK",
+    "DEPENDENT_CONCLUSIONS",
+    "EVIDENCE_ENRICHMENT",
+    "COMPONENT_CONSTRUCTION",
+)
 
 
 class GateStatus(StrEnum):
@@ -241,14 +253,9 @@ def _v3_binding_blockers(
     if matrix.get("status") != "PASS" or matrix.get("row_count") != 8:
         blockers.append("IG_READ_MATRIX_INCOMPLETE")
     derived = _mapping(evidence.get("derived_processing"), "derived processing")
-    required_stages = (
-        "MATRIX_CONSTRUCTION", "LOGIN_CONTEXT", "INVENTORY", "HISTORY",
-        "MARKET_ECONOMICS", "M5", "CLOCK", "DEPENDENT_CONCLUSIONS",
-        "EVIDENCE_ENRICHMENT", "COMPONENT_CONSTRUCTION",
-    )
     if evidence.get("derived_processing_complete") is not True or any(
         not isinstance(derived.get(stage), Mapping) or derived[stage].get("status") != "PASS"
-        for stage in required_stages
+        for stage in IG_DERIVATION_STAGES
     ):
         blockers.append("IG_READ_DERIVATION_INCOMPLETE")
     if evidence.get("single_authenticated_session") is not True:

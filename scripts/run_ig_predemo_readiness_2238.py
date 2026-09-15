@@ -33,6 +33,7 @@ from daxlab.adapters.ig_rest_readonly import (  # noqa: E402
 )
 
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object  # noqa: E402
+from daxlab.runtime.ig_predemo_safety import IG_DERIVATION_STAGES  # noqa: E402
 from daxlab.runtime.single_instance import SingleInstanceLock  # noqa: E402
 
 from ig_demo_readonly_probe import (  # noqa: E402
@@ -567,6 +568,37 @@ def _blocked(reason: str) -> dict[str, object]:
     return {"status": "BLOCKED", "reason_code": reason}
 
 
+def _safe_derivation_snapshot(value: object) -> dict[str, dict[str, str]]:
+    """Return all fixed stages without exposing exceptions or provider payloads."""
+    source = value if isinstance(value, Mapping) else {}
+    result: dict[str, dict[str, str]] = {}
+    for stage in IG_DERIVATION_STAGES:
+        row = source.get(stage)
+        status = row.get("status") if isinstance(row, Mapping) else None
+        reason = row.get("reason_code") if isinstance(row, Mapping) else None
+        if status not in {"PASS", "BLOCKED", "UNKNOWN"}:
+            status = "UNKNOWN"
+        if (
+            not isinstance(reason, str)
+            or not reason
+            or not reason.isascii()
+            or any(character not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_" for character in reason)
+        ):
+            reason = "DERIVATION_STATUS_UNAVAILABLE"
+        result[stage] = {"status": status, "reason_code": reason}
+    return result
+
+
+def _evidence_enrichment(
+    reads: list[IgReadinessRead], raw_rows: list[dict[str, object]]
+) -> int:
+    """Count attempted provider reads; raw rows remain the fallback authority."""
+    try:
+        return sum(item.request_started_at is not None for item in reads)
+    except Exception:
+        return sum(row.get("request_started_at_utc") is not None for row in raw_rows)
+
+
 def _clock_projection(
     reads: list[IgReadinessRead], account: Mapping[str, object]
 ) -> dict[str, object]:
@@ -627,6 +659,14 @@ def _build_components(evidence: Mapping[str, object]) -> dict[str, dict[str, obj
             "schema": SCHEMA,
             "authenticated_read_matrix": evidence["authenticated_read_matrix"],
             "dependent_conclusions": evidence["dependent_conclusions"],
+        },
+        "DERIVATION.json": {
+            "schema": SCHEMA,
+            "derived_processing": _safe_derivation_snapshot(
+                evidence.get("derived_processing")
+            ),
+            "derived_processing_complete": evidence.get("derived_processing_complete")
+            is True,
         },
         "ACCOUNT.json": {"schema": SCHEMA, "account": evidence["account"]},
         "INVENTORY.json": {"schema": SCHEMA, "inventory": inventory},
@@ -833,7 +873,10 @@ def collect(
         except Exception:
             observation_writer.failed = True
     results = {item.resource: item for item in reads}
-    derived_processing: dict[str, dict[str, str]] = {}
+    derived_processing: dict[str, dict[str, str]] = {
+        stage: {"status": "UNKNOWN", "reason_code": "DERIVATION_NOT_REACHED"}
+        for stage in IG_DERIVATION_STAGES
+    }
     try:
         matrix = _matrix_from_rows(raw_rows)
         derived_processing["MATRIX_CONSTRUCTION"] = {
@@ -1029,14 +1072,12 @@ def collect(
             "status": "BLOCKED", "reason_code": "DEPENDENT_DERIVATION_FAILED"
         }
     try:
-        provider_queries = sum(item.request_started_at is not None for item in reads)
+        provider_queries = _evidence_enrichment(reads, raw_rows)
         derived_processing["EVIDENCE_ENRICHMENT"] = {
             "status": "PASS", "reason_code": "NONE"
         }
     except Exception:
-        provider_queries = sum(
-            row.get("request_started_at_utc") is not None for row in raw_rows
-        )
+        provider_queries = 0
         derived_processing["EVIDENCE_ENRICHMENT"] = {
             "status": "BLOCKED", "reason_code": "EVIDENCE_ENRICHMENT_FAILED"
         }
@@ -1065,18 +1106,22 @@ def collect(
         "unknowns_preserved": True,
     }
     try:
-        components = _build_components(evidence)
         derived_processing["COMPONENT_CONSTRUCTION"] = {
             "status": "PASS", "reason_code": "NONE"
         }
+        evidence["derived_processing"] = _safe_derivation_snapshot(derived_processing)
+        evidence["derived_processing_complete"] = all(
+            derived_processing[stage]["status"] == "PASS"
+            for stage in IG_DERIVATION_STAGES
+        )
+        components = _build_components(evidence)
     except Exception:
         components = {}
         derived_processing["COMPONENT_CONSTRUCTION"] = {
             "status": "BLOCKED", "reason_code": "COMPONENT_CONSTRUCTION_FAILED"
         }
-    evidence["derived_processing_complete"] = all(
-        value["status"] == "PASS" for value in derived_processing.values()
-    )
+        evidence["derived_processing"] = _safe_derivation_snapshot(derived_processing)
+        evidence["derived_processing_complete"] = False
     return evidence, components
 
 
@@ -1116,11 +1161,12 @@ def _publish(
         "readiness_fingerprint": evidence["fingerprint"],
         "execution_capability": "NONE",
         "order_execution_enabled": False,
+        "derivation": _safe_derivation_snapshot(evidence.get("derived_processing")),
     }
     try:
         allowed_components = {
-            "READ_MATRIX.json", "ACCOUNT.json", "INVENTORY.json", "MARKET.json",
-            "CLOCK.json", "HISTORY_SCOPE.json",
+            "READ_MATRIX.json", "DERIVATION.json", "ACCOUNT.json", "INVENTORY.json",
+            "MARKET.json", "CLOCK.json", "HISTORY_SCOPE.json",
         }
         if set(components) - allowed_components:
             raise ValueError("unapproved evidence component")
@@ -1180,6 +1226,7 @@ def main() -> int:
     client = None
     login_succeeded = False
     observation_writer = None
+    evidence: dict[str, object] | None = None
     raw_rows = _initial_readiness_rows()
     phase = "VALIDATE"
     try:
@@ -1297,6 +1344,10 @@ def main() -> int:
             failure_payload["readiness_matrix_counts"] = failure_matrix["counts"]
             failure_payload["readiness_matrix"] = failure_matrix["resources"]
             failure_payload["readiness_matrix_row_count"] = failure_matrix["row_count"]
+        if isinstance(evidence, Mapping):
+            failure_payload["derivation"] = _safe_derivation_snapshot(
+                evidence.get("derived_processing")
+            )
         print(json.dumps(failure_payload, sort_keys=True))
         return 2
     finally:
@@ -1315,6 +1366,7 @@ def main() -> int:
         "readiness_matrix_counts": matrix_counts,
         "readiness_matrix": matrix.get("resources"),
         "readiness_matrix_row_count": matrix.get("row_count"),
+        "derivation": _safe_derivation_snapshot(evidence.get("derived_processing")),
         "execution_capability": "NONE",
         "order_execution_enabled": False,
     }, sort_keys=True))

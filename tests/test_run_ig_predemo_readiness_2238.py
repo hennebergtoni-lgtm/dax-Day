@@ -221,6 +221,10 @@ def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -
     )
     assert "SUMMARY: BLOCKED / FAIL_CLOSED; error_code=" in source
     assert source.index("COLLECTOR PRECHECK:") < source.index("AUTH READ-ONLY START:")
+    assert "function Write-IgDerivationMatrix" in source
+    assert "DERIVATION: rows={0}" in source
+    assert "DERIVED: stage={0}; status={1}; reason_code={2}" in source
+    assert source.count("Write-IgDerivationMatrix -Result") == 2
 
 
 def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> None:
@@ -425,8 +429,24 @@ def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatc
     assert evidence["execution_capability"] == "NONE"
     assert evidence["order_execution_enabled"] is False
     assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
-    assert set(components) == {"READ_MATRIX.json", "ACCOUNT.json", "INVENTORY.json",
-                               "MARKET.json", "CLOCK.json", "HISTORY_SCOPE.json"}
+    assert set(components) == {
+        "READ_MATRIX.json",
+        "DERIVATION.json",
+        "ACCOUNT.json",
+        "INVENTORY.json",
+        "MARKET.json",
+        "CLOCK.json",
+        "HISTORY_SCOPE.json",
+    }
+    assert tuple(evidence["derived_processing"]) == runner.IG_DERIVATION_STAGES
+    assert all(
+        row == {"status": "PASS", "reason_code": "NONE"}
+        for row in evidence["derived_processing"].values()
+    )
+    assert components["DERIVATION.json"]["derived_processing"] == evidence[
+        "derived_processing"
+    ]
+    assert components["DERIVATION.json"]["derived_processing_complete"] is True
 
 
 @pytest.mark.parametrize(
@@ -512,6 +532,7 @@ def test_unreadable_auth_health_is_not_misclassified_as_definitive_loss() -> Non
         ("M5", "_closed_candles"),
         ("CLOCK", "_clock_projection"),
         ("DEPENDENT_CONCLUSIONS", "_dependent_projection"),
+        ("EVIDENCE_ENRICHMENT", "_evidence_enrichment"),
         ("COMPONENT_CONSTRUCTION", "_build_components"),
     ),
 )
@@ -529,6 +550,7 @@ def test_each_derived_processing_exception_preserves_raw_eight_row_matrix(
     assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
     assert evidence["derived_processing"][stage]["status"] == "BLOCKED"
     assert evidence["derived_processing_complete"] is False
+    assert tuple(evidence["derived_processing"]) == runner.IG_DERIVATION_STAGES
     assert "credential-and-account-secret" not in json.dumps(evidence)
 
 
@@ -544,6 +566,7 @@ def test_login_context_projection_exception_preserves_raw_eight_row_matrix() -> 
     assert evidence["authenticated_read_matrix"]["row_count"] == 8
     assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
     assert evidence["derived_processing"]["LOGIN_CONTEXT"]["status"] == "BLOCKED"
+    assert tuple(evidence["derived_processing"]) == runner.IG_DERIVATION_STAGES
 
 
 def test_history_projection_exception_preserves_raw_eight_row_matrix() -> None:
@@ -561,6 +584,7 @@ def test_history_projection_exception_preserves_raw_eight_row_matrix() -> None:
     assert evidence["authenticated_read_matrix"]["row_count"] == 8
     assert evidence["authenticated_read_matrix"]["counts"]["PASS"] == 8
     assert evidence["derived_processing"]["HISTORY"]["status"] == "BLOCKED"
+    assert tuple(evidence["derived_processing"]) == runner.IG_DERIVATION_STAGES
 
 
 @pytest.mark.parametrize(
@@ -944,3 +968,55 @@ def test_incomplete_read_matrix_is_published_after_one_cleanup(
     summary = json.loads((tmp_path / ".runtime/attempt/SUMMARY.json").read_text())
     assert summary["status"] == "BLOCKED"
     assert summary["error_code"] == "IG_READINESS_MATRIX_INCOMPLETE"
+
+
+def test_eight_pass_reads_publish_exact_blocked_derivation_without_raw_loss(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    client = MatrixClient()
+    original_collect = runner.collect
+
+    def collect(*args, **kwargs):
+        evidence, components = original_collect(*args, **kwargs)
+        evidence["derived_processing"]["HISTORY"] = {
+            "status": "BLOCKED",
+            "reason_code": "HISTORY_DERIVATION_FAILED",
+        }
+        evidence["derived_processing_complete"] = False
+        return evidence, components
+
+    monkeypatch.setattr(sys, "argv", [
+        "run_ig_predemo_readiness_2238.py",
+        "--expected-head", "d" * 40,
+        "--credentials-file", str(tmp_path / "credentials.env"),
+        "--runtime-root", str(tmp_path),
+        "--namespace", ".runtime/attempt",
+    ])
+    monkeypatch.setattr(runner, "_head", lambda: "d" * 40)
+    monkeypatch.setattr(runner, "_credentials_from_file", lambda _: object())
+    monkeypatch.setattr(runner, "IgDemoReadOnlyClient", lambda _: client)
+    monkeypatch.setattr(runner, "collect", collect)
+
+    assert runner.main() == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["error_code"] == "IG_READINESS_DERIVATION_INCOMPLETE"
+    assert result["readiness_matrix_counts"] == {
+        "PASS": 8,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "UNKNOWN": 0,
+    }
+    assert set(result["derivation"]) == set(runner.IG_DERIVATION_STAGES)
+    assert len(result["derivation"]) == len(runner.IG_DERIVATION_STAGES)
+    assert result["derivation"]["HISTORY"] == {
+        "status": "BLOCKED",
+        "reason_code": "HISTORY_DERIVATION_FAILED",
+    }
+    assert all(
+        row["status"] == "PASS" for row in result["readiness_matrix"]
+    )
+    published = json.loads((tmp_path / ".runtime/attempt/DERIVATION.json").read_text())
+    assert published["derived_processing"] == result["derivation"]
+    summary = json.loads((tmp_path / ".runtime/attempt/SUMMARY.json").read_text())
+    assert summary["derivation"] == result["derivation"]
+    assert client.login_calls == 1 and client.logout_calls == 1

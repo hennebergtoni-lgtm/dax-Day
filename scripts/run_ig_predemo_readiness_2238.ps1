@@ -236,6 +236,36 @@ function Write-IgReadinessMatrix {
     }
 }
 
+function Write-IgDerivationMatrix {
+    param([Parameter(Mandatory = $true)]$Result)
+    $stages = @(
+        'MATRIX_CONSTRUCTION', 'LOGIN_CONTEXT', 'INVENTORY', 'HISTORY',
+        'MARKET_ECONOMICS', 'M5', 'CLOCK', 'DEPENDENT_CONCLUSIONS',
+        'EVIDENCE_ENRICHMENT', 'COMPONENT_CONSTRUCTION'
+    )
+    try {
+        $property = $Result.PSObject.Properties['derivation']
+        if ($null -eq $property -or $null -eq $property.Value) { return }
+        Write-Host ('DERIVATION: rows={0}' -f $stages.Count)
+        foreach ($stage in $stages) {
+            $rowProperty = $property.Value.PSObject.Properties[$stage]
+            if ($null -eq $rowProperty -or $null -eq $rowProperty.Value) {
+                throw 'INVALID_DERIVATION_STAGE'
+            }
+            $status = [string]$rowProperty.Value.status
+            $reason = [string]$rowProperty.Value.reason_code
+            if ($status -notin @('PASS', 'BLOCKED', 'UNKNOWN') -or
+                $reason -notmatch '^[A-Z][A-Z0-9_]*$') {
+                throw 'INVALID_DERIVATION_ROW'
+            }
+            Write-Host ('DERIVED: stage={0}; status={1}; reason_code={2}' -f
+                $stage, $status, $reason)
+        }
+    } catch {
+        Write-Host 'DERIVATION: SANITIZED_SHAPE_INVALID'
+    }
+}
+
 function Import-DaxHostRuntimeOwner {
     param(
         [Parameter(Mandatory = $true)][string]$DeploymentRoot,
@@ -521,10 +551,12 @@ function Invoke-Closeout {
                 -ScriptPath $collectorPath -Arguments $collectorArguments `
                 -SafePayloadCodes $SafeErrorCodes
             Write-IgReadinessMatrix -Result $collectorResult
+            Write-IgDerivationMatrix -Result $collectorResult
             return $collectorResult
         } catch {
             if ($_.Exception.Data.Contains('HostLaneResult')) {
                 Write-IgReadinessMatrix -Result $_.Exception.Data['HostLaneResult']
+                Write-IgDerivationMatrix -Result $_.Exception.Data['HostLaneResult']
             }
             try { $_.Exception.Data['FailurePhase'] = 'IG_SESSION' } catch { }
             throw
