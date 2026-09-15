@@ -4,6 +4,8 @@ import importlib.util
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 
 
@@ -76,46 +78,76 @@ def test_market_v4_does_not_infer_tick_or_quantity_grid_from_digits() -> None:
 
 def test_windows_wrapper_is_exact_head_isolated_get_only_and_non_destructive() -> None:
     source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
-    assert source.count("'run_ig_predemo_readiness_2238.py'") == 2
-    assert "$collectorPath" in source
+    owner = (SCRIPTS / "ig_predemo_python_runtime.psm1").read_text(encoding="utf-8")
+    assert "ig_predemo_python_runtime.psm1" in source
+    assert "Invoke-Step2238Collector" in source
     assert "clone --quiet --no-checkout --no-hardlinks" in source
     assert "checkout --quiet --detach" in source
-    assert "--runtime-root $RuntimeRoot" in source
+    assert "--runtime-root $RuntimeRoot" in owner
     assert "existing checkout remains untouched" in source
     assert "worktree add" not in source and "worktree prune" not in source
     assert "'reset'" not in source and "'stash'" not in source
     assert "'merge'" not in source and "'clean'" not in source
     assert "--force" not in source
-    assert "order_send" not in source and "/positions/otc" not in source
+    assert "order_send" not in source + owner and "/positions/otc" not in source + owner
     assert "DAX_STEP2238_DEPLOYMENT_OWNER_V1" in source
     assert "SUMMARY: BLOCKED / FAIL_CLOSED; error_code=" in source
 
 
 def test_windows_wrapper_preflights_exact_interpreter_and_import_origins() -> None:
     source = (SCRIPTS / "run_ig_predemo_readiness_2238.ps1").read_text(encoding="utf-8")
+    owner = (SCRIPTS / "ig_predemo_python_runtime.psm1").read_text(encoding="utf-8")
     for error_code in (
-        "PYTHON_COMMAND_NOT_FOUND",
-        "PYTHON_EXECUTABLE_INVALID",
-        "PYTHON_VERSION_PROBE_FAILED",
+        "PYTHON_COMMAND_DISCOVERY_FAILED",
+        "PYTHON_COMMAND_RESULT_NULL",
+        "PYTHON_COMMAND_RESULT_MULTIPLE",
+        "PYTHON_EXECUTABLE_PATH_FAILED",
+        "PYTHON_VERSION_PROBE_LAUNCH_FAILED",
         "PYTHON_VERSION_UNSUPPORTED",
-        "PYTHON_IDENTITY_INVALID",
+        "PYTHON_VERSION_IDENTITY_INVALID",
         "PYTHON_SCRIPT_MISSING",
-        "PYTHON_IMPORT_PROBE_FAILED",
+        "PYTHON_IMPORT_PROBE_LAUNCH_FAILED",
+        "PYTHON_IMPORT_ORIGIN_PATH_FAILED",
         "PYTHON_IMPORT_ORIGIN_MISMATCH",
         "PYTHON_COLLECTOR_START_FAILED",
+        "PYTHON_COLLECTOR_RESPONSE_NULL",
         "PYTHON_COLLECTOR_NO_OUTPUT",
         "PYTHON_COLLECTOR_MULTILINE_OUTPUT",
+        "PYTHON_COLLECTOR_JSON_INVALID",
         "PYTHON_COLLECTOR_RESULT_INVALID",
         "PYTHON_COLLECTOR_EXIT_MISMATCH",
+        "PYTHON_STAGE_INTERNAL_FAILURE",
     ):
         assert f"'{error_code}'" in source
-    assert "-CommandType Application" in source
-    assert source.count("-I -S -c") == 3
-    assert "sys.path[:0] = [str(src), str(scripts)]" in source
-    assert "daxlab_origin" in source and "runner_origin" in source
+    assert "-CommandType Application" in owner
+    assert owner.count("-I -S -c") == 2
+    assert "sys.path[:0] = [str(src), str(scripts)]" in owner
+    assert "daxlab_origin" in owner and "runner_origin" in owner
     assert "PYTHON_START_FAILED" not in source
     assert "PYTHON_RESULT_INVALID" not in source
-    assert source.count("2>$null") >= 3
+    assert owner.count("2>$null") == 2
+    assert "Get-Step2238Property" in owner
+    assert "Get-Step2238FullPath" in owner
+
+
+def test_python_runtime_failure_injection_is_executable_when_pwsh_exists() -> None:
+    pwsh = shutil.which("pwsh")
+    if pwsh is None:
+        return
+    completed = subprocess.run(
+        [
+            pwsh,
+            "-NoProfile",
+            "-File",
+            str(ROOT / "tests/powershell/ig_predemo_python_runtime_failure_injection.ps1"),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "Step2238 Python runtime failure injection: OK" in completed.stdout
 
 
 def test_collector_brackets_inventory_and_preserves_unknown_economics(monkeypatch) -> None:

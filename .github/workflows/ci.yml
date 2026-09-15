@@ -49,6 +49,17 @@ jobs:
           $parseErrors = $null
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/run_ig_predemo_readiness_2238.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
           if ($parseErrors.Count -ne 0) { throw 'PREDEMO_RUNNER_SYNTAX_INVALID' }
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/ig_predemo_python_runtime.psm1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -ne 0) { throw 'PREDEMO_PYTHON_OWNER_SYNTAX_INVALID' }
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'tests/powershell/ig_predemo_python_runtime_failure_injection.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -ne 0) { throw 'PREDEMO_PYTHON_INJECTION_SYNTAX_INVALID' }
+      - name: Step2238 Python launch failure injection
+        shell: pwsh
+        run: tests/powershell/ig_predemo_python_runtime_failure_injection.ps1
       - name: Export runner fixed fail-closed code contract
         shell: bash
         run: |

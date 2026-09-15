@@ -20,13 +20,29 @@ $SafeErrorCodes = @(
     'ISOLATED_CHECKOUT_FAILED', 'DEPLOYMENT_HEAD_QUERY_FAILED',
     'DEPLOYMENT_HEAD_MISMATCH', 'DEPLOYMENT_STATUS_FAILED',
     'DEPLOYMENT_NOT_CLEAN', 'DEPLOYMENT_CLEANUP_FAILED_RETAINED',
-    'PYTHON_COMMAND_NOT_FOUND',
-    'PYTHON_EXECUTABLE_INVALID', 'PYTHON_VERSION_PROBE_FAILED',
-    'PYTHON_VERSION_UNSUPPORTED', 'PYTHON_IDENTITY_INVALID',
-    'PYTHON_SCRIPT_MISSING', 'PYTHON_IMPORT_PROBE_FAILED',
-    'PYTHON_IMPORT_ORIGIN_MISMATCH', 'PYTHON_COLLECTOR_START_FAILED',
+    'PYTHON_RUNTIME_OWNER_PATH_FAILED', 'PYTHON_RUNTIME_OWNER_MISSING',
+    'PYTHON_RUNTIME_OWNER_IMPORT_FAILED', 'PYTHON_COMMAND_DISCOVERY_FAILED',
+    'PYTHON_COMMAND_RESULT_NULL', 'PYTHON_COMMAND_RESULT_MULTIPLE',
+    'PYTHON_COMMAND_IDENTITY_INVALID', 'PYTHON_EXECUTABLE_PATH_FAILED',
+    'PYTHON_EXECUTABLE_CHECK_FAILED', 'PYTHON_EXECUTABLE_NOT_FOUND',
+    'PYTHON_DISCOVERY_INTERNAL_FAILURE', 'PYTHON_DEPLOYMENT_PATH_BUILD_FAILED',
+    'PYTHON_SCRIPT_CHECK_FAILED', 'PYTHON_SCRIPT_MISSING',
+    'PYTHON_VERSION_PROBE_LAUNCH_FAILED', 'PYTHON_VERSION_PROBE_RESPONSE_INVALID',
+    'PYTHON_VERSION_PROBE_OUTPUT_INVALID', 'PYTHON_VERSION_PROBE_EXIT_FAILED',
+    'PYTHON_VERSION_PROBE_JSON_INVALID', 'PYTHON_VERSION_IDENTITY_INVALID',
+    'PYTHON_VERSION_UNSUPPORTED', 'PYTHON_IDENTITY_PATH_FAILED',
+    'PYTHON_EXECUTABLE_IDENTITY_MISMATCH', 'PYTHON_IMPORT_PROBE_LAUNCH_FAILED',
+    'PYTHON_IMPORT_PROBE_RESPONSE_INVALID', 'PYTHON_IMPORT_PROBE_OUTPUT_INVALID',
+    'PYTHON_IMPORT_PROBE_EXIT_FAILED', 'PYTHON_IMPORT_PROBE_JSON_INVALID',
+    'PYTHON_IMPORT_IDENTITY_INVALID', 'PYTHON_IMPORT_ORIGIN_PATH_FAILED',
+    'PYTHON_IMPORT_ORIGIN_COMPARE_FAILED', 'PYTHON_IMPORT_ORIGIN_MISMATCH',
+    'PYTHON_PARITY_INTERNAL_FAILURE', 'PYTHON_COLLECTOR_PATHS_INVALID',
+    'PYTHON_COLLECTOR_START_FAILED', 'PYTHON_COLLECTOR_RESPONSE_NULL',
+    'PYTHON_COLLECTOR_RESPONSE_INVALID', 'PYTHON_COLLECTOR_OUTPUT_TYPE_INVALID',
     'PYTHON_COLLECTOR_NO_OUTPUT', 'PYTHON_COLLECTOR_MULTILINE_OUTPUT',
-    'PYTHON_COLLECTOR_RESULT_INVALID', 'PYTHON_COLLECTOR_EXIT_MISMATCH',
+    'PYTHON_COLLECTOR_JSON_INVALID', 'PYTHON_COLLECTOR_RESULT_INVALID',
+    'PYTHON_COLLECTOR_EXIT_MISMATCH', 'PYTHON_COLLECTOR_INTERNAL_FAILURE',
+    'PYTHON_STAGE_INTERNAL_FAILURE',
     'GOVERNANCE_WINDOWS_HOST_REQUIRED', 'GOVERNANCE_INVALID_HEAD',
     'GOVERNANCE_HEAD_MISMATCH', 'GOVERNANCE_TRACKED_DRIFT',
     'GOVERNANCE_UNTRACKED_CODE', 'GOVERNANCE_IMPORT_PARITY',
@@ -173,131 +189,26 @@ function Test-RunnerOwnedDeployment {
     }
 }
 
-function Resolve-PythonRuntime {
-    try {
-        $command = Get-Command -Name $PythonExecutable -CommandType Application `
-            -ErrorAction Stop
-    } catch {
-        throw 'PYTHON_COMMAND_NOT_FOUND'
-    }
-    $path = [System.IO.Path]::GetFullPath([string]$command.Source)
-    if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
-        throw 'PYTHON_EXECUTABLE_INVALID'
-    }
-    return $path
-}
-
-function Test-PythonRuntimeParity {
-    param(
-        [Parameter(Mandatory = $true)][string]$PythonPath,
-        [Parameter(Mandatory = $true)][string]$DeploymentRoot
-    )
-    $sourceRoot = Join-Path $DeploymentRoot 'src'
-    $scriptsRoot = Join-Path $DeploymentRoot 'scripts'
-    $collectorPath = Join-Path $scriptsRoot 'run_ig_predemo_readiness_2238.py'
-    if (!(Test-Path -LiteralPath $collectorPath -PathType Leaf)) {
-        throw 'PYTHON_SCRIPT_MISSING'
-    }
-    $versionProbe = 'import json, pathlib, sys; print(json.dumps({' +
-        '"major":sys.version_info.major,"minor":sys.version_info.minor,' +
-        '"executable":str(pathlib.Path(sys.executable).resolve())},' +
-        'separators=(",",":")))'
-    try {
-        $versionLines = @(& $PythonPath -I -S -c $versionProbe 2>$null)
-        $versionExitCode = $LASTEXITCODE
-    } catch {
-        throw 'PYTHON_VERSION_PROBE_FAILED'
-    }
-    if ($versionExitCode -ne 0 -or !$versionLines -or $versionLines.Count -ne 1) {
-        throw 'PYTHON_VERSION_PROBE_FAILED'
-    }
-    try {
-        $version = $versionLines[0] | ConvertFrom-Json -ErrorAction Stop
-    } catch {
-        throw 'PYTHON_IDENTITY_INVALID'
-    }
-    if ($version.major -ne 3 -or $version.minor -lt 11) {
-        throw 'PYTHON_VERSION_UNSUPPORTED'
-    }
-    $expectedExecutable = [System.IO.Path]::GetFullPath($PythonPath)
-    $observedExecutable = [System.IO.Path]::GetFullPath([string]$version.executable)
-    if ($expectedExecutable -ne $observedExecutable) { throw 'PYTHON_IDENTITY_INVALID' }
-    $probe = @'
-import importlib, json, pathlib, sys
-src = pathlib.Path(sys.argv[1]).resolve()
-scripts = pathlib.Path(sys.argv[2]).resolve()
-sys.path[:0] = [str(src), str(scripts)]
-daxlab = importlib.import_module("daxlab")
-runner = importlib.import_module("run_ig_predemo_readiness_2238")
-print(json.dumps({"daxlab_origin": str(pathlib.Path(daxlab.__file__).resolve()),
-"runner_origin": str(pathlib.Path(runner.__file__).resolve())}, separators=(",", ":")))
-'@
-    try {
-        $lines = @(& $PythonPath -I -S -c $probe $sourceRoot $scriptsRoot 2>$null)
-        $exitCode = $LASTEXITCODE
-    } catch {
-        throw 'PYTHON_IMPORT_PROBE_FAILED'
-    }
-    if ($exitCode -ne 0) { throw 'PYTHON_IMPORT_PROBE_FAILED' }
-    if (!$lines -or $lines.Count -ne 1) { throw 'PYTHON_IDENTITY_INVALID' }
-    try {
-        $identity = $lines[0] | ConvertFrom-Json -ErrorAction Stop
-    } catch {
-        throw 'PYTHON_IDENTITY_INVALID'
-    }
-    $expectedDaxlabRoot = [System.IO.Path]::GetFullPath(
-        (Join-Path $sourceRoot 'daxlab')
-    ).TrimEnd([System.IO.Path]::DirectorySeparatorChar) +
-        [System.IO.Path]::DirectorySeparatorChar
-    $observedDaxlab = [System.IO.Path]::GetFullPath([string]$identity.daxlab_origin)
-    $expectedRunner = [System.IO.Path]::GetFullPath($collectorPath)
-    $observedRunner = [System.IO.Path]::GetFullPath([string]$identity.runner_origin)
-    if (!$observedDaxlab.StartsWith(
-            $expectedDaxlabRoot, [StringComparison]::OrdinalIgnoreCase) -or
-        $observedRunner -ne $expectedRunner) {
-        throw 'PYTHON_IMPORT_ORIGIN_MISMATCH'
-    }
-}
-
 function Invoke-Closeout {
     param([Parameter(Mandatory = $true)][string]$DeploymentRoot)
-    $pythonPath = Resolve-PythonRuntime
-    Test-PythonRuntimeParity -PythonPath $pythonPath -DeploymentRoot $DeploymentRoot
-    $sourceRoot = Join-Path $DeploymentRoot 'src'
-    $scriptsRoot = Join-Path $DeploymentRoot 'scripts'
-    $collectorPath = Join-Path $scriptsRoot 'run_ig_predemo_readiness_2238.py'
-    $bootstrap = @'
-import pathlib, runpy, sys
-src = pathlib.Path(sys.argv.pop(1)).resolve()
-scripts = pathlib.Path(sys.argv.pop(1)).resolve()
-collector = pathlib.Path(sys.argv.pop(1)).resolve()
-sys.path[:0] = [str(src), str(scripts)]
-sys.argv[0] = str(collector)
-runpy.run_path(str(collector), run_name="__main__")
-'@
     try {
-        $resultLines = @(
-            & $pythonPath -I -S -c $bootstrap $sourceRoot $scriptsRoot $collectorPath `
-                --expected-head $ExpectedHead --namespace $Namespace `
-                --credentials-file $CredentialsFile --runtime-root $RuntimeRoot 2>$null
-        )
-        $exitCode = $LASTEXITCODE
+        try { $modulePath = Join-Path $DeploymentRoot 'scripts/ig_predemo_python_runtime.psm1' -ErrorAction Stop }
+        catch { throw 'PYTHON_RUNTIME_OWNER_PATH_FAILED' }
+        try { $modulePresent = Test-Path -LiteralPath $modulePath -PathType Leaf -ErrorAction Stop }
+        catch { throw 'PYTHON_RUNTIME_OWNER_MISSING' }
+        if (!$modulePresent) { throw 'PYTHON_RUNTIME_OWNER_MISSING' }
+        try { Import-Module -Name $modulePath -Force -ErrorAction Stop }
+        catch { throw 'PYTHON_RUNTIME_OWNER_IMPORT_FAILED' }
+        $pythonPath = Resolve-Step2238PythonRuntime -PythonExecutable $PythonExecutable
+        $parity = Test-Step2238PythonRuntimeParity -PythonPath $pythonPath -DeploymentRoot $DeploymentRoot
+        return Invoke-Step2238Collector -PythonPath $pythonPath -Parity $parity `
+            -ExpectedHead $ExpectedHead -Namespace $Namespace `
+            -CredentialsFile $CredentialsFile -RuntimeRoot $RuntimeRoot `
+            -SafeErrorCodes $SafeErrorCodes
     } catch {
-        throw 'PYTHON_COLLECTOR_START_FAILED'
+        if ($SafeErrorCodes -contains $_.Exception.Message) { throw }
+        throw 'PYTHON_STAGE_INTERNAL_FAILURE'
     }
-    if (!$resultLines) { throw 'PYTHON_COLLECTOR_NO_OUTPUT' }
-    if ($resultLines.Count -ne 1) { throw 'PYTHON_COLLECTOR_MULTILINE_OUTPUT' }
-    try {
-        $result = $resultLines[0] | ConvertFrom-Json -ErrorAction Stop
-    } catch {
-        throw 'PYTHON_COLLECTOR_RESULT_INVALID'
-    }
-    if ($exitCode -eq 0 -and $result.status -eq 'SUCCESS') { return $result }
-    $innerCode = [string]$result.error_code
-    if ($exitCode -eq 0 -or $SafeErrorCodes -notcontains $innerCode) {
-        throw 'PYTHON_COLLECTOR_EXIT_MISMATCH'
-    }
-    throw $innerCode
 }
 
 $deploymentParent = $null

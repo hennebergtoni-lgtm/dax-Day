@@ -1,5 +1,21 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
+
+The immutable-head Windows run on
+`bbd1d29671f8d275179a38d04681dfdfca3fc248` reached deployment and WAIT, then
+failed closed with `RUNNER_UNEXPECTED_FAILURE`. No Step2238 evidence bundle was
+accepted; `legacy_partial_state=NONE_DETECTED`, host state/evidence stayed
+intact, execution stayed disabled and no broker side effect occurred.
+
+The replacement provides exhaustive fixed-code normalization around PowerShell,
+.NET paths, command-result cardinality, Python version/executable identity,
+import JSON/origins and collector bootstrap, with injection tests and stderr
+secrecy. This is implementation evidence only. M01 stays **IN_PROGRESS** and the
+27-gate tally stays **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6
+BLOCKED** pending a successful real run. NONE/false; no DEMO order; LIVE
+prohibited.
+
 ## Step2238 Python-start hardening — authoritative (2026-09-15)
 
 The real Windows run on `60539746383cbf0753d282f149d447d6e63c1130`

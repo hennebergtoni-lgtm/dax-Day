@@ -1,5 +1,22 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
+
+The real Windows run on immutable head
+`bbd1d29671f8d275179a38d04681dfdfca3fc248` reached exact-head deployment and
+WAIT, then stopped fail-closed with `RUNNER_UNEXPECTED_FAILURE`.
+`legacy_partial_state=NONE_DETECTED`; checkout/evidence were retained and
+execution stayed disabled. This does not identify a leaf cause and does not
+prove an IG login or read. No broker side effect occurred.
+
+The replacement introduces one PowerShell owner for interpreter discovery,
+version/executable identity, import origins and collector bootstrap. Native
+PowerShell/.NET, path, null/array command, response-shape, JSON type/origin and
+collector-start failures now normalize to documented credential-free codes;
+stderr remains suppressed. Failure-injection coverage is mandatory in CI.
+Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL**; M01/gates do not advance;
+NONE/false remains binding, no DEMO order, LIVE prohibited.
+
 ## Step2238 Python-start hardening — authoritative (2026-09-15)
 
 The real Windows run on `60539746383cbf0753d282f149d447d6e63c1130`

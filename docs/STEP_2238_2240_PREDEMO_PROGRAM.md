@@ -1,6 +1,24 @@
  1 file changed, 1 insertion(+), 1 deletion(-)
 # Step2238–2240 pre-DEMO readiness program
 
+## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
+
+The real Windows run on immutable head
+`bbd1d29671f8d275179a38d04681dfdfca3fc248` reached deployment and WAIT but
+returned `RUNNER_UNEXPECTED_FAILURE`. `legacy_partial_state=NONE_DETECTED`;
+checkout/evidence were retained, execution remained disabled and no broker side
+effect occurred. Because stderr is deliberately secret, the leaf cause is
+UNKNOWN and must not be invented.
+
+The successor uses `ig_predemo_python_runtime.psm1` as the sole owner for Python
+discovery, version/executable identity, isolated import-origin checks and
+collector bootstrap/result validation. Native PowerShell/.NET exceptions,
+Get-Command null/array results, path failures, malformed JSON/property/type
+shapes, import anomalies and collector failures have fixed credential-free
+codes and failure-injection tests. No retry or broker action was added. Step2238
+remains **IMPLEMENTED / WAITING_EXTERNAL**; Step2239/2240, M01 and the 27 gates
+do not advance; NONE/false and the LIVE block remain binding.
+
 ## Step2238 Python-start hardening — authoritative (2026-09-15)
 
 The real Windows run on `60539746383cbf0753d282f149d447d6e63c1130`

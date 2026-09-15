@@ -1,5 +1,22 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
+
+The real Windows run on immutable head
+`bbd1d29671f8d275179a38d04681dfdfca3fc248` reached exact-head deployment and
+WAIT, then stopped fail-closed with `RUNNER_UNEXPECTED_FAILURE`.
+`legacy_partial_state=NONE_DETECTED`; checkout/evidence were retained and
+execution stayed disabled. The leaf cause remains unknown; no IG login/read is
+proven and no broker side effect occurred.
+
+The runner now delegates discovery, version/identity, import-origin and
+collector bootstrap to one testable PowerShell owner. Every audited
+PowerShell/.NET, path, null/array, JSON property/type, origin and bootstrap
+failure maps to a fixed credential-free code with stderr suppressed. CI injects
+these failures. Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL**. Current
+readiness remains 8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED;
+NONE/false, no order and LIVE prohibition remain unchanged.
+
 ## Step2238 Python-start hardening — authoritative (2026-09-15)
 
 The real Windows run on `60539746383cbf0753d282f149d447d6e63c1130`

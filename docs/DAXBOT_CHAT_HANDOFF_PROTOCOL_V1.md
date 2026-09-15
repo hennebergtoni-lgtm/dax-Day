@@ -1,5 +1,20 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
+
+The exact-head Windows run on
+`bbd1d29671f8d275179a38d04681dfdfca3fc248` reached WAIT and then failed closed
+as `RUNNER_UNEXPECTED_FAILURE`. `legacy_partial_state=NONE_DETECTED`; existing
+checkout/evidence were retained, execution was disabled and no broker side
+effect occurred. No narrower cause may be inferred.
+
+The successor wrapper has one tested PowerShell Python-runtime owner. All
+discovery/version/identity/import-origin/collector-start operations, including
+native .NET/path exceptions and malformed null/array/JSON shapes, terminate in
+documented credential-free codes with secret stderr suppressed. Handoff is one
+replacement command only; no manual diagnostics and no order. Step2238 remains
+**IMPLEMENTED / WAITING_EXTERNAL**, NONE/false; LIVE prohibited.
+
 ## Step2238 Python-start hardening — authoritative (2026-09-15)
 
 The real Windows run on `60539746383cbf0753d282f149d447d6e63c1130`

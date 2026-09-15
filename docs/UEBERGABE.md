@@ -1,5 +1,19 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
+
+Immutable head `bbd1d29671f8d275179a38d04681dfdfca3fc248`
+reached deployment and WAIT but returned `RUNNER_UNEXPECTED_FAILURE`.
+`legacy_partial_state=NONE_DETECTED`; checkout/evidence remained intact,
+execution disabled, and no broker side effect occurred. The unknown leaf must
+not be guessed.
+
+Use only the replacement exact-head command. Its dedicated Python-runtime owner
+normalizes discovery, version/identity, import-origin, path/JSON anomalies and
+collector bootstrap exceptions to fixed credential-free codes while suppressing
+stderr. Do not run a manual diagnostic chain or any order. Step2238 remains
+**IMPLEMENTED / WAITING_EXTERNAL** and capability remains NONE/false.
+
 ## Step2238 Python-start hardening — authoritative (2026-09-15)
 
 The real Windows run on `60539746383cbf0753d282f149d447d6e63c1130`
