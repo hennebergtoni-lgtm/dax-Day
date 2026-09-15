@@ -1,5 +1,30 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 authenticated matrix availability invariant — authoritative (2026-09-15)
+
+The latest real Windows evidence reaches successful login and authenticated READ
+after the previously proven exact-head deployment, 50/52 preflight and collector
+precheck, but the former collector could still exit before publishing any matrix
+when one call escaped the list construction. The absent matrix is not interpreted
+as a failure of a particular IG endpoint.
+
+The active V3 contract preallocates an ordered raw ledger for ACCOUNTS,
+POSITIONS_A, WORKING_ORDERS_A, MARKET_V4, ACTIVITY_HISTORY, M5_PRICES,
+POSITIONS_B and WORKING_ORDERS_B before login. Each call has an outer guard; an
+unclassified exception produces one sanitized UNKNOWN row and does not suppress
+the other independent GETs. Only definitive authentication loss blocks later
+calls. Every derived and publication stage is separately guarded, and the raw
+ledger is attached to structured stdout even if evidence finalization or
+publication fails. Historical V2 evidence and namespaces are preserved; new
+evidence uses V3 and a non-overwriting V3 namespace.
+
+Failure injection enforces `login_success=true => row_count=8` across every
+resource, invalid result shapes, auth-state anomalies, all derived projections,
+cleanup, evidence finalization and publication. Step2238 remains
+IMPLEMENTED/WAITING_EXTERNAL; M01 IN_PROGRESS; 27 gates remain 8/0/13/6; DEMO
+NOT READY. `execution_capability=NONE`, `order_execution_enabled=false`, no
+retry/order and LIVE prohibition remain binding.
+
 ## Step2238 real-host module isolation/diagnostics — authoritative (2026-09-15)
 
 Real Windows head `575666143c92d21d4fb211655098c41a936eac79`

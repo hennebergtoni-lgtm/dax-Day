@@ -1,5 +1,25 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Active Step2238 handoff — eight-row post-login invariant (2026-09-15)
+
+The real Windows lane is proven through AUTH READ START, but the most recent
+collector exception bypassed the former eight-resource list before matrix
+publication. Do not diagnose an individual endpoint from that absence.
+
+Use only the V3 exact-head runner. It preallocates eight rows before login,
+guards each GET externally, retains all completed raw outcomes, blocks later
+GETs only on definitive auth loss, and isolates every derived/evidence stage.
+After any successful login the single JSON result must contain
+`login_success=true`, `readiness_matrix_row_count=8` and eight ordered sanitized
+rows, even when the overall status is BLOCKED. Default namespace is
+`.runtime/ig_predemo_readiness_2238_v3_attempt_01`; V2 evidence is historical
+and must not be overwritten or migrated.
+
+Step2238 is IMPLEMENTED/WAITING_EXTERNAL. M01 and the 27 gates remain unchanged
+at 8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED. No Step2239
+binding, DEMO promotion or order is allowed from repository-only evidence.
+NONE/false and the LIVE prohibition remain binding.
+
 ## Resume: Step2238 isolated module identity (2026-09-15)
 
 Historical head `575666143c92d21d4fb211655098c41a936eac79` failed at

@@ -2,6 +2,32 @@
 
 Status date: 2026-09-15
 
+## V3 availability closeout
+
+The subsequent real host reached successful login and authenticated READ but a
+Python exception between login and matrix construction bypassed the entire V2
+matrix. That absence carries no endpoint classification. V2 remains historical.
+
+V3 creates the raw eight-row ledger before login. Each ordered resource is
+called through a collector-level outer guard in addition to adapter
+normalization. Unexpected exceptions become `UNKNOWN` with
+`IG_READ_<RESOURCE>_UNCLASSIFIED`; they never expose exception text. Remaining
+independent GETs run once unless the authenticated client definitively changes
+to a non-authenticated state, in which case unattempted rows become BLOCKED.
+
+The raw matrix is independent of login-context projection, matrix decoration,
+inventory/history/market/M5/clock derivation, dependent conclusions, evidence
+enrichment, component construction, cleanup, hashing and publication. A failure
+in any of those stages can block acceptance but cannot remove raw rows from the
+single structured stdout result. The acceptance invariant is:
+
+`login_success == true  =>  readiness_matrix_row_count == 8`
+
+Failure injection covers every resource, invalid resource result types, lost or
+unreadable auth state, each derived stage, cleanup, finalization and publication.
+New artifacts use `DAXLAB_IG_PREDEMO_READINESS_V3`, manifest V3 and default
+`.runtime/ig_predemo_readiness_2238_v3_attempt_01`; V2 artifacts are retained.
+
 ## Real-host input retained
 
 The real Windows run at `98de1476cde6667ee07f5fbc97d52de0f6da7dcd`
@@ -50,8 +76,8 @@ All previously attempted reads remain visible. Logout is attempted exactly once.
 
 ## Evidence and dependent conclusions
 
-Schema `DAXLAB_IG_PREDEMO_READINESS_V2` publishes `READ_MATRIX.json` alongside
-the existing sanitized components in a new, non-overwriting v2 namespace. An
+Historical schema `DAXLAB_IG_PREDEMO_READINESS_V2` publishes `READ_MATRIX.json`
+alongside the existing sanitized components in its non-overwriting v2 namespace. An
 incomplete matrix is still hash-bound, read back and published with
 `IG_READINESS_MATRIX_INCOMPLETE`, after cleanup. This is evidence of the read
 failure, not acceptance evidence.

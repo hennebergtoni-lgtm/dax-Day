@@ -1,5 +1,19 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 V3 eight-row availability overlay — 2026-09-15
+
+The latest real host proved the lane through authenticated READ but did not emit
+the promised matrix because one exception could escape before V2 list
+construction completed. No account, inventory, economics, history or M5 gate is
+promoted from an absent matrix.
+
+V3 preallocates and preserves exactly eight raw rows after every successful
+login, with one outer guard per GET and independent guards around all derived and
+publication work. This is repository implementation evidence only. Counts remain
+**8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6 BLOCKED**; Step2238 is
+IMPLEMENTED/WAITING_EXTERNAL, M01 IN_PROGRESS and DEMO NOT READY. NONE/false;
+no order and LIVE prohibited.
+
 ## Step2238 authenticated-read matrix overlay — 2026-09-15
 
 The real run at `98de1476cde6667ee07f5fbc97d52de0f6da7dcd`

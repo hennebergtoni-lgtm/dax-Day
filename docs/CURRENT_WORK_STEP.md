@@ -1,5 +1,27 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2238 login-to-matrix invariant (2026-09-15)
+
+The latest real Windows run proved the exact-head host lane, 50/52 preflight,
+collector precheck and successful transition into authenticated READ. A READ-side
+exception still escaped the former list-literal collector before the promised
+eight-resource matrix could be emitted. That run therefore proves no individual
+resource outcome and does not advance M01.
+
+The V3 collector now allocates the eight-row raw ledger before login and invokes
+every resource through an outer guard. Any unexpected resource exception becomes
+`UNKNOWN / IG_READ_<RESOURCE>_UNCLASSIFIED`; independent GETs continue unless
+the client definitively reports authentication loss. Login-context, inventory,
+history, market/economics, M5, clock, dependent conclusions, component building,
+evidence finalization and publication are isolated from the raw ledger. The
+mechanical acceptance invariant is: `login_success=true` implies
+`readiness_matrix_row_count=8` in stdout, including failure results.
+
+Step2238 remains **IMPLEMENTED / WAITING_EXTERNAL** for one V3 exact-head run.
+Readiness remains **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6
+BLOCKED**; M01 is IN_PROGRESS and DEMO is NOT READY. NONE/false; no retry,
+dealing or order; LIVE prohibited.
+
 ## Current: Step2238 module isolation and safe diagnostics (2026-09-15)
 
 The real host at `575666143c92d21d4fb211655098c41a936eac79`

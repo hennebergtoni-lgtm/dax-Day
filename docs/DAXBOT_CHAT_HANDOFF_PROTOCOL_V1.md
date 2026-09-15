@@ -1,5 +1,21 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Active Step2238 continuity overlay — V3 matrix invariant (2026-09-15)
+
+Real Windows has reached authenticated READ after the proven host preflight, but
+the latest exception produced no eight-row matrix. Treat it as a collector
+availability-contract defect, not endpoint evidence. The repository-owned V3
+collector now guarantees an ordered eight-row stdout matrix whenever login
+succeeded. Unexpected per-resource exceptions are sanitized UNKNOWN rows;
+independent reads continue unless authentication is definitively lost. Derived
+processing, cleanup, evidence finalization and publication cannot erase the raw
+rows.
+
+Next status remains Step2238 IMPLEMENTED/WAITING_EXTERNAL, M01 IN_PROGRESS,
+readiness 8/0/13/6 and DEMO NOT READY. Preserve all V2 evidence. Use one V3
+exact-head host command only after mandatory CI. NONE/false; no retry, dealing,
+order or LIVE.
+
 ## Step2238 module-isolation handoff — authoritative (2026-09-15)
 
 The real `MODULE_IMPORT_EXCEPTION` at
