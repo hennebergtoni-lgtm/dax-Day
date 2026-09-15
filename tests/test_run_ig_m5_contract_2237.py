@@ -83,7 +83,7 @@ def test_runner_uses_one_session_and_preserves_fresh_resume_operator(
 
     assert code == 0
     assert summary["status"] == "SUCCESS"
-    assert summary["code_deployment"] == "ISOLATED_EXACT_HEAD_WORKTREE"
+    assert summary["code_deployment"] == "ISOLATED_EXACT_HEAD_LOCAL_CLONE"
     assert summary["runtime_storage"] == "CALLER_OWNED_EXTERNAL_ROOT"
     assert summary["session_cleanup"] == "SUCCESS"
     assert calls == ["construct", "login", "cycle", "cycle", "logout"]
@@ -166,18 +166,23 @@ def test_invalid_credentials_have_fixed_code_and_no_session(
     assert summary["session_cleanup"] == "NOT_RUN"
 
 
-def test_powershell_wrapper_uses_isolated_worktree_and_external_runtime() -> None:
+def test_powershell_wrapper_uses_owned_local_clone_and_external_runtime() -> None:
     source = (
         Path(__file__).resolve().parents[1]
         / "scripts"
         / "run_ig_m5_contract_2237.ps1"
     ).read_text(encoding="utf-8")
     assert source.count("run_ig_m5_contract_2237.py") == 1
-    assert "worktree add --detach" in source
-    assert "worktree remove" in source
+    assert "clone --quiet --no-checkout --no-hardlinks" in source
+    assert "core.longpaths=true" in source
+    assert "core.hooksPath=" in source
+    assert "DEPLOYMENT_HOOKS_CREATE_FAILED" in source
+    assert "checkout --quiet --detach" in source
+    assert "worktree add" not in source
+    assert "worktree remove" not in source
+    assert "worktree prune" not in source
     assert "--runtime-root $RuntimeRoot" in source
     assert "existing checkout remains untouched" in source
-    assert "'checkout'" not in source
     assert "'reset'" not in source
     assert "'stash'" not in source
     assert "'merge'" not in source
@@ -185,5 +190,10 @@ def test_powershell_wrapper_uses_isolated_worktree_and_external_runtime() -> Non
     assert "--force" not in source
     assert "order_send" not in source
     assert "/positions/otc" not in source
+    assert "DAX_STEP2237_DEPLOYMENT_OWNER_V1" in source
+    assert ".dax-step2237-owner.json" in source
+    assert "Test-RunnerOwnedDeployment" in source
+    assert "[System.IO.Directory]::Delete($deploymentParent, $true)" in source
+    assert "legacy_partial_state=" in source
     assert "DEPLOYMENT_CLEANUP_FAILED_RETAINED" in source
     assert "SUMMARY: BLOCKED / FAIL_CLOSED; error_code=" in source

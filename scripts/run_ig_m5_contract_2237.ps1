@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ExpectedHead,
     [string]$RepoRoot = 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck',
     [string]$RuntimeRoot = 'C:\Users\Mandy\Documents\dax-Day-ig-hostcheck',
-    [string]$Namespace = '.runtime/ig_m5_contract_2237_interval_start_v2_attempt_02',
+    [string]$Namespace = '.runtime/ig_m5_contract_2237_interval_start_v2_attempt_03',
     [string]$CredentialsFile = 'C:\Users\Mandy\ig_demo.env',
     [string]$PythonExecutable = 'python'
 )
@@ -15,11 +15,11 @@ $SafeErrorCodes = @(
     'FETCH_FAILED', 'PUBLISHED_HEAD_QUERY_FAILED', 'BRANCH_DRIFT',
     'START_HEAD_NOT_ANCESTOR', 'TARGET_COMMIT_UNAVAILABLE',
     'DEPLOYMENT_PATH_COLLISION', 'DEPLOYMENT_PARENT_CREATE_FAILED',
-    'WORKTREE_ADD_FAILED', 'WORKTREE_ADD_FAILED_DEPLOYMENT_RETAINED',
-    'DEPLOYMENT_HEAD_QUERY_FAILED', 'DEPLOYMENT_HEAD_MISMATCH',
-    'DEPLOYMENT_STATUS_FAILED', 'DEPLOYMENT_NOT_CLEAN',
-    'DEPLOYMENT_CLEANUP_FAILED_RETAINED',
-    'DEPLOYMENT_PARENT_CLEANUP_FAILED_RETAINED',
+    'DEPLOYMENT_OWNER_MARKER_FAILED', 'LOCAL_CLONE_FAILED',
+    'DEPLOYMENT_HOOKS_CREATE_FAILED',
+    'ISOLATED_CHECKOUT_FAILED', 'DEPLOYMENT_HEAD_QUERY_FAILED',
+    'DEPLOYMENT_HEAD_MISMATCH', 'DEPLOYMENT_STATUS_FAILED',
+    'DEPLOYMENT_NOT_CLEAN', 'DEPLOYMENT_CLEANUP_FAILED_RETAINED',
     'PYTHON_NOT_AVAILABLE', 'PYTHON_START_FAILED', 'PYTHON_RESULT_INVALID',
     'GOVERNANCE_WINDOWS_HOST_REQUIRED', 'GOVERNANCE_INVALID_HEAD',
     'GOVERNANCE_HEAD_MISMATCH', 'GOVERNANCE_TRACKED_DRIFT',
@@ -56,6 +56,116 @@ function Invoke-GitGate {
     return (($result -join [Environment]::NewLine).Trim())
 }
 
+function Get-LegacyPartialState {
+    param([Parameter(Mandatory = $true)][string]$TemporaryRoot)
+    $registered = 0
+    $directories = 0
+    $queryFailed = $false
+    try {
+        $lines = @(& git -C $RepoRoot worktree list --porcelain 2>$null)
+        if ($LASTEXITCODE -ne 0) {
+            $queryFailed = $true
+        } else {
+            foreach ($line in $lines) {
+                if ($line -notmatch '^worktree (.+)$') { continue }
+                try {
+                    $path = [System.IO.Path]::GetFullPath($Matches[1])
+                    $parent = Split-Path -Parent $path
+                    $leaf = Split-Path -Leaf $path
+                    $parentLeaf = Split-Path -Leaf $parent
+                    if ($leaf -eq 'exact-head' -and
+                        $parentLeaf -match '^dax-day-step2237-[0-9a-f]{32}$' -and
+                        $parent.StartsWith($TemporaryRoot, [StringComparison]::OrdinalIgnoreCase)) {
+                        $registered += 1
+                    }
+                } catch {
+                    $queryFailed = $true
+                }
+            }
+        }
+    } catch {
+        $queryFailed = $true
+    }
+    try {
+        $legacy = @([System.IO.Directory]::EnumerateDirectories($TemporaryRoot) |
+            Where-Object {
+                [System.IO.Path]::GetFileName($_) -match '^dax-day-step2237-[0-9a-f]{32}$'
+            })
+        $directories = $legacy.Count
+    } catch {
+        $queryFailed = $true
+    }
+    if ($queryFailed) { return 'QUERY_INCOMPLETE_RETAINED' }
+    if ($registered -gt 0 -or $directories -gt 0) { return 'DETECTED_RETAINED' }
+    return 'NONE_DETECTED'
+}
+
+function Test-RunnerOwnedDeployment {
+    param(
+        [Parameter(Mandatory = $true)][string]$TemporaryRoot,
+        [Parameter(Mandatory = $true)][string]$DeploymentParent,
+        [Parameter(Mandatory = $true)][string]$DeploymentRoot,
+        [Parameter(Mandatory = $true)][string]$MarkerPath,
+        [Parameter(Mandatory = $true)][string]$OwnerToken
+    )
+    try {
+        $trimChars = [char[]]@(
+            [System.IO.Path]::DirectorySeparatorChar,
+            [System.IO.Path]::AltDirectorySeparatorChar
+        )
+        $temporaryFull = [System.IO.Path]::GetFullPath($TemporaryRoot).TrimEnd($trimChars) +
+            [System.IO.Path]::DirectorySeparatorChar
+        $parentFull = [System.IO.Path]::GetFullPath($DeploymentParent)
+        $rootFull = [System.IO.Path]::GetFullPath($DeploymentRoot)
+        if (!$parentFull.StartsWith($temporaryFull, [StringComparison]::OrdinalIgnoreCase)) {
+            return $false
+        }
+        if ((Split-Path -Leaf $parentFull) -notmatch '^d2237-[0-9a-f]{32}$') {
+            return $false
+        }
+        if ($rootFull -ne [System.IO.Path]::GetFullPath((Join-Path $parentFull 'repo'))) {
+            return $false
+        }
+        if (!(Test-Path -LiteralPath $MarkerPath -PathType Leaf)) { return $false }
+        $parentAttributes = [System.IO.File]::GetAttributes($parentFull)
+        if (($parentAttributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            return $false
+        }
+        $markerAttributes = [System.IO.File]::GetAttributes($MarkerPath)
+        if (($markerAttributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            return $false
+        }
+        $marker = Get-Content -LiteralPath $MarkerPath -Raw -ErrorAction Stop |
+            ConvertFrom-Json -ErrorAction Stop
+        if ($marker.schema -ne 'DAX_STEP2237_DEPLOYMENT_OWNER_V1' -or
+            $marker.owner_token -ne $OwnerToken -or
+            $marker.expected_head -ne $ExpectedHead -or
+            $marker.deployment_child -ne 'repo') {
+            return $false
+        }
+        $allowed = @('.dax-step2237-owner.json', '.hooks', 'repo')
+        foreach ($child in [System.IO.Directory]::EnumerateFileSystemEntries($parentFull)) {
+            if ($allowed -notcontains [System.IO.Path]::GetFileName($child)) { return $false }
+        }
+        if (Test-Path -LiteralPath $rootFull) {
+            $rootAttributes = [System.IO.File]::GetAttributes($rootFull)
+            if (($rootAttributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+                return $false
+            }
+        }
+        $hooksFull = Join-Path $parentFull '.hooks'
+        if (Test-Path -LiteralPath $hooksFull) {
+            $hooksAttributes = [System.IO.File]::GetAttributes($hooksFull)
+            if (($hooksAttributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+                return $false
+            }
+        }
+        return $true
+    } catch {
+        return $false
+    }
+}
+
 function Invoke-Closeout {
     param([Parameter(Mandatory = $true)][string]$DeploymentRoot)
     try {
@@ -87,11 +197,14 @@ function Invoke-Closeout {
 
 $deploymentParent = $null
 $deploymentRoot = $null
+$markerPath = $null
+$hooksRoot = $null
+$ownerToken = $null
 $deploymentParentCreated = $false
-$worktreeAdded = $false
 $primaryErrorCode = $null
 $cleanupErrorCode = $null
 $result = $null
+$legacyPartialState = 'NOT_QUERIED'
 $previousNoByteCode = $env:PYTHONDONTWRITEBYTECODE
 
 try {
@@ -106,7 +219,7 @@ try {
         throw 'GIT_NOT_AVAILABLE'
     }
 
-    Write-Host 'START: isolated exact-head deployment; existing checkout remains untouched'
+    Write-Host 'START: isolated exact-head local clone; existing checkout remains untouched'
     $remote = Invoke-GitGate -ErrorCode 'REMOTE_QUERY_FAILED' -Arguments @(
         'remote', 'get-url', 'origin'
     )
@@ -124,15 +237,16 @@ try {
     if ($published -ne $ExpectedHead) { throw 'BRANCH_DRIFT' }
     Invoke-GitGate -ErrorCode 'START_HEAD_NOT_ANCESTOR' -Arguments @(
         'merge-base', '--is-ancestor',
-        '236ea841d3d9e9d30532b08270995cc4925abaa5', $ExpectedHead
+        '78fb8cf8648e51de964f09e205f7f278193c5439', $ExpectedHead
     ) | Out-Null
     Invoke-GitGate -ErrorCode 'TARGET_COMMIT_UNAVAILABLE' -Arguments @(
         'cat-file', '-e', ("{0}^{{commit}}" -f $ExpectedHead)
     ) | Out-Null
 
-    $deploymentParent = Join-Path ([System.IO.Path]::GetTempPath()) (
-        'dax-day-step2237-' + [Guid]::NewGuid().ToString('N')
-    )
+    $temporaryRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
+    $legacyPartialState = Get-LegacyPartialState -TemporaryRoot $temporaryRoot
+    $ownerToken = [Guid]::NewGuid().ToString('N')
+    $deploymentParent = Join-Path $temporaryRoot ('d2237-' + $ownerToken)
     if (Test-Path -LiteralPath $deploymentParent) { throw 'DEPLOYMENT_PATH_COLLISION' }
     try {
         New-Item -ItemType Directory -Path $deploymentParent -ErrorAction Stop | Out-Null
@@ -140,15 +254,53 @@ try {
     } catch {
         throw 'DEPLOYMENT_PARENT_CREATE_FAILED'
     }
-    $deploymentRoot = Join-Path $deploymentParent 'exact-head'
+    $deploymentRoot = Join-Path $deploymentParent 'repo'
+    $markerPath = Join-Path $deploymentParent '.dax-step2237-owner.json'
+    $hooksRoot = Join-Path $deploymentParent '.hooks'
     try {
-        & git -C $RepoRoot worktree add --detach $deploymentRoot $ExpectedHead 2>$null | Out-Null
-        $worktreeExit = $LASTEXITCODE
+        $markerPayload = [ordered]@{
+            schema = 'DAX_STEP2237_DEPLOYMENT_OWNER_V1'
+            owner_token = $ownerToken
+            expected_head = $ExpectedHead
+            deployment_child = 'repo'
+        } | ConvertTo-Json -Compress
+        [System.IO.File]::WriteAllText(
+            $markerPath,
+            $markerPayload,
+            [System.Text.UTF8Encoding]::new($false)
+        )
     } catch {
-        throw 'WORKTREE_ADD_FAILED'
+        throw 'DEPLOYMENT_OWNER_MARKER_FAILED'
     }
-    if ($worktreeExit -ne 0) { throw 'WORKTREE_ADD_FAILED' }
-    $worktreeAdded = $true
+    if (!(Test-RunnerOwnedDeployment -TemporaryRoot $temporaryRoot `
+            -DeploymentParent $deploymentParent -DeploymentRoot $deploymentRoot `
+            -MarkerPath $markerPath -OwnerToken $ownerToken)) {
+        throw 'DEPLOYMENT_OWNER_MARKER_FAILED'
+    }
+    try {
+        New-Item -ItemType Directory -Path $hooksRoot -ErrorAction Stop | Out-Null
+    } catch {
+        throw 'DEPLOYMENT_HOOKS_CREATE_FAILED'
+    }
+
+    try {
+        & git -c ("core.hooksPath={0}" -f $hooksRoot) -c core.longpaths=true `
+            clone --quiet --no-checkout --no-hardlinks `
+            $RepoRoot $deploymentRoot 2>$null | Out-Null
+        $cloneExit = $LASTEXITCODE
+    } catch {
+        throw 'LOCAL_CLONE_FAILED'
+    }
+    if ($cloneExit -ne 0) { throw 'LOCAL_CLONE_FAILED' }
+    try {
+        & git -C $deploymentRoot -c ("core.hooksPath={0}" -f $hooksRoot) `
+            -c core.longpaths=true checkout --quiet --detach `
+            $ExpectedHead 2>$null | Out-Null
+        $checkoutExit = $LASTEXITCODE
+    } catch {
+        throw 'ISOLATED_CHECKOUT_FAILED'
+    }
+    if ($checkoutExit -ne 0) { throw 'ISOLATED_CHECKOUT_FAILED' }
 
     $deployedHead = Invoke-GitGate -WorkingDirectory $deploymentRoot `
         -ErrorCode 'DEPLOYMENT_HEAD_QUERY_FAILED' -Arguments @('rev-parse', 'HEAD')
@@ -176,50 +328,21 @@ try {
         $env:PYTHONDONTWRITEBYTECODE = $previousNoByteCode
     }
 
-    if ($worktreeAdded -and $deploymentRoot) {
-        try {
-            $finalStatus = Invoke-GitGate -WorkingDirectory $deploymentRoot `
-                -ErrorCode 'DEPLOYMENT_STATUS_FAILED' -Arguments @(
-                    'status', '--porcelain', '--untracked-files=all'
-                )
-            if ($finalStatus) {
-                $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
-            } else {
-                & git -C $RepoRoot worktree remove $deploymentRoot 2>$null | Out-Null
-                if ($LASTEXITCODE -ne 0 -or (Test-Path -LiteralPath $deploymentRoot)) {
-                    $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
-                }
-            }
-        } catch {
-            $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
-        }
-    } elseif ($deploymentParentCreated -and $deploymentRoot -and
-              (Test-Path -LiteralPath $deploymentRoot)) {
-        try {
-            $children = @(Get-ChildItem -LiteralPath $deploymentRoot -Force -ErrorAction Stop)
-            if ($children.Count -eq 0) {
-                [System.IO.Directory]::Delete($deploymentRoot, $false)
-            } else {
-                $cleanupErrorCode = 'WORKTREE_ADD_FAILED_DEPLOYMENT_RETAINED'
-            }
-        } catch {
-            $cleanupErrorCode = 'WORKTREE_ADD_FAILED_DEPLOYMENT_RETAINED'
-        }
-    }
-
     if ($deploymentParentCreated -and $deploymentParent -and
         (Test-Path -LiteralPath $deploymentParent)) {
-        try {
-            $remaining = @(Get-ChildItem -LiteralPath $deploymentParent -Force -ErrorAction Stop)
-            if ($remaining.Count -eq 0) {
-                [System.IO.Directory]::Delete($deploymentParent, $false)
-            } elseif (!$cleanupErrorCode) {
-                $cleanupErrorCode = 'DEPLOYMENT_PARENT_CLEANUP_FAILED_RETAINED'
+        if (Test-RunnerOwnedDeployment -TemporaryRoot $temporaryRoot `
+                -DeploymentParent $deploymentParent -DeploymentRoot $deploymentRoot `
+                -MarkerPath $markerPath -OwnerToken $ownerToken) {
+            try {
+                [System.IO.Directory]::Delete($deploymentParent, $true)
+                if (Test-Path -LiteralPath $deploymentParent) {
+                    $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
+                }
+            } catch {
+                $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
             }
-        } catch {
-            if (!$cleanupErrorCode) {
-                $cleanupErrorCode = 'DEPLOYMENT_PARENT_CLEANUP_FAILED_RETAINED'
-            }
+        } else {
+            $cleanupErrorCode = 'DEPLOYMENT_CLEANUP_FAILED_RETAINED'
         }
     }
 }
@@ -227,13 +350,13 @@ try {
 $errorCode = if ($cleanupErrorCode) { $cleanupErrorCode } else { $primaryErrorCode }
 if ($errorCode) {
     Write-Host (
-        'SUMMARY: BLOCKED / FAIL_CLOSED; error_code={0}; existing checkout/evidence retained; execution disabled' `
-        -f $errorCode
+        'SUMMARY: BLOCKED / FAIL_CLOSED; error_code={0}; legacy_partial_state={1}; existing checkout/evidence retained; execution disabled' `
+        -f $errorCode, $legacyPartialState
     )
     exit 2
 }
 Write-Host (
-    'SUMMARY: SUCCESS; error_code=NONE; namespace={0}; deployment cleaned; NONE/false' `
-    -f $result.namespace
+    'SUMMARY: SUCCESS; error_code=NONE; namespace={0}; legacy_partial_state={1}; deployment cleaned; NONE/false' `
+    -f $result.namespace, $legacyPartialState
 )
 exit 0

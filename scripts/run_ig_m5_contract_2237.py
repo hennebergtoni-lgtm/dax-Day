@@ -1,6 +1,6 @@
 """One-session Windows closeout for the canonical IG M5 contract.
 
-Code executes from an isolated exact-head deployment while state/evidence is
+Code executes from an isolated exact-head local clone while state/evidence is
 written to a caller-owned durable runtime root. The runner performs one login,
 a fresh Candidate cycle, waits for the next true M5 close, performs one resume
 cycle, validates Operator projection, and performs one cleanup. It has no
@@ -28,12 +28,12 @@ from daxlab.adapters.ig_rest_readonly import IgDemoReadOnlyClient, IgReadOnlyErr
 from daxlab.runtime.atomic_json import atomic_write_json, read_json_object  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
-NAMESPACE = ".runtime/ig_m5_contract_2237_interval_start_v2_attempt_02"
+NAMESPACE = ".runtime/ig_m5_contract_2237_interval_start_v2_attempt_03"
 CREDENTIALS = Path(r"C:\Users\Mandy\ig_demo.env")
 WAIT_CHUNK_SECONDS = 30
 RESUME_OFFSET_SECONDS = 5
 CLOCK_DRIFT_SECONDS = 5
-SCHEMA = "DAX_IG_M5_CONTRACT_2237_HOST_CLOSEOUT_V2"
+SCHEMA = "DAX_IG_M5_CONTRACT_2237_HOST_CLOSEOUT_V3"
 
 ERROR_CODES = frozenset({
     "GOVERNANCE_WINDOWS_HOST_REQUIRED",
@@ -188,7 +188,7 @@ def run(
         "error_code": None,
         "exact_code_head": None,
         "namespace": namespace,
-        "code_deployment": "ISOLATED_EXACT_HEAD_WORKTREE",
+        "code_deployment": "ISOLATED_EXACT_HEAD_LOCAL_CLONE",
         "runtime_storage": "CALLER_OWNED_EXTERNAL_ROOT",
         "session_model": "ONE_LOGIN_TWO_READ_CYCLES_ONE_CLEANUP",
         "session_cleanup": "NOT_RUN",
@@ -339,7 +339,7 @@ def main(argv=None) -> int:
         "--runtime-root",
         type=Path,
         default=REPO,
-        help="Durable caller-owned root; code may run from an ephemeral exact-head worktree.",
+        help="Durable caller-owned root; code runs from an ephemeral exact-head local clone.",
     )
     args = parser.parse_args(argv)
     code, summary = run(
