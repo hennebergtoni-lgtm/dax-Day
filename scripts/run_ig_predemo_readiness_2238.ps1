@@ -237,8 +237,37 @@ function Import-DaxHostRuntimeOwner {
         [Parameter(Mandatory = $true)][string]$DeploymentRoot,
         [Parameter(Mandatory = $true)][string]$ModuleRelativePath
     )
+    $diagnostic = [ordered]@{
+        status = 'FAIL'
+        error_code = 'MODULE_IMPORT_EXCEPTION'
+        import_phase = 'VERSION'
+        exception_class = 'NONE'
+        fully_qualified_error_id = 'NONE'
+        error_category = 'NONE'
+        path_category = 'EXACT_DEPLOYMENT_MODULE'
+        path_fingerprint = 'UNKNOWN'
+        powershell_version = $PSVersionTable.PSVersion.ToString()
+        powershell_edition = [string]$PSVersionTable.PSEdition
+        language_mode = [string]$ExecutionContext.SessionState.LanguageMode
+        execution_policy = 'UNKNOWN'
+        module_file_sha256 = 'UNKNOWN'
+        security_marker = 'UNKNOWN'
+        module_identity = 'UNASSIGNED'
+    }
+    try {
+        $policy = [string](Get-ExecutionPolicy -ErrorAction Stop)
+        if ($policy -match '^[A-Za-z]+$') { $diagnostic.execution_policy = $policy }
+    } catch { }
     if ($PSVersionTable.PSVersion -lt [Version]'5.1') {
+        $diagnostic.error_code = 'MODULE_VERSION_INCOMPATIBLE'
+        Write-Host ('MODULE_DIAGNOSTIC: ' + ($diagnostic | ConvertTo-Json -Compress))
         throw 'MODULE_VERSION_INCOMPATIBLE'
+    }
+    if ($diagnostic.language_mode -ne 'FullLanguage') {
+        $diagnostic.import_phase = 'LANGUAGE_MODE'
+        $diagnostic.exception_class = 'RuntimeException'
+        Write-Host ('MODULE_DIAGNOSTIC: ' + ($diagnostic | ConvertTo-Json -Compress))
+        throw 'MODULE_IMPORT_EXCEPTION'
     }
     try {
         $rootPath = [System.IO.Path]::GetFullPath($DeploymentRoot)
@@ -255,11 +284,22 @@ function Import-DaxHostRuntimeOwner {
             throw 'MODULE_FILE_MISSING'
         }
     } catch {
+        $diagnostic.error_code = 'MODULE_FILE_MISSING'
+        $diagnostic.import_phase = 'FILE'
+        Write-Host ('MODULE_DIAGNOSTIC: ' + ($diagnostic | ConvertTo-Json -Compress))
         if ($_.Exception.Message -eq 'MODULE_FILE_MISSING') { throw }
         throw 'MODULE_FILE_MISSING'
     }
     try {
         $bytes = [System.IO.File]::ReadAllBytes($modulePath)
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $diagnostic.module_file_sha256 = ([BitConverter]::ToString(
+                $sha256.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
+            $pathBytes = [System.Text.Encoding]::UTF8.GetBytes($modulePath.ToLowerInvariant())
+            $diagnostic.path_fingerprint = ([BitConverter]::ToString(
+                $sha256.ComputeHash($pathBytes))).Replace('-', '').ToLowerInvariant()
+        } finally { $sha256.Dispose() }
         if ($bytes.Length -eq 0) { throw 'MODULE_PARSE_FAILED' }
         foreach ($value in $bytes) {
             if ($value -eq 0 -or $value -gt 127) { throw 'MODULE_PARSE_FAILED' }
@@ -272,60 +312,132 @@ function Import-DaxHostRuntimeOwner {
             throw 'MODULE_PARSE_FAILED'
         }
     } catch {
+        $diagnostic.error_code = 'MODULE_PARSE_FAILED'
+        $diagnostic.import_phase = 'PARSE'
+        $diagnostic.exception_class = $_.Exception.GetType().Name
+        Write-Host ('MODULE_DIAGNOSTIC: ' + ($diagnostic | ConvertTo-Json -Compress))
         if ($_.Exception.Message -eq 'MODULE_PARSE_FAILED') { throw }
         throw 'MODULE_PARSE_FAILED'
     }
+
     try {
-        $module = @(Import-Module -Name $modulePath -Force -PassThru -ErrorAction Stop)
-        if ($module.Count -ne 1) { throw 'MODULE_IMPORT_EXCEPTION' }
+        $zone = @(Get-Item -LiteralPath $modulePath -Stream Zone.Identifier `
+            -ErrorAction SilentlyContinue)
+        $diagnostic.security_marker = if ($zone.Count -eq 0) { 'ABSENT' } else { 'PRESENT' }
+    } catch { $diagnostic.security_marker = 'UNKNOWN' }
+    if ($diagnostic.security_marker -eq 'PRESENT') {
+        $diagnostic.import_phase = 'SECURITY_POLICY'
+        $diagnostic.exception_class = 'PSSecurityException'
+        Write-Host ('MODULE_DIAGNOSTIC: ' + ($diagnostic | ConvertTo-Json -Compress))
+        throw 'MODULE_IMPORT_EXCEPTION'
+    }
+
+    $module = $null
+    $materializedPath = $null
+    $prefix = 'D2238' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
+    try {
+        $diagnostic.import_phase = 'MODULE_MATERIALIZATION'
+        $materializedPath = Join-Path (Split-Path -Parent $rootPath) `
+            ('dax-windows-host-lane-' + [Guid]::NewGuid().ToString('N') + '.psm1')
+        [System.IO.File]::WriteAllBytes($materializedPath, $bytes)
+        $readback = [System.IO.File]::ReadAllBytes($materializedPath)
+        if ($readback.Length -ne $bytes.Length) { throw 'MODULE_IMPORT_EXCEPTION' }
+        for ($index = 0; $index -lt $bytes.Length; $index += 1) {
+            if ($readback[$index] -ne $bytes[$index]) { throw 'MODULE_IMPORT_EXCEPTION' }
+        }
+        $diagnostic.path_category = 'RUNNER_OWNED_HASH_VERIFIED_MODULE_COPY'
+        $diagnostic.module_identity = 'UNIQUE_PER_RUN'
+        $diagnostic.import_phase = 'MODULE_INITIALIZATION_OR_COMMAND_REGISTRATION'
+        $loaded = @(Import-Module -Name $materializedPath -Global -Prefix $prefix `
+            -Force -PassThru -ErrorAction Stop)
+        if ($loaded.Count -ne 1) { throw 'MODULE_IMPORT_EXCEPTION' }
+        $module = $loaded[0]
     } catch {
+        $record = $_
+        $exceptionType = $record.Exception.GetType().Name
+        if ($exceptionType -match '^[A-Za-z][A-Za-z0-9.]{0,127}$') {
+            $diagnostic.exception_class = $exceptionType
+        } else { $diagnostic.exception_class = 'OTHER' }
+        $fqid = [string]$record.FullyQualifiedErrorId
+        if ($fqid -match '^[A-Za-z0-9_.:,-]{1,160}$') {
+            $diagnostic.fully_qualified_error_id = $fqid
+        }
+        $category = [string]$record.CategoryInfo.Category
+        if ($category -match '^[A-Za-z]+$') { $diagnostic.error_category = $category }
+        if ($exceptionType -match 'Security|Unauthorized' -or
+            $fqid -match 'Authorization|ExecutionPolicy|Unauthorized') {
+            $diagnostic.import_phase = 'SECURITY_POLICY'
+        } elseif ($exceptionType -match 'SessionState|Command' -or
+                  $fqid -match 'SessionState|Command|Function.*Capacity') {
+            $diagnostic.import_phase = 'COMMAND_REGISTRATION'
+        }
+        Write-Host ('MODULE_DIAGNOSTIC: ' + ($diagnostic | ConvertTo-Json -Compress))
         if ($_.Exception.Message -eq 'MODULE_IMPORT_EXCEPTION') { throw }
         throw 'MODULE_IMPORT_EXCEPTION'
     }
     try {
-        $expectedExports = @(
-            'Invoke-DaxHostJsonProcess',
-            'Resolve-DaxHostPython',
-            'Write-DaxHostPreflight',
-            'Write-DaxPythonSelection'
-        )
-        $actualExports = @($module[0].ExportedFunctions.Keys | Sort-Object)
-        if ($actualExports.Count -ne $expectedExports.Count) {
-            throw 'MODULE_EXPORT_CONTRACT_FAILED'
-        }
-        foreach ($name in $expectedExports) {
-            if ($actualExports -notcontains $name) { throw 'MODULE_EXPORT_CONTRACT_FAILED' }
-            $command = Get-Command -Name $name -CommandType Function -ErrorAction Stop
-            if ($null -eq $command -or $command.Module.Path -ne $modulePath) {
+        $commandMap = @{}
+        foreach ($name in @(
+                'Invoke-DaxHostJsonProcess', 'Resolve-DaxHostPython',
+                'Write-DaxHostPreflight', 'Write-DaxPythonSelection')) {
+            $parts = $name -split '-', 2
+            $registeredName = $parts[0] + '-' + $prefix + $parts[1]
+            $commands = @(Get-Command -Name $registeredName -CommandType Function `
+                -ErrorAction Stop)
+            if ($commands.Count -ne 1 -or
+                $commands[0].Module.Path -ne $materializedPath) {
                 throw 'MODULE_EXPORT_CONTRACT_FAILED'
             }
+            $commandMap[$name] = $commands[0]
         }
     } catch {
+        $diagnostic.error_code = 'MODULE_EXPORT_CONTRACT_FAILED'
+        $diagnostic.import_phase = 'EXPORT_DISCOVERY_OR_COMMAND_REGISTRATION'
+        $diagnostic.exception_class = $_.Exception.GetType().Name
+        Write-Host ('MODULE_DIAGNOSTIC: ' + ($diagnostic | ConvertTo-Json -Compress))
+        if ($null -ne $module) {
+            Remove-Module -ModuleInfo $module -Force -ErrorAction SilentlyContinue
+        }
         if ($_.Exception.Message -eq 'MODULE_EXPORT_CONTRACT_FAILED') { throw }
         throw 'MODULE_EXPORT_CONTRACT_FAILED'
     }
     $lineEndings = if ([System.Text.Encoding]::ASCII.GetString($bytes).Contains("`r`n")) {
         'CRLF_OR_MIXED'
     } else { 'LF' }
-    Write-Host ('MODULE_PREFLIGHT: status=PASS; edition={0}; version={1}; encoding=ASCII; line_endings={2}; path=EXACT_DEPLOYMENT; exports=4; dependencies=NONE' -f
-        [string]$PSVersionTable.PSEdition, $PSVersionTable.PSVersion.ToString(), $lineEndings)
-    return $modulePath
+    Write-Host ('MODULE_PREFLIGHT: status=PASS; edition={0}; version={1}; encoding=ASCII; line_endings={2}; path=HASH_VERIFIED_RUNNER_OWNED_COPY; exports=4; dependencies=NONE; source_sha256={3}; language_mode={4}; execution_policy={5}; module_identity=UNIQUE_PER_RUN' -f
+        [string]$PSVersionTable.PSEdition, $PSVersionTable.PSVersion.ToString(),
+        $lineEndings, $diagnostic.module_file_sha256, $diagnostic.language_mode,
+        $diagnostic.execution_policy)
+    return [pscustomobject]@{
+        Module = $module
+        ResolvePython = $commandMap['Resolve-DaxHostPython']
+        WritePythonSelection = $commandMap['Write-DaxPythonSelection']
+        InvokeJsonProcess = $commandMap['Invoke-DaxHostJsonProcess']
+        WritePreflight = $commandMap['Write-DaxHostPreflight']
+        SourcePathFingerprint = $diagnostic.path_fingerprint
+        ModuleFileSha256 = $diagnostic.module_file_sha256
+    }
 }
 
 function Invoke-Closeout {
     param([Parameter(Mandatory = $true)][string]$DeploymentRoot)
+    $ownerContext = $null
     try {
-        $modulePath = Import-DaxHostRuntimeOwner -DeploymentRoot $DeploymentRoot `
+        $ownerContext = Import-DaxHostRuntimeOwner -DeploymentRoot $DeploymentRoot `
             -ModuleRelativePath 'scripts/dax_windows_host_lane.psm1'
+        $resolvePythonCommand = $ownerContext.ResolvePython
+        $writePythonSelectionCommand = $ownerContext.WritePythonSelection
+        $invokeJsonProcessCommand = $ownerContext.InvokeJsonProcess
+        $writePreflightCommand = $ownerContext.WritePreflight
         $script:runnerPhase = 'PYTHON'
         try { $powerShellExecutable = [System.IO.Path]::GetFileName(
                 [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) }
         catch { $powerShellExecutable = 'UNKNOWN' }
         $powerShellArchitecture = if ([Environment]::Is64BitProcess) { '64_BIT' } else { '32_BIT' }
         try {
-            $pythonSelection = Resolve-DaxHostPython -PythonExecutable $PythonExecutable `
+            $pythonSelection = & $resolvePythonCommand -PythonExecutable $PythonExecutable `
                 -DeploymentRoot $DeploymentRoot -PowerShellArchitecture $powerShellArchitecture
-            Write-DaxPythonSelection -Candidates $pythonSelection.Candidates
+            & $writePythonSelectionCommand -Candidates $pythonSelection.Candidates
             Write-Host ("PYTHON_SELECTION: status=SELECTED; resolver_rank={0}; basename={1}; version={2}; architecture={3}; identity_fingerprint={4}" -f
                 $pythonSelection.ResolverRank, $pythonSelection.ExecutableBasename,
                 $pythonSelection.Version, $pythonSelection.Architecture,
@@ -333,7 +445,8 @@ function Invoke-Closeout {
             $pythonPath = $pythonSelection.PythonPath
         } catch {
             if ($_.Exception.Data.Contains('PythonSelectionCandidates')) {
-                Write-DaxPythonSelection -Candidates $_.Exception.Data['PythonSelectionCandidates']
+                & $writePythonSelectionCommand `
+                    -Candidates $_.Exception.Data['PythonSelectionCandidates']
             }
             throw
         }
@@ -355,14 +468,14 @@ function Invoke-Closeout {
         )
         $script:runnerPhase = 'PREFLIGHT'
         try {
-            $preflight = Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
+            $preflight = & $invokeJsonProcessCommand -PythonPath $pythonPath `
                 -ScriptPath $preflightPath -Arguments $preflightArguments `
                 -SafePayloadCodes $SafeErrorCodes
-            Write-DaxHostPreflight -Result $preflight
+            & $writePreflightCommand -Result $preflight
         } catch {
             if ($_.Exception.Data.Contains('HostLaneResult')) {
                 $preflightResult = $_.Exception.Data['HostLaneResult']
-                Write-DaxHostPreflight -Result $preflightResult
+                & $writePreflightCommand -Result $preflightResult
                 try {
                     $preflightPhase = [string]$preflightResult.failure_phase
                     if ($preflightPhase -in @(
@@ -385,7 +498,7 @@ function Invoke-Closeout {
         $script:runnerPhase = 'COLLECTOR_PRECHECK'
         Write-Host 'COLLECTOR PRECHECK: exact deployment head; runtime namespace; credential shape; no IG login'
         try {
-            $precheck = Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
+            $precheck = & $invokeJsonProcessCommand -PythonPath $pythonPath `
                 -ScriptPath $collectorPath `
                 -Arguments @($collectorArguments + '--pre-auth-precheck') `
                 -SafePayloadCodes $SafeErrorCodes
@@ -399,7 +512,7 @@ function Invoke-Closeout {
         $script:runnerPhase = 'IG_SESSION'
         Write-Host 'AUTH READ-ONLY START: one login; eight-resource readiness matrix; no retry; one cleanup'
         try {
-            $collectorResult = Invoke-DaxHostJsonProcess -PythonPath $pythonPath `
+            $collectorResult = & $invokeJsonProcessCommand -PythonPath $pythonPath `
                 -ScriptPath $collectorPath -Arguments $collectorArguments `
                 -SafePayloadCodes $SafeErrorCodes
             Write-IgReadinessMatrix -Result $collectorResult
@@ -419,6 +532,10 @@ function Invoke-Closeout {
         } catch { }
         if ($SafeErrorCodes -contains $_.Exception.Message) { throw }
         throw 'HOST_LANE_INTERNAL_FAILURE'
+    } finally {
+        if ($null -ne $ownerContext -and $null -ne $ownerContext.Module) {
+            Remove-Module -ModuleInfo $ownerContext.Module -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 

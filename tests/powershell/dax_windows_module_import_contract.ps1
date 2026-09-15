@@ -112,6 +112,31 @@ try {
             -ModuleRelativePath 'scripts/malformed.psm1'
     }
 
+    $bomPath = Join-Path $productionScripts 'bom.psm1'
+    [byte[]]$bomBytes = [byte[]](0xEF, 0xBB, 0xBF) + [System.Text.Encoding]::ASCII.GetBytes(
+        "function Safe-Bom { return 'SAFE' }")
+    [System.IO.File]::WriteAllBytes($bomPath, $bomBytes)
+    Assert-Code -Expected 'MODULE_PARSE_FAILED' -Operation {
+        Import-DaxHostRuntimeOwner -DeploymentRoot $productionRoot `
+            -ModuleRelativePath 'scripts/bom.psm1'
+    }
+
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+        $markedPath = Join-Path $productionScripts 'marked.psm1'
+        [System.IO.File]::WriteAllText($markedPath, $source, [System.Text.Encoding]::ASCII)
+        try {
+            Set-Content -LiteralPath $markedPath -Stream Zone.Identifier `
+                -Value "[ZoneTransfer]`r`nZoneId=3" -Encoding ASCII -ErrorAction Stop
+            Assert-Code -Expected 'MODULE_IMPORT_EXCEPTION' -Operation {
+                Import-DaxHostRuntimeOwner -DeploymentRoot $productionRoot `
+                    -ModuleRelativePath 'scripts/marked.psm1'
+            }
+        } catch {
+            if ($_.Exception.Message -match '^ASSERT_') { throw }
+            # Filesystems without alternate data streams report this capability as unavailable.
+        }
+    }
+
     $throwsPath = Join-Path $productionScripts 'throws.psm1'
     [System.IO.File]::WriteAllText(
         $throwsPath, "throw 'SAFE_TEST_IMPORT_FAILURE'", [System.Text.Encoding]::ASCII)
@@ -133,10 +158,38 @@ try {
     $productionModulePath = Join-Path $productionScripts 'dax_windows_host_lane.psm1'
     [System.IO.File]::WriteAllText(
         $productionModulePath, $source, [System.Text.Encoding]::ASCII)
-    $observedPath = Import-DaxHostRuntimeOwner -DeploymentRoot $productionRoot `
+    $context = Import-DaxHostRuntimeOwner -DeploymentRoot $productionRoot `
         -ModuleRelativePath 'scripts/dax_windows_host_lane.psm1'
-    if ($observedPath -ne $productionModulePath) {
-        throw 'ASSERT_PRODUCTION_IMPORT_PATH_FAILED'
+    try {
+        if ($context.ModuleFileSha256 -notmatch '^[0-9a-f]{64}$' -or
+            $context.SourcePathFingerprint -notmatch '^[0-9a-f]{64}$') {
+            throw 'ASSERT_PRODUCTION_IMPORT_FINGERPRINT_FAILED'
+        }
+        $writeCommand = $context.WritePythonSelection
+        & $writeCommand -Candidates @() | Out-Null
+    } finally {
+        Remove-Module -ModuleInfo $context.Module -Force -ErrorAction SilentlyContinue
+    }
+
+    # A stale module with the canonical basename must not collide with the
+    # unique runner-owned module identity or its prefixed command names.
+    $staleRoot = Join-Path $temporaryRoot 'stale-module'
+    [System.IO.Directory]::CreateDirectory($staleRoot) | Out-Null
+    $stalePath = Join-Path $staleRoot 'dax_windows_host_lane.psm1'
+    [System.IO.File]::WriteAllText($stalePath, $source, [System.Text.Encoding]::ASCII)
+    $stale = Import-Module -Name $stalePath -Global -PassThru -Force -ErrorAction Stop
+    try {
+        $context = Import-DaxHostRuntimeOwner -DeploymentRoot $productionRoot `
+            -ModuleRelativePath 'scripts/dax_windows_host_lane.psm1'
+        try {
+            if ($context.Module.Path -eq $stale.Path) {
+                throw 'ASSERT_STALE_MODULE_COLLISION'
+            }
+        } finally {
+            Remove-Module -ModuleInfo $context.Module -Force -ErrorAction SilentlyContinue
+        }
+    } finally {
+        Remove-Module -ModuleInfo $stale -Force -ErrorAction SilentlyContinue
     }
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {

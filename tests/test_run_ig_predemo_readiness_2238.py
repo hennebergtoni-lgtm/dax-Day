@@ -161,11 +161,35 @@ def test_windows_runtime_owner_has_classified_preimport_contract() -> None:
         assert f"'{error_code}'" in source
     assert "HOST_RUNTIME_OWNER_IMPORT_FAILED" not in source
     assert "function Import-DaxHostRuntimeOwner" in source
-    assert source.index("Parser]::ParseFile") < source.index("Import-Module -Name $modulePath")
-    assert source.index("Import-Module -Name $modulePath") < source.index("ExportedFunctions.Keys")
+    assert source.index("Parser]::ParseFile") < source.index(
+        "Import-Module -Name $materializedPath"
+    )
+    assert source.index("Import-Module -Name $materializedPath") < source.index(
+        "Get-Command -Name $registeredName"
+    )
     assert source.index("Import-DaxHostRuntimeOwner") < source.index("Resolve-DaxHostPython")
-    assert "path=EXACT_DEPLOYMENT" in source
+    assert "path=HASH_VERIFIED_RUNNER_OWNED_COPY" in source
     assert "dependencies=NONE" in source
+    assert "MODULE_DIAGNOSTIC:" in source
+    assert "module_file_sha256" in source
+    assert "path_fingerprint" in source
+    assert "fully_qualified_error_id" in source
+    assert "language_mode" in source and "execution_policy" in source
+    assert "security_marker" in source
+    assert "RUNNER_OWNED_HASH_VERIFIED_MODULE_COPY" in source
+    assert "UNIQUE_PER_RUN" in source
+    assert "Import-Module -Name $materializedPath -Global -Prefix $prefix" in source
+    assert "Remove-Module -ModuleInfo $ownerContext.Module" in source
+    assert "MODULE_INITIALIZATION_OR_COMMAND_REGISTRATION" in source
+    assert "MODULE_MATERIALIZATION" in source
+    assert "LANGUAGE_MODE" in source
+    assert "EXPORT_DISCOVERY_OR_COMMAND_REGISTRATION" in source
+    import_boundary = source[
+        source.index("function Import-DaxHostRuntimeOwner"):
+        source.index("function Invoke-Closeout")
+    ]
+    assert "Write-Host $_" not in import_boundary
+    assert "Write-Output $_" not in import_boundary
     assert owner.startswith("#requires -Version 5.1\n")
     assert max(owner.encode("ascii")) < 128
 
