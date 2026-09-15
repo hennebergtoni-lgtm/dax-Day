@@ -19,7 +19,10 @@ function Assert-Code {
             'CLASS_' + $_.Exception.GetType().Name
         }
         if ($observed -ne $Expected) {
-            throw "ASSERT_WRONG_ERROR:$Expected`:OBSERVED_$observed"
+            $candidateDetail = if ($_.Exception.Data.Contains('PythonSelectionCandidates')) {
+                ($_.Exception.Data['PythonSelectionCandidates'] | ConvertTo-Json -Compress -Depth 4)
+            } else { 'NONE' }
+            throw "ASSERT_WRONG_ERROR:$Expected`:OBSERVED_$observed`:CANDIDATES_$candidateDetail"
         }
     }
 }
@@ -36,12 +39,14 @@ $resolveBase = @{
 function New-ProbeResponse {
     param(
         [string]$Identity,
-        [string]$Executable = 'C:\canonical\python.exe',
+        [string]$Executable = '',
         [string]$Version = '3.11.9',
-        [string]$Architecture = '64_BIT',
+        [string]$Architecture = '',
         [string]$Status = 'PASS',
         [string]$ErrorCode = 'NONE'
     )
+    if (!$Executable) { $Executable = Join-Path $repoRoot 'canonical-python.exe' }
+    if (!$Architecture) { $Architecture = $resolveBase.PowerShellArchitecture }
     $payload = [ordered]@{
         status = $Status; error_code = $ErrorCode; executable_path = $Executable
         executable_basename = 'python.exe'; identity_fingerprint = $Identity
@@ -75,7 +80,8 @@ Assert-Code 'PYTHON_RUNTIME_AMBIGUOUS' {
         Probe = {
             param($Item)
             $identityValue = if ($Item.Source -match '/a/') { 'a' * 64 } else { 'b' * 64 }
-            New-ProbeResponse -Identity $identityValue -Executable ('C:\' + $identityValue.Substring(0, 1) + '\python.exe')
+            New-ProbeResponse -Identity $identityValue `
+                -Executable (Join-Path $repoRoot ($identityValue.Substring(0, 1) + '-python.exe'))
         }
     }
 }
@@ -132,7 +138,7 @@ $selected = Resolve-DaxHostPython @resolveBase -Hooks @{
         throw 'NOT_FOUND'
     }
     FullPath = $identity; TestPath = $exists
-    Probe = { New-ProbeResponse -Identity ('a' * 64) -Executable 'C:\real\python.exe' }
+    Probe = { New-ProbeResponse -Identity ('a' * 64) -Executable (Join-Path $repoRoot 'real-python.exe') }
 }
 if ($selected.IdentityFingerprint -ne ('a' * 64)) { throw 'ASSERT_PY_LAUNCHER_SAME_FAILED' }
 
@@ -169,7 +175,7 @@ $selected = Resolve-DaxHostPython @resolveBase -Hooks @{
     Probe = {
         param($Item)
         if ($Item.Source -match 'WindowsApps') { $script:storeProbeCalled = $true }
-        New-ProbeResponse -Identity ('a' * 64) -Executable 'C:\Python311\python.exe'
+        New-ProbeResponse -Identity ('a' * 64) -Executable (Join-Path $repoRoot 'python311.exe')
     }
 }
 if ($storeProbeCalled) { throw 'ASSERT_STORE_ALIAS_WAS_STARTED' }
@@ -191,7 +197,7 @@ $selected = Resolve-DaxHostPython @resolveBase -Hooks @{
             return New-ProbeResponse -Identity ('b' * 64) -Status 'BLOCKED' `
                 -ErrorCode 'PYTHON_CANDIDATE_VERSION_UNSUPPORTED'
         }
-        New-ProbeResponse -Identity ('a' * 64) -Executable 'C:\good\python.exe'
+        New-ProbeResponse -Identity ('a' * 64) -Executable (Join-Path $repoRoot 'good-python.exe')
     }
 }
 if ($selected.IdentityFingerprint -ne ('a' * 64)) { throw 'ASSERT_ONLY_VALID_FAILED' }
@@ -208,7 +214,8 @@ $selected = Resolve-DaxHostPython @resolveBase -Hooks @{
     Probe = {
         param($Item)
         $identityValue = if ($Item.Resolver -eq 'python') { 'a' * 64 } else { 'b' * 64 }
-        New-ProbeResponse -Identity $identityValue -Executable ('C:\' + $Item.Resolver + '\python.exe')
+        New-ProbeResponse -Identity $identityValue `
+            -Executable (Join-Path $repoRoot ($Item.Resolver + '-python.exe'))
     }
 }
 if ($selected.ResolverRank -ne 0 -or $selected.IdentityFingerprint -ne ('a' * 64)) {
