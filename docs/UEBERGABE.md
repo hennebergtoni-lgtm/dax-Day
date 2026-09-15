@@ -1,5 +1,23 @@
 # DAX-BOT ÜBERGABE — RESUME KEYWORD
 
+## Resume: Step2238 full Windows host-lane audit (2026-09-15)
+
+Use the exact current PR head, not an older Python-hardening head. Code commit
+`6bf1a6bbbcc0af24ba35a6c8397a614f241013fe` replaces the duplicated
+Step2238 bootstrap with `dax_windows_host_lane.psm1`, an aggregate 51-check
+preflight and the shared canonical IG DEMO credential contract. It reuses the
+Step2237-proven isolated local clone and direct Python execution. `-I -S`/runpy
+and the old step-specific PowerShell runtime owner are retired.
+
+Exactly one Windows run remains. If preflight blocks, use its complete sanitized
+matrix; do not request manual Python, network or filesystem commands. If it
+passes, the same invocation performs one authenticated read-only Step2238 flow,
+publishes hash-bound evidence and cleans only its owned deployment. Step2238 is
+IMPLEMENTED/WAITING_EXTERNAL; Step2239 IMPLEMENTED/WAITING_EXTERNAL; Step2240
+IN_PROGRESS/BLOCKED; M01 IN_PROGRESS; readiness 8/0/13/6 and NOT READY. Linux is
+NOT_REQUIRED. No DEMO or LIVE order, no promotion, NONE/false. See
+`STEP_2238_WINDOWS_HOST_LANE_AUDIT.md`; older Step2238 sections are historical.
+
 ## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
 
 Immutable head `bbd1d29671f8d275179a38d04681dfdfca3fc248`

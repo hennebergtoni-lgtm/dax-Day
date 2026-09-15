@@ -1,5 +1,22 @@
 # M01 and bounded IG DEMO readiness — current acceleration matrix
 
+## Step2238 host-lane audit overlay — 2026-09-15
+
+The repository-owned Step2238 lane now has a reusable Windows runtime owner, 51
+aggregate preflight checks, 34 deterministic failure scenarios, a shared
+credential-shape contract, staged/hash-bound evidence publication and dedicated
+Windows CI. These are implementation and parity improvements, not new broker
+truth. No exact-head Step2238 account/inventory/economics bundle exists yet.
+
+Therefore the matrix remains **8 VERIFIED / 0 IMPLEMENTED / 13
+WAITING_EXTERNAL / 6 BLOCKED**: VERIFIED 1, 2, 4, 5, 6, 23, 24, 27;
+WAITING_EXTERNAL 3 and 7–18; BLOCKED 19–22, 25, 26. M01 remains IN_PROGRESS and
+DEMO readiness NOT READY. Step2238 and Step2239 are
+IMPLEMENTED/WAITING_EXTERNAL; Step2240 is IN_PROGRESS/BLOCKED. Linux is
+NOT_REQUIRED for the Windows lane. NONE/false, no order and LIVE prohibition
+remain binding. See `STEP_2238_WINDOWS_HOST_LANE_AUDIT.md`; all prior gate rows
+remain historical truth until new real evidence is reviewed.
+
 ## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
 
 The immutable-head Windows run on

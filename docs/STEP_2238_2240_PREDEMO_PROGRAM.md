@@ -1,6 +1,26 @@
  1 file changed, 1 insertion(+), 1 deletion(-)
 # Step2238–2240 pre-DEMO readiness program
 
+## Full Windows host-lane audit — authoritative (2026-09-15)
+
+Code head `6bf1a6bbbcc0af24ba35a6c8397a614f241013fe` supersedes the
+earlier step-specific Python bootstrap. The current lane reuses the
+Step2237-proven isolated local clone and direct script start, has one reusable
+PowerShell runtime/process/output owner, one shared credential-shape owner and a
+51-check aggregate preflight before authentication. The `-I -S`/runpy workaround
+and `ig_predemo_python_runtime.psm1` are retired.
+
+The audit fixed two latent contract divergences: canonical `IG_USERNAME` is now
+shared by preflight and collector, and the exact local clone origin is verified
+against its source checkout after the source checkout's GitHub origin/head gate.
+Windows CI covers native PowerShell and path semantics but is not real-host
+evidence. Linux is NOT_REQUIRED. Step2238 remains IMPLEMENTED/WAITING_EXTERNAL;
+Step2239 IMPLEMENTED/WAITING_EXTERNAL; Step2240 IN_PROGRESS/BLOCKED; NONE/false,
+no order and LIVE prohibition remain binding. Full architecture, preflight,
+failure and evidence-transfer decisions are in
+`STEP_2238_WINDOWS_HOST_LANE_AUDIT.md`. Lower sections retain the actual earlier
+failure history but no longer describe the active runner.
+
 ## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
 
 The real Windows run on immutable head

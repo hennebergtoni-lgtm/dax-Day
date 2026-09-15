@@ -1,5 +1,23 @@
 # DAX-BOT Chat Handoff Protocol V1
 
+## Step2238 Windows host-lane overlay — authoritative (2026-09-15)
+
+The active handoff uses the current PR head and the single runner
+`scripts/run_ig_predemo_readiness_2238.ps1`. It owns exact-head isolated local
+deployment and delegates runtime/process/output behavior to the shared
+`dax_windows_host_lane.psm1`. Before any IG login, the runner emits all 51
+sanitized preflight rows and aggregate counts. A failed run must be continued
+from that matrix; the operator must not be asked for a manual diagnostic chain.
+
+The exact credential key contract is shared with the collector and values are
+never logged. Existing checkout/evidence are retained; only marker- and
+token-bound temporary deployment/staging resources can be removed. Windows is
+the target; a Linux worker is NOT_REQUIRED. Successful CI is not real-host
+evidence. Step2238 stays IMPLEMENTED/WAITING_EXTERNAL until the one-command
+real-host run succeeds. Keep NONE/false, no order and LIVE prohibited. See
+`STEP_2238_WINDOWS_HOST_LANE_AUDIT.md`. Lower Step2238 handoff notes are
+historical.
+
 ## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
 
 The exact-head Windows run on

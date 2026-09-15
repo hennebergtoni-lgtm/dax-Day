@@ -1,5 +1,25 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2238 full Windows host-lane audit (2026-09-15)
+
+Repository implementation head `6bf1a6bbbcc0af24ba35a6c8397a614f241013fe`
+provides one reusable PowerShell runtime owner, direct exact-clone Python
+execution, one shared IG DEMO credential-shape contract, 51 aggregated preflight
+checks, 34 registered failure scenarios, sanitized evidence publication and a
+dedicated Windows CI lane. The isolated local clone and one-session read-only
+collector remain the real-proven Step2237 foundation; no second runtime stack was
+created.
+
+Step2238 is **IMPLEMENTED / WAITING_EXTERNAL** pending exactly one final-head
+Windows run. Step2239 remains **IMPLEMENTED / WAITING_EXTERNAL** pending review
+of its real economics/inventory/session values. Step2240 remains **IN_PROGRESS /
+BLOCKED** pending native IG lifecycle integration and evidence. M01 stays
+**IN_PROGRESS**; gates remain 8 VERIFIED, 0 IMPLEMENTED, 13 WAITING_EXTERNAL and
+6 BLOCKED. Linux is NOT_REQUIRED for the real lane. Diagnostic publication is
+automatic locally; remote publication remains an unconfigured GAP. NONE/false,
+no order and the LIVE prohibition are unchanged. Full audit:
+`STEP_2238_WINDOWS_HOST_LANE_AUDIT.md`. Lower Step2238 entries are history.
+
 ## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
 
 The real Windows run on immutable head

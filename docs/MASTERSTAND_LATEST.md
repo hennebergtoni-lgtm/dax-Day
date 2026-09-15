@@ -1,5 +1,34 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Step2238 full Windows host-lane audit — authoritative (2026-09-15)
+
+Code head `6bf1a6bbbcc0af24ba35a6c8397a614f241013fe` consolidates the
+Step2237-proven isolated clone and direct Python launch into one reusable host
+runtime owner. A credential-free 51-check preflight now aggregates independent
+HOST/PowerShell/Git/filesystem/Python/import/network/credential/evidence failures
+before authentication. A 34-scenario register plus native PowerShell injection
+tests enforce fixed reason codes and sanitized output.
+
+The audit fixed two latent deterministic false blockers: the preflight
+credential key differed from the existing collector owner (`IG_IDENTIFIER`
+versus canonical `IG_USERNAME`), and the isolated local clone's origin was
+incorrectly judged as though it must itself be the GitHub origin. Credential
+shape now has one shared owner; source-origin and local-deployment provenance are
+separate. The unnecessary `-I -S`/`runpy` boundary and step-specific runtime
+module are retired. Evidence uses exclusive staging, hash/readback and atomic
+publication.
+
+Linux is **NOT_REQUIRED** for the Windows host lane. A dedicated Windows CI adds
+parity but does not replace real-host evidence. Automatic evidence transfer is
+**PARTIAL**: sanitized/hash-bound local publication and console diagnosis work;
+no authenticated remote upload destination is assumed. Step2238 remains
+**IMPLEMENTED / WAITING_EXTERNAL**, Step2239 **IMPLEMENTED /
+WAITING_EXTERNAL**, Step2240 **IN_PROGRESS / BLOCKED**, M01 **IN_PROGRESS**,
+and the 27 gates remain **8 VERIFIED / 0 IMPLEMENTED / 13 WAITING_EXTERNAL / 6
+BLOCKED**. NONE/false remains binding; no order; LIVE prohibited. See
+`STEP_2238_WINDOWS_HOST_LANE_AUDIT.md`. Lower Step2238 sections are retained as
+historical failure records and are superseded operationally by this section.
+
 ## Step2238 total Python-boundary normalization — authoritative (2026-09-15)
 
 The real Windows run on immutable head
