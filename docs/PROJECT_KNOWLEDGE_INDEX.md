@@ -24,6 +24,7 @@ After context loss, compaction, long interruption, uncertainty about prior work,
 
 | Topic | Authoritative/current source(s) | Status / usage | Historical / secondary sources |
 |---|---|---|---|
+| Bot-Helper Turbo V1.1 | `docs/BOT_HELPER_TURBO_V1_1_DESIGN.md`, `docs/BOT_HELPER_TURBO_V1_1_ACCEPTANCE.md`, `docs/BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`, `scripts/run_turbo_acceptance.py` | Step2245 development L/E/G; partial truth, lessons, filter/autopsy/challenger, independent G and risk research only; current acceptance in closeout | V1 and Step2242–2244 history intact; no execution promotion |
 | Overall project state | `docs/MASTERSTAND.md` | Primary durable handover/source-of-truth below exact repo/code/evidence; Step 2181 refresh records current verified progress through Step 2179, truthful Step-2180 interruption, Monday target corridor and milestone logic | Older Masterstand revisions remain available through Git history |
 | Current work-step numbering | `docs/CURRENT_WORK_STEP.md` | Binding numbering pointer and reconstructed whole-number ledger; numbering only, never overrides code/evidence/safety | Commit history is reconstruction evidence when the pointer is inconsistent |
 | Workflow integrity / step close | `docs/DAXBOT_WORKFLOW_INTEGRITY_GATE_V1.md`, `docs/DAXBOT_CHAT_HANDOFF_PROTOCOL_V1.md`, `tests/test_workflow_integrity_gate.py` | Binding Step-Close-Gate, pointer-before-next-step, monotonic interrupted-lane carry-forward, visible-progress and no-background-work truth | `WORK_CONTINUITY_PROTOCOL.md` remains detailed continuity policy |

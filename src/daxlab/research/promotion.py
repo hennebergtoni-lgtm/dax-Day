@@ -14,6 +14,33 @@ PROMOTION_SCHEMA = "DAXLAB_RESEARCH_PROMOTION_V1"
 PRODUCT_ARTIFACT_SCHEMA = "DAXLAB_PRODUCT_STRATEGY_ARTIFACT_V1"
 
 
+def build_turbo_review_artifact(*, experiment, challenger, bundle, reviewer_id,
+                                accounting_ref, now, independent_checks=(), ledger, ledger_head):
+    """Additive governed entrance; historical V1 artifacts are not rewritten.
+
+    G is executed here, not accepted as a caller-supplied green boolean. Even a
+    positive judgment creates REVIEW_READY only; productive acceptance is outside
+    Turbo's authority and requires a separately authorized release workflow.
+    """
+    from daxlab.research.turbo_judge import publish_judgment
+    if (experiment.source_commit != challenger.hypothesis.provenance.evidence_head
+            or experiment.config_fingerprint != challenger.hypothesis.provenance.config_fingerprint):
+        raise ValueError('TURBO_PROMOTION_EXPERIMENT_BINDING')
+    # Bind the exact existing experiment identity, not merely its source head.
+    # E must include this immutable fingerprint in its sealed provenance refs.
+    if experiment.experiment_fingerprint not in bundle.provenance.evidence_refs:
+        raise ValueError('TURBO_PROMOTION_EVALUATION_BINDING')
+    if accounting_ref != bundle.accounting_ref:
+        raise ValueError('TURBO_PROMOTION_ACCOUNTING_BINDING')
+    result = publish_judgment(ledger, challenger, bundle, reviewer_id=reviewer_id,
+                   expected_head=ledger_head, now=now, independent_checks=independent_checks)
+    if result['verdict'] != 'PROMOTION_CANDIDATE':
+        raise ValueError('TURBO_INDEPENDENT_PROMOTION_VETO')
+    artifact = ResearchPromotionArtifactV1.build(experiment=experiment,
+                                                promotion_state=PromotionState.REVIEW_READY)
+    return artifact, result['ledger_head']
+
+
 class PromotionState(StrEnum):
     RESEARCH_ONLY = "RESEARCH_ONLY"
     REVIEW_READY = "REVIEW_READY"

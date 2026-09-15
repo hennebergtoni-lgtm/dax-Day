@@ -1,6 +1,14 @@
 # DAX-BOT Chat Handoff Protocol V1
 
-## Active handoff — Step2244 real-host closeout complete (2026-09-15)
+## Active handoff — Step2245 Turbo V1.1 implementation (2026-09-15)
+
+Read `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`, `BOT_HELPER_TURBO_V1_1_DESIGN.md` and
+`CURRENT_WORK_STEP.md` for current source/CI/acceptance and stop state. This work
+adds a development learning plane, not runtime actuation. Head/anchor/scope and
+historical/current freshness stay separate. Step2239/2240/M01 are not promoted.
+After final acceptance STOP; no subsequent tranche is authorized automatically.
+
+## Historical handoff — Step2244 real-host closeout complete (2026-09-15)
 
 Resume from the final closeout anchor, not from any lower rerun command. The
 accepted real-host evidence head is

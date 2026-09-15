@@ -38,6 +38,11 @@ jobs:
         run: python scripts/run_bot_helper_acceptance.py --output-dir bot-helper-acceptance --pass-name pass2
       - name: Ruff
         run: ruff check src tests scripts
+      - name: Turbo V1.1 U01-U40 first acceptance pass
+        run: python scripts/run_turbo_acceptance.py --output-dir turbo-acceptance --pass-name pass1
+      - name: Turbo V1.1 independent second acceptance pass
+        if: always()
+        run: python scripts/run_turbo_acceptance.py --output-dir turbo-acceptance --pass-name pass2
       - name: Step 2233/2237 and pre-DEMO IG regressions and Python syntax
         run: |
           pytest tests/test_export_ig_raw_truth_2233.py tests/test_export_ig_raw_truth_2233_runner.py tests/test_run_ig_raw_truth_2233.py tests/test_ig_raw_m5_timestamp_diagnostic.py tests/test_ig_market_data.py tests/test_ig_demo_readonly_probe.py tests/test_ig_cand001_shadow_e2e.py tests/test_run_ig_m5_contract_2237.py tests/test_ig_rest_readonly.py tests/test_ig_session_owner.py tests/test_ig_predemo_safety.py tests/test_dax_windows_host_preflight.py tests/test_dax_windows_python_runtime_probe.py tests/test_run_ig_predemo_readiness_2238.py
@@ -172,5 +177,13 @@ jobs:
         with:
           name: bot-helper-v1-ci-${{ github.sha }}
           path: bot-helper-acceptance/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Retain sanitized Turbo evidence and lessons
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: turbo-v1-1-ci-${{ github.sha }}
+          path: turbo-acceptance/
           retention-days: 30
           if-no-files-found: error

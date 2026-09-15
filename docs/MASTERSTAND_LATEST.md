@@ -1,5 +1,20 @@
 # DAX-BOT MASTERSTAND LATEST — CHAT / WORK / DEMO HANDOVER
 
+## Current Step2245 — Turbo V1.1 implemented, CI acceptance pending (2026-09-15)
+
+Start/continuity anchor `9491a5922eac4abc6984618585778317dd249600`; historical
+real-host evidence remains on `ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`.
+Development-only L/E/G, partial evidence, lessons, filter/autopsy/challenger
+governance and bounded Turbo-risk research are implemented. No runtime policy,
+strategy, execution or broker capability changed. Local U01–U40 passed twice;
+exact-head CI and final publication are pending, not inferred from local green.
+
+Current handoff: `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`; architecture/reuse/rights:
+`BOT_HELPER_TURBO_V1_1_DESIGN.md`; acceptance: `BOT_HELPER_TURBO_V1_1_ACCEPTANCE.md`.
+Step2239 WAITING_EXTERNAL, Step2240 BLOCKED, M01 NOT READY, gates 8/0/13/6/0.
+Below, statements that Turbo has not started are historical/superseded only;
+historical real-host VERIFIED facts are preserved. STOP after this acceptance.
+
 ## Step2244 real-host evidence and gate closeout — authoritative (2026-09-15)
 
 The exact-head Windows/IG-DEMO recheck on

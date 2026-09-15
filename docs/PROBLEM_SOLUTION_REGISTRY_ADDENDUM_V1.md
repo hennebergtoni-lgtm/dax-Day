@@ -75,6 +75,36 @@ This addendum continues the canonical PSR numbering without rewriting the large 
 
 ---
 
+## PSR-019 — Learning evidence must not inherit runtime or promotion authority
+
+**Status:** IMPLEMENTED / ACCEPTANCE IN STEP2245 CLOSEOUT
+**Component:** development L/E/G / evidence, research and operator boundaries
+
+**Problem:** Partial real-host truths can disappear behind a composite blocker;
+research verdicts can be confused with current opportunity approval; a renamed
+dataset can disguise repeated OOS tuning; a hash without a pinned journal can
+appear more authoritative than its underlying evidence.
+
+**Root cause:** Source scope, historical/current time, hypothesis/trial identity
+and decision authority are different axes, not a single green flag.
+
+**Accepted solution:** Preserve per-dimension provenance and historical claims;
+leave composite authority with its existing owner. Require immutable typed
+lessons, actual trial accounting, content/time-bound holdouts, independent G
+reproduction and exact opportunity/experiment binding. No productive actuation
+path. Use existing registry/atomic/replay/metric owners, not a second truth store.
+
+**Proof/evidence:** `BOT_HELPER_TURBO_V1_1_DESIGN.md`,
+`BOT_HELPER_TURBO_V1_1_ACCEPTANCE.md`, `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`;
+`tests/test_turbo_acceptance.py`, `tests/test_turbo_adversarial.py`,
+`tests/test_turbo_integration.py`, `tests/test_turbo_dogfood.py`.
+
+**Reuse rule:** Match head, scope, subject, contract and freshness separately;
+preserve old proof without manufacturing current eligibility. A research label,
+including TURBO_CANDIDATE or REVIEW_READY, grants no execution/risk authority.
+
+---
+
 ## PSR-018 — Technical progress, visible step state and pointer/CI truth can drift apart
 
 **Status:** BINDING PROCESS FIX / REGRESSION-GUARDED

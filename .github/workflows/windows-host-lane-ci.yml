@@ -15,7 +15,7 @@ jobs:
       - name: Install broker-free test surface
         run: |
           python -m pip install -e . --no-deps
-          python -m pip install pytest ruff==0.16.2 tzdata
+          python -m pip install pytest ruff==0.16.2 tzdata numpy hypothesis
       - name: Install actual browser acceptance dependency
         shell: bash
         run: |
@@ -34,6 +34,11 @@ jobs:
           BOT_HELPER_REQUIRE_BROWSER: '1'
           NODE_PATH: ${{ runner.temp }}/bot-helper-browser/node_modules
         run: python scripts/run_bot_helper_acceptance.py --output-dir bot-helper-acceptance --pass-name pass2
+      - name: Turbo first acceptance pass including native file persistence
+        run: python scripts/run_turbo_acceptance.py --output-dir turbo-acceptance --pass-name pass1
+      - name: Turbo fresh-process second acceptance pass
+        if: always()
+        run: python scripts/run_turbo_acceptance.py --output-dir turbo-acceptance --pass-name pass2
       - name: PowerShell parser parity
         shell: powershell
         run: |
@@ -83,5 +88,13 @@ jobs:
         with:
           name: bot-helper-v1-windows-host-lane-ci-${{ github.sha }}
           path: bot-helper-acceptance/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Retain sanitized Turbo Windows evidence and lessons
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: turbo-v1-1-windows-${{ github.sha }}
+          path: turbo-acceptance/
           retention-days: 30
           if-no-files-found: error

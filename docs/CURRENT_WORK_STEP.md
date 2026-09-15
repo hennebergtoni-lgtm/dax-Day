@@ -1,5 +1,30 @@
 # Current Work Step — DAX Daytrading Bot
 
+## Current: Step2245 Bot-Helper Turbo V1.1 — IN_PROGRESS (2026-09-15)
+
+- Last completed whole-number step: **2244**
+- Active whole-number step: **2245**
+- Active step state: **IN_PROGRESS / UNVERIFIED UNTIL TWO PASSES AND CI**
+- Next step after successful completion: **2246**
+
+2246 is reserved only; user STOP applies after this build. Lower structured
+step pointers are historical snapshots, not authority to resume an older step.
+
+Implementation authorized from PR #109 anchor
+`9491a5922eac4abc6984618585778317dd249600`. Evidence head remains
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`; no new provider run is claimed.
+Scope: development-only L/E/G, partial evidence, lessons, filter governance,
+causal autopsy, independent research judgment and NORMAL/BOOST/TURBO research.
+U01–U40 acceptance is frozen before implementation. CAND-001, V11.2, production
+cost/risk/loss policies, broker lifecycle and NONE/false remain unchanged.
+Step2239 WAITING_EXTERNAL, Step2240 BLOCKED, M01 NOT READY and 27 gates 8/0/13/6/0
+remain the separate authoritative readiness truth. No broker action is authorized.
+
+Current implementation/acceptance/handoff: `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`.
+Design: `BOT_HELPER_TURBO_V1_1_DESIGN.md`; frozen U01–U40:
+`BOT_HELPER_TURBO_V1_1_ACCEPTANCE.md`. Final CI acceptance is still pending.
+
+
 ## Authoritative closeout pointer — Step2244 REAL-HOST VERIFIED (2026-09-15)
 
 Start/evidence head:

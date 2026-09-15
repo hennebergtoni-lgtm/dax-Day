@@ -1,5 +1,20 @@
 # DAX-BOT CI Ownership Contract V1
 
+## Step2245 additive Turbo V1.1 ownership (2026-09-15)
+
+No new workflow. `research-lab-ci` owns U01–U40, the independent adversarial
+oracles, cross-owner research integration and 15-case historical dogfood through
+two invocations of `scripts/run_turbo_acceptance.py`. The full repository suite
+is retained. `windows-host-lane-ci` repeats this bounded acceptance to verify the
+new immutable file-ledger/lock/restart contract on native Windows. Its existing
+PowerShell and V1 coverage stays intact. NumPy and Hypothesis are existing project
+dependencies added to that lean test environment, not runtime architecture.
+
+`dax-bot-1x-ci` retains unchanged V1/product/safety ownership; it need not duplicate
+Turbo statistics. Both Turbo owners retain sanitized reports and lessons for 30
+days, including failures. Skipped/missing U cases cannot pass. LOCAL_TEST/CI and
+synthetic/replay scopes never establish fresh IG or execution evidence.
+
 Status: BINDING CI RESPONSIBILITY CONTRACT
 Updated: 2026-09-12
 

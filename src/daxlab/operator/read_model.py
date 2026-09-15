@@ -11,6 +11,47 @@ from hashlib import sha256
 import json
 
 
+def project_turbo_research(opportunity: dict, *, judgment: dict | None = None) -> dict:
+    """Optional read-only research card, separate from product readiness/health.
+
+    No button, runtime state, policy selection or execution authorization.
+    Only fixed enums, numeric counts and bounded diagnostic tokens are projected.
+    """
+    from daxlab.research.turbo_contract import safe_tree, research_payload, Provenance
+    safe_tree(opportunity)
+    if (opportunity.get('schema') != 'DAX_TURBO_V1_1'
+            or opportunity.get('kind') != 'OPPORTUNITY'
+            or opportunity.get('execution_capability') != 'NONE'
+            or opportunity.get('order_execution_enabled') is not False
+            or opportunity.get('runtime_actuation') is not False):
+        raise ValueError('TURBO_OPERATOR_BOUNDARY')
+    modes = {'NORMAL_ONLY', 'BOOST_CANDIDATE', 'TURBO_CANDIDATE',
+             'TURBO_BLOCKED', 'INSUFFICIENT_EVIDENCE'}
+    if opportunity.get('opportunity_mode') not in modes:
+        raise ValueError('TURBO_OPERATOR_MODE')
+    source = Provenance.from_payload(opportunity['provenance'])
+    allowed = ('opportunity_mode', 'why', 'evidence_scope', 'sample_adequacy',
+               'hard_blockers', 'uncertainty_class', 'falsifiers', 'regime_binding',
+               'contradicting_dimensions', 'provenance', 'observation_fingerprint')
+    state = 'REQUIRED_SEPARATELY'
+    if judgment is not None:
+        safe_tree(judgment)
+        if judgment.get('verdict') not in {'REJECT', 'MORE_EVIDENCE_REQUIRED', 'PROMOTION_CANDIDATE'}:
+            raise ValueError('TURBO_OPERATOR_JUDGMENT')
+        # A strategy/risk research review is not an approval of this opportunity.
+        # Never project an unrelated G receipt next to a setup as if it were one.
+        if (judgment.get('kind') != 'OPPORTUNITY_REVIEW'
+                or judgment.get('observation_fingerprint') != opportunity['observation_fingerprint']
+                or judgment.get('provenance_fingerprint') != source.fingerprint
+                or judgment.get('runtime_actuation') is not False):
+            raise ValueError('TURBO_OPERATOR_JUDGMENT_BINDING')
+        state = judgment['verdict']
+    return research_payload('OPERATOR_RESEARCH_VIEW',
+        **{key: opportunity.get(key) for key in allowed}, g_status=state,
+        execution_status='DISABLED', activation_button=False)
+
+
+
 OPERATOR_VIEW_SCHEMA = "DAXLAB_PRODUCT_OPERATOR_VIEW_V1"
 
 

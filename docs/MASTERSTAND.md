@@ -1,5 +1,16 @@
 # DAX-BOT MASTERSTAND — NEXT-CHAT HANDOVER
 
+## Current override — Step2245 Turbo V1.1 (2026-09-15)
+
+The authoritative current handoff is `MASTERSTAND_LATEST.md` together with
+`CURRENT_WORK_STEP.md` and `BOT_HELPER_TURBO_V1_1_CLOSEOUT.md`. Turbo V1.1 is
+development-only and currently awaiting final CI acceptance. The start anchor
+is `9491a5922eac4abc6984618585778317dd249600`; the real-host evidence head remains
+`ae0efbcaff5650f9e8a8f31bc8fd603cfae212a2`. No second real-host run or productive
+risk/strategy/execution change. Step2239 remains waiting external, Step2240
+blocked, M01 not ready; 27 gates remain 8/0/13/6/0. Older status snapshots below
+remain historical; they do not override this current pointer or authorize work.
+
 Status: **BINDING HANDOVER / REPOSITORY TRUTH FIRST**  
 Updated: **2026-09-13 — Step 2186 Work/chat-capacity handoff**  
 Repository: `hennebergtoni-lgtm/dax-Day`  
