@@ -2,7 +2,8 @@
 
 ## Current: canonical Windows Python runtime selection (2026-09-15)
 
-Implementation commit: `3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+Implementation head: `30d9575fc8b8526e281a86c9717d19e9dda6b71b`;
+Windows #8, DAX #719 and research #1503 CI are GREEN.
 
 The real Step2238 lane identified `PYTHON_COMMAND_RESULT_MULTIPLE` before its
 51-check preflight and before any IG login. The canonical owner now distinguishes

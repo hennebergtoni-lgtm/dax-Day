@@ -2,7 +2,8 @@
 
 ## Step2238 canonical Python selection overlay — 2026-09-15
 
-Implementation commit: `3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+Implementation head: `30d9575fc8b8526e281a86c9717d19e9dda6b71b`;
+all three mandatory CI lanes are GREEN.
 
 The real `PYTHON_COMMAND_RESULT_MULTIPLE` block is pre-authentication host-lane
 evidence only. The runtime owner now probes and collapses actual interpreter

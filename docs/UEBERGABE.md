@@ -2,7 +2,8 @@
 
 ## Resume: canonical Windows Python selection (2026-09-15)
 
-Runtime owner commit: `3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+Runtime owner head: `30d9575fc8b8526e281a86c9717d19e9dda6b71b`;
+all three mandatory CI lanes are GREEN.
 
 The previous real run stopped safely with `PYTHON_COMMAND_RESULT_MULTIPLE`
 before preflight/authentication. Use only the new exact-head command. The shared

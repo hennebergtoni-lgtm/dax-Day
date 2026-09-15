@@ -2,8 +2,10 @@
 
 ## Canonical Windows Python runtime selection — 2026-09-15
 
-Code commit `3d03489d3a0959e76abacdc02d7878c784d71b9f` owns the selection
+Code head `30d9575fc8b8526e281a86c9717d19e9dda6b71b` owns the selection
 contract; the final documentation commit does not change its runtime blobs.
+On that exact runtime head, `windows-host-lane-ci` #8, `dax-bot-1x-ci` #719 and
+`research-lab-ci` #1503 are GREEN.
 
 The latest real Windows run completed exact-head deployment and stopped before
 authentication with `PYTHON_COMMAND_RESULT_MULTIPLE`, `failure_phase=PYTHON`,

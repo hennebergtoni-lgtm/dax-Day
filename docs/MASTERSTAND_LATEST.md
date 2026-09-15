@@ -2,8 +2,9 @@
 
 ## Step2238 canonical Windows Python selection — authoritative (2026-09-15)
 
-Runtime-selection code commit:
-`3d03489d3a0959e76abacdc02d7878c784d71b9f`.
+Runtime-selection code head:
+`30d9575fc8b8526e281a86c9717d19e9dda6b71b`; native Windows CI #8,
+`dax-bot-1x-ci` #719 and `research-lab-ci` #1503 are GREEN on that head.
 
 The latest exact-head Windows run reached WAIT and failed closed before
 authentication as `PYTHON_COMMAND_RESULT_MULTIPLE`. This is now classified as a
